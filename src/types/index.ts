@@ -30,40 +30,40 @@ interface Player {
   title: string | undefined
 }
 
-interface StockfishAnalysisMap {
-  [move: string]: {
-    evaluation: number | undefined
-    whiteMate: number | undefined
-    blackMate: number | undefined
-    winrate: number
-  }
-}
+// interface StockfishAnalysisMap {
+//   [move: string]: {
+//     evaluation: number | undefined
+//     whiteMate: number | undefined
+//     blackMate: number | undefined
+//     winrate: number
+//   }
+// }
 
-interface MaiaAnalysisMap {
-  [move: string]: number
-}
+// interface MaiaAnalysisMap {
+//   [move: string]: number
+// }
 
-interface AvailableMoves {
-  [move: string]: GameState
-}
+// interface AvailableMoves {
+//   [move: string]: GameState
+// }
 
-interface Game {
-  id: string
-  termination: Termination
-  gameStates: GameState[]
-  whitePlayer: Player | undefined
-  blackPlayer: Player | undefined
-}
+// interface Game {
+//   id: string
+//   termination: Termination
+//   gameStates: GameState[]
+//   whitePlayer: Player | undefined
+//   blackPlayer: Player | undefined
+// }
 
-interface AnalysisGame extends Game {
-  stockfishAnalyses: { [model: string]: StockfishAnalysisMap[] }[]
-  maiaAnalyses: { [model: string]: MaiaAnalysisMap[] }[]
-  availableMoves: AvailableMoves[]
-}
+// interface AnalysisGame extends Game {
+//   stockfishAnalyses: { [model: string]: StockfishAnalysisMap[] }[]
+//   maiaAnalyses: { [model: string]: MaiaAnalysisMap[] }[]
+//   availableMoves: AvailableMoves[]
+// }
 
-interface TrainingGame extends Game {
-  targetIndex: number
-  stockfishAnalyses: { [model: string]: StockfishAnalysisMap[] }
-  maiaAnalyses: { [model: string]: MaiaAnalysisMap[] }
-  availableMoves: AvailableMoves
-}
+// interface TrainingGame extends Game {
+//   targetIndex: number
+//   stockfishAnalyses: { [model: string]: StockfishAnalysisMap[] }
+//   maiaAnalyses: { [model: string]: MaiaAnalysisMap[] }
+//   availableMoves: AvailableMoves
+// }

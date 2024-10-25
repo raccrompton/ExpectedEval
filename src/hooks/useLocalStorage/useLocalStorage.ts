@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 
 export const useLocalStorage = <T>(
   key: string,

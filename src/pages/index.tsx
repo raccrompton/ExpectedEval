@@ -1,26 +1,12 @@
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
-
-import type { NextPage } from 'next'
 import Head from 'next/head'
-import Link from 'next/link'
-import Image from 'next/image'
-import classNames from 'classnames'
+import type { NextPage } from 'next'
+import React, { useCallback, useContext, useEffect, useRef } from 'react'
 
-import maiaDiagram from './maia_diagram.png'
-import { AuthContext, ModalContext } from 'src/contexts'
-import { AuthenticatedWrapper } from 'src/components'
-import { AboutMaia } from 'src/components/AboutMaia/AboutMaia'
+import { ModalContext } from 'src/contexts'
 import { HomeHero } from 'src/components/HomeHero/HomeHero'
+import { AboutMaia } from 'src/components/AboutMaia/AboutMaia'
 
 const Home: NextPage = () => {
-  const { user, connectLichess, logout } = useContext(AuthContext)
-
   const { setPlaySetupModalProps } = useContext(ModalContext)
 
   // Close play dialog if page closed

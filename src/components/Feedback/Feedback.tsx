@@ -1,12 +1,5 @@
 import { Chess } from 'chess.ts'
-import {
-  useMemo,
-  useState,
-  Dispatch,
-  useEffect,
-  SetStateAction,
-  useCallback,
-} from 'react'
+import { useMemo, Dispatch, SetStateAction, useCallback } from 'react'
 
 import { Markdown } from 'src/components'
 import styles from './Feedback.module.scss'

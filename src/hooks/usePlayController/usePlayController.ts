@@ -1,8 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { Color, Move, Termination } from 'src/types'
 import { Chess, Piece, SQUARES } from 'chess.ts'
-import { PlayedGame, TimeControl, PlayGameConfig } from 'src/types/play'
-import { startGame } from 'src/api'
+import { PlayedGame, PlayGameConfig } from 'src/types/play'
 import { AllStats } from '../useStats'
 
 const nullFen = new Chess().fen()
@@ -87,15 +86,7 @@ const movesUciToGame = (
 
 export const usePlayController = (
   id: string,
-  {
-    player,
-    playType,
-    isBrain,
-    maiaVersion,
-    sampleMoves,
-    timeControl,
-    startFen,
-  }: PlayGameConfig,
+  { player, playType, maiaVersion, timeControl, startFen }: PlayGameConfig,
 ) => {
   const [moves, setMoves] = useState<string[]>([])
   const [moveTimes, setMoveTimes] = useState<number[]>([])

@@ -1,10 +1,10 @@
-import { useRouter } from 'next/router'
+import { ComponentProps, ReactNode, useState } from 'react'
+
+import { Modals } from 'src/types'
 import { useLocalStorage } from 'src/hooks'
-import { ComponentProps, ReactNode, useEffect, useState } from 'react'
+import { ModalContext } from 'src/contexts'
 import { InstructionsModal } from 'src/components'
 import { PlaySetupModal } from 'src/components/modals/PlaySetupModal/PlaySetupModal'
-import { ModalContext } from 'src/contexts'
-import { Modals } from 'src/types'
 
 export const ModalContextProvider: React.FC<{ children: ReactNode }> = ({
   children,

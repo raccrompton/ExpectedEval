@@ -1,20 +1,21 @@
 import { NextPage } from 'next/types'
-import { usePlayController } from 'src/hooks/usePlayController'
-import { GameplayInterface } from 'src/components/GameplayInterface'
+import { useRouter } from 'next/router'
+import { useContext, useEffect, useMemo } from 'react'
+
 import {
   startGame,
   getGameMove,
   submitGameMove,
   getPlayPlayerStats,
 } from 'src/api'
-import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
-import { PlayControls } from 'src/components/PlayControls'
-import { useContext, useEffect, useMemo, useState } from 'react'
-import { Color, PlayedGame, TimeControl, PlayGameConfig } from 'src/types'
-import { useRouter } from 'next/router'
 import { Loading } from 'src/components'
 import { ModalContext } from 'src/contexts'
 import { useStats } from 'src/hooks/useStats'
+import { PlayControls } from 'src/components/PlayControls'
+import { Color, TimeControl, PlayGameConfig } from 'src/types'
+import { usePlayController } from 'src/hooks/usePlayController'
+import { GameplayInterface } from 'src/components/GameplayInterface'
+import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
 
 const playStatsLoader = async () => {
   const stats = await getPlayPlayerStats()

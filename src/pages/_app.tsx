@@ -1,5 +1,4 @@
 import Head from 'next/head'
-import Script from 'next/script'
 import { useRouter } from 'next/router'
 import type { AppProps } from 'next/app'
 import { Analytics } from '@vercel/analytics/react'

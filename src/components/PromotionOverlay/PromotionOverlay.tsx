@@ -12,7 +12,6 @@ interface Props {
 }
 
 export const PromotionOverlay: React.FC<Props> = ({
-  player,
   file,
   selectPromotion,
 }: Props) => {

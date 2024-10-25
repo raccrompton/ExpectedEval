@@ -1,11 +1,10 @@
-import { NextPage } from 'next'
 import Head from 'next/head'
-import styles from 'src/styles/App.module.scss'
-
+import { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { useCallback, useContext, useEffect, useState } from 'react'
-import { PlayType } from 'src/types/play'
+import { useContext, useEffect, useState } from 'react'
+
 import { ModalContext } from 'src/contexts'
+import styles from 'src/styles/App.module.scss'
 
 const PlayPage: NextPage = () => {
   const router = useRouter()

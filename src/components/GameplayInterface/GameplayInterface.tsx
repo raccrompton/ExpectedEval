@@ -20,7 +20,6 @@ import { GameClock } from '../GameClock'
 import classNames from 'classnames'
 import { useUnload } from 'src/hooks/useUnload'
 import { StatsDisplay } from '../StatsDisplay'
-import { AllStats } from 'src/hooks/useStats'
 
 interface Props {
   boardShapes?: DrawShape[]

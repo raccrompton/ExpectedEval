@@ -14,8 +14,9 @@ export const GameClock: React.FC<Props> = (
 ) => {
   const { theme } = useContext(ThemeContext)
   const { user } = useContext(AuthContext)
-  const { timeControl, player, toPlay, whiteClock, blackClock, lastMoveTime } =
-    useContext(PlayControllerContext)
+  const { player, toPlay, whiteClock, blackClock, lastMoveTime } = useContext(
+    PlayControllerContext,
+  )
 
   const [referenceTime, setReferenceTime] = useState<number>(Date.now())
 
