@@ -182,7 +182,7 @@ export const GameplayInterface: React.FC<Props> = (
     <>
       <div className={styles.outer}>
         <div className={styles.container}>
-          <div className={styles.side}>
+          {/* <div className={styles.side}>
             <div className={styles.info}>
               <GameInfo
                 termination={game.termination}
@@ -195,6 +195,14 @@ export const GameplayInterface: React.FC<Props> = (
               />
             </div>
             <div className={styles.play}></div>
+          </div> */}
+          <div className={styles.side}>
+            {timeControl != 'unlimited' ? (
+              <GameClock
+                player={controller.orientation == 'white' ? 'black' : 'white'}
+                reversed={false}
+              />
+            ) : null}
           </div>
           <div className={styles.board}>
             <GameBoard
@@ -214,18 +222,12 @@ export const GameplayInterface: React.FC<Props> = (
           </div>
           <div className={styles.side}>
             {timeControl != 'unlimited' ? (
-              <GameClock
-                player={controller.orientation == 'white' ? 'black' : 'white'}
-                reversed={false}
-              />
+              <GameClock player={controller.orientation} reversed={true} />
             ) : null}
-            <div className={styles.info}>{props.children}</div>
             <div className={styles.controls}>
               <BoardController />
             </div>
-            {timeControl != 'unlimited' ? (
-              <GameClock player={controller.orientation} reversed={true} />
-            ) : null}
+            <div className={styles.info}>{props.children}</div>
             <StatsDisplay stats={stats} hideSession={true} />
           </div>
         </div>

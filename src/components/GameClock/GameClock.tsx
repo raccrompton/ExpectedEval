@@ -1,8 +1,6 @@
 import { Color } from 'src/types'
 import { useState, useEffect, useContext } from 'react'
-import classNames from 'classnames'
 
-import styles from './GameClock.module.scss'
 import { AuthContext, ThemeContext } from 'src/contexts'
 import { PlayControllerContext } from 'src/contexts/PlayControllerContext'
 
@@ -50,18 +48,15 @@ export const GameClock: React.FC<Props> = (
 
   return (
     <div
-      className={classNames(styles.clock, {
-        [styles.active]: active,
-        [styles.reversed]: props.reversed,
-      })}
+      className={`flex items-center justify-between bg-background-1 md:items-start md:justify-start ${active ? 'opacity-100' : 'opacity-50'} flex-row md:flex-col`}
     >
-      <div className={styles.time}>
-        {minutes}:{('00' + seconds).slice(-2)}
-        {showTenths ? '.' + tenths : null}
-      </div>
-      <div className={styles.player}>
+      <div className="px-4 py-2">
         {(theme == 'dark') != (props.player == 'black') ? '●' : '○'}{' '}
         {player == props.player ? user?.displayName : 'Maia'}
+      </div>
+      <div className="inline-flex self-start px-4 py-2 md:text-3xl">
+        {minutes}:{('00' + seconds).slice(-2)}
+        {showTenths ? '.' + tenths : null}
       </div>
     </div>
   )
