@@ -29,6 +29,11 @@ const Leaderboard: React.FC = () => {
         ranking: lb.play_leaders,
       },
       {
+        icon: <TrainIcon />,
+        name: 'Train',
+        ranking: lb.puzzles_leaders,
+      },
+      {
         icon: <HandIcon />,
         name: 'Hand',
         ranking: lb.hand_leaders,
@@ -38,11 +43,7 @@ const Leaderboard: React.FC = () => {
         name: 'Brain',
         ranking: lb.brain_leaders,
       },
-      {
-        icon: <TrainIcon />,
-        name: 'Train',
-        ranking: lb.puzzles_leaders,
-      },
+
       {
         icon: <TuringIcon />,
         name: 'Bot/Not',
