@@ -45,7 +45,7 @@ import { GameControllerContext } from 'src/contexts/GameControllerContext/GameCo
 const statsLoader = async () => {
   const stats = await getTrainingPlayerStats()
   return {
-    gamesPlayed: Math.max(0, stats.totalPuzzles),
+    gamesPlayed: Math.max(0, stats.totalPuzzles - 1),
     gamesWon: stats.puzzlesSolved,
     rating: stats.rating,
   }
