@@ -1,0 +1,132 @@
+@import '/src/styles/base';
+
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  @include shadowed;
+  @include rounded;
+  @include themed-styles {
+    background-color: themed-colour('navigation-background');
+  }
+
+  width: 20vw;
+  max-width: 450px;
+  min-width: 250px;
+  margin: 1vw;
+  padding: 35px;
+
+  @include mobile {
+    width: 100vw;
+    max-width: 100vw;
+    margin: 0;
+
+    margin: 0px;
+    padding: 10px;
+    h1 {
+      font-size: 1.4em;
+    }
+
+    h3 {
+      font-size: 1em;
+    }
+  }
+
+  transition: 250ms ease-in-out;
+}
+
+.hidden {
+  transition: 250ms ease-in-out;
+  @extend .container;
+  @include desktop {
+    width: 0px;
+    min-width: 0px;
+    padding: 0px;
+  }
+
+  @include mobile {
+    .menu {
+      height: 0px;
+      opacity: 0;
+      transition: 250ms ease-in-out;
+      margin: 0;
+    }
+    height: auto;
+    gap: 0px;
+
+    .auth {
+      transition: 250ms ease-in-out;
+      height: 0px;
+      opacity: 0;
+    }
+  }
+}
+
+.auth {
+  transition: 250ms ease-in-out;
+}
+
+.menu {
+  font-family: 'Montserrat', sans-serif;
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  width: 100%;
+  gap: 20px;
+  height: auto;
+
+  transition: 250ms ease-in-out;
+
+  @include mobile {
+    text-align: left;
+    gap: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+  }
+}
+
+.header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.button {
+  margin: 0;
+  border: none;
+  outline: none;
+  height: 28px;
+  width: 28px;
+  padding: 2px;
+  border-radius: 14px;
+  @include themed-styles {
+    background-color: rgba(themed-colour('background0'), 0.5);
+  }
+  transition: 200ms;
+
+  @include shadowed;
+
+  &:hover {
+    cursor: pointer;
+    @include themed-styles {
+      background-color: rgba(themed-colour('background0'), 0.8);
+      transition: 200ms;
+    }
+  }
+
+  polyline {
+    @include themed-styles {
+      stroke: themed-colour('text-primary');
+    }
+  }
+}
+
+.open {
+  @extend .button;
+  left: 10px;
+  top: 20px;
+  z-index: 2;
+  position: absolute;
+}

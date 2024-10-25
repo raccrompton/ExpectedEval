@@ -1,0 +1,61 @@
+@import '/src/styles/base';
+
+.container {
+  display: flex;
+  height: auto;
+  padding: 12px;
+  flex-direction: column;
+  @include boxed;
+
+  h3 {
+    font-weight: 500;
+  }
+
+  hr {
+    width: 100%;
+    height: 1px;
+    border: none;
+    @include themed-styles {
+      background-color: themed-colour('text-primary');
+      opacity: 0.5;
+    }
+  }
+}
+
+.id {
+  font-weight: 300;
+}
+
+.termination {
+  padding: 10px;
+  padding-bottom: 0px;
+  text-align: center;
+  opacity: 0.9;
+}
+
+.headerContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  button.helpButton {
+    background: none !important;
+    margin-left: auto;
+    padding: 0;
+
+    &:hover {
+      opacity: 0.8;
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+      @include themed-styles {
+        color: themed-colour('text-primary');
+        &:hover {
+          color: rgba(themed-colour('human-accent'), 0.7);
+        }
+      }
+    }
+  }
+}
