@@ -1,4 +1,5 @@
 import Head from 'next/head'
+import Script from 'next/script'
 import { useRouter } from 'next/router'
 import type { AppProps } from 'next/app'
 import { Analytics } from '@vercel/analytics/react'
@@ -45,6 +46,16 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
         <Footer />
       </div>
       <Analytics />
+      <Script async src="/analytics.js?id=G-SNP84LXLKY" />
+      <Script id="analytics">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'G-SNP84LXLKY');
+        `}
+      </Script>
     </Compose>
   )
 }
