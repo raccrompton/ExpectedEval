@@ -1,5 +1,5 @@
 # maia platform
-  
+   
 This is a [Next.js](https://nextjs.org/) boilerplate project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) with the additions of [`typescript`](https://www.typescriptlang.org/), [`eslint`](https://eslint.org/), [`storybook`](https://storybook.js.org/), [`prettier`](https://prettier.io/), [`sass`](https://sass-lang.com/), [`testing-library`](https://testing-library.com/) ,and [`jest`](https://jestjs.io/).
 
 Initialize a new `next-app` with this project as a template by running
