@@ -161,7 +161,7 @@ function BetaBlurb() {
   return (
     <>
       {user?.lichessId ? (
-        <div className="my-4 mt-20 flex w-screen flex-col items-start bg-engine-1 p-3 transition md:mt-0 md:w-auto md:rounded">
+        <div className="my-4 flex w-screen flex-col items-start bg-engine-1 p-3 transition md:mt-0 md:w-auto md:rounded">
           <div className="flex items-center gap-2">
             <div className="*:h-5 *:w-5">{SunIcon}</div>
             <p className="text-lg font-medium">Maia Chess is in private beta</p>

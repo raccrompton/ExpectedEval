@@ -8,7 +8,7 @@
   top: 0;
   bottom: 0;
   width: 100vw;
-  z-index: 8;
+  z-index: 100;
 
   @include themed-styles {
     background-color: rgba(themed-colour(backdrop), 0.9);
