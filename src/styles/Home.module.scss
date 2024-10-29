@@ -112,6 +112,12 @@
     display: flex;
     flex-direction: row;
 
+    @include mobile {
+      flex-grow: 1;
+      flex-direction: column;
+      gap: 16px;
+    }
+
     @include themed-styles {
       background-color: rgba(themed-colour('text-primary'), 0.05);
     }
