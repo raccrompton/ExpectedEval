@@ -30,7 +30,7 @@ export const getPlayerStats = async () => {
 
     trainRating: data.puzzles_elo as number,
     trainCorrect: data.puzzles_correct as number,
-    trainGames: Math.max(0, (data.puzzles_played as number) - 1),
+    trainGames: data.puzzles_played as number,
     trainMax: data.puzzles_elo_max as number,
     trainMin: data.puzzles_elo_min as number,
     trainHours: data.puzzle_game_time as number,
