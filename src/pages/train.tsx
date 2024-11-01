@@ -11,7 +11,6 @@ import {
 } from 'react'
 import Head from 'next/head'
 import { Chess } from 'chess.ts'
-import classNames from 'classnames'
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
@@ -32,7 +31,6 @@ import {
   VerticalEvaluationBar,
   PositionEvaluationContainer,
 } from 'src/components'
-import styles from 'src/styles/App.module.scss'
 import { useTrainingController } from 'src/hooks'
 import { AllStats, useStats } from 'src/hooks/useStats'
 import { TrainingGame, Status } from 'src/types/training'
@@ -178,17 +176,13 @@ const TrainPage: NextPage = () => {
         logGuess={logGuess}
         gamesController={
           <>
-            <div className={styles.moves}>
-              <div className={styles.games}>
+            <div className="relative bottom-0 h-full min-h-[38px] flex-1 overflow-auto">
+              <div className="flex flex-row flex-wrap items-start justify-start gap-1 overflow-y-auto">
                 {previousGameResults.map((game, index) => (
                   <span
                     key={game.id}
                     onClick={() => setCurrentIndex(index)}
-                    className={classNames({
-                      [styles.current]: game.result === undefined,
-                      [styles.correct]: game.result,
-                      [styles.incorrect]: !(game.result ?? true),
-                    })}
+                    className={`${game.result ? 'bg-engine-1' : game.result === undefined ? 'bg-button-secondary' : 'bg-human-4'} h-7 w-7 cursor-pointer rounded-sm`}
                   />
                 ))}
               </div>
@@ -298,10 +292,15 @@ const Train: React.FC<Props> = ({
 
   const desktopLayout = (
     <>
-      <div className={styles.outer}>
-        <div className={styles.container}>
-          <div className={styles.side}>
-            <div className={styles.info}>
+      <div className="flex h-full flex-1 flex-col justify-center gap-1">
+        <div className="mt-2 flex w-full flex-row items-center justify-center gap-1">
+          <div
+            style={{
+              maxWidth: 'min(20vw, 100vw - 75vh)',
+            }}
+            className="flex h-[75vh] w-[40vh] flex-col gap-1"
+          >
+            <div>
               <GameInfo
                 {...trainingGame}
                 whitePlayer={
@@ -325,13 +324,18 @@ const Train: React.FC<Props> = ({
                 instructionsType="train"
               />
             </div>
-            <div className={styles.play}>
-              <button onClick={launchContinue}>Continue Against Maia</button>
+            <div className="flex w-full">
+              <button
+                onClick={launchContinue}
+                className="flex w-full flex-1 items-center rounded bg-human-4 px-4 py-2 transition duration-200 hover:bg-human-3"
+              >
+                Continue Against Maia
+              </button>
             </div>
             {gamesController}
             <StatsDisplay stats={stats} />
           </div>
-          <div className={styles.board}>
+          <div className="relative flex aspect-square w-full max-w-[75vh]">
             <GameBoard
               move={move}
               game={trainingGame}
@@ -347,9 +351,20 @@ const Train: React.FC<Props> = ({
               label="Maia Probability"
             />
           </div>
-          <div className={styles.side}>
-            <div className={styles.map}>
-              <div className={styles.scatter}>
+          <div
+            style={{
+              maxWidth: 'min(20vw, 100vw - 75vh)',
+            }}
+            className="flex h-[75vh] w-[40vh] flex-col gap-1"
+          >
+            <div className="flex">
+              <div
+                style={{
+                  maxHeight: 'min(20vw, 100vw - 75vh)',
+                  maxWidth: 'min(20vw, 100vw - 75vh)',
+                }}
+                className="flex h-[40vh] w-[40vh] [&>div]:h-[inherit] [&>div]:max-h-[inherit] [&>div]:max-w-[inherit]"
+              >
                 <MovePlot
                   data={data}
                   onMove={setCurrentMove}
@@ -360,13 +375,25 @@ const Train: React.FC<Props> = ({
                   onMouseLeave={() => setMovePlotHover(null)}
                 />
               </div>
-              <div className={styles.human}></div>
+              <div
+                style={{
+                  background:
+                    'linear-gradient(0deg, rgb(36, 36, 36) 0%, rgb(255, 137, 70) 100%)',
+                }}
+                className="-mr-1 h-full w-1"
+              />
             </div>
-            <div className={styles.ai}></div>
-            <div className={styles.analysis}>
+            <div
+              style={{
+                background:
+                  'linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(83, 167, 162) 100%)',
+              }}
+              className="-mt-1 h-1 w-full"
+            />
+            <div className="flex-none">
               <PositionEvaluationContainer moveEvaluation={moveEvaluation} />
             </div>
-            <div className={styles.feedback}>
+            <div className="flex flex-1 flex-col items-stretch">
               <Feedback
                 status={status}
                 game={trainingGame}
@@ -385,12 +412,12 @@ const Train: React.FC<Props> = ({
                 mobile
               />
             </div> */}
-            <div className={styles.controls}>
+            <div className="flex-none">
               <BoardController setCurrentMove={setCurrentMove} />
             </div>
           </div>
         </div>
-        <div className={styles.sf}>
+        <div className="mr-8 flex items-center justify-center">
           <HorizontalEvaluationBar
             min={0}
             max={1}
@@ -404,10 +431,10 @@ const Train: React.FC<Props> = ({
 
   const mobileLayout = (
     <>
-      <div className={styles.outer}>
-        <div className={styles.container}>
-          <div className={styles.side}>
-            <div className={styles.info}>
+      <div className="flex h-full flex-1 flex-col justify-center gap-1">
+        <div className="mt-2 flex h-full flex-col items-start justify-start gap-2">
+          <div className="flex h-auto w-full flex-col gap-2">
+            <div className="w-screen">
               <GameInfo
                 {...trainingGame}
                 whitePlayer={
@@ -431,11 +458,16 @@ const Train: React.FC<Props> = ({
                 instructionsType="train"
               />
             </div>
-            <div className={styles.play}>
-              <button onClick={launchContinue}>Continue Against Maia</button>
+            <div className="flex w-full">
+              <button
+                onClick={launchContinue}
+                className="flex w-full flex-1 items-center rounded bg-human-4 px-4 py-2 transition duration-200 hover:bg-human-3"
+              >
+                Continue Against Maia
+              </button>
             </div>
           </div>
-          <div className={styles.board}>
+          <div className="relative flex aspect-square h-[100vw] w-screen">
             <GameBoard
               game={trainingGame}
               moves={moves}
@@ -445,8 +477,8 @@ const Train: React.FC<Props> = ({
               shapes={movePlotHover ? [movePlotHover] : undefined}
             />
           </div>
-          <div className={styles.side}>
-            <div className={styles.feedback}>
+          <div className="flex h-auto w-full flex-col gap-1">
+            <div className="flex flex-1 flex-col items-stretch">
               <Feedback
                 status={status}
                 game={trainingGame}
@@ -457,8 +489,8 @@ const Train: React.FC<Props> = ({
                 getNewGame={getNewGame}
               />
             </div>
-            <div className={styles.map}>
-              <div className={styles.scatter}>
+            <div className="flex">
+              <div className="flex h-[20vh] w-screen flex-none [&>div]:h-[inherit] [&>div]:max-h-[inherit] [&>div]:max-w-[inherit]">
                 <MovePlot
                   data={data}
                   onMove={setCurrentMove}
@@ -469,10 +501,22 @@ const Train: React.FC<Props> = ({
                   onMouseLeave={() => setMovePlotHover(null)}
                 />
               </div>
-              <div className={styles.human}></div>
+              <div
+                style={{
+                  background:
+                    'linear-gradient(0deg, rgb(36, 36, 36) 0%, rgb(255, 137, 70) 100%)',
+                }}
+                className="-mt-1 h-full w-1"
+              />
             </div>
-            <div className={styles.ai}></div>
-            <div className={styles.analysis}>
+            <div
+              style={{
+                background:
+                  'linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(83, 167, 162) 100%)',
+              }}
+              className="-mt-1 h-1 w-full"
+            />
+            <div className="w-full flex-none">
               <PositionEvaluationContainer moveEvaluation={moveEvaluation} />
             </div>
             {/* <div className={styles.moves}>
@@ -483,7 +527,7 @@ const Train: React.FC<Props> = ({
                 mobile
               />
             </div> */}
-            <div className={styles.controls}>
+            <div className="flex-none">
               <BoardController setCurrentMove={setCurrentMove} />
             </div>
             <StatsDisplay stats={stats} />
