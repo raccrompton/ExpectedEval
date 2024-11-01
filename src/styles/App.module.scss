@@ -536,37 +536,3 @@
     }
   }
 }
-
-.leaderboardPage {
-  display: flex;
-  flex-direction: column;
-  align-items: start;
-  justify-content: center;
-  gap: 20px;
-  width: 100%;
-  padding: 2% 4%;
-  height: 100%;
-
-  @include mobile {
-    padding: 15% 4%;
-  }
-
-  .leaderboardHeader {
-    display: flex;
-    flex-direction: column;
-
-    p {
-      margin: 0px;
-    }
-  }
-
-  .leaderboardContainer {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: start;
-    gap: 25px;
-    width: 100%;
-    height: 100%;
-  }
-}

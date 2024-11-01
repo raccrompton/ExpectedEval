@@ -1,5 +1,5 @@
-import styles from 'src/styles/App.module.scss'
-import { LeaderboardColumn } from 'src/components/LeaderboardColumn/LeaderboardColumn'
+import { useCallback, useEffect, useState } from 'react'
+
 import {
   BrainIcon,
   HandIcon,
@@ -7,8 +7,8 @@ import {
   TrainIcon,
   TuringIcon,
 } from 'src/components/Icons/icons'
-import { useCallback, useEffect, useState } from 'react'
 import { getLeaderboard } from 'src/api'
+import { LeaderboardColumn } from 'src/components/LeaderboardColumn/LeaderboardColumn'
 
 const Leaderboard: React.FC = () => {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
@@ -57,8 +57,8 @@ const Leaderboard: React.FC = () => {
   }, [fetchLeaderboard])
 
   return (
-    <div className={styles.leaderboardPage}>
-      <div className={styles.leaderboardHeader}>
+    <div className="flex h-full w-full flex-col items-start justify-center gap-8 px-[4%] py-[2%]">
+      <div className="flex flex-col">
         <h1 className="text-4xl font-bold">Rating Leaderboards</h1>
         <p>
           Last Updated:{' '}
@@ -74,7 +74,7 @@ const Leaderboard: React.FC = () => {
             : '...'}
         </p>
       </div>
-      <div className={styles.leaderboardContainer}>
+      <div className="flex h-full w-full flex-row flex-wrap justify-start gap-4">
         {leaderboard?.map((column, index) => (
           <LeaderboardColumn key={index} {...column} />
         ))}

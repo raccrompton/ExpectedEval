@@ -11,7 +11,6 @@ import {
   WindowSizeContextProvider,
   AnalysisListContextProvider,
 } from 'src/providers'
-import { Compose, ErrorBoundary, Header } from 'src/components/'
 import 'src/styles/globals.scss'
 import 'src/styles/tailwind.css'
 import 'react-tooltip/dist/react-tooltip.css'
@@ -19,6 +18,7 @@ import 'chessground/assets/chessground.base.css'
 import 'chessground/assets/chessground.brown.css'
 import 'chessground/assets/chessground.cburnett.css'
 import { Footer } from 'src/components/Footer/Footer'
+import { Compose, ErrorBoundary, Header } from 'src/components/'
 
 function MaiaPlatform({ Component, pageProps }: AppProps) {
   const router = useRouter()
