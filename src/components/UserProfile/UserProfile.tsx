@@ -76,10 +76,10 @@ const UserProfile: React.FC = () => {
   }, [])
 
   const desktopLayout = () => (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        {UserIcon}
-        <h1>{user?.displayName}</h1>
+    <div className="flex h-full w-full flex-col items-start justify-center gap-6 px-[4%] md:py-[2%]">
+      <div className="flex flex-row items-center gap-4">
+        <div className="*:w-16 *:fill-primary">{UserIcon}</div>
+        <h1 className="text-3xl font-semibold">{user?.displayName}</h1>
       </div>
       <div className="flex flex-col gap-6 md:flex-row">
         <GameList />
@@ -149,10 +149,10 @@ const UserProfile: React.FC = () => {
   )
 
   const mobileLayout = () => (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        {UserIcon}
-        <h1>{user?.displayName}</h1>
+    <div className="mt-6 flex flex-col gap-3 px-[4%]">
+      <div className="flex flex-row items-center gap-3">
+        <div className="*:w-12 *:fill-primary">{UserIcon}</div>
+        <h1 className="text-3xl font-semibold">{user?.displayName}</h1>
       </div>
       <div className="flex w-full flex-col gap-6">
         <GameList />
