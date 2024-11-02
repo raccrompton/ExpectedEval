@@ -16,9 +16,13 @@ export const VerticalEvaluationBar: React.FC<Props> = ({
   const height = ((value ?? min - min) / (max - min)) * 100
 
   return (
-    <div className={styles.container}>
-      <p className={styles.label}>{label}</p>
-      <div className={styles.content} style={{ height: `${height}%` }} />
+    <div className="relative flex h-[75vh] max-h-[70vw] w-6 flex-col justify-end overflow-hidden rounded-sm bg-human-4">
+      <div className="absolute left-0 top-0 z-0 h-full w-full bg-black bg-opacity-40" />
+      <p className="z-10 mb-2 -rotate-90 whitespace-nowrap text-sm">{label}</p>
+      <div
+        className="absolute bottom-0 left-0 z-0 h-full w-full transform rounded-t-sm bg-human-3 duration-300"
+        style={{ height: `${height}%` }}
+      />
     </div>
   )
 }
