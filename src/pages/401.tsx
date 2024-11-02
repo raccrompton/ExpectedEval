@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Head from 'next/head'
 import { useContext } from 'react'
 import { useRouter } from 'next/router'
 import Chessground from '@react-chess/chessground'
@@ -15,6 +16,13 @@ export default function Error401Page() {
 
   return (
     <div className="absolute flex h-full w-full flex-col items-center justify-center gap-8 px-4 md:flex-row md:px-0">
+      <Head>
+        <title>Beta Access – Maia Chess</title>
+        <meta
+          name="description"
+          content="Maia Chess is in beta! Sign up to get access"
+        />
+      </Head>
       <div
         style={{
           width: 'min(40vw, 40vh)',

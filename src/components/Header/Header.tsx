@@ -118,6 +118,7 @@ export const Header: React.FC = () => {
               target="_blank"
               rel="noreferrer"
               href="https://lichess.org/@/maia1"
+              className="uppercase"
             >
               Play
             </a>

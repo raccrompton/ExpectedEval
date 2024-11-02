@@ -1,3 +1,4 @@
+import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { GetStaticPaths, GetStaticProps } from 'next'
@@ -20,6 +21,13 @@ const BlogPost = ({ post }: BlogPostProps) => {
 
   return (
     <div className={styles.page}>
+      <Head>
+        <title>Blog – Maia Chess</title>
+        <meta
+          name="description"
+          content="Maia Chess is in beta! Sign up to get access"
+        />
+      </Head>
       <div className="flex w-full flex-col items-center justify-start overflow-x-hidden">
         <div className="flex flex-col gap-2 md:w-8/12">
           <Link href="/blog">
