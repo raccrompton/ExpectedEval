@@ -121,10 +121,15 @@ export const GameplayInterface: React.FC<Props> = (
 
   const desktopLayout = (
     <>
-      <div className={styles.outer}>
-        <div className={styles.container}>
-          <div className={styles.side}>
-            <div className={styles.info}>
+      <div className="flex h-full flex-1 flex-col justify-center gap-1">
+        <div className="mt-2 flex w-full flex-row items-center justify-center gap-1">
+          <div
+            style={{
+              maxWidth: 'min(20vw, 100vw - 75vh)',
+            }}
+            className="flex h-[75vh] w-[40vh] flex-col gap-1"
+          >
+            <div>
               <GameInfo
                 termination={game.termination}
                 blackPlayer={{ name: blackPlayer ?? 'Unknown' }}
@@ -135,10 +140,9 @@ export const GameplayInterface: React.FC<Props> = (
                 instructionsType={playType}
               />
             </div>
-            <div className={styles.play}></div>
             <StatsDisplay stats={stats} hideSession={true} />
           </div>
-          <div className={styles.board}>
+          <div className="relative flex aspect-square w-full max-w-[75vh]">
             <GameBoard
               game={game}
               moves={moveMap}
@@ -154,18 +158,23 @@ export const GameplayInterface: React.FC<Props> = (
               />
             ) : null}
           </div>
-          <div className={classNames([styles.side, styles.gameplay])}>
+          <div
+            style={{
+              maxWidth: 'min(20vw, 100vw - 75vh)',
+            }}
+            className="flex h-[75vh] w-[40vh] flex-col justify-center gap-1"
+          >
             {timeControl != 'unlimited' ? (
               <GameClock
                 player={controller.orientation == 'white' ? 'black' : 'white'}
                 reversed={false}
               />
             ) : null}
-            <div className={classNames([styles.moves, styles.gameplay])}>
+            <div className="relative bottom-0 h-full min-h-[38px] flex-1">
               <MovesContainer game={game} termination={game.termination} />
             </div>
-            <div className={styles.info}>{props.children}</div>
-            <div className={styles.controls}>
+            <div>{props.children}</div>
+            <div className="flex-none">
               <BoardController />
             </div>
             {timeControl != 'unlimited' ? (
@@ -179,8 +188,8 @@ export const GameplayInterface: React.FC<Props> = (
 
   const mobileLayout = (
     <>
-      <div className={styles.outer}>
-        <div className={styles.container}>
+      <div className="flex h-full flex-1 flex-col justify-center gap-1">
+        <div className="mt-2 flex h-full flex-col items-start justify-start gap-2">
           {/* <div className={styles.side}>
             <div className={styles.info}>
               <GameInfo
@@ -195,7 +204,7 @@ export const GameplayInterface: React.FC<Props> = (
             </div>
             <div className={styles.play}></div>
           </div> */}
-          <div className={styles.side}>
+          <div className="flex h-auto w-full flex-col gap-1">
             {timeControl != 'unlimited' ? (
               <GameClock
                 player={controller.orientation == 'white' ? 'black' : 'white'}
@@ -203,7 +212,7 @@ export const GameplayInterface: React.FC<Props> = (
               />
             ) : null}
           </div>
-          <div className={styles.board}>
+          <div className="relative flex aspect-square h-[100vw] w-screen">
             <GameBoard
               game={game}
               moves={moveMap}
@@ -219,14 +228,14 @@ export const GameplayInterface: React.FC<Props> = (
               />
             ) : null}
           </div>
-          <div className={styles.side}>
+          <div className="flex h-auto w-full flex-col gap-1">
             {timeControl != 'unlimited' ? (
               <GameClock player={controller.orientation} reversed={true} />
             ) : null}
-            <div className={styles.controls}>
+            <div className="flex-none">
               <BoardController />
             </div>
-            <div className={styles.info}>{props.children}</div>
+            <div className="w-screen">{props.children}</div>
             <StatsDisplay stats={stats} hideSession={true} />
           </div>
         </div>

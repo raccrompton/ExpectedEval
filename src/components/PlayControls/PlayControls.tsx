@@ -18,14 +18,28 @@ export const PlayControls: React.FC<Props> = ({
   return (
     <div>
       {gameOver ? (
-        <div className={styles.container}>
-          {playAgain ? <button onClick={playAgain}>Play again</button> : null}
+        <div className="flex flex-col p-4 text-center">
+          {playAgain ? (
+            <button
+              onClick={playAgain}
+              className="flex items-center justify-center rounded bg-human-3 py-2 transition duration-200 hover:bg-human-4"
+            >
+              <p className="text-lg">Play again</p>
+            </button>
+          ) : null}
         </div>
       ) : (
-        <div className={styles.container}>
+        <div className="flex flex-col gap-2 p-4 text-center">
           {playerActive ? 'Your turn' : 'Waiting for opponent'}
           {offerDraw ? <button onClick={offerDraw}>Offer draw</button> : null}
-          {resign ? <button onClick={resign}>Resign</button> : null}
+          {resign ? (
+            <button
+              onClick={resign}
+              className="flex items-center justify-center rounded bg-human-3 py-2 transition duration-200 hover:bg-human-4"
+            >
+              <p className="text-lg">Resign</p>
+            </button>
+          ) : null}
         </div>
       )}
     </div>
