@@ -1,7 +1,5 @@
-import classNames from 'classnames'
 import { useEffect, useState } from 'react'
 
-import styles from './StatsDisplay.module.scss'
 import { AllStats, SingleStats } from 'src/hooks/useStats'
 import { CaretUpIcon, CaretDownIcon } from 'src/components/Icons/icons'
 
@@ -13,24 +11,24 @@ const SingleStatsDisplay: React.FC<SingleProps> = ({ stats }: SingleProps) => {
   const winPercentage = stats ? (stats.gamesWon / stats.gamesPlayed) * 100 : 0
 
   return (
-    <div className={styles.singleStats}>
-      <div>
-        <div className={classNames({ [styles.notLoaded]: stats == undefined })}>
+    <div className="flex flex-row">
+      <div className="flex flex-1 flex-col gap-1">
+        <div className={`${stats == undefined && 'opacity-0'}`}>
           {stats?.gamesWon || 0}
         </div>
-        <div className={styles.label}>Correct</div>
+        <div className="text-xs">Correct</div>
       </div>
-      <div>
-        <div className={classNames({ [styles.notLoaded]: stats == undefined })}>
+      <div className="flex flex-1 flex-col gap-1">
+        <div className={`${stats == undefined && 'opacity-0'}`}>
           {stats?.gamesPlayed || 0}
         </div>
-        <div className={styles.label}>Played</div>
+        <div className="text-xs">Played</div>
       </div>
-      <div>
-        <div className={classNames({ [styles.notLoaded]: stats == undefined })}>
+      <div className="flex flex-1 flex-col gap-1">
+        <div className={`${stats == undefined && 'opacity-0'}`}>
           {Number.isNaN(winPercentage) ? '-' : Math.trunc(winPercentage)}%
         </div>
-        <div className={styles.label}>Rate</div>
+        <div className="text-xs">Rate</div>
       </div>
     </div>
   )
@@ -47,8 +45,18 @@ const RatingDiffDisplay: React.FC<RatingDiffProps> = ({
   const sign = diff < 0 ? '–' : '+'
 
   return (
-    <div className={classNames(styles.diff, { [styles.decrease]: diff < 0 })}>
-      {icon} {sign + Math.abs(diff)}
+    <div
+      className={`ml-4 flex flex-row items-center gap-2 text-base ${diff < 0 ? 'text-red-500' : 'text-green-500'}`}
+    >
+      <i
+        className={`mb-3 h-4 w-4 ${diff < 0 ? '*:fill-red-500' : 'fill-green-500'}`}
+      >
+        {icon}
+      </i>
+      <p className="text-lg">
+        {sign}
+        {Math.abs(diff)}
+      </p>
     </div>
   )
 }
@@ -72,14 +80,11 @@ export const StatsDisplay: React.FC<Props> = ({
   }, [stats])
 
   return (
-    <div className={styles.stats}>
-      <div className={styles.rating}>
-        <div className={styles.label}>Your rating</div>
+    <div className="bg-background-1/90 flex flex-col gap-3 rounded-l p-4">
+      <div className="flex flex-col">
+        <div className="text-sm uppercase">Your rating</div>
         <div
-          className={classNames(styles.ratingNum, {
-            [styles.notLoaded]: cachedRating == undefined,
-            [styles.cachedRating]: stats.rating == undefined,
-          })}
+          className={`flex flex-row items-center text-2xl font-bold ${cachedRating === undefined && 'opacity-0'} ${stats.rating === undefined && 'opacity-50'}`}
         >
           {cachedRating || 0}
           {stats.rating != undefined && stats.lastRating != undefined ? (
@@ -88,13 +93,13 @@ export const StatsDisplay: React.FC<Props> = ({
         </div>
       </div>
       {hideSession ? null : (
-        <div className={styles.sessionStats}>
-          <div className={styles.label}>This session</div>
+        <div className="flex flex-col gap-1">
+          <div className="text-xs uppercase">This session</div>
           <SingleStatsDisplay stats={stats.sessionStats} />
         </div>
       )}
-      <div className={styles.lifetimeStats}>
-        <div className={styles.label}>Lifetime</div>
+      <div className="flex flex-col gap-1 text-secondary">
+        <div className="text-xs uppercase">Lifetime</div>
         <SingleStatsDisplay stats={stats.lifetimeStats} />
       </div>
     </div>
