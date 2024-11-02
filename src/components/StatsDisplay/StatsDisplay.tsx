@@ -80,7 +80,7 @@ export const StatsDisplay: React.FC<Props> = ({
   }, [stats])
 
   return (
-    <div className="bg-background-1/90 flex flex-col gap-3 rounded-l p-4">
+    <div className="flex flex-col gap-3 rounded-l bg-background-1/90 p-4">
       <div className="flex flex-col">
         <div className="text-sm uppercase">Your rating</div>
         <div
