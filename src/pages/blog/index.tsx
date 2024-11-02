@@ -1,3 +1,4 @@
+import Head from 'next/head'
 import Link from 'next/link'
 
 import { Post } from 'src/types'
@@ -7,6 +8,13 @@ import { getSortedPostsData } from 'src/blog/posts'
 export default function Blog({ posts }: { posts: Post[] }) {
   return (
     <div className={styles.page}>
+      <Head>
+        <title>Blog – Maia Chess</title>
+        <meta
+          name="description"
+          content="Maia Chess is in beta! Sign up to get access"
+        />
+      </Head>
       <h1 className="text-4xl font-bold">Blog</h1>
       <div className="flex w-full flex-col gap-6 overflow-x-hidden overflow-y-scroll">
         {posts.map((post, index) => (

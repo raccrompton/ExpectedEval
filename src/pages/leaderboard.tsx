@@ -1,3 +1,4 @@
+import Head from 'next/head'
 import { useCallback, useEffect, useState } from 'react'
 
 import {
@@ -58,6 +59,13 @@ const Leaderboard: React.FC = () => {
 
   return (
     <div className="flex h-full w-full flex-col items-start justify-center gap-8 px-[4%] py-[2%]">
+      <Head>
+        <title>Leaderboard – Maia Chess</title>
+        <meta
+          name="description"
+          content="Top users across all Maia Chess leaderboards"
+        />
+      </Head>
       <div className="flex flex-col">
         <h1 className="text-4xl font-bold">Rating Leaderboards</h1>
         <p>
