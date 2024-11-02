@@ -28,7 +28,6 @@ import {
   getAnalyzedTournamentGame,
 } from 'src/api'
 import { Color } from 'src/types'
-import styles from 'src/styles/App.module.scss'
 import { useAnalysisController } from 'src/hooks'
 import { AnalyzedGame, MoveMap } from 'src/types/analysis'
 import { MovesContainer } from 'src/components/MovesContainer'
@@ -299,7 +298,7 @@ const Analysis: React.FC<Props> = ({
             </div>
             {listController}
           </div>
-          <div className={styles.board}>
+          <div className="relative flex aspect-square w-full max-w-[75vh]">
             <GameBoard
               game={analyzedGame}
               moves={moves}
@@ -316,9 +315,20 @@ const Analysis: React.FC<Props> = ({
               label="Maia Probability"
             />
           </div>
-          <div className={styles.side}>
-            <div className={styles.map}>
-              <div className={styles.scatter}>
+          <div
+            style={{
+              maxWidth: 'min(20vw, 100vw - 75vh)',
+            }}
+            className="flex h-[75vh] w-[40vh] flex-col gap-1"
+          >
+            <div className="flex">
+              <div
+                style={{
+                  maxHeight: 'min(20vw, 100vw - 75vh)',
+                  maxWidth: 'min(20vw, 100vw - 75vh)',
+                }}
+                className="flex h-[40vh] w-[40vh] [&>div]:h-[inherit] [&>div]:max-h-[inherit] [&>div]:max-w-[inherit]"
+              >
                 <MovePlot
                   data={data}
                   onMove={setCurrentMove}
@@ -326,10 +336,22 @@ const Analysis: React.FC<Props> = ({
                   onMouseLeave={() => setMovePlotHover(null)}
                 />
               </div>
-              <div className={styles.human}></div>
+              <div
+                style={{
+                  background:
+                    'linear-gradient(0deg, rgb(36, 36, 36) 0%, rgb(255, 137, 70) 100%)',
+                }}
+                className="-mr-1 h-full w-1"
+              />
             </div>
-            <div className={styles.ai} />
-            <div className={styles.analysis}>
+            <div
+              style={{
+                background:
+                  'linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(83, 167, 162) 100%)',
+              }}
+              className="-mt-1 h-1 w-full"
+            />
+            <div className="flex-none">
               <div className="flex w-full flex-col overflow-hidden rounded">
                 <div className="flex items-center justify-center bg-background-1 py-2">
                   <p className="text-sm text-secondary">Current Position</p>
@@ -365,19 +387,19 @@ const Analysis: React.FC<Props> = ({
               </div>
               <BlunderMeter {...blunderMeter} />
             </div>
-            <div className={styles.moves}>
+            <div className="relative bottom-0 h-full min-h-[38px] flex-1 overflow-auto">
               <MovesContainer
                 game={analyzedGame}
                 setCurrentMove={setCurrentMove}
                 termination={analyzedGame.termination}
               />
             </div>
-            <div className={styles.controls}>
+            <div className="flex-none">
               <BoardController setCurrentMove={setCurrentMove} />
             </div>
           </div>
         </div>
-        <div className={styles.sf}>
+        <div className="mr-8 flex items-center justify-center">
           <HorizontalEvaluationBar
             min={0}
             max={800}
@@ -427,10 +449,22 @@ const Analysis: React.FC<Props> = ({
                   onMouseLeave={() => setMovePlotHover(null)}
                 />
               </div>
-              <div className={styles.human}></div>
+              <div
+                style={{
+                  background:
+                    'linear-gradient(0deg, rgb(36, 36, 36) 0%, rgb(255, 137, 70) 100%)',
+                }}
+                className="-mt-1 h-full w-1"
+              />
             </div>
-            <div className={styles.ai} />
-            <div className={styles.analysis}>
+            <div
+              style={{
+                background:
+                  'linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(83, 167, 162) 100%)',
+              }}
+              className="-mt-1 h-1 w-full"
+            />
+            <div className="flex-none">
               <div className="flex w-full flex-col overflow-hidden rounded">
                 <div className="flex items-center justify-center bg-background-1 py-2">
                   <p className="text-sm text-secondary">Current Position</p>
