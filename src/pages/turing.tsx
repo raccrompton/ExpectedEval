@@ -19,7 +19,6 @@ import {
 } from 'src/components'
 import { AllStats } from 'src/hooks/useStats'
 import { TuringGame } from 'src/types/turing'
-import styles from 'src/styles/App.module.scss'
 import { StatsDisplay } from 'src/components/StatsDisplay'
 import { useGameController, useTuringController } from 'src/hooks'
 
@@ -68,10 +67,15 @@ const Turing: React.FC<Props> = (props: Props) => {
 
   const desktopLayout = (
     <>
-      <div className={styles.outer}>
-        <div className={styles.container}>
-          <div className={styles.side}>
-            <div className={styles.info}>
+      <div className="flex h-full flex-1 flex-col justify-center gap-1">
+        <div className="mt-2 flex w-full flex-row items-center justify-center gap-1">
+          <div
+            style={{
+              maxWidth: 'min(20vw, 100vw - 75vh)',
+            }}
+            className="flex h-[75vh] w-[40vh] flex-col gap-1"
+          >
+            <div>
               <GameInfo
                 termination={game.termination}
                 blackPlayer={game.result?.blackPlayer}
@@ -82,28 +86,33 @@ const Turing: React.FC<Props> = (props: Props) => {
                 instructionsType="turing"
               />
             </div>
-            <div className={styles.play}>
+            <div className="flex w-full items-center rounded bg-human-4 px-4 py-2 transition duration-200 hover:bg-human-3">
               <button onClick={launchContinue}>Continue against Maia</button>
+            </div>
+            <div className="flex flex-row flex-wrap items-start justify-start gap-1 overflow-y-auto">
+              <TuringGames />
             </div>
             <StatsDisplay stats={stats} />
           </div>
-          <div className={styles.board}>
+          <div className="relative flex aspect-square w-full max-w-[75vh]">
             <GameBoard game={game} />
           </div>
-          <div className={styles.side}>
-            <div className={styles.moves}>
+          <div
+            style={{
+              maxWidth: 'min(20vw, 100vw - 75vh)',
+            }}
+            className="flex h-[75vh] w-[40vh] flex-col gap-1"
+          >
+            <div className="relative bottom-0 h-full min-h-[38px] flex-1">
               <MovesContainer game={game} termination={game.termination} />
             </div>
-            <div className={styles.info}>
+            <div>
               <TuringSubmission />
             </div>
-            <div className={styles.controls}>
+            <div className="flex-none">
               <BoardController />
             </div>
           </div>
-        </div>
-        <div className={styles.sf} style={{ marginRight: 0 }}>
-          <TuringGames />
         </div>
       </div>
     </>
@@ -111,10 +120,10 @@ const Turing: React.FC<Props> = (props: Props) => {
 
   const mobileLayout = (
     <>
-      <div className={styles.outer}>
-        <div className={styles.container}>
-          <div className={styles.side}>
-            <div className={styles.info}>
+      <div className="flex h-full flex-1 flex-col justify-center gap-1">
+        <div className="mt-2 flex h-full flex-col items-start justify-start gap-2">
+          <div className="flex h-auto w-full flex-col gap-2">
+            <div className="w-screen">
               <GameInfo
                 termination={game.termination}
                 blackPlayer={game.result?.blackPlayer}
@@ -126,25 +135,30 @@ const Turing: React.FC<Props> = (props: Props) => {
               />
             </div>
           </div>
-          <div className={styles.board}>
+          <div className="relative flex aspect-square h-[100vw] w-screen">
             <GameBoard game={game} />
           </div>
-          <div className={styles.side}>
-            <div className={styles.moves}>
+          <div className="flex h-auto w-full flex-col gap-1">
+            <div className="relative bottom-0 h-full flex-1 overflow-auto">
               <MovesContainer game={game} termination={game.termination} />
             </div>
-            <div className={styles.controls}>
+            <div className="flex-none">
               <BoardController />
             </div>
-            <div className={styles.info}>
+            <div className="w-screen">
               <TuringSubmission />
             </div>
-            <div className={styles.play}>
-              <button onClick={launchContinue}>Continue against Maia</button>
+            <div className="flex w-full">
+              <button
+                onClick={launchContinue}
+                className="flex w-full flex-1 items-center rounded bg-human-4 px-4 py-2 transition duration-200 hover:bg-human-3"
+              >
+                Continue Against Maia
+              </button>
             </div>
           </div>
         </div>
-        <div className={styles.sf} style={{ marginRight: 0 }}>
+        <div className="flex flex-row flex-wrap items-start justify-start gap-1 overflow-y-auto">
           <TuringGames />
         </div>
         <StatsDisplay stats={stats} />
