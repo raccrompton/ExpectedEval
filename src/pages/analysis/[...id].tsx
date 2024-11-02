@@ -312,7 +312,7 @@ const Analysis: React.FC<Props> = ({
           <div>
             <VerticalEvaluationBar
               value={moveEvaluation?.maiaWr}
-              label="Maia Probability"
+              label="Maia White Win %"
             />
           </div>
           <div

@@ -348,7 +348,7 @@ const Train: React.FC<Props> = ({
           <div>
             <VerticalEvaluationBar
               value={moveEvaluation?.maia}
-              label="Maia Probability"
+              label="Maia White Win %"
             />
           </div>
           <div
