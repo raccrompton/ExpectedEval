@@ -111,6 +111,7 @@ export const submitGameMove = async (
       fen: fen,
       brain_moves: brainMoves,
       winner: winner,
+      ...(winner && winner !== 'none' ? { winner: winner } : {}),
     }),
   })
 

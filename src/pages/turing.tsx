@@ -73,9 +73,9 @@ const Turing: React.FC<Props> = (props: Props) => {
             style={{
               maxWidth: 'min(20vw, 100vw - 75vh)',
             }}
-            className="flex h-[75vh] w-[40vh] flex-col gap-1"
+            className="flex h-[75vh] w-[40vh] flex-col justify-between"
           >
-            <div>
+            <div className="flex w-full flex-col gap-2">
               <GameInfo
                 termination={game.termination}
                 blackPlayer={game.result?.blackPlayer}
@@ -85,13 +85,14 @@ const Turing: React.FC<Props> = (props: Props) => {
                 showId={false}
                 instructionsType="turing"
               />
+              <div className="flex w-full items-center rounded bg-human-4 px-4 py-2 transition duration-200 hover:bg-human-3">
+                <button onClick={launchContinue}>Continue against Maia</button>
+              </div>
+              <div className="flex flex-row flex-wrap items-start justify-start gap-1 overflow-y-auto">
+                <TuringGames />
+              </div>
             </div>
-            <div className="flex w-full items-center rounded bg-human-4 px-4 py-2 transition duration-200 hover:bg-human-3">
-              <button onClick={launchContinue}>Continue against Maia</button>
-            </div>
-            <div className="flex flex-row flex-wrap items-start justify-start gap-1 overflow-y-auto">
-              <TuringGames />
-            </div>
+
             <StatsDisplay stats={stats} />
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">

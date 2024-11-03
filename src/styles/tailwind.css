@@ -59,6 +59,17 @@ svg {
   fill: rgb(var(--color-text-primary));
 }
 
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
 .spinner {
   border: 4px solid rgb(var(--color-background4));
   border-left-color: rgb(var(--color-human-accent1));

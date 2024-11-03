@@ -127,19 +127,18 @@ export const GameplayInterface: React.FC<Props> = (
             style={{
               maxWidth: 'min(20vw, 100vw - 75vh)',
             }}
-            className="flex h-[75vh] w-[40vh] flex-col gap-1"
+            className="flex h-[75vh] w-[40vh] flex-col justify-between gap-1"
           >
-            <div>
-              <GameInfo
-                termination={game.termination}
-                blackPlayer={{ name: blackPlayer ?? 'Unknown' }}
-                whitePlayer={{ name: whitePlayer ?? 'Unknown' }}
-                type={playType}
-                id={game.id}
-                showId={false}
-                instructionsType={playType}
-              />
-            </div>
+            <GameInfo
+              termination={game.termination}
+              blackPlayer={{ name: blackPlayer ?? 'Unknown' }}
+              whitePlayer={{ name: whitePlayer ?? 'Unknown' }}
+              type={playType}
+              id={game.id}
+              showId={false}
+              instructionsType={playType}
+            />
+
             <StatsDisplay stats={stats} hideSession={true} />
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
