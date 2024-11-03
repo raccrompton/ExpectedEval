@@ -16,10 +16,10 @@ export default function Blog({ posts }: { posts: Post[] }) {
         />
       </Head>
       <h1 className="text-4xl font-bold">Blog</h1>
-      <div className="flex w-full flex-col gap-6 overflow-x-hidden overflow-y-scroll">
+      <div className="flex w-full flex-col gap-6 overflow-x-hidden">
         {posts.map((post, index) => (
           <Link href={`/blog/${post.id}`} key={index}>
-            <div className="flex w-full cursor-pointer flex-col gap-2 hover:opacity-80 md:w-auto md:max-w-2xl">
+            <div className="flex w-full cursor-pointer flex-col gap-2 overflow-hidden hover:opacity-80 md:w-auto md:max-w-2xl">
               <div className="flex flex-col">
                 <p>
                   {new Date(post.date).toLocaleDateString('en-US', {
@@ -31,7 +31,7 @@ export default function Blog({ posts }: { posts: Post[] }) {
                 <h2 className="text-2xl font-semibold">{post.title}</h2>
                 <p>{post.excerpt}</p>
               </div>
-              <div className="flex items-center gap-2 overflow-x-scroll">
+              <div className="no-scrollbar flex items-center gap-2 overflow-x-scroll">
                 {post.tags.map((tag, index) => (
                   <div
                     key={index}
