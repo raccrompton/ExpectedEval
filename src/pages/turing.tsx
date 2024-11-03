@@ -85,7 +85,7 @@ const Turing: React.FC<Props> = (props: Props) => {
                 showId={false}
                 instructionsType="turing"
               />
-              <div className="flex w-full items-center rounded bg-human-4 px-4 py-2 transition duration-200 hover:bg-human-3">
+              <div className="flex w-full items-center rounded bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4">
                 <button onClick={launchContinue}>Continue against Maia</button>
               </div>
               <div className="flex flex-row flex-wrap items-start justify-start gap-1 overflow-y-auto">
@@ -152,7 +152,7 @@ const Turing: React.FC<Props> = (props: Props) => {
             <div className="flex w-full">
               <button
                 onClick={launchContinue}
-                className="flex w-full flex-1 items-center rounded bg-human-4 px-4 py-2 transition duration-200 hover:bg-human-3"
+                className="flex w-full flex-1 items-center rounded bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4"
               >
                 Continue Against Maia
               </button>

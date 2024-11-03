@@ -2,7 +2,6 @@ import { Chess } from 'chess.ts'
 import { useMemo, Dispatch, SetStateAction, useCallback } from 'react'
 
 import { Markdown } from 'src/components'
-import styles from './Feedback.module.scss'
 import { useTrainingController } from 'src/hooks'
 import { TrainingGame, Status } from 'src/types/training'
 
@@ -86,11 +85,11 @@ export const Feedback: React.FC<Props> = ({
   }, [game.targetIndex, setCurrentIndex])
 
   return (
-    <div className={styles.container}>
-      <div>
+    <div className="flex w-screen flex-1 flex-col justify-between gap-2 bg-background-1 p-3 md:w-auto md:gap-0 md:p-5">
+      <div className="[&_h2]:text-lg [&_p]:text-sm">
         <Markdown>{content.trim()}</Markdown>
       </div>
-      <div className={styles.buttons}>
+      <div className="flex flex-col gap-1.5">
         {status !== 'archived' && (
           <>
             {status === 'incorrect' && currentMove && (
@@ -99,6 +98,7 @@ export const Feedback: React.FC<Props> = ({
                   setStatus('default')
                   setCurrentMove(null)
                 }}
+                className="flex w-full justify-center rounded-sm bg-engine-3 py-1.5 text-sm font-medium text-primary transition duration-300 hover:bg-engine-4 disabled:bg-backdrop disabled:text-secondary"
               >
                 Try Again
               </button>
@@ -107,12 +107,16 @@ export const Feedback: React.FC<Props> = ({
               <button
                 onClick={moveToTarget}
                 disabled={status == 'loading' || !currentMove}
+                className="flex w-full justify-center rounded-sm bg-engine-3 py-1.5 text-sm font-medium text-primary transition duration-300 hover:bg-engine-4 disabled:bg-backdrop disabled:text-secondary"
               >
                 Reset
               </button>
             )}
             {status !== 'forfeit' && status !== 'correct' && (
-              <button className={styles.secondary} onClick={setAndGiveUp}>
+              <button
+                onClick={setAndGiveUp}
+                className="flex w-full justify-center rounded-sm bg-human-3 py-1.5 text-sm font-medium text-primary transition duration-300 hover:bg-human-4 disabled:bg-backdrop disabled:text-secondary"
+              >
                 Give Up
               </button>
             )}
@@ -120,17 +124,15 @@ export const Feedback: React.FC<Props> = ({
               <button
                 onClick={async () => {
                   setCurrentMove(null)
-
                   await getNewGame()
                 }}
-                className={styles.secondary}
+                className="flex w-full justify-center rounded-sm bg-human-3 py-1.5 text-sm font-medium text-primary transition duration-300 hover:bg-human-4 disabled:bg-backdrop disabled:text-secondary"
               >
                 Next Puzzle
               </button>
             )}
           </>
         )}
-
         {/* <button
               onClick={() => {
                 router.push(

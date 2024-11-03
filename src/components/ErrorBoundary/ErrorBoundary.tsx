@@ -1,8 +1,6 @@
-import Chessground from '@react-chess/chessground'
 import Link from 'next/link'
 import { Component } from 'react'
-
-import styles from './ErrorBoundary.module.scss'
+import Chessground from '@react-chess/chessground'
 
 interface Props {
   children: React.ReactNode
@@ -38,20 +36,30 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       if (this.state.isUnauthorized) {
         return (
-          <div className={styles.container}>
-            <h1>Unauthorized Access</h1>
+          <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-backdrop">
+            <h2 className="text-3xl font-bold">Unauthorized Access</h2>
             <p>
               You do not have permission to view this content. Please log in.
             </p>
-            <Link href="/">Click here to go home</Link>
+            <Link href="/">
+              <div
+                role="button"
+                tabIndex={0}
+                className="flex items-center justify-center rounded bg-human-3 px-8 py-2 transition duration-200 hover:bg-human-4"
+                onClick={() => this.setState({ hasError: false })}
+                onKeyDown={() => this.setState({ hasError: false })}
+              >
+                <p className="text-lg text-primary">Click here to go home</p>
+              </div>
+            </Link>
           </div>
         )
       }
 
       return (
-        <div className={styles.container}>
-          <div>
-            <div className={styles.board}>
+        <div className="flex h-screen w-screen flex-col items-center justify-center gap-10 bg-backdrop">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-[90vh] w-[90vh] md:h-[40vh] md:w-[40vh]">
               <Chessground
                 contained
                 config={{
@@ -60,21 +68,26 @@ export class ErrorBoundary extends Component<Props, State> {
                 }}
               />
             </div>
+            <h2 className="text-3xl font-bold">
+              Sorry, you encountered an Error
+            </h2>
+            <Link href="/">
+              <div
+                role="button"
+                tabIndex={0}
+                className="flex items-center justify-center rounded bg-human-3 px-8 py-2 transition duration-200 hover:bg-human-4"
+                onClick={() => this.setState({ hasError: false })}
+                onKeyDown={() => this.setState({ hasError: false })}
+              >
+                <p className="text-lg text-primary">Click here to go home</p>
+              </div>
+            </Link>
           </div>
-          <h2>Sorry, you encountered an Error</h2>
-
-          <div
-            role="button"
-            tabIndex={0}
-            className="mb-10"
-            onClick={() => this.setState({ hasError: false })}
-            onKeyDown={() => this.setState({ hasError: false })}
-          >
-            <Link href="/">Click here to go home</Link>
-          </div>
-          <div className="flex flex-col justify-center">
+          <div className="mt-4 flex flex-col justify-center">
             <p>Please share this stack trace:</p>
-            <code>{this.state.error?.toString()}</code>
+            <code className="bg-background-1 p-2">
+              {this.state.error?.toString()}
+            </code>
           </div>
         </div>
       )

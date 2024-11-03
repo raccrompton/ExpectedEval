@@ -327,7 +327,7 @@ const Train: React.FC<Props> = ({
             <div className="flex w-full">
               <button
                 onClick={launchContinue}
-                className="flex w-full flex-1 items-center rounded bg-human-4 px-4 py-2 transition duration-200 hover:bg-human-3"
+                className="flex w-full flex-1 items-center rounded bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4"
               >
                 Continue Against Maia
               </button>
@@ -461,7 +461,7 @@ const Train: React.FC<Props> = ({
             <div className="flex w-full">
               <button
                 onClick={launchContinue}
-                className="flex w-full flex-1 items-center rounded bg-human-4 px-4 py-2 transition duration-200 hover:bg-human-3"
+                className="flex w-full flex-1 items-center rounded bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4"
               >
                 Continue Against Maia
               </button>
