@@ -1,6 +1,5 @@
 export * from './Compose'
 export * from './Navigation'
-export * from './GameList'
 export * from './GameInfo'
 export * from './BoardController'
 export * from './MovePlot'

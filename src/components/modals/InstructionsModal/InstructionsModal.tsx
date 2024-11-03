@@ -1,10 +1,10 @@
 import { useContext } from 'react'
+import { AnimatePresence } from 'framer-motion'
+
 import { ModalContext } from 'src/contexts'
 import { Markdown } from '../../Markdown'
 import { ModalContainer } from '../ModalContainer'
 import { CloseIcon } from 'src/components/Icons/icons'
-
-import styles from './InstructionsModal.module.scss'
 
 export type InstructionsType =
   | 'againstMaia'
@@ -60,19 +60,32 @@ export const InstructionsModal: React.FC<Props> = ({
   }
 
   return (
-    <ModalContainer dismiss={dismiss} className={styles.modalContainer}>
-      <div className={styles.instructions}>
-        <button className={styles.close} title="Close" onClick={dismiss}>
-          {CloseIcon}
-        </button>
-        <h2>{titles[instructionsType]}</h2>
-        <div className={styles.textContainer}>
-          <Markdown>{content[instructionsType]}</Markdown>
-          <div className={styles.buttons}>
-            <button onClick={dismiss}>CONTINUE</button>
+    <AnimatePresence>
+      <ModalContainer dismiss={dismiss} className="z-50">
+        <div className="relative flex flex-col gap-4">
+          <button
+            title="Close"
+            onClick={dismiss}
+            className="absolute -right-4 -top-2 cursor-pointer border-none bg-none opacity-50 outline-none transition duration-300 hover:opacity-100"
+          >
+            {CloseIcon}
+          </button>
+          <h2 className="text-center text-2xl font-bold">
+            {titles[instructionsType]}
+          </h2>
+          <div className="max-w-[600px]">
+            <Markdown>{content[instructionsType]}</Markdown>
+            <div className="flex items-center justify-end">
+              <button
+                onClick={dismiss}
+                className="flex items-center justify-center rounded-sm bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4"
+              >
+                Continue
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </ModalContainer>
+      </ModalContainer>
+    </AnimatePresence>
   )
 }

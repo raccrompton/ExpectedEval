@@ -33,7 +33,7 @@ const BlogPost = ({ post }: BlogPostProps) => {
           <Link href="/blog">
             <p className="hover:opacity-75">← Go back</p>
           </Link>
-          <h1 className="text-4xl">{post.title}</h1>
+          <h1 className="text-4xl font-bold">{post.title}</h1>
           <div className="flex items-center gap-4">
             <p>
               {new Date(post.date).toLocaleDateString('en-US', {
@@ -83,36 +83,6 @@ const BlogPost = ({ post }: BlogPostProps) => {
         </div>
       </div>
       <style>{`
-        h1 {
-          font-size: 2em;
-          font-weight: bold;
-        }
-
-        h2 {
-          font-size: 1.5em;
-          font-weight: bold;
-        }
-
-        h3 {
-          font-size: 1.17em;
-          font-weight: bold;
-        }
-
-        h4 {
-          font-size: 1em;
-          font-weight: bold;
-        }
-
-        h5 {
-          font-size: 0.83em;
-          font-weight: bold;
-        }
-
-        h6 {
-          font-size: 0.67em;
-          font-weight: bold;
-        }
-
         .markdown-content h1,
         .markdown-content h2,
         .markdown-content h3,

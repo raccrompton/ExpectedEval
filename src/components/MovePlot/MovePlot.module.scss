@@ -26,7 +26,7 @@
 .disabled {
   width: inherit;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   flex: 1;
   height: 100%;
   @include themed-styles {

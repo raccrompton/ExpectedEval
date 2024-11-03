@@ -1,6 +1,5 @@
 import Chessground from '@react-chess/chessground'
 import { useEffect, useMemo, useState } from 'react'
-import styles from './Loading.module.scss'
 
 const states = [
   'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
@@ -29,12 +28,12 @@ export const Loading: React.FC = () => {
   }, [currentIndex])
 
   return (
-    <div className={styles.container}>
-      <div>
-        <div className={styles.board}>
+    <div className="flex h-screen w-screen items-center justify-center bg-backdrop pb-20">
+      <div className="flex flex-col items-center gap-4">
+        <div className="h-[50vw] w-[50vw] opacity-50 md:h-[30vh] md:w-[30vh]">
           <Chessground contained config={{ fen: currentState }} />
         </div>
-        <h2>Loading...</h2>
+        <h2 className="text-2xl font-semibold">Loading...</h2>
       </div>
     </div>
   )

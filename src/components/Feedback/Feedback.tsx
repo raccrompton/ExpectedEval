@@ -33,26 +33,26 @@ export const Feedback: React.FC<Props> = ({
     new Chess(game.moves[targetIndex].board).turn() === 'w' ? 'white' : 'black'
 
   const archivedContent = `
-  ## PUZZLE COMPLETED
+  ##### PUZZLE COMPLETED
   You already solved this puzzle. Use the boxes on the left to navigate to another puzzle.
 `
 
   const defaultContent = `
-  ## YOUR TURN
+  ##### YOUR TURN
   Find the best move for **${turn}**!
   `
   const incorrectContent = `
-  ## ${latestGuess} is incorrect
+  ##### ${latestGuess} is incorrect
   Try again or give up to see the best move.
   `
 
   const correctContent = `
-  ## Correct! ${latestGuess} is the best move.
+  ##### Correct! ${latestGuess} is the best move.
   You can now explore the position.
   `
 
   const gaveUpContent = `
-  ## Explore the position
+  ##### Explore the position
   Explore the current position by using the move map, or train on another position.`
 
   const content = useMemo(() => {
@@ -86,7 +86,7 @@ export const Feedback: React.FC<Props> = ({
 
   return (
     <div className="flex w-screen flex-1 flex-col justify-between gap-2 bg-background-1 p-3 md:w-auto md:gap-0 md:p-5">
-      <div className="[&_h2]:text-lg [&_p]:text-sm">
+      <div>
         <Markdown>{content.trim()}</Markdown>
       </div>
       <div className="flex flex-col gap-1.5">
