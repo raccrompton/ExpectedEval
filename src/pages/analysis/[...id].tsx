@@ -291,7 +291,7 @@ const Analysis: React.FC<Props> = ({
             <div className="flex w-full">
               <button
                 onClick={launchContinue}
-                className="flex w-full cursor-pointer items-center justify-start rounded bg-human-4 p-2 transition duration-300 hover:bg-human-3"
+                className="flex w-full cursor-pointer items-center justify-start rounded bg-human-3 p-2 transition duration-300 hover:bg-human-4"
               >
                 Continue Against Maia
               </button>
@@ -521,7 +521,7 @@ const Analysis: React.FC<Props> = ({
             <div className="flex w-full">
               <button
                 onClick={launchContinue}
-                className="flex w-full cursor-pointer items-center justify-start rounded bg-human-4 p-2 transition duration-300 hover:bg-human-3"
+                className="flex w-full cursor-pointer items-center justify-start rounded bg-human-3 p-2 transition duration-300 hover:bg-human-4"
               >
                 Continue Against Maia
               </button>

@@ -1,10 +1,9 @@
 import { useContext } from 'react'
-import { ModalContext, ThemeContext } from 'src/contexts'
-import { Player, Termination } from 'src/types'
-import { InstructionsType } from 'src/components/modals/InstructionsModal'
-import { HelpIcon } from 'src/components/Icons/icons'
 
-import styles from './GameInfo.module.scss'
+import { Player, Termination } from 'src/types'
+import { HelpIcon } from 'src/components/Icons/icons'
+import { ModalContext, ThemeContext } from 'src/contexts'
+import { InstructionsType } from 'src/components/modals/InstructionsModal'
 
 interface Props {
   termination?: Termination
@@ -41,19 +40,19 @@ export const GameInfo: React.FC<Props> = (props: Props) => {
 
   return (
     <>
-      <div className={styles.container}>
-        <div className={styles.headerContainer}>
-          <h3>
+      <div className="flex flex-col rounded-l bg-background-1/80 p-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium">
             {prettyTypes[type]}
             {showId ? (
               <>
                 {' '}
-                &middot; <span className={styles.id}>{id}</span>
+                &middot; <span className="font-light">{id}</span>
               </>
             ) : null}
           </h3>
           <button
-            className={styles.helpButton}
+            className="h-5 w-5 transition duration-200 *:h-5 *:w-5 *:hover:text-human-2"
             onClick={() => {
               setInstructionsModalProps({ instructionsType: instructionsType })
             }}
@@ -71,7 +70,7 @@ export const GameInfo: React.FC<Props> = (props: Props) => {
           {blackPlayer?.rating ? `(${blackPlayer.rating})` : null}
         </div>
         {termination ? (
-          <div className={styles.termination}>
+          <div className="p-1 text-center">
             {termination.result}
             {', '}
             {termination.winner !== 'none'

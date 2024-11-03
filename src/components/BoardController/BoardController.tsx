@@ -1,9 +1,8 @@
 import { useCallback, useContext, useEffect, useMemo } from 'react'
-import { GameControllerContext } from 'src/contexts/'
-import { useWindowSize } from 'src/hooks'
-import { FlipIcon } from 'src/components/Icons/icons'
 
-import styles from './BoardController.module.scss'
+import { useWindowSize } from 'src/hooks'
+import { GameControllerContext } from 'src/contexts/'
+import { FlipIcon } from 'src/components/Icons/icons'
 
 interface Props {
   setCurrentMove?: (move: [string, string] | null) => void
@@ -92,18 +91,39 @@ export const BoardController: React.FC<Props> = ({ setCurrentMove }: Props) => {
   ])
 
   return (
-    <div className={styles.container}>
-      <button onClick={toggleBoardOrientation}>{FlipIcon}</button>
-      <button onClick={getFirst} disabled={!hasPrevious}>
+    <div className="flex w-full flex-row items-center gap-[1px] rounded">
+      <button
+        onClick={toggleBoardOrientation}
+        className="flex h-7 flex-1 items-center justify-center rounded-sm bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40"
+      >
+        {FlipIcon}
+      </button>
+      <button
+        onClick={getFirst}
+        disabled={!hasPrevious}
+        className="flex h-7 flex-1 items-center justify-center rounded-sm bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40"
+      >
         &#8249;&#8249;&#8249;
       </button>
-      <button onClick={getPrevious} disabled={!hasPrevious}>
+      <button
+        onClick={getPrevious}
+        disabled={!hasPrevious}
+        className="flex h-7 flex-1 items-center justify-center rounded-sm bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40"
+      >
         &#8249;
       </button>
-      <button onClick={getNext} disabled={!hasNext}>
+      <button
+        onClick={getNext}
+        disabled={!hasNext}
+        className="flex h-7 flex-1 items-center justify-center rounded-sm bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40"
+      >
         &#8250;
       </button>
-      <button onClick={getLast} disabled={!hasNext}>
+      <button
+        onClick={getLast}
+        disabled={!hasNext}
+        className="flex h-7 flex-1 items-center justify-center rounded-sm bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40"
+      >
         &#8250;&#8250;&#8250;
       </button>
     </div>
