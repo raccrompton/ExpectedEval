@@ -143,10 +143,11 @@ export const MovePlot: React.FC<Props> = ({
         onMouseLeave={onMouseLeave}
       />
       {disabled ? (
-        <div className={styles.disabled}>
+        <div className="absolute flex h-full w-full flex-1 flex-col items-center justify-center bg-background-1 p-2 text-center opacity-60">
           <Markdown>
             {`
-## MOVE MAP CURRENTLY DISABLED
+##### MOVE MAP CURRENTLY DISABLED
+
 Play an acceptable move or give up to unlock
 `.trim()}
           </Markdown>

@@ -1,5 +1,3 @@
-import styles from './LeaderboardColumn.module.scss'
-
 interface Props {
   icon: JSX.Element
   name: string
@@ -15,16 +13,19 @@ export const LeaderboardColumn: React.FC<Props> = ({
   ranking,
 }: Props) => {
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        {icon}
-        <p>{name}</p>
+    <div className="flex flex-col">
+      <div className="flex flex-row items-center justify-start gap-3 bg-background-2 px-6 py-4">
+        <i className="*:h-6 *:w-6">{icon}</i>
+        <h2 className="text-2xl font-bold uppercase">{name}</h2>
       </div>
-      <div className={styles.rankings}>
+      <div className="flex w-full flex-col">
         {ranking.map((player, index) => (
-          <div key={index} className={styles.rank}>
-            <div>
-              <p>{index + 1}</p>
+          <div
+            key={index}
+            className={`flex w-full items-center justify-between px-6 py-2 ${index % 2 === 0 ? 'bg-background-1/90' : 'bg-background-1/50'}`}
+          >
+            <div className="flex items-center gap-2">
+              <p className="w-5">{index + 1}</p>
               <p>
                 {player.display_name} {index == 0 && '👑'}
               </p>

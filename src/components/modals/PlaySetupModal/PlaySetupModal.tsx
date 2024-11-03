@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { useRouter } from 'next/router'
+import { AnimatePresence } from 'framer-motion'
 import { useCallback, useContext, useState } from 'react'
 
 import {
@@ -148,72 +149,73 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
   )
 
   return (
-    <ModalContainer dismiss={() => setPlaySetupModalProps(undefined)}>
-      <div className={styles.playSetup}>
-        <button
-          className={styles.close}
-          title="Close"
-          onClick={() => setPlaySetupModalProps(undefined)}
-        >
-          {CloseIcon}
-        </button>
-        <h2>
-          {props.playType == 'againstMaia'
-            ? 'Play Maia'
-            : 'Play Hand and Brain'}
-        </h2>
-        {props.playType == 'handAndBrain' ? (
-          <>
-            <div className={styles.option}>
-              Play as:{' '}
-              <OptionSelect
-                options={[true, false]}
-                labels={['Brain', 'Hand']}
-                selected={isBrain}
-                onChange={setIsBrain}
-              />
-            </div>
-            <div className={styles.selectParent}>
-              Partner:{' '}
-              <select
-                value={maiaPartnerVersion}
-                className={styles.select}
-                onChange={(e) => setMaiaPartnerVersion(e.target.value)}
-              >
-                {maiaOptions.map((maia) => (
-                  <option key={`partner_${maia}`} value={maia}>
-                    {maia.replace('maia_kdd_', 'Maia ')}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </>
-        ) : null}
-
-        <div className={styles.selectParent}>
-          Opponent:{' '}
-          <select
-            value={maiaVersion}
-            className={styles.select}
-            onChange={(e) => setMaiaVersion(e.target.value)}
+    <AnimatePresence>
+      <ModalContainer dismiss={() => setPlaySetupModalProps(undefined)}>
+        <div className={styles.playSetup}>
+          <button
+            className={styles.close}
+            title="Close"
+            onClick={() => setPlaySetupModalProps(undefined)}
           >
-            {maiaOptions.map((maia) => (
-              <option key={`opponent_${maia}`} value={maia}>
-                {maia.replace('maia_kdd_', 'Maia ')}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className={styles.option}>
-          Time control:{' '}
-          <OptionSelect
-            options={TimeControlOptions}
-            labels={TimeControlOptionNames}
-            selected={timeControl}
-            onChange={setTimeControl}
-          />
-        </div>
-        {/* {typeToPlay == 'handAndBrain' ? (
+            {CloseIcon}
+          </button>
+          <h2>
+            {props.playType == 'againstMaia'
+              ? 'Play Maia'
+              : 'Play Hand and Brain'}
+          </h2>
+          {props.playType == 'handAndBrain' ? (
+            <>
+              <div className={styles.option}>
+                Play as:{' '}
+                <OptionSelect
+                  options={[true, false]}
+                  labels={['Brain', 'Hand']}
+                  selected={isBrain}
+                  onChange={setIsBrain}
+                />
+              </div>
+              <div className={styles.selectParent}>
+                Partner:{' '}
+                <select
+                  value={maiaPartnerVersion}
+                  className={styles.select}
+                  onChange={(e) => setMaiaPartnerVersion(e.target.value)}
+                >
+                  {maiaOptions.map((maia) => (
+                    <option key={`partner_${maia}`} value={maia}>
+                      {maia.replace('maia_kdd_', 'Maia ')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          ) : null}
+
+          <div className={styles.selectParent}>
+            Opponent:{' '}
+            <select
+              value={maiaVersion}
+              className={styles.select}
+              onChange={(e) => setMaiaVersion(e.target.value)}
+            >
+              {maiaOptions.map((maia) => (
+                <option key={`opponent_${maia}`} value={maia}>
+                  {maia.replace('maia_kdd_', 'Maia ')}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.option}>
+            Time control:{' '}
+            <OptionSelect
+              options={TimeControlOptions}
+              labels={TimeControlOptionNames}
+              selected={timeControl}
+              onChange={setTimeControl}
+            />
+          </div>
+          {/* {typeToPlay == 'handAndBrain' ? (
           <div className={styles.selectParent}>
             Friendly Maia model:{' '}
             <select
@@ -229,15 +231,15 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
             </select>
           </div>
         ) : null} */}
-        {/* <button
+          {/* <button
           className={styles.moreOptionsButton}
           onClick={() => setMoreOptionsOpen(!openMoreOptions)}
         >
           {openMoreOptions ? <>&#9660;</> : <>&#9654;</>} More options
         </button> */}
-        {openMoreOptions ? (
-          <div className={styles.moreOptions}>
-            {/* <div>
+          {openMoreOptions ? (
+            <div className={styles.moreOptions}>
+              {/* <div>
               <input
                 type="checkbox"
                 id="simulateMaiaTime"
@@ -249,51 +251,52 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
                 <abbr title="Disable to have Maia move instantly">?</abbr>
               </label>
             </div> */}
-            <div>
+              <div>
+                <input
+                  type="checkbox"
+                  id="sample"
+                  checked={fen !== undefined}
+                  onChange={() => setFen(fen === undefined ? '' : undefined)}
+                />
+                <label htmlFor="sample">
+                  Start from position{' '}
+                  <abbr title="Start game at a custom position">?</abbr>
+                </label>
+              </div>
+            </div>
+          ) : null}
+          {fen !== undefined ? (
+            <div className={styles.fen}>
               <input
-                type="checkbox"
-                id="sample"
-                checked={fen !== undefined}
-                onChange={() => setFen(fen === undefined ? '' : undefined)}
+                type="text"
+                value={fen}
+                placeholder="Starting position"
+                onChange={(e) => setFen(e.target.value)}
               />
-              <label htmlFor="sample">
-                Start from position{' '}
-                <abbr title="Start game at a custom position">?</abbr>
-              </label>
             </div>
+          ) : null}
+          <div className={styles.playButtons}>
+            <button onClick={() => start('black')} title="Play as black">
+              <div>
+                <Image src={bK} fill={true} alt="" />
+              </div>
+            </button>
+            <button
+              onClick={() => start(undefined)}
+              title="Play as random colour"
+            >
+              <div>
+                <Image src={wbK} fill={true} alt="" />
+              </div>
+            </button>
+            <button onClick={() => start('white')} title="Play as white">
+              <div>
+                <Image src={wK} fill={true} alt="" />
+              </div>
+            </button>
           </div>
-        ) : null}
-        {fen !== undefined ? (
-          <div className={styles.fen}>
-            <input
-              type="text"
-              value={fen}
-              placeholder="Starting position"
-              onChange={(e) => setFen(e.target.value)}
-            />
-          </div>
-        ) : null}
-        <div className={styles.playButtons}>
-          <button onClick={() => start('black')} title="Play as black">
-            <div>
-              <Image src={bK} fill={true} alt="" />
-            </div>
-          </button>
-          <button
-            onClick={() => start(undefined)}
-            title="Play as random colour"
-          >
-            <div>
-              <Image src={wbK} fill={true} alt="" />
-            </div>
-          </button>
-          <button onClick={() => start('white')} title="Play as white">
-            <div>
-              <Image src={wK} fill={true} alt="" />
-            </div>
-          </button>
         </div>
-      </div>
-    </ModalContainer>
+      </ModalContainer>
+    </AnimatePresence>
   )
 }

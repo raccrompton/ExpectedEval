@@ -35,6 +35,11 @@ const Leaderboard: React.FC = () => {
         ranking: lb.puzzles_leaders,
       },
       {
+        icon: <TuringIcon />,
+        name: 'Bot/Not',
+        ranking: lb.turing_leaders,
+      },
+      {
         icon: <HandIcon />,
         name: 'Hand',
         ranking: lb.hand_leaders,
@@ -43,12 +48,6 @@ const Leaderboard: React.FC = () => {
         icon: <BrainIcon />,
         name: 'Brain',
         ranking: lb.brain_leaders,
-      },
-
-      {
-        icon: <TuringIcon />,
-        name: 'Bot/Not',
-        ranking: lb.turing_leaders,
       },
     ])
   }, [])
@@ -82,7 +81,7 @@ const Leaderboard: React.FC = () => {
             : '...'}
         </p>
       </div>
-      <div className="flex h-full w-full flex-row flex-wrap justify-start gap-4">
+      <div className="grid h-full w-full grid-cols-1 justify-start gap-4 md:grid-cols-3">
         {leaderboard?.map((column, index) => (
           <LeaderboardColumn key={index} {...column} />
         ))}
