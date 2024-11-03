@@ -110,7 +110,7 @@ export const submitGameMove = async (
       move_times: moveTimes,
       fen: fen,
       brain_moves: brainMoves,
-      winner: winner,
+
       ...(winner && winner !== 'none' ? { winner: winner } : {}),
     }),
   })
