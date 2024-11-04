@@ -4,7 +4,6 @@ import { useRouter } from 'next/router'
 import { useContext, useEffect, useState } from 'react'
 
 import { ModalContext } from 'src/contexts'
-import styles from 'src/styles/App.module.scss'
 
 const PlayPage: NextPage = () => {
   const router = useRouter()
@@ -44,23 +43,8 @@ const PlayPage: NextPage = () => {
     <>
       <Head>
         <title>Maia Chess - Play</title>
-        <meta name="description" content="Turing survey" />
+        <meta name="description" content="Play Against Maia" />
       </Head>
-      <div className={styles.outer}>
-        {/* <div className={styles.gameMenu}>
-          <button onClick={() => startGame('againstMaia')}>Play Maia</button>
-          <a
-            href="https://lichess.org/@/maia1"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Play Maia on Lichess
-          </a>
-          <button onClick={() => startGame('handAndBrain')}>
-            Play Hand and Brain
-          </button>
-        </div> */}
-      </div>
     </>
   )
 }

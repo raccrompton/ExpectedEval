@@ -5,7 +5,6 @@ import { GetStaticPaths, GetStaticProps } from 'next'
 
 import { Post } from 'src/types'
 import { Markdown } from 'src/components'
-import styles from 'src/styles/App.module.scss'
 import { getSortedPostsData, getPostData } from 'src/blog/posts'
 
 interface BlogPostProps {
@@ -20,7 +19,7 @@ const BlogPost = ({ post }: BlogPostProps) => {
   }
 
   return (
-    <div className={styles.page}>
+    <div className="flex h-full w-full flex-col items-start justify-center gap-5 px-[4%] py-[10%] md:px-[4%] md:py-[2%]">
       <Head>
         <title>Blog – Maia Chess</title>
         <meta
