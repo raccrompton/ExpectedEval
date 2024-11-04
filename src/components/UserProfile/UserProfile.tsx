@@ -15,7 +15,6 @@ import {
 } from '../Icons/icons'
 import GameList from './GameList'
 import { getPlayerStats } from 'src/api'
-import styles from './UserProfile.module.scss'
 import { AuthContext, WindowSizeContext } from 'src/contexts'
 import { ProfileColumn } from '../ProfileColumn/ProfileColumn'
 

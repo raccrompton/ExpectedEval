@@ -5,12 +5,12 @@ import {
   ScatterPlotRawSerie,
   ScatterPlotTooltipProps,
 } from '@nivo/scatterplot'
-import classNames from 'classnames'
 import { useCallback, useContext } from 'react'
-import { ThemeContext, WindowSizeContext } from 'src/contexts'
+
 import { DataNode } from 'src/types'
-import { computeColour } from 'src/utils/colours'
 import { Markdown } from 'src/components'
+import { computeColour } from 'src/utils/colours'
+import { ThemeContext, WindowSizeContext } from 'src/contexts'
 
 interface Props {
   data: ScatterPlotRawSerie<DataNode>[]
@@ -21,8 +21,6 @@ interface Props {
   currentSquare?: string | null
   disabled?: boolean
 }
-
-import styles from './MovePlot.module.scss'
 
 export const MovePlot: React.FC<Props> = ({
   data = [],

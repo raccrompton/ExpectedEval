@@ -1,8 +1,5 @@
-import React, { AnchorHTMLAttributes, ClassAttributes } from 'react'
-
 import ReactMarkdown from 'react-markdown'
-
-import styles from './Markdown.module.scss'
+import React, { AnchorHTMLAttributes, ClassAttributes } from 'react'
 
 interface Props {
   children: string

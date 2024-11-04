@@ -1,5 +1,3 @@
-import styles from './HorizontalEvaluationBar.module.scss'
-
 interface Props {
   min?: number
   max?: number

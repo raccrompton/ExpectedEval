@@ -5,8 +5,6 @@ interface Props {
   label?: string
 }
 
-import styles from './VerticalEvaluationBar.module.scss'
-
 export const VerticalEvaluationBar: React.FC<Props> = ({
   min = 0,
   max = 1,

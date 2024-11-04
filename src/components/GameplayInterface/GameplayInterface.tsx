@@ -1,5 +1,7 @@
+import Head from 'next/head'
+import type { DrawShape } from 'chessground/draw'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import styles from 'src/styles/App.module.scss'
+
 import {
   AuthContext,
   GameControllerContext,
@@ -11,15 +13,12 @@ import {
   GameInfo,
   MovesContainer,
 } from 'src/components'
-import Head from 'next/head'
+import { GameClock } from '../GameClock'
 import { useGameController } from 'src/hooks'
+import { StatsDisplay } from '../StatsDisplay'
+import { useUnload } from 'src/hooks/useUnload'
 import { PromotionOverlay } from 'src/components/PromotionOverlay'
 import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
-import type { DrawShape } from 'chessground/draw'
-import { GameClock } from '../GameClock'
-import classNames from 'classnames'
-import { useUnload } from 'src/hooks/useUnload'
-import { StatsDisplay } from '../StatsDisplay'
 
 interface Props {
   boardShapes?: DrawShape[]

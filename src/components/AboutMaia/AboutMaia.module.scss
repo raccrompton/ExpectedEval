@@ -4,8 +4,20 @@ $black: #222;
 
 @import '/src/styles/base';
 
+.font {
+  font-family:
+    Helvetica Neue,
+    Helvetica,
+    Arial,
+    sans-serif;
+}
+
 .homepage {
-  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+  font-family:
+    Helvetica Neue,
+    Helvetica,
+    Arial,
+    sans-serif;
 
   .container {
     max-width: 1170px;
@@ -97,22 +109,22 @@ $black: #222;
     text-align: center;
   }
 
-  p {
-    margin: 0 0 15px;
-    font-size: 20px;
-    line-height: 1.5;
-  }
-  @media (min-width: 768px) {
-    p {
-      margin: 0 0 25px;
-      font-size: 16px;
-      line-height: 1.6;
-    }
-  }
+  // p {
+  //   margin: 0 0 15px;
+  //   font-size: 20px;
+  //   line-height: 1.5;
+  // }
+  // @media (min-width: 768px) {
+  //   p {
+  //     margin: 0 0 25px;
+  //     font-size: 16px;
+  //     line-height: 1.6;
+  //   }
+  // }
 
-  p#affiliation {
-    font-size: 12px;
-  }
+  // p#affiliation {
+  //   font-size: 12px;
+  // }
 
   .col4,
   .col6,
@@ -143,10 +155,10 @@ $black: #222;
     margin: auto;
   }
 
-  img {
-    width: 100%;
-    height: auto;
-  }
+  // img {
+  //   width: 100%;
+  //   height: auto;
+  // }
 }
 .peopleList {
   display: flex;

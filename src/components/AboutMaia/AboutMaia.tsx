@@ -1,20 +1,18 @@
 import Image from 'next/image'
 import { useEffect } from 'react'
-import styles from './AboutMaia.module.scss'
-import { draw_all_plots, destroy_all_charts } from './plots'
-import maia_diagram_transparent from './maia-diagram_transparent.png'
-import maia_transfer_val_accs from './maia_transfer_val_accs.svg'
-import personReid from './people/reid.jpg'
-import personAshton from './people/ashton.jpeg'
+
 import personJon from './people/jon.jpg'
 import personSid from './people/sid.jpeg'
-// import personRussel from './people/russell.jpg'
-import personJoseph from './people/joseph.jpg'
+import personReid from './people/reid.jpg'
 import personIsaac from './people/isaac.jpg'
-import personDmitriy from './people/dmitriy.jpg'
 import personKevin from './people/kevin.jpg'
+import personJoseph from './people/joseph.jpg'
+import personAshton from './people/ashton.jpeg'
 import example_board from './example_board.png'
-
+import personDmitriy from './people/dmitriy.jpg'
+import { draw_all_plots, destroy_all_charts } from './plots'
+import maia_transfer_val_accs from './maia_transfer_val_accs.svg'
+import maia_diagram_transparent from './maia-diagram_transparent.png'
 import { EnvelopeSquareIcon, GithubIcon } from 'src/components/Icons/icons'
 
 export const AboutMaia = () => {
@@ -24,12 +22,20 @@ export const AboutMaia = () => {
   })
 
   return (
-    <div className={styles.homepage}>
-      <div className="flex flex-row items-center justify-center gap-10 bg-white py-5 text-sm uppercase tracking-wider text-black">
-        <a href="#main_info">Project</a>
-        <a href="#paper">Paper</a>
-        <a href="#data">Data</a>
-        <a href="#team">Team</a>
+    <div className="font-helvetica [&_a]:text-blue-500">
+      <div className="flex flex-row items-center justify-center gap-10 bg-white py-5 text-sm uppercase tracking-wider">
+        <a href="#main_info" className="!text-black">
+          Project
+        </a>
+        <a href="#paper" className="!text-black">
+          Paper
+        </a>
+        <a href="#data" className="!text-black">
+          Data
+        </a>
+        <a href="#team" className="!text-black">
+          Team
+        </a>
         <a
           id="#code"
           target="_blank"
@@ -38,7 +44,7 @@ export const AboutMaia = () => {
           className="flex flex-row items-center justify-start gap-2"
         >
           <i className="flex [&>*]:!fill-black">{GithubIcon}</i>{' '}
-          <span>Code</span>
+          <span className="!text-black">Code</span>
         </a>
         <a
           id="#email"
@@ -50,15 +56,20 @@ export const AboutMaia = () => {
           <i className="flex text-black [&>*]:!fill-black">
             {EnvelopeSquareIcon}
           </i>{' '}
-          <span>Email list</span>
+          <span className="!text-black">Email list</span>
         </a>
       </div>
-      <section id="main_info" className={styles.lightSection}>
-        <div className={styles.container}>
-          <div className={styles.row}>
-            <div className={styles.col8}>
-              <h3>Capturing human style in chess</h3>
-              <div className={styles.graphContainer}>
+      <section
+        id="main_info"
+        className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black"
+      >
+        <div className="mx-auto my-0 max-w-[1170px]">
+          <div className="flex flex-col md:flex-row">
+            <div className="m-auto box-border w-auto px-4 md:w-2/3">
+              <h2 className="text-center text-2xl font-bold uppercase">
+                Capturing human style in chess
+              </h2>
+              <div className="relative m-auto min-h-[170px] w-full max-w-[600px]">
                 <canvas id="maia_bars" />
               </div>
               <p>
@@ -71,10 +82,10 @@ export const AboutMaia = () => {
           </div>
         </div>
       </section>
-      <section className={styles.lightSection}>
-        <div className={styles.container}>
-          <div className={styles.row}>
-            <div className={styles.col6}>
+      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+        <div className="mx-auto my-0 max-w-[1170px]">
+          <div className="flex flex-col md:flex-row">
+            <div className="box-border w-auto px-4 md:w-1/2">
               <figure>
                 <Image
                   src={maia_diagram_transparent}
@@ -89,9 +100,8 @@ export const AboutMaia = () => {
                 </figcaption>
               </figure>
             </div>
-            <div className={styles.col6}>
+            <div className="box-border w-auto px-4 md:w-1/2">
               <p>
-                {' '}
                 Maia is an AlphaZero/Leela-like deep learning framework that
                 learns from online human games instead of self-play. Maia is
                 trained on millions of games, and tries to predict the human
@@ -109,10 +119,10 @@ export const AboutMaia = () => {
           </div>
         </div>
       </section>
-      <section className={styles.lightSection}>
-        <div className={styles.container}>
-          <div className={styles.row}>
-            <div className={styles.col4}>
+      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+        <div className="mx-auto my-0 max-w-[1170px]">
+          <div className="flex flex-col md:flex-row">
+            <div className="box-border w-auto px-4 md:w-1/3">
               <p>
                 We measure “move-matching accuracy”, how often Maia&rsquo;s
                 predicted move is the same as the human move played in real
@@ -129,7 +139,7 @@ export const AboutMaia = () => {
                 tempting but wrong move <i>b6</i> at around 1500.{' '}
               </p>
             </div>
-            <div className={styles.col8}>
+            <div className="m-auto box-border w-auto px-4 md:w-2/3">
               <figure>
                 <Image src={example_board} alt="example board" />
                 <figcaption>
@@ -143,21 +153,21 @@ export const AboutMaia = () => {
                 </figcaption>
               </figure>
             </div>
-            {/*
-    <iframe  class='widget_embed' src="https://csslab.github.io/Maia-Agreement-Visualizer"></iframe>*/}
           </div>
         </div>
       </section>
-      <section className={styles.lightSection}>
-        <div className={styles.container}>
-          <h3>Maia captures human style at targeted skill levels</h3>
-          <div className={styles.row}>
-            <div className={styles.col6}>
-              <div className={styles.graphContainer}>
+      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+        <div className="mx-auto my-0 max-w-[1170px]">
+          <h2 className="text-center text-2xl font-bold uppercase">
+            Maia captures human style at targeted skill levels
+          </h2>
+          <div className="flex flex-col md:flex-row">
+            <div className="box-border w-auto px-4 md:w-1/2">
+              <div className="relative m-auto min-h-[170px] w-full max-w-[600px]">
                 <canvas id="maia_lines" className="line_plot" />
               </div>
             </div>
-            <div className={styles.col6}>
+            <div className="box-border w-auto px-4 md:w-1/2">
               <div className="text_column">
                 <p>
                   We tested each Maia on 9 sets of 500,000 positions that arose
@@ -165,7 +175,6 @@ export const AboutMaia = () => {
                   and 1900. Every Maia made a prediction for every position, and
                   we measured its resulting move-matching accuracy on each set.{' '}
                 </p>
-                {/* <p><b> Maia captures human style at its specified skill level</b></p> */}
                 <p>
                   Each Maia captures human style at its targeted skill level.
                   Lower Maias best predict moves played by lower-rated players,
@@ -177,15 +186,15 @@ export const AboutMaia = () => {
           </div>
         </div>
       </section>
-      <section className={styles.lightSection}>
-        <div className={styles.container}>
-          <div className={styles.row}>
-            <div className={styles.col6}>
-              <div className={styles.graphContainer}>
+      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+        <div className="mx-auto my-0 max-w-[1170px]">
+          <div className="flex flex-col md:flex-row">
+            <div className="box-border w-auto px-4 md:w-1/2">
+              <div className="relative m-auto min-h-[170px] w-full max-w-[600px]">
                 <canvas id="all_lines" className="line_plot" />
               </div>
             </div>
-            <div className={styles.col6}>
+            <div className="box-border w-auto px-4 md:w-1/2">
               <div className="text_column">
                 <p>
                   As a comparison, we looked at how depth-limited Stockfish does
@@ -212,19 +221,20 @@ export const AboutMaia = () => {
           </div>
         </div>
       </section>
-      <section className={styles.lightSection}>
-        <div className={styles.container}>
-          <h3>Predicting mistakes</h3>
-          <div className={styles.row}>
-            <div className={styles.col6}>
-              <div className={styles.graphContainer}>
+      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+        <div className="mx-auto my-0 max-w-[1170px]">
+          <h2 className="text-center text-2xl font-bold uppercase">
+            Predicting mistakes
+          </h2>
+          <div className="flex flex-col md:flex-row">
+            <div className="box-border w-auto px-4 md:w-1/2">
+              <div className="relative m-auto min-h-[170px] w-full max-w-[600px]">
                 <canvas id="data_delta" className="line_plot" />
               </div>
             </div>
-            <div className={styles.col6}>
+            <div className="box-border w-auto px-4 md:w-1/2">
               <div className="text_column">
                 <p>
-                  {' '}
                   Maia is particularly good at predicting human mistakes. The
                   move-matching accuracy of any model increases with the quality
                   of the move, since good moves are easier to predict. But even
@@ -238,11 +248,13 @@ export const AboutMaia = () => {
           </div>
         </div>
       </section>
-      <section className={styles.lightSection}>
-        <div className={styles.container}>
-          <h3>Personalizing to Individual Players</h3>
-          <div className={styles.row}>
-            <div className={styles.col6}>
+      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+        <div className="mx-auto my-0 max-w-[1170px]">
+          <h2 className="text-center text-2xl font-bold uppercase">
+            Personalizing to Individual Players
+          </h2>
+          <div className="flex flex-col md:flex-row">
+            <div className="box-border w-auto px-4 md:w-1/2">
               <figure>
                 <Image src={maia_transfer_val_accs} alt="Transfer Maia" />
                 <figcaption>
@@ -252,7 +264,7 @@ export const AboutMaia = () => {
                 </figcaption>
               </figure>
             </div>
-            <div className={styles.col6}>
+            <div className="box-border w-auto px-4 md:w-1/2">
               <div className="text_column">
                 <p>
                   Next, we tried pushing the modeling of human play to the next
@@ -280,10 +292,11 @@ export const AboutMaia = () => {
           </div>
         </div>
       </section>
-      <section className={styles.lightSection}>
-        <div className={styles.container}>
-          <h3>Play Maia and more</h3>
-          {/* <div class="col-lg-10 "> */}
+      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+        <div className="mx-auto my-0 max-w-[1170px]">
+          <h2 className="text-center text-2xl font-bold uppercase">
+            Play Maia and more
+          </h2>
           <p>
             You can play against Maia yourself on Lichess! You can play{' '}
             <a href="https://lichess.org/@/maia1">Maia 1100</a>,{' '}
@@ -304,44 +317,12 @@ export const AboutMaia = () => {
             <a href="mailto:maiachess@cs.toronto.edu">email</a> or{' '}
             <a href="https://twitter.com/maiachess">Twitter</a>.
           </p>
-          {/* </div> */}
-          {/* <div class="row">
-  <div class="col-lg-4 col-lg-offset-2">
-    <h4>Our models are on Lichess</h4>
-    <table class="table models_table">
-      <tr>
-        <th>Name</th>
-        <th>Trained Rating</th>
-      </tr>
-      <tr>
-        <td class="model_name"><a href="https://lichess.org/@/maia1">maia1</a></td>
-        <td class="model_rating">1100</td>
-      </tr>
-      <tr>
-        <td class="model_name"><a href="https://lichess.org/@/maia5">maia5</a></td>
-        <td class="model_rating">1500</td>
-      </tr>
-      <tr>
-        <td class="model_name"><a href="https://lichess.org/@/maia9">maia9</a></td>
-        <td class="model_rating">1900</td>
-      </tr>
-    </table>
-  </div>
-      <div class="col-lg-6">
-  
-  <h4>Please get in touch</h4>
-  
-      </div> */}
         </div>
-        {/* <div class="row closing-remark">
-  
-      </div> */}
       </section>
-      <section id="paper" className={styles.lightSection}>
-        {/* <section id="paper" className="content-section dark-section"> */}
-        <div className={styles.container}>
+      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+        <div className="mx-auto my-0 max-w-[1170px]">
           <div className="row col-lg-9 col-lg-offset-2 left-justify-section">
-            <h2>paper</h2>
+            <h3 className="text-center text-xl font-bold uppercase">Paper</h3>
             <p>
               {' '}
               Read the full{' '}
@@ -396,7 +377,9 @@ export const AboutMaia = () => {
               The code for training Maia can be found on our{' '}
               <a href="https://github.com/CSSLab/maia-chess">Github Repo</a>.
             </p>
-            <h4>Abstract</h4>
+            <h3 className="mt-20 text-center text-xl font-bold uppercase">
+              Abstract
+            </h3>
             <p className="abstract">
               As artificial intelligence becomes increasingly intelligent--in
               some cases, achieving superhuman performance--there is growing
@@ -427,21 +410,13 @@ export const AboutMaia = () => {
               intelligence systems with human collaboration in mind by first
               accurately modeling granular human decision-making.
             </p>
-            {/*<h3>BibTex</h3>
-  <code>@inproceedings{mcilroyyoung2020maia,
-  title={Aligning Superhuman AI with Human Behavior: Chess as a Model System},
-  author={McIlroy-Young, Reid and Sen, Siddhartha and Kleinberg, Jon and Anderson, Ashton},
-  year={2020},
-  booktitle={Proceedings of the 25th ACM SIGKDD international conference on Knowledge discovery and data mining}
-  }</code>
-  */}
           </div>
         </div>
       </section>
-      <section id="data" className={styles.lightSection}>
-        <div className={styles.container}>
+      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+        <div className="mx-auto my-0 max-w-[1170px]">
           <div className="row col-lg-8 col-lg-offset-2 left-justify-section">
-            <h2>Data</h2>
+            <h3 className="text-center text-xl font-bold uppercase">Data</h3>
             <p>
               {' '}
               All our data is from the wonderful archive at{' '}
@@ -453,270 +428,175 @@ export const AboutMaia = () => {
               </a>
               .
             </p>
-            {/* <p>If you want the full dataset we used for training the models please get in touch</p> */}
           </div>
         </div>
       </section>
-      <section id="team" className={styles.lightSection}>
-        {/* <section id="team" className="content-section"> */}
-        <div className={styles.container}>
-          <div className="row col-lg-10 col-lg-offset-1">
-            <h2>Team</h2>
-            <div className={styles.peopleList}>
-              <div className={styles.person}>
-                <div className={styles.personLine}>
-                  <Image
-                    className={styles.personImage}
-                    src={personAshton}
-                    alt="Picture of Ashton Anderson"
-                  />
-                </div>
-                <div className={styles.personLine}>
-                  <a href="http://www.cs.toronto.edu/~ashton/">
+      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+        <div className="mx-auto my-0 max-w-[1170px]">
+          <div>
+            <h3 className="text-center text-xl font-bold uppercase">Team</h3>
+            <div className="flex flex-col items-center justify-center text-center md:flex-row md:flex-wrap md:items-stretch md:justify-between">
+              <div className="flex min-w-[270px] flex-col items-center justify-center gap-3 pb-16">
+                <Image
+                  src={personAshton}
+                  alt="Picture of Ashton Anderson"
+                  className="h-48 w-48 rounded-full"
+                />
+                <div className="flex flex-col">
+                  <a
+                    target="_blank"
+                    href="http://www.cs.toronto.edu/~ashton/"
+                    className="text-2xl"
+                  >
                     Ashton Anderson
                   </a>
-                </div>
-                <div className={styles.affiliation}>
+
                   <p>University of Toronto</p>
                 </div>
-                <div className={styles.role}>
-                  <p>Project Lead</p>
-                </div>
-                {/* <div className={styles.personLine}>
-                  <div className={styles.personLink}>
-                    <a href="http://www.cs.toronto.edu/~ashton/">
-                      <i
-                        className="fas fa-external-link-alt"
-                        title="Ashton Anderson website link"
-                      />
-                    </a>
-                  </div>
-                  <div className={styles.personLink}>
-                    <a href="https://www.twitter.com/ashton1anderson">
-                      <i
-                        className="fab fa-twitter"
-                        title="Ashton Anderson Twitter link"
-                      />
-                    </a>
-                  </div>
-                  <div className={styles.personLink}>
-                    <a href="https://github.com/ashtonanderson">{GithubIcon}</a>
-                  </div>
-                </div> */}
+                <p className="font-semibold">Project Lead</p>
               </div>
-              <div className={styles.person}>
-                <div className={styles.personLine}>
-                  <Image
-                    className={styles.personImage}
-                    src={personReid}
-                    alt="Picture of Reid McIlroy-Young"
-                  />
-                </div>
-                <div className={styles.personLine}>
-                  <a href="https://reidmcy.com">Reid McIlroy-Young</a>
-                </div>
-                <div className={styles.affiliation}>
+              <div className="flex min-w-[270px] flex-col items-center justify-center gap-3 pb-16">
+                <Image
+                  src={personReid}
+                  alt="Picture of Reid McIlroy-Young"
+                  className="h-48 w-48 rounded-full"
+                />
+                <div className="flex flex-col">
+                  <a
+                    target="_blank"
+                    href="https://reidmcy.com"
+                    className="text-2xl"
+                  >
+                    Reid McIlroy-Young
+                  </a>
+
                   <p>University of Toronto</p>
                 </div>
-                <div className={styles.role}>
-                  <p>Head Developer</p>
-                </div>
-                {/* <div className={styles.personLine}>
-                  <div className={styles.personLink}>
-                    <a href="https://reidmcy.com">
-                      <i
-                        className="fas fa-external-link-alt"
-                        title="Reid McIlroy-Young website link"
-                      />
-                    </a>
-                  </div>
-                  <div className={styles.personLink}>
-                    <a href="https://www.twitter.com/reidmcy">
-                      <i
-                        className="fab fa-twitter"
-                        title="Reid McIlroy-Young Twitter link"
-                      />
-                    </a>
-                  </div>
-                  <div className={styles.personLink}>
-                    <a href="https://github.com/reidmcy">{GithubIcon}</a>
-                  </div>
-                </div> */}
+                <p className="font-semibold">Head Developer</p>
               </div>
-              <div className={styles.person}>
-                <div className={styles.personLine}>
-                  <Image
-                    className={styles.personImage}
-                    src={personJon}
-                    alt="Picture of Jon Kleinberg"
-                  />
-                </div>
-                <div className={styles.personLine}>
-                  <a href="http://www.cs.cornell.edu/home/kleinber">
+              <div className="flex min-w-[270px] flex-col items-center justify-center gap-3 pb-16">
+                <Image
+                  src={personJon}
+                  alt="Picture of Jon Kleinberg"
+                  className="h-48 w-48 rounded-full"
+                />
+                <div className="flex flex-col">
+                  <a
+                    target="_blank"
+                    href="http://www.cs.cornell.edu/home/kleinber"
+                    className="text-2xl"
+                  >
                     Jon Kleinberg
                   </a>
-                </div>
-                <div className={styles.affiliation}>
+
                   <p>Cornell University</p>
                 </div>
-                <div className={styles.role}>
-                  <p>Collaborator</p>
-                </div>
-                {/* <div className={styles.personLine}>
-                  <div className={styles.personLink}>
-                    <a href="http://www.cs.cornell.edu/home/kleinber">
-                      <i
-                        className="fas fa-external-link-alt"
-                        title="Jon Kleinberg website link"
-                      />
-                    </a>
-                  </div>
-                </div> */}
+                <p className="font-semibold">Collaborator</p>
               </div>
-              <div className={styles.person}>
-                <div className={styles.personLine}>
-                  <Image
-                    className={styles.personImage}
-                    src={personSid}
-                    alt="Picture of Siddhartha Sen"
-                  />
-                </div>
-                <div className={styles.personLine}>
-                  <a href="http://sidsen.org">Siddhartha Sen</a>
-                </div>
-                <div className={styles.affiliation}>
+              <div className="flex min-w-[270px] flex-col items-center justify-center gap-3 pb-16">
+                <Image
+                  src={personSid}
+                  alt="Picture of Siddhartha Sen"
+                  className="h-48 w-48 rounded-full"
+                />
+                <div className="flex flex-col">
+                  <a
+                    target="_blank"
+                    href="http://sidsen.org"
+                    className="text-2xl"
+                  >
+                    Siddhartha Sen
+                  </a>
+
                   <p>Microsoft Research</p>
                 </div>
-                <div className={styles.role}>
-                  <p>Collaborator</p>
-                </div>
-                {/* <div className={styles.personLine}>
-                  <div className={styles.personLink}>
-                    <a href="http://sidsen.org">
-                      <i
-                        className="fas fa-external-link-alt"
-                        title="Siddhartha Sen website link"
-                      />
-                    </a>
-                  </div>
-                  <div className={styles.personLink}>
-                    <a href="https://github.com/sidsen">{GithubIcon}</a>
-                  </div>
-                </div> */}
+                <p className="font-semibold">Collaborator</p>
               </div>
-              {/* <div className={styles.person}>
-                <div className={styles.personLine}>
-                  <Image
-                    className={styles.personImage}
-                    src={personRussel}
-                    alt="Picture of Russell Wang"
-                  />
+              <div className="flex min-w-[270px] flex-col items-center justify-center gap-3 pb-16">
+                <Image
+                  src={personJoseph}
+                  alt="Picture of Joseph Tang"
+                  className="h-48 w-48 rounded-full"
+                />
+                <div className="flex flex-col">
+                  <a
+                    target="_blank"
+                    href="https://lilv98.github.io/"
+                    className="text-2xl"
+                  >
+                    Joseph Tang
+                  </a>
+
+                  <p>University of Toronto</p>
                 </div>
-                <div className={styles.personLine}>
-                  <a href=" https://github.com/rwang97">Russell Wang</a>
-                </div>
-                <div className={styles.affiliation}>
-                  <p className="affiliation">University of Toronto</p>
-                </div>
-                <div className={styles.role}>
-                  <p>Developer</p>
-                </div> */}
-              {/* <div className={styles.personLine}>
-                  <div className={styles.personLink}>
-                    <a href="https://www.twitter.com/rwang97">
-                      <i
-                        className="fab fa-twitter"
-                        title="Russell Wang Twitter link"
-                      />
-                    </a>
-                  </div>
-                  <div className={styles.personLink}>
-                    <a href="https://github.com/rwang97">{GithubIcon}</a>
-                  </div>
-                </div>
-              </div>  */}
-              <div className={styles.person}>
-                <div className={styles.personLine}>
-                  <Image
-                    className={styles.personImage}
-                    src={personJoseph}
-                    alt="Picture of Joseph Tang"
-                  />
-                </div>
-                <div className={styles.personLine}>
-                  <a href="https://lilv98.github.io/">Joseph Tang</a>
-                </div>
-                <div className={styles.affiliation}>
-                  <p className="affiliation">University of Toronto</p>
-                </div>
-                <div className={styles.role}>
-                  <p>Model Developer</p>
-                </div>
+                <p className="font-semibold">Model Developer</p>
               </div>
-              <div className={styles.person}>
-                <div className={styles.personLine}>
-                  <Image
-                    src={personIsaac}
-                    className={styles.personImage}
-                    alt="Picture of Isaac Waller"
-                  />
+              <div className="flex min-w-[270px] flex-col items-center justify-center gap-3 pb-16">
+                <Image
+                  src={personIsaac}
+                  alt="Picture of Isaac Waller"
+                  className="h-48 w-48 rounded-full"
+                />
+                <div className="flex flex-col">
+                  <a
+                    target="_blank"
+                    href="https://waller.is/"
+                    className="text-2xl"
+                  >
+                    Isaac Waller
+                  </a>
+
+                  <p>University of Toronto</p>
                 </div>
-                <div className={styles.personLine}>
-                  <a href="https://waller.is/">Isaac Waller</a>
-                </div>
-                <div className={styles.affiliation}>
-                  <p className="affiliation">University of Toronto</p>
-                </div>
-                <div className={styles.role}>
-                  <p>Web Developer</p>
-                </div>
+                <p className="font-semibold">Web Developer</p>
               </div>
-              <div className={styles.person}>
-                <div className={styles.personLine}>
-                  <Image
-                    className={styles.personImage}
-                    src={personDmitriy}
-                    alt="Picture of Dmitriy Prokopchuk"
-                  />
-                </div>
-                <div className={styles.personLine}>
-                  <a href="https://prokopchukdim.github.io/">
+              <div className="flex min-w-[270px] flex-col items-center justify-center gap-3 pb-16">
+                <Image
+                  src={personDmitriy}
+                  className="h-48 w-48 rounded-full"
+                  alt="Picture of Dmitriy Prokopchuk"
+                />
+                <div className="flex flex-col">
+                  <a
+                    target="_blank"
+                    href="https://prokopchukdim.github.io/"
+                    className="text-2xl"
+                  >
                     Dmitriy Prokopchuk
                   </a>
+
+                  <p>University of Toronto</p>
                 </div>
-                <div className={styles.affiliation}>
-                  <p className="affiliation">University of Toronto</p>
-                </div>
-                <div className={styles.role}>
-                  <p>Web Developer</p>
-                </div>
+                <p className="font-semibold">Web Developer</p>
               </div>
-              <div className={styles.person}>
-                <div className={styles.personLine}>
-                  <Image
-                    className={styles.personImage}
-                    src={personKevin}
-                    alt="Picture of Kevin Thomas"
-                  />
+              <div className="flex min-w-[270px] flex-col items-center justify-center gap-3 pb-16">
+                <Image
+                  src={personKevin}
+                  className="h-48 w-48 rounded-full"
+                  alt="Picture of Kevin Thomas"
+                />
+                <div className="flex flex-col">
+                  <a
+                    target="_blank"
+                    href="https://kevinjosethomas.com/"
+                    className="text-2xl"
+                  >
+                    Kevin Thomas
+                  </a>
+                  <p>Burnaby South Secondary</p>
                 </div>
-                <div className={styles.personLine}>
-                  <a href="https://kevinjosethomas.com/">Kevin Thomas</a>
-                </div>
-                <div className={styles.affiliation}>
-                  <p className="affiliation">Burnaby South Secondary</p>
-                </div>
-                <div className={styles.role}>
-                  <p>Web Developer</p>
-                </div>
+                <p className="font-semibold">Web Developer</p>
               </div>
             </div>
           </div>
         </div>
       </section>
-      <section className={styles.lightSection}>
-        <div className={styles.container}>
-          <div className={styles.col8}>
-            <h2>Acknowledgments</h2>
+      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+        <div className="mx-auto my-0 max-w-[1170px]">
+          <div className="m-auto box-border w-auto px-4 md:w-2/3">
+            <h3 className="text-center text-xl font-bold uppercase">
+              Acknowledgments
+            </h3>
             <p>
               Many thanks to Lichess.org for providing the human games that we
               trained on and hosting our Maia models that you can play against.
