@@ -85,7 +85,7 @@ export const Feedback: React.FC<Props> = ({
   }, [game.targetIndex, setCurrentIndex])
 
   return (
-    <div className="flex w-screen flex-1 flex-col justify-between gap-2 bg-background-1 p-3 md:w-auto md:gap-0 md:p-5">
+    <div className="flex w-screen flex-1 flex-col justify-between gap-2 rounded-sm bg-background-1 p-3 md:w-auto md:gap-0 md:p-5">
       <div>
         <Markdown>{content.trim()}</Markdown>
       </div>

@@ -1,11 +1,9 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import classNames from 'classnames'
 import { Tooltip } from 'react-tooltip'
 import { useCallback, useContext, useMemo } from 'react'
 
 import { CheckIcon } from '../Icons/icons'
-import styles from './MovesContainer.module.scss'
 import { AnalyzedGame, BaseGame, Move, Termination } from 'src/types'
 import { GameControllerContext, WindowSizeContext } from 'src/contexts'
 
@@ -14,7 +12,6 @@ interface Props {
   setCurrentMove?: (move: [string, string] | null) => void
   highlightIndices?: number[]
   mobile?: boolean
-  control?: boolean
   termination?: Termination
 }
 
@@ -23,7 +20,6 @@ export const MovesContainer: React.FC<Props> = ({
   setCurrentMove,
   highlightIndices,
   mobile = false,
-  control = false,
   termination,
 }: Props) => {
   const controller = useContext(GameControllerContext)
@@ -61,24 +57,8 @@ export const MovesContainer: React.FC<Props> = ({
     [highlightIndices],
   )
 
-  // const scroll = useCallback(
-  //   (ref: HTMLDivElement) => {
-  //     if (!ref) return
-  //     const selected =
-  //       parseInt(ref.dataset.index ?? '', 10) == controller.currentIndex
-  //     if (selected && ref != null) {
-  //       ref.scrollIntoView({
-  //         behavior: 'smooth',
-  //         block: 'start',
-  //         inline: 'center',
-  //       })
-  //     }
-  //   },
-  //   [controller.currentIndex],
-  // )
-
   const container = (
-    <div className={classNames(styles.container, { [styles.mobile]: mobile })}>
+    <div className="red-scrollbar flex h-64 flex-col overflow-y-auto overflow-x-hidden whitespace-nowrap rounded-sm bg-background-1/60 md:h-full">
       <Tooltip id="check" />
       {moves.map(([white, black], index) => {
         const prevMoveIndex = index * 2
@@ -107,29 +87,24 @@ export const MovesContainer: React.FC<Props> = ({
         }
 
         return (
-          <div key={index} className={styles.move}>
-            <span>{index + 1}</span>
+          <div key={index} className="flex w-full flex-row">
+            <span className="flex w-1/6 items-center justify-center bg-background-2 py-1 text-sm text-secondary">
+              {index + 1}
+            </span>
             <div
               onClick={() => {
                 if (setCurrentMove) setCurrentMove(null)
                 controller.setCurrentIndex(index * 2 + 1)
               }}
               data-index={index * 2 + 1}
-              className={classNames([
-                {
-                  'flex flex-row items-center justify-between': true,
-                  [styles.selected]: controller.currentIndex === index * 2 + 1,
-                  [styles.highlighted]: highlightSet.has(index * 2 + 1),
-                },
-              ])}
-              // ref={scroll}
+              className={`flex flex-1 cursor-pointer flex-row items-center justify-between px-2 hover:bg-background-2 ${controller.currentIndex === index * 2 + 1 && 'bg-engine-3/90'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
             >
               {white?.san ?? white?.lastMove?.join(' ')}
               {predictedWhite && (
                 <i
                   data-tooltip-id="check"
                   data-tooltip-content="Maia predicted this move"
-                  className={styles.checked}
+                  className="*:h-4 *:w-4 *:fill-human-2"
                 >
                   {CheckIcon}
                 </i>
@@ -141,21 +116,14 @@ export const MovesContainer: React.FC<Props> = ({
                 if (black) controller.setCurrentIndex(index * 2 + 2)
               }}
               data-index={index * 2 + 2}
-              className={classNames([
-                {
-                  'flex flex-row items-center justify-between': true,
-                  [styles.selected]: controller.currentIndex === index * 2 + 2,
-                  [styles.highlighted]: highlightSet.has(index * 2 + 2),
-                },
-              ])}
-              // ref={scroll}
+              className={`flex flex-1 cursor-pointer flex-row items-center justify-between px-2 hover:bg-background-2 ${controller.currentIndex === index * 2 + 2 && 'bg-engine-3/90'} ${highlightSet.has(index * 2 + 2) && 'bg-human-3/80'}`}
             >
               {black?.san ?? black?.lastMove?.join(' ')}
               {predictedBlack && (
                 <i
                   data-tooltip-id="check"
                   data-tooltip-content="Maia predicted this move"
-                  className={styles.checked}
+                  className="*:h-4 *:w-4 *:fill-human-2"
                 >
                   {CheckIcon}
                 </i>
@@ -164,9 +132,9 @@ export const MovesContainer: React.FC<Props> = ({
           </div>
         )
       })}
-      {termination && !control && !isMobile && (
+      {termination && !isMobile && (
         <div
-          className={styles.termination}
+          className="cursor-pointer rounded-sm border border-primary/10 bg-background-1/90 p-5 text-center opacity-90"
           onClick={() => setCurrentIndex(plyCount - 1)}
         >
           {termination.result}
@@ -178,19 +146,6 @@ export const MovesContainer: React.FC<Props> = ({
       )}
     </div>
   )
-
-  if (control)
-    return (
-      <div className={styles.control}>
-        <button onClick={getPrevious} disabled={!hasPrevious}>
-          &#8249;
-        </button>
-        {container}
-        <button onClick={getNext} disabled={!hasNext}>
-          &#8250;
-        </button>
-      </div>
-    )
 
   return container
 }

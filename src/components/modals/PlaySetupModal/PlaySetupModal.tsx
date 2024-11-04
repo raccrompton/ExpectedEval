@@ -14,7 +14,6 @@ import bK from './bK.svg'
 import wK from './wK.svg'
 import wbK from './wbK.svg'
 import { ModalContext } from 'src/contexts'
-import styles from './PlaySetupModal.module.scss'
 import { ModalContainer } from '../ModalContainer'
 import { CloseIcon } from 'src/components/Icons/icons'
 
@@ -44,12 +43,12 @@ function OptionSelect<T>({
   onChange,
 }: OptionSelectProps<T>) {
   return (
-    <div className={styles.optionSelect}>
+    <div className="flex flex-row items-center overflow-hidden rounded-sm">
       {options.map((option, index) => {
         return (
           <button
             key={index}
-            className={option == selected ? styles.selected : ''}
+            className={`cursor-pointer bg-background-2 px-4 py-1 text-primary ${option === selected ? 'bg-human-4' : 'hover:bg-human-4/80'} transition duration-200`}
             onClick={() => onChange(option)}
           >
             {labels[index]}
@@ -79,7 +78,7 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
   const [timeControl, setTimeControl] = useState<TimeControl>(
     props.timeControl || TimeControlOptions[0],
   )
-  const [isBrain, setIsBrain] = useState<boolean>(props.isBrain || true)
+  const [isBrain, setIsBrain] = useState<boolean>(props.isBrain || false)
   const [sampleMoves, setSampleMoves] = useState<boolean>(
     props.sampleMoves || true,
   )
@@ -151,107 +150,72 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
   return (
     <AnimatePresence>
       <ModalContainer dismiss={() => setPlaySetupModalProps(undefined)}>
-        <div className={styles.playSetup}>
+        <div className="relative flex flex-col justify-center gap-6 text-left">
           <button
-            className={styles.close}
+            className="absolute -right-4 -top-2 cursor-pointer border-none bg-none opacity-50 transition duration-200 *:text-primary hover:opacity-100"
             title="Close"
             onClick={() => setPlaySetupModalProps(undefined)}
           >
             {CloseIcon}
           </button>
-          <h2>
+          <h2 className="text-center text-2xl font-bold">
             {props.playType == 'againstMaia'
               ? 'Play Maia'
               : 'Play Hand and Brain'}
           </h2>
-          {props.playType == 'handAndBrain' ? (
-            <>
-              <div className={styles.option}>
-                Play as:{' '}
-                <OptionSelect
-                  options={[true, false]}
-                  labels={['Brain', 'Hand']}
-                  selected={isBrain}
-                  onChange={setIsBrain}
-                />
-              </div>
-              <div className={styles.selectParent}>
-                Partner:{' '}
-                <select
-                  value={maiaPartnerVersion}
-                  className={styles.select}
-                  onChange={(e) => setMaiaPartnerVersion(e.target.value)}
-                >
-                  {maiaOptions.map((maia) => (
-                    <option key={`partner_${maia}`} value={maia}>
-                      {maia.replace('maia_kdd_', 'Maia ')}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </>
-          ) : null}
-
-          <div className={styles.selectParent}>
-            Opponent:{' '}
-            <select
-              value={maiaVersion}
-              className={styles.select}
-              onChange={(e) => setMaiaVersion(e.target.value)}
-            >
-              {maiaOptions.map((maia) => (
-                <option key={`opponent_${maia}`} value={maia}>
-                  {maia.replace('maia_kdd_', 'Maia ')}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className={styles.option}>
-            Time control:{' '}
-            <OptionSelect
-              options={TimeControlOptions}
-              labels={TimeControlOptionNames}
-              selected={timeControl}
-              onChange={setTimeControl}
-            />
-          </div>
-          {/* {typeToPlay == 'handAndBrain' ? (
-          <div className={styles.selectParent}>
-            Friendly Maia model:{' '}
-            <select
-              className={styles.select}
-              value={friendlyMaiaVersion}
-              onChange={(e) => setFriendlyMaiaVersion(e.target.value)}
-            >
-              {maiaOptions.map((maia) => (
-                <option key={maia} value={maia}>
-                  {maia.replace('maia_kdd_', 'Maia ')}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : null} */}
-          {/* <button
-          className={styles.moreOptionsButton}
-          onClick={() => setMoreOptionsOpen(!openMoreOptions)}
-        >
-          {openMoreOptions ? <>&#9660;</> : <>&#9654;</>} More options
-        </button> */}
-          {openMoreOptions ? (
-            <div className={styles.moreOptions}>
-              {/* <div>
-              <input
-                type="checkbox"
-                id="simulateMaiaTime"
-                checked={simulateMaiaTime}
-                onChange={() => setSimulateMaiaTime(!simulateMaiaTime)}
+          <div className="flex flex-col items-start gap-4">
+            {props.playType == 'handAndBrain' ? (
+              <>
+                <div className="flex items-center justify-center gap-2">
+                  Play as:{' '}
+                  <OptionSelect
+                    options={[false, true]}
+                    labels={['Hand', 'Brain']}
+                    selected={isBrain}
+                    onChange={setIsBrain}
+                  />
+                </div>
+                <div className="flex items-center justify-start gap-2">
+                  Partner:{' '}
+                  <select
+                    value={maiaPartnerVersion}
+                    className="overflow-hidden rounded-sm bg-background-2 px-2 py-1 focus:outline-none"
+                    onChange={(e) => setMaiaPartnerVersion(e.target.value)}
+                  >
+                    {maiaOptions.map((maia) => (
+                      <option key={`partner_${maia}`} value={maia}>
+                        {maia.replace('maia_kdd_', 'Maia ')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            ) : null}
+            <div className="flex items-center justify-start gap-2">
+              Opponent:
+              <select
+                value={maiaVersion}
+                className="overflow-hidden rounded-sm bg-background-2 px-2 py-1 focus:outline-none"
+                onChange={(e) => setMaiaVersion(e.target.value)}
+              >
+                {maiaOptions.map((maia) => (
+                  <option key={`opponent_${maia}`} value={maia}>
+                    {maia.replace('maia_kdd_', 'Maia ')}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-row items-center justify-start gap-2">
+              Time control:{' '}
+              <OptionSelect
+                options={TimeControlOptions}
+                labels={TimeControlOptionNames}
+                selected={timeControl}
+                onChange={setTimeControl}
               />
-              <label htmlFor="simulateMaiaTime">
-                Simulate human move times{' '}
-                <abbr title="Disable to have Maia move instantly">?</abbr>
-              </label>
-            </div> */}
-              <div>
+            </div>
+            {openMoreOptions ? (
+              <div className="flex cursor-pointer flex-row items-center justify-start gap-1 text-sm">
                 <input
                   type="checkbox"
                   id="sample"
@@ -263,37 +227,47 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
                   <abbr title="Start game at a custom position">?</abbr>
                 </label>
               </div>
+            ) : null}
+            {fen !== undefined ? (
+              <div>
+                <input
+                  type="text"
+                  value={fen}
+                  placeholder="Starting FEN position"
+                  onChange={(e) => setFen(e.target.value)}
+                  className="rounded-sm bg-background-2 px-1 py-1 text-sm text-secondary placeholder:text-secondary focus:outline-none"
+                />
+              </div>
+            ) : null}
+            <div className="flex w-full items-end justify-center gap-2">
+              <button
+                onClick={() => start('black')}
+                title="Play as black"
+                className="flex cursor-pointer select-none items-center justify-center rounded-sm border-none bg-background-2 p-2 text-center text-xl outline-none transition duration-200 hover:bg-human-4"
+              >
+                <div className="relative h-16 w-16">
+                  <Image src={bK} fill={true} alt="" />
+                </div>
+              </button>
+              <button
+                onClick={() => start(undefined)}
+                title="Play as random colour"
+                className="flex cursor-pointer select-none items-center justify-center rounded-sm border-none bg-background-2 p-4 text-center text-xl outline-none transition duration-200 hover:bg-human-4"
+              >
+                <div className="relative h-20 w-20">
+                  <Image src={wbK} fill={true} alt="" />
+                </div>
+              </button>
+              <button
+                onClick={() => start('white')}
+                title="Play as white"
+                className="flex cursor-pointer select-none items-center justify-center rounded-sm border-none bg-background-2 p-2 text-center text-xl outline-none transition duration-200 hover:bg-human-4"
+              >
+                <div className="relative h-16 w-16">
+                  <Image src={wK} fill={true} alt="" />
+                </div>
+              </button>
             </div>
-          ) : null}
-          {fen !== undefined ? (
-            <div className={styles.fen}>
-              <input
-                type="text"
-                value={fen}
-                placeholder="Starting position"
-                onChange={(e) => setFen(e.target.value)}
-              />
-            </div>
-          ) : null}
-          <div className={styles.playButtons}>
-            <button onClick={() => start('black')} title="Play as black">
-              <div>
-                <Image src={bK} fill={true} alt="" />
-              </div>
-            </button>
-            <button
-              onClick={() => start(undefined)}
-              title="Play as random colour"
-            >
-              <div>
-                <Image src={wbK} fill={true} alt="" />
-              </div>
-            </button>
-            <button onClick={() => start('white')} title="Play as white">
-              <div>
-                <Image src={wK} fill={true} alt="" />
-              </div>
-            </button>
           </div>
         </div>
       </ModalContainer>
