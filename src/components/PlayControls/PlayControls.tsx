@@ -1,5 +1,3 @@
-import styles from './PlayControls.module.scss'
-
 interface Props {
   playerActive: boolean
   gameOver: boolean
