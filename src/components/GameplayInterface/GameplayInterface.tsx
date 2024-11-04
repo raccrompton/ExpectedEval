@@ -189,20 +189,6 @@ export const GameplayInterface: React.FC<Props> = (
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
         <div className="mt-2 flex h-full flex-col items-start justify-start gap-2">
-          {/* <div className={styles.side}>
-            <div className={styles.info}>
-              <GameInfo
-                termination={game.termination}
-                blackPlayer={{ name: blackPlayer ?? 'Unknown' }}
-                whitePlayer={{ name: whitePlayer ?? 'Unknown' }}
-                type={playType}
-                id={game.id}
-                showId={false}
-                instructionsType={playType}
-              />
-            </div>
-            <div className={styles.play}></div>
-          </div> */}
           <div className="flex h-auto w-full flex-col gap-1">
             {timeControl != 'unlimited' ? (
               <GameClock

@@ -133,25 +133,6 @@ export const Feedback: React.FC<Props> = ({
             )}
           </>
         )}
-        {/* <button
-              onClick={() => {
-                router.push(
-                  {
-                    pathname: '/analysis/[id]',
-                    query: {
-                      id: game.id,
-                      index: game.targetIndex,
-                      orientation:
-                        game.targetIndex % 2 === 0 ? 'white' : 'black',
-                    },
-                  },
-                  `/analysis/${game.id}`,
-                )
-              }}
-              className={styles.secondary}
-            >
-              Analyze This Board
-            </button> */}
       </div>
     </div>
   )

@@ -113,14 +113,6 @@ export const MovePlot: React.FC<Props> = ({
               onMouseMove={(event) => onMouseMove?.(node, event)}
               onMouseLeave={(event) => onMouseLeave?.(node, event)}
               onClick={(event) => onClick?.(node, event)}
-              // className={classNames({
-              //   [styles.animated]:
-              //     (currentMove &&
-              //       currentMove.join('') === props.node.data.move) ||
-              //     (!currentMove &&
-              //       currentSquare &&
-              //       currentSquare === props.node.data.move.slice(0, 2)),
-              // })}
             />
           )
         }}
