@@ -101,12 +101,6 @@ export const MovePlot: React.FC<Props> = ({
             onClick,
           } = props
           const { size } = props.node as any
-          // if (!size) {
-          //   console.log(props.node.x, props.node.y, size)
-          //   console.log(
-          //     Math.abs(Math.asin((props.node.x * props.node.y + 3) / 4)),
-          //   )
-          // }
 
           return (
             <circle
@@ -119,14 +113,14 @@ export const MovePlot: React.FC<Props> = ({
               onMouseMove={(event) => onMouseMove?.(node, event)}
               onMouseLeave={(event) => onMouseLeave?.(node, event)}
               onClick={(event) => onClick?.(node, event)}
-              className={classNames({
-                [styles.animated]:
-                  (currentMove &&
-                    currentMove.join('') === props.node.data.move) ||
-                  (!currentMove &&
-                    currentSquare &&
-                    currentSquare === props.node.data.move.slice(0, 2)),
-              })}
+              // className={classNames({
+              //   [styles.animated]:
+              //     (currentMove &&
+              //       currentMove.join('') === props.node.data.move) ||
+              //     (!currentMove &&
+              //       currentSquare &&
+              //       currentSquare === props.node.data.move.slice(0, 2)),
+              // })}
             />
           )
         }}

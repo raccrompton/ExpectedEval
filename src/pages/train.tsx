@@ -182,7 +182,7 @@ const TrainPage: NextPage = () => {
                   <span
                     key={game.id}
                     onClick={() => setCurrentIndex(index)}
-                    className={`${game.result ? 'bg-engine-1' : game.result === undefined ? 'bg-button-secondary' : 'bg-human-4'} h-7 w-7 cursor-pointer rounded-sm`}
+                    className={`${game.result ? 'bg-engine-4' : game.result === undefined ? 'bg-button-secondary' : 'bg-human-4'} h-7 w-7 cursor-pointer rounded-sm`}
                   />
                 ))}
               </div>
@@ -404,14 +404,6 @@ const Train: React.FC<Props> = ({
                 getNewGame={getNewGame}
               />
             </div>
-            {/* <div className={styles.moves}>
-              <MovesContainer
-                game={trainingGame}
-                setCurrentMove={setCurrentMove}
-                highlightIndices={[trainingGame.targetIndex]}
-                mobile
-              />
-            </div> */}
             <div className="flex-none">
               <BoardController setCurrentMove={setCurrentMove} />
             </div>
@@ -519,14 +511,6 @@ const Train: React.FC<Props> = ({
             <div className="w-full flex-none">
               <PositionEvaluationContainer moveEvaluation={moveEvaluation} />
             </div>
-            {/* <div className={styles.moves}>
-              <MovesContainer
-                game={trainingGame}
-                setCurrentMove={setCurrentMove}
-                highlightIndices={[trainingGame.targetIndex]}
-                mobile
-              />
-            </div> */}
             <div className="flex-none">
               <BoardController setCurrentMove={setCurrentMove} />
             </div>

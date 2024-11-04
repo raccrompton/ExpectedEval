@@ -2,12 +2,11 @@ import Head from 'next/head'
 import Link from 'next/link'
 
 import { Post } from 'src/types'
-import styles from 'src/styles/App.module.scss'
 import { getSortedPostsData } from 'src/blog/posts'
 
 export default function Blog({ posts }: { posts: Post[] }) {
   return (
-    <div className={styles.page}>
+    <div className="flex h-full w-full flex-col items-start justify-center gap-5 px-[4%] py-[10%] md:px-[4%] md:py-[2%]">
       <Head>
         <title>Blog – Maia Chess</title>
         <meta

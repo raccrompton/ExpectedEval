@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useContext } from 'react'
-import { GameControllerContext } from 'src/contexts'
+
 import { Color } from 'src/types'
-import styles from './PromotionOverlay.module.scss'
-import classNames from 'classnames'
+import { GameControllerContext } from 'src/contexts'
+import Chessground from '@react-chess/chessground'
 
 interface Props {
   player: Color
@@ -24,29 +24,38 @@ export const PromotionOverlay: React.FC<Props> = ({
     pieces.reverse()
   }
 
-  const offset = file.charCodeAt(0) - 'a'.charCodeAt(0)
-  const offsetPct = 100 * ((flipped ? 7 - offset : offset) / 8)
-
   return (
     <>
-      <div
-        className={classNames(styles.overlay, {
-          [styles.flipped]: flipped,
-        })}
-      >
-        <div
-          className={styles.container}
-          style={{ marginLeft: offsetPct + '%' }}
-        >
-          {pieces.map((piece) => (
-            <button
-              className={styles.piece}
-              key={piece}
-              onClick={() => selectPromotion(piece)}
-            >
-              {piece}
-            </button>
-          ))}
+      <div className="absolute left-0 top-0 z-10 flex h-full w-full flex-col items-center justify-center bg-backdrop/80">
+        <div className="flex h-1/2 w-1/2 flex-row items-center justify-center">
+          {pieces.map((piece) => {
+            let asset
+            asset = flipped ? `black ` : `white `
+            if (piece === 'q') {
+              asset += 'queen'
+            } else if (piece === 'n') {
+              asset += 'knight'
+            } else if (piece === 'r') {
+              asset += 'rook'
+            } else if (piece === 'b') {
+              asset += 'bishop'
+            }
+
+            return (
+              <button
+                key={piece}
+                onClick={() => selectPromotion(piece)}
+                className="flex h-1/4 w-full items-center justify-center bg-engine-3 hover:bg-engine-4"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className="h-20 w-20"
+                  src={`/assets/pieces/${asset}.svg`}
+                  alt={piece}
+                />
+              </button>
+            )
+          })}
         </div>
       </div>
     </>
