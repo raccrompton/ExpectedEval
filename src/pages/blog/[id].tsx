@@ -63,7 +63,7 @@ const BlogPost = ({ post }: BlogPostProps) => {
             )}
             {post.journal && <p>{post.journal}</p>}
           </div>
-          <div className="mt-1 flex items-center gap-2 overflow-x-scroll">
+          <div className="no-scrollbar mt-1 flex items-center gap-2 overflow-x-scroll">
             {post.tags.map((tag, index) => (
               <div
                 key={index}
