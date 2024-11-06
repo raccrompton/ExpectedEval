@@ -82,7 +82,7 @@ const UserProfile: React.FC = () => {
       </div>
       <div className="flex flex-col gap-6 md:flex-row">
         <GameList />
-        <div className="flex h-full w-full flex-row flex-wrap justify-start gap-6">
+        <div className="grid h-full w-full grid-cols-2 gap-6">
           <ProfileColumn
             icon={<RegularPlayIcon />}
             name="REGULAR"
