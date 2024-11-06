@@ -424,9 +424,9 @@ const Train: React.FC<Props> = ({
   const mobileLayout = (
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
-        <div className="mt-2 flex h-full flex-col items-start justify-start gap-2">
+        <div className="mt-2 flex h-full flex-col items-start justify-start gap-1">
           <div className="flex h-auto w-full flex-col gap-2">
-            <div className="w-screen">
+            {/* <div className="w-screen">
               <GameInfo
                 {...trainingGame}
                 whitePlayer={
@@ -449,15 +449,7 @@ const Train: React.FC<Props> = ({
                 showId={false}
                 instructionsType="train"
               />
-            </div>
-            <div className="flex w-full">
-              <button
-                onClick={launchContinue}
-                className="flex w-full flex-1 items-center rounded bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4"
-              >
-                Continue Against Maia
-              </button>
-            </div>
+            </div> */}
           </div>
           <div className="relative flex aspect-square h-[100vw] w-screen">
             <GameBoard
@@ -470,6 +462,9 @@ const Train: React.FC<Props> = ({
             />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
+            <div className="flex-none">
+              <BoardController setCurrentMove={setCurrentMove} />
+            </div>
             <div className="flex flex-1 flex-col items-stretch">
               <Feedback
                 status={status}
@@ -481,6 +476,7 @@ const Train: React.FC<Props> = ({
                 getNewGame={getNewGame}
               />
             </div>
+            <StatsDisplay stats={stats} />
             <div className="flex">
               <div className="flex h-[20vh] w-screen flex-none [&>div]:h-[inherit] [&>div]:max-h-[inherit] [&>div]:max-w-[inherit]">
                 <MovePlot
@@ -511,10 +507,15 @@ const Train: React.FC<Props> = ({
             <div className="w-full flex-none">
               <PositionEvaluationContainer moveEvaluation={moveEvaluation} />
             </div>
-            <div className="flex-none">
-              <BoardController setCurrentMove={setCurrentMove} />
+
+            <div className="flex w-full">
+              <button
+                onClick={launchContinue}
+                className="flex w-full flex-1 items-center rounded bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4"
+              >
+                Continue Against Maia
+              </button>
             </div>
-            <StatsDisplay stats={stats} />
           </div>
         </div>
       </div>

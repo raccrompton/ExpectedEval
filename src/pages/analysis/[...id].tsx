@@ -414,13 +414,13 @@ const Analysis: React.FC<Props> = ({
   const mobileLayout = (
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
-        <div className="mt-16 flex w-full flex-col items-start justify-start gap-1">
+        <div className="flex w-full flex-col items-start justify-start gap-1">
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="w-screen">
               <GameInfo
                 {...analyzedGame}
+                showId={false}
                 type={analyzedGame.gameType}
-                showId={true}
                 instructionsType="analysis"
               />
             </div>
@@ -437,33 +437,9 @@ const Analysis: React.FC<Props> = ({
             />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
-            <div className="!h-[50px] w-screen !flex-grow-0">
+            <div className="w-screen !flex-grow-0">
               <BoardController setCurrentMove={setCurrentMove} />
             </div>
-            <div className="flex">
-              <div className="h-[20vh] max-h-[200px] w-screen !flex-none">
-                <MovePlot
-                  data={data}
-                  onMove={setCurrentMove}
-                  onMouseEnter={showArrow}
-                  onMouseLeave={() => setMovePlotHover(null)}
-                />
-              </div>
-              <div
-                style={{
-                  background:
-                    'linear-gradient(0deg, rgb(36, 36, 36) 0%, rgb(255, 137, 70) 100%)',
-                }}
-                className="-mt-1 h-full w-1"
-              />
-            </div>
-            <div
-              style={{
-                background:
-                  'linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(83, 167, 162) 100%)',
-              }}
-              className="-mt-1 h-1 w-full"
-            />
             <div className="flex-none">
               <div className="flex w-full flex-col overflow-hidden rounded">
                 <div className="flex items-center justify-center bg-background-1 py-2">
@@ -495,6 +471,30 @@ const Analysis: React.FC<Props> = ({
               </div>
               <BlunderMeter {...blunderMeter} />
             </div>
+            <div className="flex">
+              <div className="h-[20vh] max-h-[200px] w-screen !flex-none">
+                <MovePlot
+                  data={data}
+                  onMove={setCurrentMove}
+                  onMouseEnter={showArrow}
+                  onMouseLeave={() => setMovePlotHover(null)}
+                />
+              </div>
+              <div
+                style={{
+                  background:
+                    'linear-gradient(0deg, rgb(36, 36, 36) 0%, rgb(255, 137, 70) 100%)',
+                }}
+                className="-mt-1 h-full w-1"
+              />
+            </div>
+            <div
+              style={{
+                background:
+                  'linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(83, 167, 162) 100%)',
+              }}
+              className="-mt-1 h-1 w-full"
+            />
             <div className="relative bottom-0 h-full flex-1 overflow-auto">
               <MovesContainer
                 game={analyzedGame}
