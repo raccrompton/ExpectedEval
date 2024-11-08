@@ -30,7 +30,7 @@ import {
   VerticalEvaluationBar,
   PositionEvaluationContainer,
 } from 'src/components'
-import { PuzzleInfo } from 'src/components/Train'
+import { PuzzleInfo, PuzzleLog } from 'src/components/Train'
 import { useTrainingController } from 'src/hooks'
 import { AllStats, useStats } from 'src/hooks/useStats'
 import { TrainingGame, Status } from 'src/types/training'
@@ -68,7 +68,7 @@ const TrainPage: NextPage = () => {
   const [stats, incrementStats] = useStats(statsLoader)
   const [userGuesses, setUserGuesses] = useState<string[]>([])
   const [previousGameResults, setPreviousGameResults] = useState<
-    { id: string; result?: boolean }[]
+    (TrainingGame & { result?: boolean })[]
   >([])
 
   const getNewGame = useCallback(async () => {
@@ -86,7 +86,7 @@ const TrainPage: NextPage = () => {
     setUserGuesses([])
     setTrainingGames(trainingGames.concat([game]))
     setCurrentIndex(trainingGames.length)
-    setPreviousGameResults(previousGameResults.concat([{ id: game.id }]))
+    setPreviousGameResults(previousGameResults.concat([{ ...game }]))
   }, [trainingGames, previousGameResults, router])
 
   useEffect(() => {
@@ -176,16 +176,11 @@ const TrainPage: NextPage = () => {
         logGuess={logGuess}
         gamesController={
           <>
-            <div className="relative bottom-0 h-full min-h-[38px] flex-1 overflow-auto">
-              <div className="flex flex-row flex-wrap items-start justify-start gap-1 overflow-y-auto">
-                {previousGameResults.map((game, index) => (
-                  <span
-                    key={game.id}
-                    onClick={() => setCurrentIndex(index)}
-                    className={`${game.result ? 'bg-engine-4' : game.result === undefined ? 'bg-button-secondary' : 'bg-human-4'} h-7 w-7 cursor-pointer rounded-sm`}
-                  />
-                ))}
-              </div>
+            <div className="relative bottom-0 flex h-full min-h-[38px] flex-1 flex-col justify-end overflow-auto">
+              <PuzzleLog
+                previousGameResults={previousGameResults}
+                setCurrentIndex={setCurrentIndex}
+              />
             </div>
           </>
         }
@@ -306,14 +301,15 @@ const Train: React.FC<Props> = ({
               rating={trainingGame.puzzle_elo}
               hideRating={status !== 'correct' && status !== 'forfeit'}
             />
-            <div className="flex w-full">
-              <button
-                onClick={launchContinue}
-                className="flex w-full flex-1 items-center rounded bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4"
-              >
-                Play position against Maia
-              </button>
-            </div>
+            <button
+              onClick={launchContinue}
+              className="flex w-full items-center gap-1.5 rounded bg-human-3 px-3 py-2 transition duration-200 hover:bg-human-4"
+            >
+              <span className="material-symbols-outlined text-base">
+                swords
+              </span>
+              <span>Play position against Maia</span>
+            </button>
             {gamesController}
             <StatsDisplay stats={stats} />
           </div>
@@ -471,15 +467,15 @@ const Train: React.FC<Props> = ({
             <div className="w-full flex-none">
               <PositionEvaluationContainer moveEvaluation={moveEvaluation} />
             </div>
-
-            <div className="flex w-full">
-              <button
-                onClick={launchContinue}
-                className="flex w-full flex-1 items-center rounded bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4"
-              >
-                Play position against Maia
-              </button>
-            </div>
+            <button
+              onClick={launchContinue}
+              className="flex w-full items-center gap-1.5 rounded bg-human-3 px-3 py-2 transition duration-200 hover:bg-human-4"
+            >
+              <span className="material-symbols-outlined text-base">
+                swords
+              </span>
+              <span>Play position against Maia</span>
+            </button>
           </div>
         </div>
       </div>
