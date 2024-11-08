@@ -25,12 +25,12 @@ import {
   Loading,
   MovePlot,
   Feedback,
-  GameInfo,
   BoardController,
   AuthenticatedWrapper,
   VerticalEvaluationBar,
   PositionEvaluationContainer,
 } from 'src/components'
+import { PuzzleInfo } from 'src/components/Train'
 import { useTrainingController } from 'src/hooks'
 import { AllStats, useStats } from 'src/hooks/useStats'
 import { TrainingGame, Status } from 'src/types/training'
@@ -300,36 +300,18 @@ const Train: React.FC<Props> = ({
             }}
             className="flex h-[75vh] w-[40vh] flex-col gap-1"
           >
-            <div>
-              <GameInfo
-                {...trainingGame}
-                whitePlayer={
-                  status === 'correct' || status === 'forfeit'
-                    ? trainingGame.whitePlayer
-                    : {
-                        name: 'Unknown',
-                        rating: 0,
-                      }
-                }
-                blackPlayer={
-                  status === 'correct' || status === 'forfeit'
-                    ? trainingGame.blackPlayer
-                    : {
-                        name: 'Unknown',
-                        rating: 0,
-                      }
-                }
-                type={trainingGame.gameType}
-                showId={false}
-                instructionsType="train"
-              />
-            </div>
+            <PuzzleInfo
+              id={trainingGame.id}
+              instructionsType="train"
+              rating={trainingGame.puzzle_elo}
+              hideRating={status !== 'correct' && status !== 'forfeit'}
+            />
             <div className="flex w-full">
               <button
                 onClick={launchContinue}
                 className="flex w-full flex-1 items-center rounded bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4"
               >
-                Continue Against Maia
+                Play position against Maia
               </button>
             </div>
             {gamesController}
@@ -425,31 +407,13 @@ const Train: React.FC<Props> = ({
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
         <div className="mt-2 flex h-full flex-col items-start justify-start gap-1">
-          <div className="flex h-auto w-full flex-col gap-2">
-            {/* <div className="w-screen">
-              <GameInfo
-                {...trainingGame}
-                whitePlayer={
-                  status === 'correct' || status === 'forfeit'
-                    ? trainingGame.whitePlayer
-                    : {
-                        name: 'Unknown',
-                        rating: 0,
-                      }
-                }
-                blackPlayer={
-                  status === 'correct' || status === 'forfeit'
-                    ? trainingGame.blackPlayer
-                    : {
-                        name: 'Unknown',
-                        rating: 0,
-                      }
-                }
-                type={trainingGame.gameType}
-                showId={false}
-                instructionsType="train"
-              />
-            </div> */}
+          <div className="flex h-auto w-full flex-col">
+            <PuzzleInfo
+              id={trainingGame.id}
+              instructionsType="train"
+              rating={trainingGame.puzzle_elo}
+              hideRating={status !== 'correct' && status !== 'forfeit'}
+            />
           </div>
           <div className="relative flex aspect-square h-[100vw] w-screen">
             <GameBoard
@@ -513,7 +477,7 @@ const Train: React.FC<Props> = ({
                 onClick={launchContinue}
                 className="flex w-full flex-1 items-center rounded bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4"
               >
-                Continue Against Maia
+                Play position against Maia
               </button>
             </div>
           </div>

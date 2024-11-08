@@ -5,6 +5,7 @@ export interface AvailableMoves {
 }
 
 export interface TrainingGame extends Game {
+  puzzle_elo: number
   stockfishEvaluation: MoveMap
   maiaEvaluation: MoveMap
   availableMoves: AvailableMoves
