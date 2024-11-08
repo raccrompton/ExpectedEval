@@ -43,7 +43,7 @@ export const PuzzleInfo: React.FC<Props> = ({
         <p className="text-sm text-secondary">
           Rating of puzzle:{' '}
           {hideRating ? (
-            <span className="text-secondary">hidden</span>
+            <span className="text-secondary/60">hidden</span>
           ) : (
             <span className="text-human-2">{rating}</span>
           )}
