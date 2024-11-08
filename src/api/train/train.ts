@@ -13,6 +13,8 @@ export const getTrainingGame = async () => {
     '-' +
     data['puzzle_id']['move_ply']
 
+  const puzzle_elo = data['puzzle_elo']
+
   const gameType = 'train'
 
   const termination = {
@@ -78,6 +80,7 @@ export const getTrainingGame = async () => {
 
   return {
     id: id,
+    puzzle_elo,
     whitePlayer,
     blackPlayer,
     moves,
