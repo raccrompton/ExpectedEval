@@ -21,18 +21,17 @@ import {
 import {
   Loading,
   MovePlot,
+  BlunderMeter,
   BoardController,
   AuthenticatedWrapper,
   VerticalEvaluationBar,
-  BlunderMeter,
 } from 'src/components'
 import { Color } from 'src/types'
-import { GameInfo } from 'src/components/Core'
 import { useAnalysisController } from 'src/hooks'
-import { AnalysisInfo } from 'src/components/Analysis'
 import { AnalyzedGame, MoveMap } from 'src/types/analysis'
 import { MovesContainer } from 'src/components/MovesContainer'
 import { GameBoard } from 'src/components/GameBoard/GameBoard'
+import { GameInfo, ContinueAgainstMaia } from 'src/components/Core'
 import { ThemeContext, ModalContext, WindowSizeContext } from 'src/contexts'
 import AnalysisGameList from 'src/components/AnalysisGameList/AnalysisGameList'
 import { HorizontalEvaluationBar } from 'src/components/HorizontalEvaluationBar'
@@ -336,15 +335,7 @@ const Analysis: React.FC<Props> = ({
               </select>
             </div>
 
-            <button
-              onClick={launchContinue}
-              className="flex w-full items-center gap-1.5 rounded bg-human-3 px-3 py-2 transition duration-200 hover:bg-human-4"
-            >
-              <span className="material-symbols-outlined text-base">
-                swords
-              </span>
-              <span>Play position against Maia</span>
-            </button>
+            <ContinueAgainstMaia launchContinue={launchContinue} />
 
             {listController}
           </div>
@@ -561,15 +552,7 @@ const Analysis: React.FC<Props> = ({
                 ))}
               </select>
             </div>
-            <button
-              onClick={launchContinue}
-              className="flex w-full items-center gap-1.5 bg-human-3 px-3 py-2 transition duration-200 hover:bg-human-4"
-            >
-              <span className="material-symbols-outlined text-base">
-                swords
-              </span>
-              <span>Play position against Maia</span>
-            </button>
+            <ContinueAgainstMaia launchContinue={launchContinue} />
             {listController}
           </div>
         </div>

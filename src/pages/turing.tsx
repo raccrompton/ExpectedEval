@@ -17,11 +17,11 @@ import {
   BoardController,
   TuringSubmission,
 } from 'src/components'
-import { GameInfo } from 'src/components/Core'
 import { AllStats } from 'src/hooks/useStats'
 import { TuringGame } from 'src/types/turing'
 import { StatsDisplay } from 'src/components/StatsDisplay'
 import { useGameController, useTuringController } from 'src/hooks'
+import { GameInfo, ContinueAgainstMaia } from 'src/components/Core'
 
 const TuringPage: NextPage = () => {
   const { openedModals, setInstructionsModalProps: setInstructionsModalProps } =
@@ -117,9 +117,7 @@ const Turing: React.FC<Props> = (props: Props) => {
               <GameInfo title="Bot or Not" icon="smart_toy" type="turing">
                 {Info}
               </GameInfo>
-              <div className="flex w-full items-center rounded bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4">
-                <button onClick={launchContinue}>Continue against Maia</button>
-              </div>
+              <ContinueAgainstMaia launchContinue={launchContinue} />
               <div className="flex flex-row flex-wrap items-start justify-start gap-1 overflow-y-auto">
                 <TuringGames />
               </div>
@@ -175,12 +173,7 @@ const Turing: React.FC<Props> = (props: Props) => {
               <TuringSubmission />
             </div>
             <div className="flex w-full">
-              <button
-                onClick={launchContinue}
-                className="flex w-full flex-1 items-center rounded bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4"
-              >
-                Continue Against Maia
-              </button>
+              <ContinueAgainstMaia launchContinue={launchContinue} />
             </div>
           </div>
         </div>
