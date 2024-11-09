@@ -9,7 +9,7 @@ import {
   WindowSizeContext,
 } from 'src/contexts'
 import { GameBoard, MovesContainer, BoardController } from 'src/components'
-import { GameInfo } from '../Core'
+import { GameInfo, ExportGame } from '../Core'
 import { GameClock } from '../GameClock'
 import { useGameController } from 'src/hooks'
 import { StatsDisplay } from '../StatsDisplay'
@@ -159,7 +159,7 @@ export const GameplayInterface: React.FC<Props> = (
   const desktopLayout = (
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
-        <div className="mt-2 flex w-full flex-row items-center justify-center gap-1">
+        <div className="flex w-full flex-row items-center justify-center gap-1">
           <div
             style={{
               maxWidth: 'min(20vw, 100vw - 75vh)',
@@ -219,6 +219,7 @@ export const GameplayInterface: React.FC<Props> = (
             ) : null}
           </div>
         </div>
+        <ExportGame moves={game.moves.slice(0, controller.currentIndex + 1)} />
       </div>
     </>
   )
