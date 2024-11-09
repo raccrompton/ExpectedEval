@@ -30,7 +30,7 @@ import {
   VerticalEvaluationBar,
   PositionEvaluationContainer,
 } from 'src/components'
-import { GameInfo } from 'src/components/Core'
+import { GameInfo, ContinueAgainstMaia } from 'src/components/Core'
 import { PuzzleLog } from 'src/components/Train'
 import { useTrainingController } from 'src/hooks'
 import { AllStats, useStats } from 'src/hooks/useStats'
@@ -312,15 +312,7 @@ const Train: React.FC<Props> = ({
                 )}
               </p>
             </GameInfo>
-            <button
-              onClick={launchContinue}
-              className="flex w-full items-center gap-1.5 rounded bg-human-3 px-3 py-2 transition duration-200 hover:bg-human-4"
-            >
-              <span className="material-symbols-outlined text-base">
-                swords
-              </span>
-              <span>Play position against Maia</span>
-            </button>
+            <ContinueAgainstMaia launchContinue={launchContinue} />
             {gamesController}
             <StatsDisplay stats={stats} />
           </div>
@@ -488,15 +480,7 @@ const Train: React.FC<Props> = ({
             <div className="w-full flex-none">
               <PositionEvaluationContainer moveEvaluation={moveEvaluation} />
             </div>
-            <button
-              onClick={launchContinue}
-              className="flex w-full items-center gap-1.5 bg-human-3 px-3 py-2 transition duration-200 hover:bg-human-4"
-            >
-              <span className="material-symbols-outlined text-base">
-                swords
-              </span>
-              <span>Play position against Maia</span>
-            </button>
+            <ContinueAgainstMaia launchContinue={launchContinue} />
           </div>
         </div>
       </div>
