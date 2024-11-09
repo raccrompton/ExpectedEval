@@ -1,5 +1,4 @@
 export * from './Compose'
-export * from './GameInfo'
 export * from './BoardController'
 export * from './MovePlot'
 export * from './PositionEvaluationContainer'

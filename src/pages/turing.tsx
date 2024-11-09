@@ -3,6 +3,7 @@ import { NextPage } from 'next/types'
 import { useCallback, useContext, useEffect } from 'react'
 
 import {
+  ThemeContext,
   ModalContext,
   WindowSizeContext,
   GameControllerContext,
@@ -10,13 +11,13 @@ import {
 } from 'src/contexts'
 import {
   Loading,
-  GameInfo,
   GameBoard,
   TuringGames,
   MovesContainer,
   BoardController,
   TuringSubmission,
 } from 'src/components'
+import { GameInfo } from 'src/components/Core'
 import { AllStats } from 'src/hooks/useStats'
 import { TuringGame } from 'src/types/turing'
 import { StatsDisplay } from 'src/components/StatsDisplay'
@@ -53,6 +54,7 @@ interface Props {
 
 const Turing: React.FC<Props> = (props: Props) => {
   const { game, stats } = props
+  const { theme } = useContext(ThemeContext)
   const { isMobile } = useContext(WindowSizeContext)
 
   const controller = useGameController(game)
@@ -65,6 +67,42 @@ const Turing: React.FC<Props> = (props: Props) => {
     window.open(url)
   }, [game, controller])
 
+  const Info = (
+    <>
+      <div className="flex w-full items-center justify-between text-secondary">
+        <p>{theme == 'dark' ? '●' : '○'} Unknown</p>
+        <p>
+          {game.termination.winner === 'white' ? (
+            <span className="text-engine-3">1</span>
+          ) : game.termination.winner === 'black' ? (
+            <span className="text-human-3">0</span>
+          ) : (
+            <span>1/2</span>
+          )}
+        </p>
+      </div>
+      <div className="flex w-full items-center justify-between text-secondary">
+        <p>{theme == 'light' ? '●' : '○'} Unknown</p>
+        <p>
+          {game.termination.winner === 'black' ? (
+            <span className="text-engine-3">1</span>
+          ) : game.termination.winner === 'white' ? (
+            <span className="text-human-3">0</span>
+          ) : (
+            <span>1/2</span>
+          )}
+        </p>
+      </div>{' '}
+      {game.termination ? (
+        <p className="text-center capitalize text-secondary">
+          {game.termination.winner !== 'none'
+            ? `${game.termination.winner} wins`
+            : 'draw'}
+        </p>
+      ) : null}
+    </>
+  )
+
   const desktopLayout = (
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
@@ -76,15 +114,9 @@ const Turing: React.FC<Props> = (props: Props) => {
             className="flex h-[75vh] w-[40vh] flex-col justify-between"
           >
             <div className="flex w-full flex-col gap-2">
-              <GameInfo
-                termination={game.termination}
-                blackPlayer={game.result?.blackPlayer}
-                whitePlayer={game.result?.whitePlayer}
-                type={'turing'}
-                id={game.id}
-                showId={false}
-                instructionsType="turing"
-              />
+              <GameInfo title="Bot or Not" icon="smart_toy" type="turing">
+                {Info}
+              </GameInfo>
               <div className="flex w-full items-center rounded bg-human-3 px-4 py-2 transition duration-200 hover:bg-human-4">
                 <button onClick={launchContinue}>Continue against Maia</button>
               </div>
@@ -92,7 +124,6 @@ const Turing: React.FC<Props> = (props: Props) => {
                 <TuringGames />
               </div>
             </div>
-
             <StatsDisplay stats={stats} />
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
@@ -125,15 +156,9 @@ const Turing: React.FC<Props> = (props: Props) => {
         <div className="mt-2 flex h-full flex-col items-start justify-start gap-2">
           <div className="flex h-auto w-full flex-col gap-2">
             <div className="w-screen">
-              <GameInfo
-                termination={game.termination}
-                blackPlayer={game.result?.blackPlayer}
-                whitePlayer={game.result?.whitePlayer}
-                type={'turing'}
-                id={game.id}
-                showId={false}
-                instructionsType="turing"
-              />
+              <GameInfo title="Bot or Not" icon="smart_toy" type="turing">
+                {Info}
+              </GameInfo>
             </div>
           </div>
           <div className="relative flex aspect-square h-[100vw] w-screen">
