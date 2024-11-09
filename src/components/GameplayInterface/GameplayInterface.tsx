@@ -5,14 +5,11 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import {
   AuthContext,
   GameControllerContext,
+  ThemeContext,
   WindowSizeContext,
 } from 'src/contexts'
-import {
-  BoardController,
-  GameBoard,
-  GameInfo,
-  MovesContainer,
-} from 'src/components'
+import { GameBoard, MovesContainer, BoardController } from 'src/components'
+import { GameInfo } from '../Core'
 import { GameClock } from '../GameClock'
 import { useGameController } from 'src/hooks'
 import { StatsDisplay } from '../StatsDisplay'
@@ -41,6 +38,7 @@ export const GameplayInterface: React.FC<Props> = (
     timeControl,
     stats,
   } = useContext(PlayControllerContext)
+  const { theme } = useContext(ThemeContext)
   const { isMobile } = useContext(WindowSizeContext)
 
   const controller = useGameController(game, 0, player)
@@ -118,6 +116,46 @@ export const GameplayInterface: React.FC<Props> = (
   const blackPlayer = player == 'black' ? user?.displayName : maiaTitle
   const whitePlayer = player == 'white' ? user?.displayName : maiaTitle
 
+  const Info = (
+    <>
+      <div className="flex w-full items-center justify-between text-secondary">
+        <p>
+          {theme == 'dark' ? '●' : '○'} {whitePlayer ?? 'Unknown'}
+        </p>
+        <p>
+          {game.termination?.winner === 'white' ? (
+            <span className="text-engine-3">1</span>
+          ) : game.termination?.winner === 'black' ? (
+            <span className="text-human-3">0</span>
+          ) : game.termination ? (
+            <span>1/2</span>
+          ) : null}
+        </p>
+      </div>
+      <div className="flex w-full items-center justify-between text-secondary">
+        <p>
+          {theme == 'light' ? '●' : '○'} {blackPlayer ?? 'Unknown'}
+        </p>
+        <p>
+          {game.termination?.winner === 'black' ? (
+            <span className="text-engine-3">1</span>
+          ) : game.termination?.winner === 'white' ? (
+            <span className="text-human-3">0</span>
+          ) : game.termination ? (
+            <span>1/2</span>
+          ) : null}
+        </p>
+      </div>{' '}
+      {game.termination ? (
+        <p className="text-center capitalize text-secondary">
+          {game.termination.winner !== 'none'
+            ? `${game.termination.winner} wins`
+            : 'draw'}
+        </p>
+      ) : null}
+    </>
+  )
+
   const desktopLayout = (
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
@@ -129,15 +167,16 @@ export const GameplayInterface: React.FC<Props> = (
             className="flex h-[75vh] w-[40vh] flex-col justify-between gap-1"
           >
             <GameInfo
-              termination={game.termination}
-              blackPlayer={{ name: blackPlayer ?? 'Unknown' }}
-              whitePlayer={{ name: whitePlayer ?? 'Unknown' }}
+              icon="swords"
               type={playType}
-              id={game.id}
-              showId={false}
-              instructionsType={playType}
-            />
-
+              title={
+                playType === 'againstMaia'
+                  ? 'Play vs. Maia'
+                  : 'Play Hand and Brain'
+              }
+            >
+              {Info}
+            </GameInfo>
             <StatsDisplay stats={stats} hideSession={true} />
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">

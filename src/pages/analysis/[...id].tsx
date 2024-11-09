@@ -7,15 +7,6 @@ import React, {
   Dispatch,
   SetStateAction,
 } from 'react'
-import {
-  GameInfo,
-  Loading,
-  MovePlot,
-  BoardController,
-  AuthenticatedWrapper,
-  VerticalEvaluationBar,
-  BlunderMeter,
-} from 'src/components'
 import Head from 'next/head'
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
@@ -27,12 +18,22 @@ import {
   getAnalyzedLichessGame,
   getAnalyzedTournamentGame,
 } from 'src/api'
+import {
+  Loading,
+  MovePlot,
+  BoardController,
+  AuthenticatedWrapper,
+  VerticalEvaluationBar,
+  BlunderMeter,
+} from 'src/components'
 import { Color } from 'src/types'
+import { GameInfo } from 'src/components/Core'
 import { useAnalysisController } from 'src/hooks'
+import { AnalysisInfo } from 'src/components/Analysis'
 import { AnalyzedGame, MoveMap } from 'src/types/analysis'
 import { MovesContainer } from 'src/components/MovesContainer'
 import { GameBoard } from 'src/components/GameBoard/GameBoard'
-import { ModalContext, WindowSizeContext } from 'src/contexts'
+import { ThemeContext, ModalContext, WindowSizeContext } from 'src/contexts'
 import AnalysisGameList from 'src/components/AnalysisGameList/AnalysisGameList'
 import { HorizontalEvaluationBar } from 'src/components/HorizontalEvaluationBar'
 import { GameControllerContext } from 'src/contexts/GameControllerContext/GameControllerContext'
@@ -150,6 +151,7 @@ const Analysis: React.FC<Props> = ({
   initialOrientation,
   listController,
 }: Props) => {
+  const { theme } = useContext(ThemeContext)
   const { width } = useContext(WindowSizeContext)
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
   const [movePlotHover, setMovePlotHover] = useState<DrawShape | null>(null)
@@ -255,6 +257,54 @@ const Analysis: React.FC<Props> = ({
     analyzedGame.stockfishEvaluations,
   ])
 
+  const Info = (
+    <>
+      <div className="flex w-full items-center justify-between text-secondary">
+        <p>
+          {theme == 'dark' ? '●' : '○'}{' '}
+          {analyzedGame.whitePlayer?.name ?? 'Unknown'}{' '}
+          {analyzedGame.whitePlayer?.rating
+            ? `(${analyzedGame.whitePlayer.rating})`
+            : null}
+        </p>
+        <p>
+          {analyzedGame.termination.winner === 'white' ? (
+            <span className="text-engine-3">1</span>
+          ) : analyzedGame.termination.winner === 'black' ? (
+            <span className="text-human-3">0</span>
+          ) : (
+            <span>1/2</span>
+          )}
+        </p>
+      </div>
+      <div className="flex w-full items-center justify-between text-secondary">
+        <p>
+          {theme == 'light' ? '●' : '○'}{' '}
+          {analyzedGame.blackPlayer?.name ?? 'Unknown'}{' '}
+          {analyzedGame.blackPlayer?.rating
+            ? `(${analyzedGame.blackPlayer.rating})`
+            : null}
+        </p>
+        <p>
+          {analyzedGame.termination.winner === 'black' ? (
+            <span className="text-engine-3">1</span>
+          ) : analyzedGame.termination.winner === 'white' ? (
+            <span className="text-human-3">0</span>
+          ) : (
+            <span>1/2</span>
+          )}
+        </p>
+      </div>{' '}
+      {analyzedGame.termination ? (
+        <p className="text-center capitalize text-secondary">
+          {analyzedGame.termination.winner !== 'none'
+            ? `${analyzedGame.termination.winner} wins`
+            : 'draw'}
+        </p>
+      ) : null}
+    </>
+  )
+
   const desktopLayout = (
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-2">
@@ -264,12 +314,9 @@ const Analysis: React.FC<Props> = ({
             className="flex h-[75vh] max-h-[70vw] w-[40vh] flex-col justify-start gap-2 overflow-hidden"
           >
             <div className="flex w-screen flex-col md:w-auto">
-              <GameInfo
-                {...analyzedGame}
-                type={analyzedGame.gameType}
-                showId={false}
-                instructionsType="analysis"
-              />
+              <GameInfo title="Analysis" icon="bar_chart" type="analysis">
+                {Info}
+              </GameInfo>
             </div>
             <div className="flex flex-col">
               <p>Analyze using:</p>
@@ -288,14 +335,17 @@ const Analysis: React.FC<Props> = ({
                 ))}
               </select>
             </div>
-            <div className="flex w-full">
-              <button
-                onClick={launchContinue}
-                className="flex w-full cursor-pointer items-center justify-start rounded bg-human-3 p-2 transition duration-300 hover:bg-human-4"
-              >
-                Continue Against Maia
-              </button>
-            </div>
+
+            <button
+              onClick={launchContinue}
+              className="flex w-full items-center gap-1.5 rounded bg-human-3 px-3 py-2 transition duration-200 hover:bg-human-4"
+            >
+              <span className="material-symbols-outlined text-base">
+                swords
+              </span>
+              <span>Play position against Maia</span>
+            </button>
+
             {listController}
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
@@ -415,16 +465,9 @@ const Analysis: React.FC<Props> = ({
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
         <div className="flex w-full flex-col items-start justify-start gap-1">
-          <div className="flex h-auto w-full flex-col gap-1">
-            <div className="w-screen">
-              <GameInfo
-                {...analyzedGame}
-                showId={false}
-                type={analyzedGame.gameType}
-                instructionsType="analysis"
-              />
-            </div>
-          </div>
+          <GameInfo title="Analysis" icon="bar_chart" type="analysis">
+            {Info}
+          </GameInfo>
           <div className="relative flex h-[100vw] w-screen">
             <GameBoard
               game={analyzedGame}
@@ -518,14 +561,15 @@ const Analysis: React.FC<Props> = ({
                 ))}
               </select>
             </div>
-            <div className="flex w-full">
-              <button
-                onClick={launchContinue}
-                className="flex w-full cursor-pointer items-center justify-start rounded bg-human-3 p-2 transition duration-300 hover:bg-human-4"
-              >
-                Continue Against Maia
-              </button>
-            </div>
+            <button
+              onClick={launchContinue}
+              className="flex w-full items-center gap-1.5 bg-human-3 px-3 py-2 transition duration-200 hover:bg-human-4"
+            >
+              <span className="material-symbols-outlined text-base">
+                swords
+              </span>
+              <span>Play position against Maia</span>
+            </button>
             {listController}
           </div>
         </div>

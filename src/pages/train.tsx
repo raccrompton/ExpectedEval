@@ -30,7 +30,8 @@ import {
   VerticalEvaluationBar,
   PositionEvaluationContainer,
 } from 'src/components'
-import { PuzzleInfo, PuzzleLog } from 'src/components/Train'
+import { GameInfo } from 'src/components/Core'
+import { PuzzleLog } from 'src/components/Train'
 import { useTrainingController } from 'src/hooks'
 import { AllStats, useStats } from 'src/hooks/useStats'
 import { TrainingGame, Status } from 'src/types/training'
@@ -295,12 +296,22 @@ const Train: React.FC<Props> = ({
             }}
             className="flex h-[75vh] w-[40vh] flex-col gap-1"
           >
-            <PuzzleInfo
-              id={trainingGame.id}
-              instructionsType="train"
-              rating={trainingGame.puzzle_elo}
-              hideRating={status !== 'correct' && status !== 'forfeit'}
-            />
+            <GameInfo title="Training" icon="target" type="train">
+              <p className="text-secondary">
+                Puzzle{' '}
+                <span className="text-secondary/60">#{trainingGame.id}</span>
+              </p>
+              <p className="text-secondary">
+                Rating of puzzle:{' '}
+                {status !== 'correct' && status !== 'forfeit' ? (
+                  <span className="text-secondary/60">hidden</span>
+                ) : (
+                  <span className="text-human-2">
+                    {trainingGame.puzzle_elo}
+                  </span>
+                )}
+              </p>
+            </GameInfo>
             <button
               onClick={launchContinue}
               className="flex w-full items-center gap-1.5 rounded bg-human-3 px-3 py-2 transition duration-200 hover:bg-human-4"
@@ -404,12 +415,22 @@ const Train: React.FC<Props> = ({
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
         <div className="mt-2 flex h-full flex-col items-start justify-start gap-1">
           <div className="flex h-auto w-full flex-col">
-            <PuzzleInfo
-              id={trainingGame.id}
-              instructionsType="train"
-              rating={trainingGame.puzzle_elo}
-              hideRating={status !== 'correct' && status !== 'forfeit'}
-            />
+            <GameInfo title="Training" icon="target" type="train">
+              <p className="text-secondary">
+                Puzzle{' '}
+                <span className="text-secondary/60">#{trainingGame.id}</span>
+              </p>
+              <p className="text-secondary">
+                Rating of puzzle:{' '}
+                {status !== 'correct' && status !== 'forfeit' ? (
+                  <span className="text-secondary/60">hidden</span>
+                ) : (
+                  <span className="text-human-2">
+                    {trainingGame.puzzle_elo}
+                  </span>
+                )}
+              </p>
+            </GameInfo>
           </div>
           <div className="relative flex aspect-square h-[100vw] w-screen">
             <GameBoard
@@ -469,7 +490,7 @@ const Train: React.FC<Props> = ({
             </div>
             <button
               onClick={launchContinue}
-              className="flex w-full items-center gap-1.5 rounded bg-human-3 px-3 py-2 transition duration-200 hover:bg-human-4"
+              className="flex w-full items-center gap-1.5 bg-human-3 px-3 py-2 transition duration-200 hover:bg-human-4"
             >
               <span className="material-symbols-outlined text-base">
                 swords
