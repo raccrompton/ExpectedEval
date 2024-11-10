@@ -18,6 +18,7 @@ const pieceColorMap: { [key: string]: string } = {
   bq: 'black queen',
   br: 'black rook',
   bb: 'black bishop',
+  bn: 'black knight',
 }
 
 interface Props {
