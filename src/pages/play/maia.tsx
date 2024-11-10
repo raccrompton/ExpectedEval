@@ -51,10 +51,21 @@ const useVsMaiaPlayController = (
         !controller.playerActive &&
         !controller.game.termination
       ) {
+        const maiaClock =
+          (controller.player == 'white'
+            ? controller.blackClock
+            : controller.whiteClock) / 1000
+        const initialClock = controller.timeControl.includes('+')
+          ? parseInt(controller.timeControl.split('+')[0]) * 60
+          : 0
+
         const maiaMoves = await getGameMove(
           controller.moves,
           playGameConfig.maiaVersion,
           playGameConfig.startFen,
+          null,
+          playGameConfig.simulateMaiaTime ? initialClock : 0,
+          playGameConfig.simulateMaiaTime ? maiaClock : 0,
         )
         const nextMove = maiaMoves['top_move']
         const moveDelay = maiaMoves['move_delay']
@@ -63,9 +74,17 @@ const useVsMaiaPlayController = (
           return
         }
 
-        const moveTime = controller.updateClock(moveDelay)
-        controller.setMoves([...controller.moves, nextMove])
-        controller.setMoveTimes([...controller.moveTimes, moveTime])
+        if (playGameConfig.simulateMaiaTime) {
+          setTimeout(() => {
+            const moveTime = controller.updateClock()
+            controller.setMoves([...controller.moves, nextMove])
+            controller.setMoveTimes([...controller.moveTimes, moveTime])
+          }, moveDelay * 1000)
+        } else {
+          const moveTime = controller.updateClock()
+          controller.setMoves([...controller.moves, nextMove])
+          controller.setMoveTimes([...controller.moveTimes, moveTime])
+        }
       }
     }
 

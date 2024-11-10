@@ -126,17 +126,37 @@ const useHandBrainPlayController = (
     let canceled = false
 
     const makeMaiaMove = async () => {
+      const maiaClock =
+        (controller.player == 'white'
+          ? controller.blackClock
+          : controller.whiteClock) / 1000
+      const initialClock = controller.timeControl.includes('+')
+        ? parseInt(controller.timeControl.split('+')[0]) * 60
+        : 0
+
       const maiaMoves = await getGameMove(
         controller.moves,
         playGameConfig.maiaVersion,
         playGameConfig.startFen,
+        null,
+        playGameConfig.simulateMaiaTime ? initialClock : 0,
+        playGameConfig.simulateMaiaTime ? maiaClock : 0,
       )
       const nextMove = maiaMoves['top_move']
+      const moveDelay = maiaMoves['move_delay']
 
-      if (!canceled) {
-        controller.updateClock()
-        controller.setMoves([...controller.moves, nextMove])
+      if (canceled) {
+        return
       }
+
+      setTimeout(
+        () => {
+          const moveTime = controller.updateClock()
+          controller.setMoves([...controller.moves, nextMove])
+          controller.setMoveTimes([...controller.moveTimes, moveTime])
+        },
+        playGameConfig.simulateMaiaTime ? moveDelay * 1000 : 0,
+      )
     }
 
     if (

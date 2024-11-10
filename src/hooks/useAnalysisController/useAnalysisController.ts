@@ -44,7 +44,6 @@ export const useAnalysisController = (
     message: StockfishEvaluation,
     moveIndex: number,
   ) => {
-    console.log(message)
     setStockfishEvaluations((prev) => {
       const newEvaluations = [...prev]
       newEvaluations[moveIndex] = message

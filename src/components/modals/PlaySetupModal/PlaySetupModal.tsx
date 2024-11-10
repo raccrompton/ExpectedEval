@@ -214,6 +214,15 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
                 onChange={setTimeControl}
               />
             </div>
+            <div className="flex flex-row items-center justify-start gap-2">
+              Maia time simulation:{' '}
+              <OptionSelect
+                options={[false, true]}
+                labels={['Play Instantly', 'Play with delay']}
+                selected={simulateMaiaTime}
+                onChange={setSimulateMaiaTime}
+              />
+            </div>
             {openMoreOptions ? (
               <div className="flex cursor-pointer flex-row items-center justify-start gap-1 text-sm">
                 <input
