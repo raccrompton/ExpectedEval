@@ -53,9 +53,9 @@ export const getGameMove = async (
   maiaVersion = 'maia_kdd_1900',
   fen: string | null = null,
   piece: string | null = null,
+  initial_clock = 0,
+  current_clock = 0,
 ) => {
-  //return new Chess(fen).moves({ verbose: true }).map((m) => m.from + m.to)
-
   const res = await fetch(
     buildUrl(
       'play/get_move?' +
@@ -66,11 +66,27 @@ export const getGameMove = async (
                   fen: fen || '',
                   maia_name: maiaVersion,
                   piece: piece || '',
+                  initial_clock: initial_clock.toString(),
+                  current_clock: current_clock.toString(),
                 }
-              : { maia_name: maiaVersion, piece: piece || '' }
+              : {
+                  maia_name: maiaVersion,
+                  piece: piece || '',
+                  initial_clock: initial_clock.toString(),
+                  current_clock: current_clock.toString(),
+                }
             : fen
-              ? { fen: fen || '', maia_name: maiaVersion }
-              : { maia_name: maiaVersion },
+              ? {
+                  fen: fen || '',
+                  maia_name: maiaVersion,
+                  initial_clock: initial_clock.toString(),
+                  current_clock: current_clock.toString(),
+                }
+              : {
+                  maia_name: maiaVersion,
+                  initial_clock: initial_clock.toString(),
+                  current_clock: current_clock.toString(),
+                },
         ),
     ),
     {
