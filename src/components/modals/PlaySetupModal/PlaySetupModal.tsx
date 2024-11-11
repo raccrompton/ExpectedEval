@@ -215,10 +215,10 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
               />
             </div>
             <div className="flex flex-row items-center justify-start gap-2">
-              Maia time simulation:{' '}
+              Maia time use:{' '}
               <OptionSelect
                 options={[false, true]}
-                labels={['Play Instantly', 'Play with delay']}
+                labels={['Instant', 'Human-like']}
                 selected={simulateMaiaTime}
                 onChange={setSimulateMaiaTime}
               />
