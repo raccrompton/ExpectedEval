@@ -32,6 +32,7 @@ export interface AnalyzedGame extends Game {
   positionEvaluations: { [model: string]: PositionEvaluation[] }
   availableMoves: AvailableMoves[]
   type: EvaluationType
+  pgn?: string
 }
 
 export interface Termination {

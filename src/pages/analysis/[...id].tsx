@@ -1,10 +1,10 @@
 import React, {
   useMemo,
+  Dispatch,
   useState,
   useEffect,
   useContext,
   useCallback,
-  Dispatch,
   SetStateAction,
 } from 'react'
 import Head from 'next/head'
@@ -36,6 +36,18 @@ import { ThemeContext, ModalContext, WindowSizeContext } from 'src/contexts'
 import AnalysisGameList from 'src/components/AnalysisGameList/AnalysisGameList'
 import { HorizontalEvaluationBar } from 'src/components/HorizontalEvaluationBar'
 import { GameControllerContext } from 'src/contexts/GameControllerContext/GameControllerContext'
+
+const MAIA_MODELS = [
+  'maia_kdd_1100',
+  'maia_kdd_1200',
+  'maia_kdd_1300',
+  'maia_kdd_1400',
+  'maia_kdd_1500',
+  'maia_kdd_1600',
+  'maia_kdd_1700',
+  'maia_kdd_1800',
+  'maia_kdd_1900',
+]
 
 const AnalysisPage: NextPage = () => {
   const { openedModals, setInstructionsModalProps: setInstructionsModalProps } =
@@ -81,10 +93,11 @@ const AnalysisPage: NextPage = () => {
       id: string,
       pgn: string,
       setCurrentMove?: Dispatch<SetStateAction<number>>,
+      currentMaiaModel = 'maia_kdd_1500',
     ) => {
       let game
       try {
-        game = await getAnalyzedLichessGame(id, pgn)
+        game = await getAnalyzedLichessGame(id, pgn, currentMaiaModel)
       } catch (e) {
         router.push('/401')
         return
@@ -107,7 +120,7 @@ const AnalysisPage: NextPage = () => {
         if (queryId[1] == 'lichess') {
           const pgn = await getLichessGamePGN(queryId[0])
 
-          getAndSetLichessGames(queryId[0], pgn)
+          getAndSetLichessGames(queryId[0], pgn, undefined)
         } else {
           getAndSetTournamentGame(queryId)
         }
@@ -119,16 +132,13 @@ const AnalysisPage: NextPage = () => {
     <>
       {analyzedGame ? (
         <Analysis
+          currentId={currentId}
           analyzedGame={analyzedGame}
+          setAnalyzedGame={setAnalyzedGame}
           initialIndex={index ? Number(index) : 0}
           initialOrientation={orientation == 'black' ? 'black' : 'white'}
-          listController={
-            <AnalysisGameList
-              currentId={currentId}
-              loadNewTournamentGame={getAndSetTournamentGame}
-              loadNewLichessGames={getAndSetLichessGames}
-            />
-          }
+          getAndSetTournamentGame={getAndSetTournamentGame}
+          getAndSetLichessGames={getAndSetLichessGames}
         />
       ) : (
         <Loading />
@@ -138,18 +148,34 @@ const AnalysisPage: NextPage = () => {
 }
 
 interface Props {
+  currentId: string[]
+  getAndSetTournamentGame: (
+    newId: string[],
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
+  ) => Promise<void>
+  getAndSetLichessGames: (
+    id: string,
+    pgn: string,
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
+    currentMaiaModel?: string,
+  ) => Promise<void>
   analyzedGame: AnalyzedGame
   initialIndex: number
   initialOrientation: Color
-  listController: React.ReactNode
+
+  setAnalyzedGame: Dispatch<SetStateAction<AnalyzedGame | undefined>>
 }
 
 const Analysis: React.FC<Props> = ({
+  currentId,
   analyzedGame,
   initialIndex,
   initialOrientation,
-  listController,
+  getAndSetTournamentGame,
+  getAndSetLichessGames,
+  setAnalyzedGame,
 }: Props) => {
+  const router = useRouter()
   const { theme } = useContext(ThemeContext)
   const { width } = useContext(WindowSizeContext)
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
@@ -161,7 +187,6 @@ const Analysis: React.FC<Props> = ({
     moves,
     data,
     controller,
-    maiaModels,
     setCurrentMaiaModel,
     currentMaiaModel,
     moveEvaluation,
@@ -190,6 +215,37 @@ const Analysis: React.FC<Props> = ({
       orig: orig as Key,
       dest: dest as Key,
     })
+  }
+
+  const updateMaiaModel = async (model: string) => {
+    if (analyzedGame.type === 'tournament') {
+      setCurrentMaiaModel(model)
+    } else if (analyzedGame.type === 'pgn') {
+      if (analyzedGame.maiaEvaluations[model]) {
+        setCurrentMaiaModel(model)
+        return
+      }
+
+      let game
+      try {
+        game = await getAnalyzedLichessGame(
+          analyzedGame.id,
+          analyzedGame.pgn as string,
+          model,
+        )
+      } catch (e) {
+        router.push('/401')
+        return
+      }
+      const evals = game.maiaEvaluations[model]
+      if (evals) {
+        const newAnalyzedGame = { ...analyzedGame }
+        newAnalyzedGame.maiaEvaluations[model] = evals
+
+        setAnalyzedGame(newAnalyzedGame)
+        setCurrentMaiaModel(model)
+      }
+    }
   }
 
   useEffect(() => {
@@ -320,24 +376,24 @@ const Analysis: React.FC<Props> = ({
             <div className="flex flex-col">
               <p>Analyze using:</p>
               <select
-                disabled={maiaModels.length === 1}
-                className={`cursor-pointer rounded border-none bg-human-4 p-2 outline-none ${maiaModels.length === 1 ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 value={currentMaiaModel}
-                onChange={(e) => {
-                  setCurrentMaiaModel(e.target.value)
-                }}
+                className="cursor-pointer rounded border-none bg-human-4 p-2 outline-none"
+                onChange={(e) => updateMaiaModel(e.target.value)}
               >
-                {maiaModels.map((model) => (
+                {MAIA_MODELS.map((model) => (
                   <option value={model} key={model}>
                     {model.replace('maia_kdd_', 'Maia ')}
                   </option>
                 ))}
               </select>
             </div>
-
             <ContinueAgainstMaia launchContinue={launchContinue} />
-
-            {listController}
+            <AnalysisGameList
+              currentId={currentId}
+              currentMaiaModel={currentMaiaModel}
+              loadNewTournamentGame={getAndSetTournamentGame}
+              loadNewLichessGames={getAndSetLichessGames}
+            />
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
             <GameBoard
@@ -541,11 +597,9 @@ const Analysis: React.FC<Props> = ({
               <select
                 className="w-full cursor-pointer rounded border-none bg-human-4 p-2 outline-none"
                 value={currentMaiaModel}
-                onChange={(e) => {
-                  setCurrentMaiaModel(e.target.value)
-                }}
+                onChange={(e) => updateMaiaModel(e.target.value)}
               >
-                {maiaModels.map((model) => (
+                {MAIA_MODELS.map((model) => (
                   <option value={model} key={model}>
                     {model.replace('maia_kdd_', 'Maia ')}
                   </option>
@@ -553,7 +607,12 @@ const Analysis: React.FC<Props> = ({
               </select>
             </div>
             <ContinueAgainstMaia launchContinue={launchContinue} />
-            {listController}
+            <AnalysisGameList
+              currentId={currentId}
+              currentMaiaModel={currentMaiaModel}
+              loadNewTournamentGame={getAndSetTournamentGame}
+              loadNewLichessGames={getAndSetLichessGames}
+            />
           </div>
         </div>
       </div>

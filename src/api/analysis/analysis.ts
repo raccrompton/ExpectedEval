@@ -160,14 +160,26 @@ export const getAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
   } as any as AnalyzedGame
 }
 
-export const getAnalyzedLichessGame = async (id: string, pgn: string) => {
-  const res = await fetch(buildUrl('analysis/analyze_user_game'), {
-    method: 'POST',
-    body: pgn,
-    headers: {
-      'Content-Type': 'text/plain',
+export const getAnalyzedLichessGame = async (
+  id: string,
+  pgn: string,
+  maia_model = 'maia_kdd_1500',
+) => {
+  const res = await fetch(
+    buildUrl(
+      'analysis/analyze_user_game?' +
+        new URLSearchParams({
+          maia_model,
+        }),
+    ),
+    {
+      method: 'POST',
+      body: pgn,
+      headers: {
+        'Content-Type': 'text/plain',
+      },
     },
-  })
+  )
 
   if (res.status === 401) {
     throw new Error('Unauthorized')
@@ -245,5 +257,6 @@ export const getAnalyzedLichessGame = async (id: string, pgn: string) => {
     gameType,
     termination,
     positionEvaluations,
-  } as any as AnalyzedGame
+    pgn,
+  } as AnalyzedGame
 }
