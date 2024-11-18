@@ -1,10 +1,10 @@
 import {
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
   useRef,
+  useMemo,
   Dispatch,
+  useState,
+  useEffect,
+  useContext,
   SetStateAction,
 } from 'react'
 import { motion } from 'framer-motion'
@@ -14,6 +14,7 @@ import { AnalysisListContext, GameControllerContext } from 'src/contexts'
 
 interface AnalysisGameListProps {
   currentId: string[] | null
+  currentMaiaModel: string
   loadNewTournamentGame: (
     newId: string[],
     setCurrentMove: Dispatch<SetStateAction<number>>,
@@ -22,11 +23,13 @@ interface AnalysisGameListProps {
     id: string,
     pgn: string,
     setCurrentMove: Dispatch<SetStateAction<number>>,
+    currentMaiaModel: string,
   ) => Promise<void>
 }
 
 const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   currentId,
+  currentMaiaModel,
   loadNewTournamentGame,
   loadNewLichessGames,
 }) => {
@@ -143,6 +146,7 @@ const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                     game.id,
                     game.pgn,
                     controller.setCurrentIndex,
+                    currentMaiaModel,
                   )
                   setLoadingIndex(null)
                 }}

@@ -203,13 +203,14 @@ export const useAnalysisController = (
   ])
 
   const data = useMemo(() => {
+    if (!plotData[currentMaiaModel]) return []
     return plotData[currentMaiaModel][controller.currentIndex]
   }, [controller.currentIndex, currentMaiaModel, plotData])
 
-  const positionEvaluation = useMemo(
-    () => game.positionEvaluations[currentMaiaModel][controller.currentIndex],
-    [controller.currentIndex, currentMaiaModel, game.positionEvaluations],
-  )
+  // const positionEvaluation = useMemo(
+  //   () => game.positionEvaluations[currentMaiaModel][controller.currentIndex],
+  //   [controller.currentIndex, currentMaiaModel, game.positionEvaluations],
+  // )
 
   const moveEvaluation = useMemo(() => {
     if (currentMove) {
@@ -414,7 +415,7 @@ export const useAnalysisController = (
     maiaModels,
     currentMaiaModel,
     setCurrentMaiaModel,
-    positionEvaluation,
+    // positionEvaluation,
     currentMove,
     setCurrentMove,
     moveEvaluation,
