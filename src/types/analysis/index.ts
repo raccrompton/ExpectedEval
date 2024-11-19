@@ -26,6 +26,12 @@ export interface AnalysisLichessGame {
   result?: string
 }
 
+export interface AnalysisWebGame {
+  id: string
+  label: string
+  result: string
+}
+
 export interface AnalyzedGame extends Game {
   maiaEvaluations: { [model: string]: MoveMap[] }
   stockfishEvaluations: StockfishEvaluations<EvaluationType>
