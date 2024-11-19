@@ -80,7 +80,7 @@ const UserProfile: React.FC = () => {
         <div className="*:w-16 *:fill-primary">{UserIcon}</div>
         <h1 className="text-3xl font-semibold">{user?.displayName}</h1>
       </div>
-      <div className="flex flex-col gap-6 md:flex-row">
+      <div className="flex flex-col items-start gap-6 md:flex-row">
         <GameList />
         <div className="grid h-full w-full grid-cols-2 gap-6">
           <ProfileColumn

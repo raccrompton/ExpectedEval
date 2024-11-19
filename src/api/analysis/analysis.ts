@@ -49,6 +49,18 @@ export const getAnalysisList = async (): Promise<
   return data
 }
 
+export const getAnalysisGameList = async (type = 'play', page = 1) => {
+  const res = await fetch(buildUrl(`analysis/user/list/${type}/${page}`))
+
+  if (res.status === 401) {
+    throw new Error('Unauthorized')
+  }
+
+  const data = await res.json()
+
+  return data
+}
+
 export const getLichessGames = async (
   username: string,
   onMessage: (data: any) => void,
