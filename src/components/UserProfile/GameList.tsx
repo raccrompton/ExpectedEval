@@ -2,8 +2,8 @@ import { motion } from 'framer-motion'
 import { AuthContext } from 'src/contexts'
 import React, { useState, useEffect, useContext } from 'react'
 
+import { AnalysisWebGame } from 'src/types'
 import { getLichessGames, getAnalysisGameList } from 'src/api'
-import { AnalysisLichessGame, AnalysisWebGame } from 'src/types'
 
 export default function GameList() {
   const { user } = useContext(AuthContext)
@@ -97,7 +97,7 @@ export default function GameList() {
           setSelected={setSelected}
         />
       </div>
-      <div className="red-scrollbar flex max-h-[60vh] flex-col overflow-y-scroll">
+      <div className="red-scrollbar flex max-h-64 flex-col overflow-y-scroll md:max-h-[60vh]">
         {(selected === 'play'
           ? playGames
           : selected === 'hand'
@@ -108,7 +108,7 @@ export default function GameList() {
         ).map((game, index) => (
           <a
             key={index}
-            href={`/analysis/${game.id}/lichess`}
+            href={`/analysis/${game.id}/${selected}`}
             className={`group flex w-full cursor-pointer items-center gap-2 pr-2 ${index % 2 === 0 ? 'bg-background-1/40' : 'bg-background-1/20'} hover:bg-background-1/80`}
           >
             <div className="flex h-full w-10 items-center justify-center bg-background-1 py-1 group-hover:bg-white/5">
