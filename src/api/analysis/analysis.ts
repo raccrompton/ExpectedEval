@@ -272,3 +272,103 @@ export const getAnalyzedLichessGame = async (
     pgn,
   } as AnalyzedGame
 }
+
+export const getAnalyzedUserGame = async (
+  id: string,
+  game_type: 'play' | 'hand' | 'brain',
+  maia_model = 'maia_kdd_1500',
+) => {
+  const res = await fetch(
+    buildUrl(
+      `analysis/user/analyze_user_maia_game/${id}?` +
+        new URLSearchParams({
+          game_type,
+          maia_model,
+        }),
+    ),
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+    },
+  )
+
+  if (res.status === 401) {
+    throw new Error('Unauthorized')
+  }
+
+  const data = await res.json()
+
+  const termination = {
+    ...data['termination'],
+    condition: 'Normal',
+  }
+
+  const gameType = 'blitz'
+  const blackPlayer = data['black_player']
+  const whitePlayer = data['white_player']
+
+  const maiaEvaluations: { [model: string]: MoveMap[] } = {}
+  const positionEvaluations: { [model: string]: PositionEvaluation[] } = {}
+  const availableMoves: AvailableMoves[] = []
+
+  for (const model of data['maia_versions']) {
+    maiaEvaluations[model] = data['maia_evals'][model]
+    positionEvaluations[model] = Object.keys(data['maia_evals'][model]).map(
+      () => ({
+        trickiness: 1,
+        performance: 1,
+      }),
+    )
+  }
+
+  for (const position of data['move_maps']) {
+    const moves: AvailableMoves = {}
+    for (const move of position) {
+      const fromTo = move.move.join('')
+      const san = move['move_san']
+      const { check, fen } = move
+
+      moves[fromTo] = {
+        board: fen,
+        check,
+        san,
+        lastMove: move.move,
+      }
+    }
+    availableMoves.push(moves)
+  }
+
+  const gameStates = data['game_states']
+
+  const moves = gameStates.map((gameState: any) => {
+    const {
+      last_move: lastMove,
+      fen,
+      check,
+      last_move_san: san,
+      evaluations: maia_values,
+    } = gameState
+
+    return {
+      board: fen,
+      lastMove,
+      san,
+      check,
+      maia_values,
+    }
+  })
+
+  return {
+    id,
+    blackPlayer,
+    whitePlayer,
+    moves,
+    maiaEvaluations,
+    availableMoves,
+    gameType,
+    termination,
+    positionEvaluations,
+  } as AnalyzedGame
+}

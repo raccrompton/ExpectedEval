@@ -11,6 +11,7 @@ import { motion } from 'framer-motion'
 
 import Tournament from './Tournament'
 import { AnalysisListContext, GameControllerContext } from 'src/contexts'
+import UserGameList from './UserGameList'
 
 interface AnalysisGameListProps {
   currentId: string[] | null
@@ -25,6 +26,12 @@ interface AnalysisGameListProps {
     setCurrentMove: Dispatch<SetStateAction<number>>,
     currentMaiaModel: string,
   ) => Promise<void>
+  loadNewUserGames: (
+    id: string,
+    type: 'play' | 'hand' | 'brain',
+    setCurrentMove: Dispatch<SetStateAction<number>>,
+    currentMaiaModel: string,
+  ) => Promise<void>
 }
 
 const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
@@ -32,12 +39,20 @@ const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   currentMaiaModel,
   loadNewTournamentGame,
   loadNewLichessGames,
+  loadNewUserGames,
 }) => {
-  const [selected, setSelected] = useState<'tournament' | 'lichess'>('lichess')
+  const [selected, setSelected] = useState<
+    'tournament' | 'pgn' | 'play' | 'hand' | 'brain'
+  >('pgn')
 
   const controller = useContext(GameControllerContext)
-  const { analysisTournamentList, analysisLichessList } =
-    useContext(AnalysisListContext)
+  const {
+    analysisPlayList,
+    analysisHandList,
+    analysisBrainList,
+    analysisLichessList,
+    analysisTournamentList,
+  } = useContext(AnalysisListContext)
   const listKeys = useMemo(() => {
     return analysisTournamentList
       ? Array.from(analysisTournamentList.keys()).sort((a, b) =>
@@ -85,11 +100,11 @@ const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     <div className="flex flex-col items-start justify-start overflow-hidden rounded bg-background-1">
       <div className="flex min-h-12 w-full items-center justify-center overflow-hidden bg-background-2">
         <button
-          onClick={() => setSelected('lichess')}
-          className={`relative z-10 flex h-full w-full items-center justify-center py-2 pb-3 transition duration-300 hover:bg-background-3 ${selected === 'lichess' && 'bg-background-5'}`}
+          onClick={() => setSelected('pgn')}
+          className={`relative z-10 flex h-full w-full items-center justify-center py-2 pb-3 transition duration-300 hover:bg-background-3 ${['pgn', 'hand', 'brain', 'play'].includes(selected) && 'bg-background-5'}`}
         >
           <p className="z-10 font-medium text-primary">Your Games</p>
-          {selected === 'lichess' && (
+          {['pgn', 'hand', 'brain', 'play'].includes(selected) && (
             <motion.div
               layoutId="selected-highlight"
               className="absolute bottom-0 left-0 h-1 w-full rounded bg-primary"
@@ -130,47 +145,20 @@ const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
           ))}
         </div>
       ) : (
-        <div className="flex h-full w-full flex-col justify-start overflow-y-scroll">
-          {analysisLichessList.map((game, index) => {
-            const selected =
-              currentId && currentId[1] === 'lichess'
-                ? currentId[0] === game.id
-                : false
-
-            return (
-              <button
-                key={index}
-                onClick={async () => {
-                  setLoadingIndex(index)
-                  await loadNewLichessGames(
-                    game.id,
-                    game.pgn,
-                    controller.setCurrentIndex,
-                    currentMaiaModel,
-                  )
-                  setLoadingIndex(null)
-                }}
-                className={`group flex w-full cursor-pointer items-center gap-2 ${selected ? 'bg-background-2 font-bold' : 'hover:bg-background-2'}`}
-              >
-                <div
-                  className={`flex h-full w-10 items-center justify-center ${selected ? 'bg-background-3' : 'bg-background-2 group-hover:bg-background-3'}`}
-                >
-                  {loadingIndex === index ? (
-                    <div className="spinner" />
-                  ) : (
-                    <p className="text-muted">{index + 1}</p>
-                  )}
-                </div>
-                <div className="flex flex-1 items-center justify-between py-1">
-                  <p className="text-primary">
-                    {game.white} vs. {game.black}
-                  </p>
-                  <p className="text-muted">{game.result}</p>
-                </div>
-              </button>
-            )
-          })}
-        </div>
+        <UserGameList
+          currentId={currentId}
+          selected={selected}
+          setSelected={setSelected}
+          playGames={analysisPlayList}
+          handGames={analysisHandList}
+          brainGames={analysisBrainList}
+          lichessGames={analysisLichessList}
+          setCurrentIndex={controller.setCurrentIndex}
+          currentMaiaModel={currentMaiaModel}
+          loadNewUserGames={loadNewUserGames}
+          loadNewLichessGames={loadNewLichessGames}
+          setLoadingIndex={setLoadingIndex}
+        />
       )}
     </div>
   ) : null
