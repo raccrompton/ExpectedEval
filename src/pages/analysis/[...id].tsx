@@ -293,6 +293,16 @@ const Analysis: React.FC<Props> = ({
         const newAnalyzedGame = { ...analyzedGame }
         newAnalyzedGame.maiaEvaluations[model] = evals
 
+        for (let i = 0; i < analyzedGame.moves.length; i++) {
+          const maiaValues = newAnalyzedGame.moves[i].maia_values
+          if (maiaValues) {
+            const newMaiaValues = game.moves[i].maia_values as {
+              [key: string]: number
+            }
+            maiaValues[model] = newMaiaValues[model]
+          }
+        }
+
         setAnalyzedGame(newAnalyzedGame)
         setCurrentMaiaModel(model)
       }
