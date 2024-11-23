@@ -152,7 +152,7 @@ export const useAnalysisController = (
           )
 
           data[model].push(currentData)
-        } else if (game.type === 'pgn') {
+        } else {
           const stockfishRaw = stockfishEvaluations[index]
           if (!stockfishRaw || stockfishRaw.depth < 10) {
             data[model].push([])

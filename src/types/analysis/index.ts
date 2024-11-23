@@ -1,7 +1,7 @@
 import { Game } from '../base'
 import { AvailableMoves } from '../training'
 
-type EvaluationType = 'tournament' | 'pgn'
+type EvaluationType = 'tournament' | 'pgn' | 'play' | 'hand' | 'brain'
 
 type StockfishEvaluations<T extends EvaluationType> = T extends 'tournament'
   ? MoveMap[]
@@ -24,6 +24,14 @@ export interface AnalysisLichessGame {
   black: string
   pgn: string
   result?: string
+}
+
+export interface AnalysisWebGame {
+  id: string
+  type: 'tournament' | 'pgn' | 'play' | 'hand' | 'brain'
+  label: string
+  result: string
+  pgn?: string
 }
 
 export interface AnalyzedGame extends Game {

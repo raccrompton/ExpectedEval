@@ -6,12 +6,12 @@ import { useRouter } from 'next/router'
 import React, { useState, useEffect, useContext } from 'react'
 
 import {
+  UserIcon,
   HandIcon,
   BrainIcon,
   TrainIcon,
   TuringIcon,
   RegularPlayIcon,
-  UserIcon,
 } from '../Icons/icons'
 import GameList from './GameList'
 import { getPlayerStats } from 'src/api'
@@ -80,12 +80,12 @@ const UserProfile: React.FC = () => {
         <div className="*:w-16 *:fill-primary">{UserIcon}</div>
         <h1 className="text-3xl font-semibold">{user?.displayName}</h1>
       </div>
-      <div className="flex flex-col gap-6 md:flex-row">
+      <div className="flex flex-col items-start gap-6 md:flex-row">
         <GameList />
         <div className="grid h-full w-full grid-cols-2 gap-6">
           <ProfileColumn
             icon={<RegularPlayIcon />}
-            name="REGULAR"
+            name="Regular"
             data={{
               rating: stats.regularRating,
               highest: stats.regularMax,
@@ -97,7 +97,7 @@ const UserProfile: React.FC = () => {
           />
           <ProfileColumn
             icon={<HandIcon />}
-            name="HAND"
+            name="Hand"
             data={{
               rating: stats.handRating,
               highest: stats.handMax,
@@ -109,7 +109,7 @@ const UserProfile: React.FC = () => {
           />
           <ProfileColumn
             icon={<BrainIcon />}
-            name="BRAIN"
+            name="Brain"
             data={{
               rating: stats.brainRating,
               highest: stats.brainMax,
@@ -121,7 +121,7 @@ const UserProfile: React.FC = () => {
           />
           <ProfileColumn
             icon={<TrainIcon />}
-            name="TRAIN"
+            name="Train"
             data={{
               rating: stats.trainRating,
               highest: stats.trainMax,
@@ -132,7 +132,7 @@ const UserProfile: React.FC = () => {
           />
           <ProfileColumn
             icon={<TuringIcon />}
-            name="BOT/NOT"
+            name="Bot / Not"
             data={{
               rating: stats.botNotRating,
               highest: stats.botNotMax,

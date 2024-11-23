@@ -1,9 +1,9 @@
+import { useRouter } from 'next/router'
 import { ReactNode, useContext, useEffect, useState } from 'react'
 
+import { AnalysisWebGame, AnalysisTournamentGame } from 'src/types'
 import { AuthContext, AnalysisListContext } from 'src/contexts'
-import { getAnalysisList, getLichessGames } from 'src/api'
-import { AnalysisLichessGame, AnalysisTournamentGame } from 'src/types'
-import { useRouter } from 'next/router'
+import { getAnalysisList, getLichessGames, getAnalysisGameList } from 'src/api'
 
 export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
   children,
@@ -18,8 +18,17 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
     AnalysisTournamentGame[]
   > | null>(null)
   const [analysisLichessList, setAnalysisLichessList] = useState<
-    AnalysisLichessGame[]
+    AnalysisWebGame[]
   >([])
+  const [analysisPlayList, setAnalysisPlayList] = useState<AnalysisWebGame[]>(
+    [],
+  )
+  const [analysisHandList, setAnalysisHandList] = useState<AnalysisWebGame[]>(
+    [],
+  )
+  const [analysisBrainList, setAnalysisBrainList] = useState<AnalysisWebGame[]>(
+    [],
+  )
 
   useEffect(() => {
     async function getAndSetData() {
@@ -41,23 +50,12 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     if (user?.lichessId) {
       getLichessGames(user?.lichessId, (data) => {
-        const playerColor =
-          data.players.white.user?.id == user?.lichessId ? 'white' : 'black'
-
         const result = data.pgn.match(/\[Result\s+"(.+?)"\]/)[1] || '?'
 
-        const game = {
+        const game: AnalysisWebGame = {
           id: data.id,
-          white:
-            playerColor === 'white'
-              ? 'You'
-              : data.players.white.user?.id || 'Anonymous',
-          whiteRating: data.players.white.rating,
-          black:
-            playerColor === 'black'
-              ? 'You'
-              : data.players.black.user?.id || 'Anonymous',
-          blackRating: data.players.black.rating,
+          type: 'pgn',
+          label: `${data.players.white.user?.id || 'Unknown'} vs. ${data.players.black.user?.id || 'Unknown'}`,
           result: result,
           pgn: data.pgn,
         }
@@ -67,9 +65,60 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [user?.lichessId])
 
+  useEffect(() => {
+    if (user?.lichessId) {
+      const playRequest = getAnalysisGameList('play', 1)
+      const handRequest = getAnalysisGameList('hand', 1)
+      const brainRequest = getAnalysisGameList('brain', 1)
+
+      Promise.all([playRequest, handRequest, brainRequest]).then((data) => {
+        const [play, hand, brain] = data
+
+        const parse = (
+          game: {
+            game_id: string
+            maia_name: string
+            result: string
+            player_color: 'white' | 'black'
+          },
+          type: string,
+        ) => {
+          const raw = game.maia_name.replace('_kdd_', ' ')
+          const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
+
+          return {
+            id: game.game_id,
+            label:
+              game.player_color === 'white'
+                ? `You vs. ${maia}`
+                : `${maia} vs. You`,
+            result: game.result,
+            type,
+          }
+        }
+
+        setAnalysisPlayList(
+          play.games.map((game: never) => parse(game, 'play')),
+        )
+        setAnalysisHandList(
+          hand.games.map((game: never) => parse(game, 'hand')),
+        )
+        setAnalysisBrainList(
+          brain.games.map((game: never) => parse(game, 'brain')),
+        )
+      })
+    }
+  }, [user?.lichessId])
+
   return (
     <AnalysisListContext.Provider
-      value={{ analysisTournamentList, analysisLichessList }}
+      value={{
+        analysisTournamentList,
+        analysisLichessList,
+        analysisPlayList,
+        analysisHandList,
+        analysisBrainList,
+      }}
     >
       {children}
     </AnalysisListContext.Provider>
