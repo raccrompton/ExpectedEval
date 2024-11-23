@@ -1,4 +1,5 @@
 import { Dispatch, SetStateAction } from 'react'
+
 import {
   PlusIcon,
   MinusIcon,
@@ -67,7 +68,7 @@ export default function Tournament({
       >
         {games?.map((game, j) => {
           const selected =
-            currentId && currentId[1] != 'lichess'
+            currentId && currentId[1] == 'tournament'
               ? sectionId == currentId[0] &&
                 game.game_index == Number.parseInt(currentId[1])
               : false

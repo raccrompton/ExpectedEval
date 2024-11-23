@@ -15,6 +15,7 @@ import type { DrawShape } from 'chessground/draw'
 
 import {
   getLichessGamePGN,
+  getAnalyzedUserGame,
   getAnalyzedLichessGame,
   getAnalyzedTournamentGame,
 } from 'src/api'
@@ -32,8 +33,8 @@ import { AnalyzedGame, MoveMap } from 'src/types/analysis'
 import { MovesContainer } from 'src/components/MovesContainer'
 import { GameBoard } from 'src/components/GameBoard/GameBoard'
 import { GameInfo, ContinueAgainstMaia } from 'src/components/Core'
+import AnalysisGameList from 'src/components/Analysis/AnalysisGameList'
 import { ThemeContext, ModalContext, WindowSizeContext } from 'src/contexts'
-import AnalysisGameList from 'src/components/AnalysisGameList/AnalysisGameList'
 import { HorizontalEvaluationBar } from 'src/components/HorizontalEvaluationBar'
 import { GameControllerContext } from 'src/contexts/GameControllerContext/GameControllerContext'
 
@@ -107,26 +108,55 @@ const AnalysisPage: NextPage = () => {
         ...game,
         type: 'pgn',
       })
-      setCurrentId([id, 'lichess'])
-      router.push(`/analysis/${id}/lichess`, undefined, { shallow: true })
+      setCurrentId([id, 'pgn'])
+      router.push(`/analysis/${id}/pgn`, undefined, { shallow: true })
     },
     [router],
+  )
+
+  const getAndSetUserGame = useCallback(
+    async (
+      id: string,
+      type: 'play' | 'hand' | 'brain',
+      setCurrentMove?: Dispatch<SetStateAction<number>>,
+      currentMaiaModel = 'maia_kdd_1500',
+    ) => {
+      let game
+      try {
+        game = await getAnalyzedUserGame(id, type, currentMaiaModel)
+      } catch (e) {
+        router.push('/401')
+        return
+      }
+      if (setCurrentMove) setCurrentMove(0)
+      setAnalyzedGame({ ...game, type })
+      setCurrentId([id, type])
+      router.push(`/analysis/${id}/${type}`, undefined, { shallow: true })
+    },
+    [],
   )
 
   useEffect(() => {
     ;(async () => {
       if (analyzedGame == undefined) {
         const queryId = id as string[]
-        if (queryId[1] == 'lichess') {
+        if (queryId[1] === 'licpgnhess') {
           const pgn = await getLichessGamePGN(queryId[0])
-
           getAndSetLichessGames(queryId[0], pgn, undefined)
+        } else if (['play', 'hand', 'brain'].includes(queryId[1])) {
+          getAndSetUserGame(queryId[0], queryId[1] as 'play' | 'hand' | 'brain')
         } else {
           getAndSetTournamentGame(queryId)
         }
       }
     })()
-  }, [id, analyzedGame, getAndSetTournamentGame, getAndSetLichessGames])
+  }, [
+    id,
+    analyzedGame,
+    getAndSetTournamentGame,
+    getAndSetLichessGames,
+    getAndSetUserGame,
+  ])
 
   return (
     <>
@@ -139,6 +169,7 @@ const AnalysisPage: NextPage = () => {
           initialOrientation={orientation == 'black' ? 'black' : 'white'}
           getAndSetTournamentGame={getAndSetTournamentGame}
           getAndSetLichessGames={getAndSetLichessGames}
+          getAndSetUserGames={getAndSetUserGame}
         />
       ) : (
         <Loading />
@@ -159,10 +190,15 @@ interface Props {
     setCurrentMove?: Dispatch<SetStateAction<number>>,
     currentMaiaModel?: string,
   ) => Promise<void>
+  getAndSetUserGames: (
+    id: string,
+    type: 'play' | 'hand' | 'brain',
+    setCurrentMove: Dispatch<SetStateAction<number>>,
+    currentMaiaModel: string,
+  ) => Promise<void>
   analyzedGame: AnalyzedGame
   initialIndex: number
   initialOrientation: Color
-
   setAnalyzedGame: Dispatch<SetStateAction<AnalyzedGame | undefined>>
 }
 
@@ -173,6 +209,7 @@ const Analysis: React.FC<Props> = ({
   initialOrientation,
   getAndSetTournamentGame,
   getAndSetLichessGames,
+  getAndSetUserGames,
   setAnalyzedGame,
 }: Props) => {
   const router = useRouter()
@@ -220,23 +257,37 @@ const Analysis: React.FC<Props> = ({
   const updateMaiaModel = async (model: string) => {
     if (analyzedGame.type === 'tournament') {
       setCurrentMaiaModel(model)
-    } else if (analyzedGame.type === 'pgn') {
+    } else {
       if (analyzedGame.maiaEvaluations[model]) {
         setCurrentMaiaModel(model)
         return
       }
 
       let game
-      try {
-        game = await getAnalyzedLichessGame(
-          analyzedGame.id,
-          analyzedGame.pgn as string,
-          model,
-        )
-      } catch (e) {
-        router.push('/401')
-        return
+      if (analyzedGame.type === 'pgn') {
+        try {
+          game = await getAnalyzedLichessGame(
+            analyzedGame.id,
+            analyzedGame.pgn as string,
+            model,
+          )
+        } catch (e) {
+          router.push('/401')
+          return
+        }
+      } else {
+        try {
+          game = await getAnalyzedUserGame(
+            analyzedGame.id,
+            analyzedGame.type,
+            model,
+          )
+        } catch (e) {
+          router.push('/401')
+          return
+        }
       }
+
       const evals = game.maiaEvaluations[model]
       if (evals) {
         const newAnalyzedGame = { ...analyzedGame }
@@ -393,6 +444,7 @@ const Analysis: React.FC<Props> = ({
               currentMaiaModel={currentMaiaModel}
               loadNewTournamentGame={getAndSetTournamentGame}
               loadNewLichessGames={getAndSetLichessGames}
+              loadNewUserGames={getAndSetUserGames}
             />
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
@@ -612,6 +664,7 @@ const Analysis: React.FC<Props> = ({
               currentMaiaModel={currentMaiaModel}
               loadNewTournamentGame={getAndSetTournamentGame}
               loadNewLichessGames={getAndSetLichessGames}
+              loadNewUserGames={getAndSetUserGames}
             />
           </div>
         </div>

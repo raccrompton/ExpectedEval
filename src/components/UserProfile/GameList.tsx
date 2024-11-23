@@ -7,13 +7,30 @@ import { getLichessGames, getAnalysisGameList } from 'src/api'
 
 export default function GameList() {
   const { user } = useContext(AuthContext)
-  const [selected, setSelected] = useState<
-    'play' | 'hand' | 'brain' | 'lichess'
-  >('play')
+  const [selected, setSelected] = useState<'play' | 'hand' | 'brain' | 'pgn'>(
+    'play',
+  )
   const [games, setGames] = useState<AnalysisWebGame[]>([])
   const [playGames, setPlayGames] = useState<AnalysisWebGame[]>([])
   const [handGames, setHandGames] = useState<AnalysisWebGame[]>([])
   const [brainGames, setBrainGames] = useState<AnalysisWebGame[]>([])
+
+  useEffect(() => {
+    if (user?.lichessId) {
+      getLichessGames(user?.lichessId, (data) => {
+        const result = data.pgn.match(/\[Result\s+"(.+?)"\]/)[1] || '?'
+
+        const game: AnalysisWebGame = {
+          id: data.id,
+          label: `${data.players.white.user?.id || 'Unknown'} vs. ${data.players.black.user?.id || 'Unknown'}`,
+          result: result,
+          type: 'pgn',
+        }
+
+        setGames((x) => [...x, game])
+      })
+    }
+  }, [user?.lichessId])
 
   useEffect(() => {
     if (user?.lichessId) {
@@ -24,12 +41,15 @@ export default function GameList() {
       Promise.all([playRequest, handRequest, brainRequest]).then((data) => {
         const [play, hand, brain] = data
 
-        const parse = (game: {
-          game_id: string
-          maia_name: string
-          result: string
-          player_color: 'white' | 'black'
-        }) => {
+        const parse = (
+          game: {
+            game_id: string
+            maia_name: string
+            result: string
+            player_color: 'white' | 'black'
+          },
+          type: string,
+        ) => {
           const raw = game.maia_name.replace('_kdd_', ' ')
           const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
 
@@ -40,28 +60,13 @@ export default function GameList() {
                 ? `You vs. ${maia}`
                 : `${maia} vs. You`,
             result: game.result,
+            type,
           }
         }
 
-        setPlayGames(play.games.map(parse))
-        setHandGames(hand.games.map(parse))
-        setBrainGames(brain.games.map(parse))
-      })
-    }
-  }, [user?.lichessId])
-
-  useEffect(() => {
-    if (user?.lichessId) {
-      getLichessGames(user?.lichessId, (data) => {
-        const result = data.pgn.match(/\[Result\s+"(.+?)"\]/)[1] || '?'
-
-        const game = {
-          id: data.id,
-          label: `${data.players.white.user?.id || 'Unknown'} vs. ${data.players.black.user?.id || 'Unknown'}`,
-          result: result,
-        }
-
-        setGames((x) => [...x, game])
+        setPlayGames(play.games.map((game: never) => parse(game, 'play')))
+        setHandGames(hand.games.map((game: never) => parse(game, 'hand')))
+        setBrainGames(brain.games.map((game: never) => parse(game, 'brain')))
       })
     }
   }, [user?.lichessId])
@@ -92,7 +97,7 @@ export default function GameList() {
         />
         <Header
           label="Lichess"
-          name="lichess"
+          name="pgn"
           selected={selected}
           setSelected={setSelected}
         />
@@ -132,9 +137,9 @@ function Header({
   setSelected,
 }: {
   label: string
-  name: 'play' | 'hand' | 'brain' | 'lichess'
-  selected: 'play' | 'hand' | 'brain' | 'lichess'
-  setSelected: (name: 'play' | 'hand' | 'brain' | 'lichess') => void
+  name: 'play' | 'hand' | 'brain' | 'pgn'
+  selected: 'play' | 'hand' | 'brain' | 'pgn'
+  setSelected: (name: 'play' | 'hand' | 'brain' | 'pgn') => void
 }) {
   return (
     <button

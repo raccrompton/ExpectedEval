@@ -6,12 +6,12 @@ import { useRouter } from 'next/router'
 import React, { useState, useEffect, useContext } from 'react'
 
 import {
+  UserIcon,
   HandIcon,
   BrainIcon,
   TrainIcon,
   TuringIcon,
   RegularPlayIcon,
-  UserIcon,
 } from '../Icons/icons'
 import GameList from './GameList'
 import { getPlayerStats } from 'src/api'
