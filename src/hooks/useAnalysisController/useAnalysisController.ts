@@ -7,25 +7,12 @@ import { AnalyzedGame, Color, MoveMap, StockfishEvaluation } from 'src/types'
 
 function parseMaiaWinRate(
   turnPlayed: string,
-  whiteRating: number,
-  blackRating: number,
+  currentMaiaModel: string,
   maiaValues?: { [key: string]: number },
 ) {
   if (maiaValues === undefined) return -1
 
-  if (Object.keys(maiaValues).length === 1) {
-    const maiaWr = Object.values(maiaValues)[0]
-
-    return maiaWr !== -1 && turnPlayed === 'white' ? 1 - maiaWr : maiaWr
-  }
-
-  let rating =
-    Math.floor(
-      ((turnPlayed === 'black' ? whiteRating : blackRating) || 1100) / 100,
-    ) * 100
-  rating = Math.min(1900, Math.max(1100, rating))
-
-  let maiaWr = maiaValues ? maiaValues[`maia_kdd_${rating}`] : -1
+  let maiaWr = maiaValues ? maiaValues[currentMaiaModel] : -1
   if (maiaWr !== -1 && turnPlayed === 'white') {
     maiaWr = 1 - maiaWr
   }
@@ -225,8 +212,7 @@ export const useAnalysisController = (
         const turnPlayed = controller.currentIndex % 2 === 0 ? 'black' : 'white'
         const maiaWr = parseMaiaWinRate(
           turnPlayed,
-          game.whitePlayer.rating || 1100,
-          game.blackPlayer.rating || 1100,
+          currentMaiaModel,
           maiaValues,
         )
         const moveEval = {
@@ -241,8 +227,7 @@ export const useAnalysisController = (
         const turnPlayed = controller.currentIndex % 2 === 0 ? 'black' : 'white'
         const maiaWr = parseMaiaWinRate(
           turnPlayed,
-          game.whitePlayer.rating || 1100,
-          game.blackPlayer.rating || 1100,
+          currentMaiaModel,
           maiaValues,
         )
         const moveEval = {
@@ -273,8 +258,7 @@ export const useAnalysisController = (
         const turnPlayed = controller.currentIndex % 2 === 0 ? 'black' : 'white'
         const maiaWr = parseMaiaWinRate(
           turnPlayed,
-          game.whitePlayer.rating || 1100,
-          game.blackPlayer.rating || 1100,
+          currentMaiaModel,
           maiaValues,
         )
         const moveEval = {
@@ -293,8 +277,7 @@ export const useAnalysisController = (
         const turnPlayed = controller.currentIndex % 2 === 0 ? 'black' : 'white'
         const maiaWr = parseMaiaWinRate(
           turnPlayed,
-          game.whitePlayer.rating || 1100,
-          game.blackPlayer.rating || 1100,
+          currentMaiaModel,
           maiaValues,
         )
 
