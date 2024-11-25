@@ -1,5 +1,6 @@
 import { NextPage } from 'next/types'
 import { useRouter } from 'next/router'
+import { backOff } from 'exponential-backoff'
 import { useContext, useEffect, useMemo } from 'react'
 
 import {
@@ -59,13 +60,19 @@ const useVsMaiaPlayController = (
           ? parseInt(controller.timeControl.split('+')[0]) * 60
           : 0
 
-        const maiaMoves = await getGameMove(
-          controller.moves,
-          playGameConfig.maiaVersion,
-          playGameConfig.startFen,
-          null,
-          playGameConfig.simulateMaiaTime ? initialClock : 0,
-          playGameConfig.simulateMaiaTime ? maiaClock : 0,
+        const maiaMoves = await backOff(
+          () =>
+            getGameMove(
+              controller.moves,
+              playGameConfig.maiaVersion,
+              playGameConfig.startFen,
+              null,
+              playGameConfig.simulateMaiaTime ? initialClock : 0,
+              playGameConfig.simulateMaiaTime ? maiaClock : 0,
+            ),
+          {
+            jitter: 'full',
+          },
         )
         const nextMove = maiaMoves['top_move']
         const moveDelay = maiaMoves['move_delay']
@@ -106,14 +113,20 @@ const useVsMaiaPlayController = (
     const winner = controller.game.termination?.winner
 
     const submitFn = async () => {
-      await submitGameMove(
-        controller.game.id,
-        controller.moves,
-        controller.moveTimes,
-        gameOverState,
-        'play',
-        playGameConfig.startFen || undefined,
-        winner,
+      await backOff(
+        () =>
+          submitGameMove(
+            controller.game.id,
+            controller.moves,
+            controller.moveTimes,
+            gameOverState,
+            'play',
+            playGameConfig.startFen || undefined,
+            winner,
+          ),
+        {
+          jitter: 'full',
+        },
       )
 
       // Only update stats after final move submitted

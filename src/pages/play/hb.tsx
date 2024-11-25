@@ -1,23 +1,25 @@
 import { NextPage } from 'next/types'
+import { PieceSymbol } from 'chess.ts'
+import { useRouter } from 'next/router'
+import type { Key } from 'chessground/types'
+import { backOff } from 'exponential-backoff'
+import type { DrawShape } from 'chessground/draw'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+
+import {
+  startGame,
+  getGameMove,
+  submitGameMove,
+  getPlayPlayerStats,
+} from 'src/api'
+import { Loading } from 'src/components'
+import { ModalContext } from 'src/contexts'
+import { useStats } from 'src/hooks/useStats'
+import { Color, PlayGameConfig, TimeControl } from 'src/types'
 import { usePlayController } from 'src/hooks/usePlayController'
 import { GameplayInterface } from 'src/components/GameplayInterface'
-import {
-  getGameMove,
-  getPlayPlayerStats,
-  startGame,
-  submitGameMove,
-} from 'src/api'
-import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import type { DrawShape } from 'chessground/draw'
-import type { Key } from 'chessground/types'
 import { HandBrainPlayControls } from 'src/components/HandBrainPlayControls'
-import { PieceSymbol } from 'chess.ts'
-import { Color, PlayGameConfig, TimeControl } from 'src/types'
-import { useRouter } from 'next/router'
-import { Loading } from 'src/components'
-import { useStats } from 'src/hooks/useStats'
-import { ModalContext } from 'src/contexts'
+import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
 
 const brainStatsLoader = async () => {
   const stats = await getPlayPlayerStats()
@@ -79,10 +81,16 @@ const useHandBrainPlayController = (
       let canceled = false
 
       const maiaChoosePiece = async () => {
-        const maiaMoves = await getGameMove(
-          controller.moves,
-          playGameConfig.maiaPartnerVersion,
-          playGameConfig.startFen,
+        const maiaMoves = await backOff(
+          () =>
+            getGameMove(
+              controller.moves,
+              playGameConfig.maiaPartnerVersion,
+              playGameConfig.startFen,
+            ),
+          {
+            jitter: 'full',
+          },
         )
         const nextMove = maiaMoves['top_move']
 
@@ -134,13 +142,19 @@ const useHandBrainPlayController = (
         ? parseInt(controller.timeControl.split('+')[0]) * 60
         : 0
 
-      const maiaMoves = await getGameMove(
-        controller.moves,
-        playGameConfig.maiaVersion,
-        playGameConfig.startFen,
-        null,
-        playGameConfig.simulateMaiaTime ? initialClock : 0,
-        playGameConfig.simulateMaiaTime ? maiaClock : 0,
+      const maiaMoves = await backOff(
+        () =>
+          getGameMove(
+            controller.moves,
+            playGameConfig.maiaVersion,
+            playGameConfig.startFen,
+            null,
+            playGameConfig.simulateMaiaTime ? initialClock : 0,
+            playGameConfig.simulateMaiaTime ? maiaClock : 0,
+          ),
+        {
+          jitter: 'full',
+        },
       )
       const nextMove = maiaMoves['top_move']
       const moveDelay = maiaMoves['move_delay']
@@ -183,11 +197,17 @@ const useHandBrainPlayController = (
         setSelectedPiece(piece)
         setBrainMoves([...brainMoves, piece])
 
-        const maiaMoves = await getGameMove(
-          controller.moves,
-          playGameConfig.maiaPartnerVersion,
-          playGameConfig.startFen,
-          piece,
+        const maiaMoves = await backOff(
+          () =>
+            getGameMove(
+              controller.moves,
+              playGameConfig.maiaPartnerVersion,
+              playGameConfig.startFen,
+              piece,
+            ),
+          {
+            jitter: 'full',
+          },
         )
         const nextMove = maiaMoves['top_move']
         makeMove(nextMove)
@@ -236,15 +256,21 @@ const useHandBrainPlayController = (
     const winner = controller.game.termination?.winner
 
     const submitFn = async () => {
-      await submitGameMove(
-        controller.game.id,
-        controller.moves,
-        controller.moveTimes,
-        gameOverState,
-        playGameConfig.isBrain ? 'brain' : 'hand',
-        playGameConfig.startFen || undefined,
-        winner,
-        brainMoves,
+      await backOff(
+        () =>
+          submitGameMove(
+            controller.game.id,
+            controller.moves,
+            controller.moveTimes,
+            gameOverState,
+            playGameConfig.isBrain ? 'brain' : 'hand',
+            playGameConfig.startFen || undefined,
+            winner,
+            brainMoves,
+          ),
+        {
+          jitter: 'full',
+        },
       )
       if (controller.game.termination) {
         const winner = controller.game.termination?.winner
