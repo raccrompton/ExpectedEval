@@ -420,9 +420,10 @@ export const AboutMaia = () => {
             <p>
               {' '}
               All our data is from the wonderful archive at{' '}
-              <a href="https://database.lichess.org/">database.lichess.org</a>.
-              We converted the raw PGN raw data dumps into CSV, and have made
-              the CSV we used for testing available at{' '}
+              <a href="https://database.lichess.org/">
+                database.lichess.org
+              </a>. We converted the raw PGN raw data dumps into CSV, and have
+              made the CSV we used for testing available at{' '}
               <a href="http://csslab.cs.toronto.edu/datasets/#maia_kdd">
                 csslab.cs.toronto.edu/datasets
               </a>

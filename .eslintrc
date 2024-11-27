@@ -6,12 +6,12 @@
     "plugin:import/errors",
     "plugin:import/warnings",
     "plugin:jsx-a11y/recommended",
-    "prettier"
+    "prettier",
   ],
   "settings": {
     "react": {
-      "version": "detect"
-    }
+      "version": "detect",
+    },
   },
   "rules": {
     "react/prop-types": "off",
@@ -19,14 +19,14 @@
     "react/react-in-jsx-scope": "off",
     "react-hooks/exhaustive-deps": "off",
     "@typescript-eslint/no-unused-vars": "off",
-    "import/no-named-as-default": "off"
+    "import/no-named-as-default": "off",
   },
   "overrides": [
     {
       "files": ["*.js"],
       "rules": {
-        "typescript/no-var-requires": "off"
-      }
-    }
-  ]
+        "typescript/no-var-requires": "off",
+      },
+    },
+  ],
 }
