@@ -131,10 +131,11 @@ const sharedWasmMemory = (lo: number, hi = 32767): WebAssembly.Memory => {
 
 const setupStockfish = (): Promise<StockfishWeb> => {
   return new Promise<StockfishWeb>((resolve, reject) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     import('lila-stockfish-web/sf17-79.js').then((makeModule: any) => {
       makeModule
         .default({
-          wasmMemory: sharedWasmMemory(2560!),
+          wasmMemory: sharedWasmMemory(2560),
           onError: (msg: string) => reject(new Error(msg)),
           locateFile: (name: string) => `/stockfish/${name}`,
         })
