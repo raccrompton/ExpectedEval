@@ -12,13 +12,15 @@ import {
   submitGameMove,
   getPlayPlayerStats,
 } from 'src/api'
-import { Loading } from 'src/components'
+import {
+  Loading,
+  GameplayInterface,
+  HandBrainPlayControls,
+} from 'src/components'
 import { ModalContext } from 'src/contexts'
 import { useStats } from 'src/hooks/useStats'
 import { Color, PlayGameConfig, TimeControl } from 'src/types'
 import { usePlayController } from 'src/hooks/usePlayController'
-import { GameplayInterface } from 'src/components/GameplayInterface'
-import { HandBrainPlayControls } from 'src/components/HandBrainPlayControls'
 import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
 
 const brainStatsLoader = async () => {

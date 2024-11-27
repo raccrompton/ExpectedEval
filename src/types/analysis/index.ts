@@ -18,14 +18,6 @@ export interface AnalysisTournamentGame {
   result?: string
 }
 
-export interface AnalysisLichessGame {
-  id: string
-  white: string
-  black: string
-  pgn: string
-  result?: string
-}
-
 export interface AnalysisWebGame {
   id: string
   type: 'tournament' | 'pgn' | 'play' | 'hand' | 'brain'

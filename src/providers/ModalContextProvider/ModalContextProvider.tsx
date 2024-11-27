@@ -3,8 +3,7 @@ import { ComponentProps, ReactNode, useState } from 'react'
 import { Modals } from 'src/types'
 import { useLocalStorage } from 'src/hooks'
 import { ModalContext } from 'src/contexts'
-import { InstructionsModal } from 'src/components'
-import { PlaySetupModal } from 'src/components/modals/PlaySetupModal/PlaySetupModal'
+import { InstructionsModal, PlaySetupModal } from 'src/components'
 
 export const ModalContextProvider: React.FC<{ children: ReactNode }> = ({
   children,

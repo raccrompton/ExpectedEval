@@ -17,8 +17,7 @@ import 'react-tooltip/dist/react-tooltip.css'
 import 'chessground/assets/chessground.base.css'
 import 'chessground/assets/chessground.brown.css'
 import 'chessground/assets/chessground.cburnett.css'
-import { Footer } from 'src/components/Footer/Footer'
-import { Compose, ErrorBoundary, Header } from 'src/components/'
+import { Footer, Compose, ErrorBoundary, Header } from 'src/components'
 
 function MaiaPlatform({ Component, pageProps }: AppProps) {
   const router = useRouter()

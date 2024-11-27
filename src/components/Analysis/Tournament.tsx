@@ -8,7 +8,7 @@ import {
 } from 'src/components/Icons/icons'
 import { AnalysisTournamentGame } from 'src/types'
 
-export default function Tournament({
+export const Tournament = ({
   id,
   index,
   currentId,
@@ -37,7 +37,7 @@ export default function Tournament({
     setCurrentMove: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
   setCurrentMove: Dispatch<SetStateAction<number>>
-}) {
+}) => {
   const games = analysisTournamentList.get(id)
   const [sectionId, title] = id.split('---')
   const opened = openIndex == index

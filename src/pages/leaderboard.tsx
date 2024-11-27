@@ -9,7 +9,7 @@ import {
   TuringIcon,
 } from 'src/components/Icons/icons'
 import { getLeaderboard } from 'src/api'
-import { LeaderboardColumn } from 'src/components/LeaderboardColumn/LeaderboardColumn'
+import { LeaderboardColumn } from 'src/components'
 
 const Leaderboard: React.FC = () => {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)

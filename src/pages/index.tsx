@@ -3,8 +3,7 @@ import type { NextPage } from 'next'
 import React, { useCallback, useContext, useEffect, useRef } from 'react'
 
 import { ModalContext } from 'src/contexts'
-import { HomeHero } from 'src/components/HomeHero/HomeHero'
-import { AboutMaia } from 'src/components/AboutMaia/AboutMaia'
+import { HomeHero, AboutMaia } from 'src/components'
 
 const Home: NextPage = () => {
   const { setPlaySetupModalProps } = useContext(ModalContext)

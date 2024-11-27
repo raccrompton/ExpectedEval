@@ -9,13 +9,11 @@ import {
   submitGameMove,
   getPlayPlayerStats,
 } from 'src/api'
-import { Loading } from 'src/components'
 import { ModalContext } from 'src/contexts'
 import { useStats } from 'src/hooks/useStats'
-import { PlayControls } from 'src/components/PlayControls'
 import { Color, TimeControl, PlayGameConfig } from 'src/types'
 import { usePlayController } from 'src/hooks/usePlayController'
-import { GameplayInterface } from 'src/components/GameplayInterface'
+import { Loading, PlayControls, GameplayInterface } from 'src/components'
 import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
 
 const playStatsLoader = async () => {
