@@ -1,7 +1,7 @@
-import { Modals } from 'src/types'
 import React, { ComponentProps } from 'react'
-import { InstructionsModal } from 'src/components'
-import { PlaySetupModal } from 'src/components/modals/PlaySetupModal/PlaySetupModal'
+
+import { Modals } from 'src/types'
+import { InstructionsModal, PlaySetupModal } from 'src/components'
 
 const fn = () => {
   throw new Error('poorly provided ModalContext')

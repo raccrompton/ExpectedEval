@@ -24,21 +24,22 @@ import {
 import {
   Loading,
   MovePlot,
+  GameInfo,
   Feedback,
+  PuzzleLog,
+  GameBoard,
+  StatsDisplay,
   BoardController,
+  ContinueAgainstMaia,
   AuthenticatedWrapper,
   VerticalEvaluationBar,
+  HorizontalEvaluationBar,
   PositionEvaluationContainer,
 } from 'src/components'
-import { GameInfo, ContinueAgainstMaia } from 'src/components/Core'
-import { PuzzleLog } from 'src/components/Train'
 import { useTrainingController } from 'src/hooks'
 import { AllStats, useStats } from 'src/hooks/useStats'
 import { TrainingGame, Status } from 'src/types/training'
-import { StatsDisplay } from 'src/components/StatsDisplay'
 import { ModalContext, WindowSizeContext } from 'src/contexts'
-import { GameBoard } from 'src/components/GameBoard/GameBoard'
-import { HorizontalEvaluationBar } from 'src/components/HorizontalEvaluationBar'
 import { GameControllerContext } from 'src/contexts/GameControllerContext/GameControllerContext'
 
 const statsLoader = async () => {

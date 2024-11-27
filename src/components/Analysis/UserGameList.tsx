@@ -28,7 +28,7 @@ interface Props {
   currentMaiaModel: string
 }
 
-export default function UserGameList({
+export const UserGameList = ({
   currentId,
   selected,
   setSelected,
@@ -41,7 +41,7 @@ export default function UserGameList({
   loadNewLichessGames,
   loadNewUserGames,
   currentMaiaModel,
-}: Props) {
+}: Props) => {
   return (
     <div className="flex w-full flex-col">
       <div className="grid select-none grid-cols-4 border-b-2 border-white border-opacity-10">

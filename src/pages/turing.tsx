@@ -11,17 +11,18 @@ import {
 } from 'src/contexts'
 import {
   Loading,
+  GameInfo,
   GameBoard,
   TuringGames,
+  StatsDisplay,
   MovesContainer,
   BoardController,
   TuringSubmission,
+  ContinueAgainstMaia,
 } from 'src/components'
 import { AllStats } from 'src/hooks/useStats'
 import { TuringGame } from 'src/types/turing'
-import { StatsDisplay } from 'src/components/StatsDisplay'
 import { useGameController, useTuringController } from 'src/hooks'
-import { GameInfo, ContinueAgainstMaia } from 'src/components/Core'
 
 const TuringPage: NextPage = () => {
   const { openedModals, setInstructionsModalProps: setInstructionsModalProps } =

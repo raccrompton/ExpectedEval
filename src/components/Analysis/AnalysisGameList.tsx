@@ -9,9 +9,8 @@ import {
 } from 'react'
 import { motion } from 'framer-motion'
 
-import Tournament from './Tournament'
+import { Tournament, UserGameList } from 'src/components'
 import { AnalysisListContext, GameControllerContext } from 'src/contexts'
-import UserGameList from './UserGameList'
 
 interface AnalysisGameListProps {
   currentId: string[] | null
@@ -34,7 +33,7 @@ interface AnalysisGameListProps {
   ) => Promise<void>
 }
 
-const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
+export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   currentId,
   currentMaiaModel,
   loadNewTournamentGame,
@@ -181,5 +180,3 @@ const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     </div>
   ) : null
 }
-
-export default AnalysisGameList

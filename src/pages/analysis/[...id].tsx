@@ -22,20 +22,21 @@ import {
 import {
   Loading,
   MovePlot,
+  GameInfo,
+  GameBoard,
   BlunderMeter,
+  MovesContainer,
   BoardController,
+  AnalysisGameList,
+  ContinueAgainstMaia,
   AuthenticatedWrapper,
   VerticalEvaluationBar,
+  HorizontalEvaluationBar,
 } from 'src/components'
 import { Color } from 'src/types'
 import { useAnalysisController } from 'src/hooks'
 import { AnalyzedGame, MoveMap } from 'src/types/analysis'
-import { MovesContainer } from 'src/components/MovesContainer'
-import { GameBoard } from 'src/components/GameBoard/GameBoard'
-import { GameInfo, ContinueAgainstMaia } from 'src/components/Core'
-import AnalysisGameList from 'src/components/Analysis/AnalysisGameList'
 import { ThemeContext, ModalContext, WindowSizeContext } from 'src/contexts'
-import { HorizontalEvaluationBar } from 'src/components/HorizontalEvaluationBar'
 import { GameControllerContext } from 'src/contexts/GameControllerContext/GameControllerContext'
 
 const MAIA_MODELS = [
