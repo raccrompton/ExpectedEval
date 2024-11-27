@@ -60,6 +60,7 @@ export const useTuringController = () => {
           ...turingGames,
           [game.id]: { ...game, result },
         })
+        commentController[1]('')
         // to avoid race conditions on the server, sleep
         await new Promise((r) => setTimeout(r, 500))
         incrementStats(1, result.correct ? 1 : 0)
