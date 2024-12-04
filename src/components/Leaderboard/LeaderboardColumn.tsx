@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 interface Props {
   icon: JSX.Element
   name: string
@@ -26,10 +28,16 @@ export const LeaderboardColumn: React.FC<Props> = ({
           >
             <div className="flex items-center gap-2">
               <p className="w-5">{index + 1}</p>
-              <p>
-                {player.display_name} {index == 0 && '👑'}
-              </p>
+              <Link
+                href={`/profile/${player.display_name}`}
+                className="flex items-center gap-2 hover:underline"
+              >
+                <p>
+                  {player.display_name} {index == 0 && '👑'}
+                </p>
+              </Link>
             </div>
+
             <p>{player.elo}</p>
           </div>
         ))}
