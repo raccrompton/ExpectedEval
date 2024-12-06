@@ -552,6 +552,7 @@ const Analysis: React.FC<Props> = ({
                 game={analyzedGame}
                 setCurrentMove={setCurrentMove}
                 termination={analyzedGame.termination}
+                currentMaiaModel={currentMaiaModel}
               />
             </div>
             <div className="flex-none">
@@ -653,6 +654,7 @@ const Analysis: React.FC<Props> = ({
                 game={analyzedGame}
                 setCurrentMove={setCurrentMove}
                 termination={analyzedGame.termination}
+                currentMaiaModel={currentMaiaModel}
               />
             </div>
             <div>

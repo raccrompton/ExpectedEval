@@ -13,6 +13,7 @@ interface Props {
   highlightIndices?: number[]
   mobile?: boolean
   termination?: Termination
+  currentMaiaModel?: string
 }
 
 export const MovesContainer: React.FC<Props> = ({
@@ -21,6 +22,7 @@ export const MovesContainer: React.FC<Props> = ({
   highlightIndices,
   mobile = false,
   termination,
+  currentMaiaModel,
 }: Props) => {
   const controller = useContext(GameControllerContext)
   const { isMobile } = useContext(WindowSizeContext)
@@ -66,7 +68,8 @@ export const MovesContainer: React.FC<Props> = ({
         let predictedWhite, predictedBlack
 
         if ('maiaEvaluations' in game) {
-          const evals = game.maiaEvaluations['maia_kdd_1100']
+          const evals =
+            game.maiaEvaluations[currentMaiaModel ?? 'maia_kdd_1100']
 
           const prevEvals = evals?.[prevMoveIndex]
           const whiteEvals = evals?.[whiteMoveIndex]
