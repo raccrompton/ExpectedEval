@@ -89,7 +89,7 @@ export const Header: React.FC = () => {
             <div
               className={`${router.pathname.startsWith('/play') && 'bg-background-1'} group relative`}
             >
-              <button>PLAY</button>
+              <button>Play</button>
               <div className="absolute left-0 top-[100%] z-30 hidden w-48 flex-col items-start bg-background-1 group-hover:flex">
                 <button
                   onClick={() => startGame('againstMaia')}
@@ -125,50 +125,64 @@ export const Header: React.FC = () => {
           )}
           <Link
             href="/analysis"
-            className={`${router.pathname.startsWith('/analysis') && 'bg-background-1'} uppercase hover:bg-background-1`}
+            className={`${router.pathname.startsWith('/analysis') && 'bg-background-1'} hover:bg-background-1`}
           >
             Analysis
           </Link>
           <Link
             href="/train"
-            className={`${router.pathname.startsWith('/train') && 'bg-background-1'} uppercase hover:bg-background-1`}
+            className={`${router.pathname.startsWith('/train') && 'bg-background-1'} hover:bg-background-1`}
           >
             Train
           </Link>
           <Link
-            href="/turing"
-            className={`${router.pathname.startsWith('/turing') && 'bg-background-1'} uppercase hover:bg-background-1`}
+            href="/openings"
+            className={`${router.pathname.startsWith('/openings') && 'bg-background-1'} hover:bg-background-1`}
           >
-            Bot-or-not
+            Openings
+          </Link>
+          <Link
+            href="/turing"
+            className={`${router.pathname.startsWith('/turing') && 'bg-background-1'} hover:bg-background-1`}
+          >
+            Bot-or-Not
           </Link>
           <Link
             href="/leaderboard"
-            className={`${router.pathname.startsWith('/leaderboard') && 'bg-background-1'} uppercase hover:bg-background-1`}
+            className={`${router.pathname.startsWith('/leaderboard') && 'bg-background-1'} hover:bg-background-1`}
           >
             Leaderboard
           </Link>
-          <Link
-            href="/blog"
-            className={`${router.pathname.startsWith('/blog') && 'bg-background-1'} uppercase hover:bg-background-1`}
-          >
-            Blog
-          </Link>
-          <a
-            target="_blank"
-            rel="noreferrer"
-            href="https://twitch.tv/maiachess"
-            className="uppercase hover:bg-background-1"
-          >
-            WATCH
-          </a>
-          <a
-            target="_blank"
-            rel="noreferrer"
-            href="https://forms.gle/XYeoTJF4YgUu4Vq28"
-            className="uppercase hover:bg-background-1"
-          >
-            FEEDBACK
-          </a>
+          <div className="group relative">
+            <button className="-gap-1 flex items-center">
+              <p>More</p>
+              <i className="material-symbols-outlined">arrow_drop_down</i>
+            </button>
+            <div className="absolute left-0 top-[100%] z-30 hidden w-32 flex-col items-start bg-background-1 group-hover:flex">
+              <Link
+                href="/blog"
+                className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
+              >
+                Blog
+              </Link>
+              <a
+                target="_blank"
+                rel="noreferrer"
+                href="https://twitch.tv/maiachess"
+                className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
+              >
+                Watch
+              </a>
+              <a
+                target="_blank"
+                rel="noreferrer"
+                href="https://forms.gle/XYeoTJF4YgUu4Vq28"
+                className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
+              >
+                Feedback
+              </a>
+            </div>
+          </div>
         </div>
       </div>
       <div className="hidden flex-row items-center gap-3 md:flex">
@@ -249,6 +263,9 @@ export const Header: React.FC = () => {
             </Link>
             <Link href="/train" className="uppercase">
               Train
+            </Link>
+            <Link href="/openings" className="uppercase">
+              Openings
             </Link>
             <Link href="/turing" className="uppercase">
               Bot-or-not
