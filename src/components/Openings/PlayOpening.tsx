@@ -117,6 +117,7 @@ export const PlayOpening: React.FC<Props> = ({
     window.open(url.toString(), '_blank')
   }, [
     push,
+    color,
     version,
     timeControl,
     maiaTimeControl,
