@@ -217,7 +217,7 @@ function Switcher({
             role="button"
             tabIndex={0}
             onClick={() => setSelected(option)}
-            className={`flex flex-1 cursor-pointer items-center justify-center px-3 py-1.5 ${selected.id === option.id ? 'bg-human-4/60' : 'hover:bg-human-4/10'}`}
+            className={`flex flex-1 cursor-pointer items-center justify-center px-2 py-1.5 ${selected.id === option.id ? 'bg-human-4/60' : 'hover:bg-human-4/10'}`}
           >
             <p className="select-none text-sm">{option.name}</p>
           </div>

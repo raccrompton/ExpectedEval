@@ -51,7 +51,7 @@ const Openings: React.FC = () => {
           }}
         />
       </div>
-      <div className="flex h-[75vh] flex-1 flex-col justify-between gap-4 md:min-w-[35vh] md:max-w-[45vh]">
+      <div className="flex min-h-[75vh] flex-1 flex-col justify-between gap-4 md:min-w-[40vh] md:max-w-[30%]">
         <OpeningDetails
           selectedOpening={selectedOpening}
           selectedVariation={selectedVariation}
