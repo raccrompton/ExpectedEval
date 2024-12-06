@@ -19,7 +19,7 @@ export const OpeningBook: React.FC<Props> = ({
   setSelectedVariation,
 }: Props) => {
   return (
-    <div className="flex max-h-[40vh] flex-1 flex-col gap-2 border border-white border-opacity-5 bg-background-1 py-2 md:h-[75vh] md:max-h-max md:min-w-[35vh] md:max-w-[45vh] md:rounded md:py-3">
+    <div className="flex max-h-[40vh] flex-1 flex-col gap-2 border border-white border-opacity-5 bg-background-1 py-2 md:h-[75vh] md:max-h-max md:min-w-[40vh] md:max-w-[30%] md:rounded md:py-3">
       <div className="flex items-center gap-2 px-4 2xl:px-6">
         <i className="material-symbols-outlined text-xl md:text-3xl">
           menu_book
