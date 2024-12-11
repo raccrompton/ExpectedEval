@@ -221,8 +221,8 @@ export const usePlayController = (
   const setCurrentSquare = async (key: string | null) => undefined
 
   const stats: AllStats = {
-    lifetimeStats: undefined,
-    sessionStats: { gamesWon: 0, gamesPlayed: 0 },
+    lifetime: undefined,
+    session: { gamesWon: 0, gamesPlayed: 0 },
     lastRating: undefined,
     rating: 0,
   }
