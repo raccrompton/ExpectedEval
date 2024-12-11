@@ -25,8 +25,8 @@ export const PlayControllerContext =
     blackClock: 0,
     lastMoveTime: 0,
     stats: {
-      lifetimeStats: undefined,
-      sessionStats: { gamesWon: 0, gamesPlayed: 0 },
+      lifetime: undefined,
+      session: { gamesWon: 0, gamesPlayed: 0 },
       lastRating: undefined,
       rating: 0,
     },
