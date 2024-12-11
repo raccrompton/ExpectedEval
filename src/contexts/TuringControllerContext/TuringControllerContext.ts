@@ -12,8 +12,8 @@ export const TuringControllerContext =
   React.createContext<ITuringControllerContext>({
     game: undefined,
     stats: {
-      lifetimeStats: undefined,
-      sessionStats: { gamesWon: 0, gamesPlayed: 0 },
+      lifetime: undefined,
+      session: { gamesWon: 0, gamesPlayed: 0 },
       lastRating: 0,
       rating: 0,
     },

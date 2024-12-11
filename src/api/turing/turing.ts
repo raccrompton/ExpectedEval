@@ -80,6 +80,7 @@ export const submitTuringGuess = async (
   const split = rawTimeControl.split('+')
   const baseTimeInMinutes = parseInt(split[0], 10) / 60
   const timeControl = `${baseTimeInMinutes}+${split[1]}`
+  const turingElo = data['turing_elo']
 
   return {
     bot,
@@ -88,6 +89,7 @@ export const submitTuringGuess = async (
     correct,
     gameType,
     timeControl,
+    turingElo,
   } as TuringSubmissionResult
 }
 

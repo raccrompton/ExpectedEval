@@ -13,4 +13,6 @@ export interface TuringSubmissionResult {
   correct: boolean
   gameType: string
   timeControl: string
+  turingElo: number
+  ratingDiff: number
 }

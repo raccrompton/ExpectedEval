@@ -17,9 +17,9 @@ import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
 
 import {
-  getTrainingPlayerStats,
   getTrainingGame,
   logPuzzleGuesses,
+  getTrainingPlayerStats,
 } from 'src/api'
 import {
   Loading,
@@ -66,15 +66,13 @@ const TrainPage: NextPage = () => {
   const [trainingGames, setTrainingGames] = useState<TrainingGame[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [status, setStatus] = useState<Status>('default')
-  const [loading, setLoading] = useState(false)
-  const [stats, incrementStats] = useStats(statsLoader)
+  const [stats, incrementStats, updateRating] = useStats(statsLoader)
   const [userGuesses, setUserGuesses] = useState<string[]>([])
   const [previousGameResults, setPreviousGameResults] = useState<
-    (TrainingGame & { result?: boolean })[]
+    (TrainingGame & { result?: boolean; ratingDiff?: number })[]
   >([])
 
   const getNewGame = useCallback(async () => {
-    setLoading(true)
     let game
     try {
       game = await getTrainingGame()
@@ -83,7 +81,6 @@ const TrainPage: NextPage = () => {
       return
     }
 
-    setLoading(false)
     setStatus('default')
     setUserGuesses([])
     setTrainingGames(trainingGames.concat([game]))
@@ -100,7 +97,7 @@ const TrainPage: NextPage = () => {
   }, [currentIndex])
 
   const logGuess = useCallback(
-    async (gameId, move, status, setStatus) => {
+    async (gameId, move, status, setStatus, rating) => {
       if (currentIndex != trainingGames.length - 1) {
         return // No logging for past puzzles
       }
@@ -124,10 +121,17 @@ const TrainPage: NextPage = () => {
               ? {
                   ...game,
                   result: false,
+                  ratingDiff: response.puzzle_elo - rating,
                 }
               : game
           })
         })
+
+        // If the user forfeits, update their stats
+        if (userGuesses.length == 0) {
+          updateRating(response.puzzle_elo)
+          incrementStats(1, 0)
+        }
         return
       }
 
@@ -139,7 +143,7 @@ const TrainPage: NextPage = () => {
 
       if (userGuesses.length == 0) {
         const result = response.correct_moves.includes(newGuesses[0])
-        // This was the first guess, which is thte only one that counts for correctness
+        // This was the first guess, which is the only one that counts for correctness
         // After waiting for a while after logging the guess to accomodate slow server,
         // update stats
         if (newGuesses.length && response.correct_moves) {
@@ -149,13 +153,14 @@ const TrainPage: NextPage = () => {
                 ? {
                     ...game,
                     result,
+                    ratingDiff: response.puzzle_elo - rating,
                   }
                 : game
             })
           })
         }
 
-        await new Promise((r) => setTimeout(r, 500))
+        updateRating(response.puzzle_elo)
         incrementStats(1, result ? 1 : 0)
       }
     },
@@ -204,6 +209,7 @@ interface Props {
     move: string[] | null,
     status: Status,
     setStatus: Dispatch<SetStateAction<Status>>,
+    rating: number,
   ) => void
 }
 
@@ -257,14 +263,20 @@ const Train: React.FC<Props> = ({
 
       if (playedMove != null && status !== 'correct' && status !== 'forfeit') {
         setLatestGuess(parseMove(playedMove)?.san || null)
-        logGuess(trainingGame.id, playedMove, status, setStatus)
+        logGuess(
+          trainingGame.id,
+          playedMove,
+          status,
+          setStatus,
+          stats.rating ?? 0,
+        )
       }
     },
     [setCurrentMove, logGuess, trainingGame.id, status, setStatus],
   )
 
   const setAndGiveUp = useCallback(() => {
-    logGuess(trainingGame.id, null, 'forfeit', setStatus)
+    logGuess(trainingGame.id, null, 'forfeit', setStatus, stats.rating ?? 0)
     setStatus('forfeit')
   }, [trainingGame.id, logGuess, setStatus])
 

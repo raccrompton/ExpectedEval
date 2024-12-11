@@ -3,7 +3,7 @@ import { useCallback, useContext, useEffect, useState } from 'react'
 
 import { TuringControllerContext } from 'src/contexts'
 
-export const TuringSubmission: React.FC = () => {
+export const TuringSubmission = ({ rating }: { rating: number }) => {
   const { game, submitGuess, getNewGame, commentController } = useContext(
     TuringControllerContext,
   )
@@ -12,9 +12,9 @@ export const TuringSubmission: React.FC = () => {
 
   const handleSubmit = useCallback(() => {
     if (selected) {
-      submitGuess(selected, comment)
+      submitGuess(selected, comment, rating)
     }
-  }, [selected, submitGuess, comment])
+  }, [selected, submitGuess, comment, rating])
 
   useEffect(() => {
     setSelected(null)

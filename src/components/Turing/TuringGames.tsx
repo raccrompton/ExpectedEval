@@ -6,14 +6,36 @@ export const TuringGames: React.FC = () => {
   const { gameIds, setCurrentId, games } = useContext(TuringControllerContext)
   return (
     <div className="flex flex-row flex-wrap items-start justify-start gap-1 overflow-y-auto">
-      {gameIds.map((id) => (
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-        <span
-          key={id}
-          onClick={() => setCurrentId(id)}
-          className={`${!games[id].result ? 'bg-button-secondary' : games[id].result?.correct ? 'bg-engine-4' : 'bg-human-4'} h-7 w-7 cursor-pointer rounded-sm`}
-        />
-      ))}
+      {gameIds.map((id) => {
+        const game = games[id]
+        return (
+          <button
+            key={id}
+            onClick={() => setCurrentId(id)}
+            className={`${!game.result ? 'bg-button-secondary' : game.result?.correct ? 'bg-engine-4' : 'bg-human-4'} h-10 w-10 cursor-pointer rounded-sm`}
+          >
+            {game.result?.ratingDiff ? (
+              <>
+                <i
+                  className={`material-symbols-outlined -mt-1 ${game.result.ratingDiff >= 0 ? 'text-blue-200' : 'text-red-300'}`}
+                >
+                  {game.result.ratingDiff >= 0
+                    ? 'arrow_drop_up'
+                    : 'arrow_drop_down'}
+                </i>
+                <p
+                  className={`-mt-2 text-xs tracking-widest ${game.result.ratingDiff >= 0 ? 'text-blue-200' : 'text-red-300'}`}
+                >
+                  {game.result.ratingDiff >= 0 && '+'}
+                  {game.result.ratingDiff}
+                </p>
+              </>
+            ) : (
+              <></>
+            )}
+          </button>
+        )
+      })}
     </div>
   )
 }

@@ -54,7 +54,7 @@ const useHandBrainPlayController = (
 
   const [brainMoves, setBrainMoves] = useState<string[]>([])
 
-  const [stats, incrementStats] = useStats(
+  const [stats, incrementStats, updateRating] = useStats(
     isBrain ? brainStatsLoader : handStatsLoader,
   )
 
@@ -258,7 +258,7 @@ const useHandBrainPlayController = (
     const winner = controller.game.termination?.winner
 
     const submitFn = async () => {
-      await backOff(
+      const response = await backOff(
         () =>
           submitGameMove(
             controller.game.id,
@@ -276,6 +276,8 @@ const useHandBrainPlayController = (
       )
       if (controller.game.termination) {
         const winner = controller.game.termination?.winner
+
+        updateRating(response.player_elo)
         incrementStats(1, winner == playGameConfig.player ? 1 : 0)
       }
     }
@@ -290,6 +292,7 @@ const useHandBrainPlayController = (
     brainMoves,
     playGameConfig.player,
     incrementStats,
+    updateRating,
   ])
 
   return {

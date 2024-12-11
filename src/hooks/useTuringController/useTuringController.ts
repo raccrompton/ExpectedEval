@@ -23,7 +23,7 @@ export const useTuringController = () => {
 
   const [currentId, setCurrentId] = useState<null | string>(null)
   const [loading, setLoading] = useState(false)
-  const [stats, incrementStats, resetLastRating] = useStats(statsLoader)
+  const [stats, incrementStats, updateRating] = useStats(statsLoader)
 
   const getNewGame = useCallback(async () => {
     setLoading(true)
@@ -35,11 +35,10 @@ export const useTuringController = () => {
       return
     }
 
-    resetLastRating()
     setLoading(false)
     setTuringGames({ ...turingGames, [game.id]: game })
     setCurrentId(game.id)
-  }, [turingGames, router, resetLastRating])
+  }, [turingGames, router])
 
   useEffect(() => {
     if (Object.keys(turingGames).length === 0) getNewGame()
@@ -53,20 +52,23 @@ export const useTuringController = () => {
   const gameIds = useMemo(() => Object.keys(turingGames), [turingGames])
 
   const submitGuess = useCallback(
-    async (guess: Color, comment = '') => {
+    async (guess: Color, comment = '', rating: number) => {
       if (game && !game.result) {
         const result = await submitTuringGuess(game.id, guess, comment)
         setTuringGames({
           ...turingGames,
-          [game.id]: { ...game, result },
+          [game.id]: {
+            ...game,
+            result: { ...result, ratingDiff: result.turingElo - rating },
+          },
         })
         commentController[1]('')
-        // to avoid race conditions on the server, sleep
-        await new Promise((r) => setTimeout(r, 500))
+
+        updateRating(result.turingElo)
         incrementStats(1, result.correct ? 1 : 0)
       }
     },
-    [game, incrementStats, turingGames],
+    [game, incrementStats, turingGames, updateRating],
   )
 
   const commentController = useState('')

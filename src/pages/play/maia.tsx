@@ -31,7 +31,7 @@ const useVsMaiaPlayController = (
 ) => {
   const controller = usePlayController(id, playGameConfig)
 
-  const [stats, incrementStats] = useStats(playStatsLoader)
+  const [stats, incrementStats, updateRating] = useStats(playStatsLoader)
 
   const makeMove = async (moveUci: string) => {
     const newMoves = [...controller.moves, moveUci]
@@ -111,7 +111,7 @@ const useVsMaiaPlayController = (
     const winner = controller.game.termination?.winner
 
     const submitFn = async () => {
-      await backOff(
+      const response = await backOff(
         () =>
           submitGameMove(
             controller.game.id,
@@ -130,6 +130,7 @@ const useVsMaiaPlayController = (
       // Only update stats after final move submitted
       if (controller.game.termination) {
         const winner = controller.game.termination?.winner
+        updateRating(response.player_elo)
         incrementStats(1, winner == playGameConfig.player ? 1 : 0)
       }
     }
@@ -141,6 +142,7 @@ const useVsMaiaPlayController = (
     controller.moveTimes,
     playGameConfig.startFen,
     incrementStats,
+    updateRating,
     playGameConfig.player,
   ])
 
