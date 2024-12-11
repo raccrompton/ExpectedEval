@@ -138,7 +138,7 @@ const Turing: React.FC<Props> = (props: Props) => {
               <MovesContainer game={game} termination={game.termination} />
             </div>
             <div>
-              <TuringSubmission />
+              <TuringSubmission rating={stats.rating ?? 0} />
             </div>
             <div className="flex-none">
               <BoardController />
@@ -171,7 +171,7 @@ const Turing: React.FC<Props> = (props: Props) => {
               <BoardController />
             </div>
             <div className="w-screen">
-              <TuringSubmission />
+              <TuringSubmission rating={stats.rating ?? 0} />
             </div>
             <div className="flex w-full">
               <ContinueAgainstMaia launchContinue={launchContinue} />

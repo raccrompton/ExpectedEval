@@ -95,12 +95,12 @@ export const StatsDisplay: React.FC<Props> = ({
       {hideSession ? null : (
         <div className="flex flex-col gap-1">
           <div className="text-xs uppercase">This session</div>
-          <SingleStatsDisplay stats={stats.sessionStats} />
+          <SingleStatsDisplay stats={stats.session} />
         </div>
       )}
       <div className="flex flex-col gap-1 text-secondary">
         <div className="text-xs uppercase">Lifetime</div>
-        <SingleStatsDisplay stats={stats.lifetimeStats} />
+        <SingleStatsDisplay stats={stats.lifetime} />
       </div>
     </div>
   )

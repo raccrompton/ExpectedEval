@@ -89,7 +89,7 @@ export const Header: React.FC = () => {
             <div
               className={`${router.pathname.startsWith('/play') && 'bg-background-1'} group relative`}
             >
-              <button>Play</button>
+              <button className="uppercase">Play</button>
               <div className="absolute left-0 top-[100%] z-30 hidden w-48 flex-col items-start bg-background-1 group-hover:flex">
                 <button
                   onClick={() => startGame('againstMaia')}
@@ -125,37 +125,37 @@ export const Header: React.FC = () => {
           )}
           <Link
             href="/analysis"
-            className={`${router.pathname.startsWith('/analysis') && 'bg-background-1'} hover:bg-background-1`}
+            className={`${router.pathname.startsWith('/analysis') && 'bg-background-1'} uppercase hover:bg-background-1`}
           >
             Analysis
           </Link>
           <Link
             href="/train"
-            className={`${router.pathname.startsWith('/train') && 'bg-background-1'} hover:bg-background-1`}
+            className={`${router.pathname.startsWith('/train') && 'bg-background-1'} uppercase hover:bg-background-1`}
           >
             Train
           </Link>
           <Link
             href="/openings"
-            className={`${router.pathname.startsWith('/openings') && 'bg-background-1'} hover:bg-background-1`}
+            className={`${router.pathname.startsWith('/openings') && 'bg-background-1'} uppercase hover:bg-background-1`}
           >
             Openings
           </Link>
           <Link
             href="/turing"
-            className={`${router.pathname.startsWith('/turing') && 'bg-background-1'} hover:bg-background-1`}
+            className={`${router.pathname.startsWith('/turing') && 'bg-background-1'} uppercase hover:bg-background-1`}
           >
             Bot-or-Not
           </Link>
           <Link
             href="/leaderboard"
-            className={`${router.pathname.startsWith('/leaderboard') && 'bg-background-1'} hover:bg-background-1`}
+            className={`${router.pathname.startsWith('/leaderboard') && 'bg-background-1'} uppercase hover:bg-background-1`}
           >
             Leaderboard
           </Link>
           <div className="group relative">
             <button className="-gap-1 flex items-center">
-              <p>More</p>
+              <p className="uppercase">More</p>
               <i className="material-symbols-outlined">arrow_drop_down</i>
             </button>
             <div className="absolute left-0 top-[100%] z-30 hidden w-32 flex-col items-start bg-background-1 group-hover:flex">
