@@ -319,7 +319,10 @@ export const AboutMaia = () => {
           </p>
         </div>
       </section>
-      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+      <section
+        id="paper"
+        className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black"
+      >
         <div className="mx-auto my-0 max-w-[1170px]">
           <div className="row col-lg-9 col-lg-offset-2 left-justify-section">
             <h3 className="text-center text-xl font-bold uppercase">Paper</h3>
@@ -413,7 +416,10 @@ export const AboutMaia = () => {
           </div>
         </div>
       </section>
-      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+      <section
+        id="data"
+        className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black"
+      >
         <div className="mx-auto my-0 max-w-[1170px]">
           <div className="row col-lg-8 col-lg-offset-2 left-justify-section">
             <h3 className="text-center text-xl font-bold uppercase">Data</h3>
@@ -431,7 +437,10 @@ export const AboutMaia = () => {
           </div>
         </div>
       </section>
-      <section className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black">
+      <section
+        id="team"
+        className="flex min-h-[60vh] flex-col justify-evenly bg-white py-20 text-black"
+      >
         <div className="mx-auto my-0 max-w-[1170px]">
           <div>
             <h3 className="text-center text-xl font-bold uppercase">Team</h3>
