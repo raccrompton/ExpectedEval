@@ -29,7 +29,7 @@ export const ModalContainer: React.FC<Props> = ({
         exit={{ y: 100, opacity: 0 }}
         transition={{ duration: 0.2, type: 'tween' }}
         className="max-w-[100vw] rounded bg-backdrop p-8"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         {children}
       </motion.div>
