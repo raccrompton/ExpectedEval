@@ -83,11 +83,9 @@ class Engine {
     }
 
     if (!isNaN(mate) && isNaN(cp)) {
-      if (this.fen.includes(' w ')) {
-        cp = mate > 0 ? 10000 : -10000
-      } else {
-        cp = mate > 0 ? -10000 : 10000
-      }
+      console.log(msg)
+      console.log(this.fen)
+      cp = mate > 0 ? 10000 : -10000
     }
 
     if (this.store[depth]) {
@@ -107,6 +105,7 @@ class Engine {
 
     if (!this.store[depth].sent && multipv === this.legalMoveCount) {
       this.store[depth].sent = true
+      console.log(Object.values(this.store[depth].cp_vec))
       this.callback(this.store[depth], this.moveIndex)
     }
   }
