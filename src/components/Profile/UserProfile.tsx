@@ -8,12 +8,11 @@ import {
   RegularPlayIcon,
 } from '../Icons/icons'
 import { ProfileColumn } from 'src/components'
+import { PlayerStats } from 'src/types'
 
 interface Props {
   wide?: boolean
-  stats: {
-    [key: string]: number
-  }
+  stats: PlayerStats
 }
 
 export const UserProfile = ({ wide, stats }: Props) => {

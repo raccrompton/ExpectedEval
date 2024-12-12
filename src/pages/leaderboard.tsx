@@ -16,8 +16,9 @@ const Leaderboard: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<
     {
       icon: JSX.Element
-      name: string
       ranking: { display_name: string; elo: number }[]
+      name: 'Regular' | 'Train' | 'Bot/Not' | 'Hand' | 'Brain'
+      id: 'regular' | 'train' | 'turing' | 'hand' | 'brain'
     }[]
   >()
   const fetchLeaderboard = useCallback(async () => {
@@ -25,26 +26,31 @@ const Leaderboard: React.FC = () => {
     setLastUpdated(new Date(lb.last_updated + 'Z'))
     setLeaderboard([
       {
+        id: 'regular',
         icon: <RegularPlayIcon />,
         name: 'Regular',
         ranking: lb.play_leaders,
       },
       {
+        id: 'train',
         icon: <TrainIcon />,
         name: 'Train',
         ranking: lb.puzzles_leaders,
       },
       {
+        id: 'turing',
         icon: <TuringIcon />,
         name: 'Bot/Not',
         ranking: lb.turing_leaders,
       },
       {
+        id: 'hand',
         icon: <HandIcon />,
         name: 'Hand',
         ranking: lb.hand_leaders,
       },
       {
+        id: 'brain',
         icon: <BrainIcon />,
         name: 'Brain',
         ranking: lb.brain_leaders,
@@ -81,7 +87,7 @@ const Leaderboard: React.FC = () => {
             : '...'}
         </p>
       </div>
-      <div className="grid h-full w-full grid-cols-1 justify-start gap-4 md:grid-cols-3">
+      <div className="grid h-full w-full grid-cols-1 justify-start gap-4 md:grid-cols-2 lg:grid-cols-3">
         {leaderboard?.map((column, index) => (
           <LeaderboardColumn key={index} {...column} />
         ))}
