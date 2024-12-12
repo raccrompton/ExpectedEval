@@ -1,8 +1,9 @@
-import Link from 'next/link'
+import { LeaderboardEntry } from 'src/components'
 
 interface Props {
+  id: 'regular' | 'train' | 'turing' | 'hand' | 'brain'
+  name: 'Regular' | 'Train' | 'Bot/Not' | 'Hand' | 'Brain'
   icon: JSX.Element
-  name: string
   ranking: {
     display_name: string
     elo: number
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export const LeaderboardColumn: React.FC<Props> = ({
+  id,
   icon,
   name,
   ranking,
@@ -22,24 +24,13 @@ export const LeaderboardColumn: React.FC<Props> = ({
       </div>
       <div className="flex w-full flex-col">
         {ranking.map((player, index) => (
-          <div
+          <LeaderboardEntry
             key={index}
-            className={`flex w-full items-center justify-between px-6 py-2 ${index % 2 === 0 ? 'bg-background-1/90' : 'bg-background-1/50'}`}
-          >
-            <div className="flex items-center gap-2">
-              <p className="w-5">{index + 1}</p>
-              <Link
-                href={`/profile/${player.display_name}`}
-                className="flex items-center gap-2 hover:underline"
-              >
-                <p>
-                  {player.display_name} {index == 0 && '👑'}
-                </p>
-              </Link>
-            </div>
-
-            <p>{player.elo}</p>
-          </div>
+            typeId={id}
+            type={name}
+            index={index}
+            {...player}
+          />
         ))}
       </div>
     </div>
