@@ -3,6 +3,7 @@ import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { useContext, useState, useEffect } from 'react'
 
+import { PlayerStats } from 'src/types'
 import { getPlayerStats } from 'src/api'
 import { UserIcon } from 'src/components/Icons/icons'
 import { AuthContext, WindowSizeContext } from 'src/contexts'
@@ -11,7 +12,7 @@ import { AuthenticatedWrapper, UserProfile, GameList } from 'src/components'
 const ProfilePage: NextPage = () => {
   const router = useRouter()
   const { user } = useContext(AuthContext)
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<PlayerStats>({
     regularRating: 0,
     regularWins: 0,
     regularDraws: 0,
@@ -74,9 +75,7 @@ const ProfilePage: NextPage = () => {
 }
 
 interface Props {
-  stats: {
-    [key: string]: number
-  }
+  stats: PlayerStats
 }
 const Profile: React.FC<Props> = (props: Props) => {
   const { user } = useContext(AuthContext)
