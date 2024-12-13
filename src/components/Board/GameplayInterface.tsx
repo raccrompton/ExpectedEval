@@ -182,7 +182,15 @@ export const GameplayInterface: React.FC<Props> = (
             >
               {Info}
             </GameInfo>
-            <StatsDisplay stats={stats} hideSession={true} />
+            <div className="flex w-full flex-col gap-2">
+              <ExportGame
+                game={game}
+                whitePlayer={whitePlayer ?? 'Unknown'}
+                blackPlayer={blackPlayer ?? 'Unknown'}
+                maiaVersion={maiaTitle}
+              />
+              <StatsDisplay stats={stats} hideSession={true} />
+            </div>
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
             <GameBoard
@@ -224,7 +232,6 @@ export const GameplayInterface: React.FC<Props> = (
             ) : null}
           </div>
         </div>
-        <ExportGame moves={game.moves.slice(0, controller.currentIndex + 1)} />
       </div>
     </>
   )
@@ -266,6 +273,12 @@ export const GameplayInterface: React.FC<Props> = (
             </div>
             <div className="w-screen">{props.children}</div>
             <StatsDisplay stats={stats} hideSession={true} />
+            <ExportGame
+              game={game}
+              whitePlayer={whitePlayer ?? 'Unknown'}
+              blackPlayer={blackPlayer ?? 'Unknown'}
+              maiaVersion={maiaTitle}
+            />
           </div>
         </div>
       </div>

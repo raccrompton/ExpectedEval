@@ -83,8 +83,6 @@ class Engine {
     }
 
     if (!isNaN(mate) && isNaN(cp)) {
-      console.log(msg)
-      console.log(this.fen)
       cp = mate > 0 ? 10000 : -10000
     }
 
