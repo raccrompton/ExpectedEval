@@ -54,14 +54,14 @@ const ProfilePage: NextPage = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      const playerStats = await getPlayerStats(user?.lichessId)
+      const playerStats = await getPlayerStats()
       setStats(playerStats)
     }
 
     if (!user?.lichessId) router.push('/')
 
     fetchStats()
-  }, [])
+  }, [user])
 
   return (
     <AuthenticatedWrapper>
