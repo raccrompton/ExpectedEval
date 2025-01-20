@@ -3,28 +3,21 @@ import * as ort from 'onnxruntime-web'
 import { mirrorMove, preprocess, allPossibleMovesReversed } from './utils'
 
 class Maia {
-  public Ready: Promise<boolean>
   public model!: ort.InferenceSession
+  public ready: boolean
 
-  constructor(options: {
-    modelPath: string
-    wasmPaths?: ort.Env.WasmPrefixOrFilePaths
-  }) {
-    this.Ready = new Promise(async (resolve, reject) => {
+  constructor(options: { model: string }) {
+    this.ready = false
+    ;(async () => {
       try {
-        const buffer = await this.getCachedModel(options.modelPath)
-
-        if (options.wasmPaths) {
-          ort.env.wasm.wasmPaths = options.wasmPaths
-        }
-
+        const buffer = await this.getCachedModel(options.model)
         this.model = await ort.InferenceSession.create(buffer)
 
-        resolve(true)
+        this.ready = true
       } catch (e) {
-        reject(e)
+        this.ready = false
       }
-    })
+    })()
   }
 
   private async getCachedModel(url: string): Promise<ArrayBuffer> {
