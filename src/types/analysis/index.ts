@@ -35,6 +35,14 @@ export interface AnalyzedGame extends Game {
   pgn?: string
 }
 
+export interface ClientAnalyzedGame extends Game {
+  maiaEvaluations: { [rating: string]: MaiaEvaluation }[]
+  stockfishEvaluations: StockfishEvaluations<EvaluationType>
+  availableMoves: AvailableMoves[]
+  type: EvaluationType
+  pgn?: string
+}
+
 export interface Termination {
   result: string
   winner: 'white' | 'black' | 'none' | undefined
@@ -49,6 +57,11 @@ export interface MoveMap {
 export interface PositionEvaluation {
   trickiness: number
   performance: number
+}
+
+export interface MaiaEvaluation {
+  policy: { [key: string]: number }
+  value: number
 }
 
 export interface StockfishEvaluation {

@@ -103,7 +103,7 @@ class Engine {
 
     if (!this.store[depth].sent && multipv === this.legalMoveCount) {
       this.store[depth].sent = true
-      console.log(Object.values(this.store[depth].cp_vec))
+
       this.callback(this.store[depth], this.moveIndex)
     }
   }

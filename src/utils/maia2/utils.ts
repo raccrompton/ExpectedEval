@@ -3,10 +3,6 @@ import { Chess, Move } from 'chess.ts'
 import allPossibleMovesDict from './data/all_moves.json'
 import allPossibleMovesReversedDict from './data/all_moves_reversed.json'
 
-interface VerboseMove extends Move {
-  lan: string
-}
-
 const allPossibleMoves = allPossibleMovesDict as Record<string, number>
 const allPossibleMovesReversed = allPossibleMovesReversedDict as Record<
   number,
@@ -131,8 +127,10 @@ function preprocess(
 
   // Generate legal moves tensor
   const legalMoves = new Float32Array(Object.keys(allPossibleMoves).length)
-  for (const move of board.moves({ verbose: true }) as VerboseMove[]) {
-    const moveIndex = allPossibleMoves[move.lan]
+
+  for (const move of board.moves({ verbose: true }) as Move[]) {
+    const promotion = move.promotion ? move.promotion : ''
+    const moveIndex = allPossibleMoves[move.from + move.to + promotion]
 
     if (moveIndex !== undefined) {
       legalMoves[moveIndex] = 1.0
@@ -260,13 +258,14 @@ function mirrorFEN(fen: string): string {
   const mirroredActiveColor = activeColor === 'w' ? 'b' : 'w'
 
   // Adjust castling rights: Swap uppercase (white) with lowercase (black) and vice versa
-  const mirroredCastling = swapCastlingRights(castling)
+  // const mirroredCastling = swapCastlingRights(castling)
 
   // En passant square: Mirror the rank only (since flipping top-to-bottom)
-  const mirroredEnPassant = enPassant !== '-' ? mirrorEnPassant(enPassant) : '-'
+  // const mirroredEnPassant = enPassant !== '-' ? mirrorEnPassant(enPassant) : '-'
 
   // Return the new FEN
-  return `${mirroredPosition} ${mirroredActiveColor} ${mirroredCastling} ${mirroredEnPassant} ${halfmove} ${fullmove}`
+  // return `${mirroredPosition} ${mirroredActiveColor} ${mirroredCastling} ${mirroredEnPassant} ${halfmove} ${fullmove}`
+  return `${mirroredPosition} ${mirroredActiveColor} ${castling} ${enPassant} ${halfmove} ${fullmove}`
 }
 
 /**
@@ -290,25 +289,22 @@ function swapColorsInRank(rank: string): string {
 }
 
 /**
- * Swaps the colors of pieces in a rank by changing uppercase to lowercase and vice versa.
- * @param rank The rank to be mirrored.
- * @returns The mirrored rank.
+ * Swap castling rights between white and black.
+ *
+ * @param castling - The castling rights string.
+ * @returns The swapped castling rights string.
  */
 function swapCastlingRights(castling: string): string {
-  if (castling === '-') return castling
-
-  let swapped = ''
-  for (const char of castling) {
-    if (/[A-Z]/.test(char)) {
-      swapped += char.toLowerCase()
-    } else if (/[a-z]/.test(char)) {
-      swapped += char.toUpperCase()
-    } else {
-      swapped += char
-    }
+  const castlingMap: { [key: string]: string } = {
+    K: 'k',
+    Q: 'q',
+    k: 'K',
+    q: 'Q',
   }
-
-  return swapped
+  return castling
+    .split('')
+    .map((char) => castlingMap[char] || char)
+    .join('')
 }
 
 /**

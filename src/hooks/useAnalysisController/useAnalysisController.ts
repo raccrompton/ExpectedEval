@@ -75,6 +75,8 @@ export const useAnalysisController = (
       })
     }
 
+    console.log(moveMap)
+
     return moveMap
   }, [controller.currentIndex, game.maiaEvaluations, maiaModels])
 
