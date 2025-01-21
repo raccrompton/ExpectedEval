@@ -10,24 +10,33 @@ import {
 
 interface Props {
   moves: { [key: string]: number }[] | undefined
+  colorSanMapping: {
+    [move: string]: {
+      san: string
+      color: string
+    }
+  }
 }
 
-export const MovesByRating: React.FC<Props> = ({ moves }: Props) => {
+export const MovesByRating: React.FC<Props> = ({
+  moves,
+  colorSanMapping,
+}: Props) => {
   return (
-    <div className="col-span-2 flex h-full max-h-full flex-col rounded bg-background-1/60 pb-4">
-      <p className="p-4 text-xl text-white">Moves by Rating</p>
+    <div className="col-span-2 flex h-full max-h-full flex-col rounded bg-background-1/60">
+      <p className="p-4 text-lg text-white">Moves by Rating</p>
       <div className="flex h-full w-full flex-col">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={moves} margin={{ left: 20, right: 0 }}>
+          <AreaChart data={moves} margin={{ left: -5, right: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#3C3C3C" />
             <XAxis
               dataKey="rating"
               axisLine={false}
               tick={{
                 fill: 'white',
-                fontSize: 14,
+                fontSize: 10,
               }}
-              tickMargin={6}
+              tickMargin={4}
               ticks={[1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900]}
             />
             <YAxis
@@ -37,20 +46,20 @@ export const MovesByRating: React.FC<Props> = ({ moves }: Props) => {
               domain={[0, 100]}
               tick={{
                 fill: 'white',
-                fontSize: 14,
+                fontSize: 10,
               }}
               label={{
                 value: 'Maia Probability',
                 angle: -90,
-                fill: '#ff0000',
+                fill: '#FE7F6D',
                 position: 'insideLeft',
                 dy: 46,
-                offset: 4,
+                offset: 20,
                 fontWeight: 600,
                 fontSize: 14,
               }}
               tickCount={4}
-              tickMargin={5}
+              tickMargin={2}
               tickLine={false}
               tickFormatter={(value) => `${value}%`}
             />
@@ -61,7 +70,7 @@ export const MovesByRating: React.FC<Props> = ({ moves }: Props) => {
               domain={[0, 100]}
               tick={{
                 fill: 'white',
-                fontSize: 14,
+                fontSize: 10,
               }}
               tickCount={4}
               tickMargin={5}
@@ -79,11 +88,11 @@ export const MovesByRating: React.FC<Props> = ({ moves }: Props) => {
                     yAxisId="left"
                     dataKey={move}
                     dot={{
-                      stroke: '#fff',
+                      stroke: colorSanMapping[move].color,
                       strokeWidth: 1,
                     }}
-                    stroke={'#fff'}
-                    fill={'#fff'}
+                    stroke={colorSanMapping[move].color}
+                    fill={colorSanMapping[move].color}
                     fillOpacity={0.1}
                     strokeWidth={3}
                   />

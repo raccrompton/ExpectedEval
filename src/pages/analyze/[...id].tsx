@@ -21,7 +21,7 @@ import {
 } from 'src/api'
 import {
   Loading,
-  MovePlot,
+  MoveMap,
   GameInfo,
   GameBoard,
   BlunderMeter,
@@ -30,13 +30,14 @@ import {
   BoardController,
   AnalysisGameList,
   ContinueAgainstMaia,
+  MoveRecommendations,
   AuthenticatedWrapper,
   VerticalEvaluationBar,
   HorizontalEvaluationBar,
 } from 'src/components'
 import { Color } from 'src/types'
 import { useClientAnalysisController } from 'src/hooks'
-import { ClientAnalyzedGame, MoveMap } from 'src/types/analysis'
+import { ClientAnalyzedGame } from 'src/types/analysis'
 import { ThemeContext, ModalContext, WindowSizeContext } from 'src/contexts'
 import { GameControllerContext } from 'src/contexts/GameControllerContext/GameControllerContext'
 
@@ -224,7 +225,6 @@ const Analysis: React.FC<Props> = ({
   const {
     move,
     moves,
-    data,
     controller,
     setCurrentMaiaModel,
     currentMaiaModel,
@@ -233,7 +233,10 @@ const Analysis: React.FC<Props> = ({
     stockfishEvaluations,
     maiaEvaluations,
     blunderMeter,
+    moveMap,
     movesByRating,
+    colorSanMapping,
+    moveRecommendations,
   } = useClientAnalysisController(
     analyzedGame,
     initialIndex,
@@ -378,7 +381,7 @@ const Analysis: React.FC<Props> = ({
   const desktopLayout = (
     <div className="flex h-full w-full flex-col items-center py-4 md:py-10">
       <div className="flex h-full w-[90%] flex-1 flex-col justify-center gap-2">
-        <div className="flex h-[90vh] w-full flex-row items-start justify-start gap-2">
+        <div className="flex w-full flex-row items-start justify-start gap-2">
           {/* <div
             style={{ maxWidth: 'min(20vw, 100vw - 75vh)' }}
             className="flex h-[75vh] max-h-[70vw] w-[40vh] flex-col justify-start gap-2 overflow-hidden"
@@ -446,18 +449,27 @@ const Analysis: React.FC<Props> = ({
               />
             </div>
           </div>
-          <div className="grid h-full w-full grid-rows-3">
-            <div className="grid grid-cols-3 gap-2"></div>
-            <div className="grid grid-cols-3 gap-2"></div>
-            <div className="grid h-full grid-cols-3 gap-2 overflow-y-hidden">
-              <MovesByRating moves={movesByRating} />
-              <div className="flex flex-col">
-                {/* <MovesContainer
-                    game={analyzedGame}
-                    setCurrentMove={setCurrentMove}
-                    termination={analyzedGame.termination}
-                    currentMaiaModel={currentMaiaModel}
-                  /> */}
+          <div className="grid w-full grid-rows-3 gap-2">
+            <div className="h-[calc((90vh - 1rem)/3)] grid grid-cols-3 gap-2"></div>
+            <div className="h-[calc((90vh - 1rem)/3)] grid grid-cols-3 gap-2">
+              <MoveRecommendations
+                recommendations={moveRecommendations}
+                colorSanMapping={colorSanMapping}
+              />
+              <MoveMap moveMap={moveMap} colorSanMapping={colorSanMapping} />
+            </div>
+            <div className="h-[calc((90vh - 1rem)/3)] grid grid-cols-3 gap-2 overflow-y-hidden">
+              <MovesByRating
+                moves={movesByRating}
+                colorSanMapping={colorSanMapping}
+              />
+              <div className="ovrerflow-y-scroll flex h-[30vh] flex-col">
+                <MovesContainer
+                  game={analyzedGame}
+                  setCurrentMove={setCurrentMove}
+                  termination={analyzedGame.termination}
+                  currentMaiaModel={currentMaiaModel}
+                />
                 <BoardController setCurrentMove={setCurrentMove} />
               </div>
             </div>
