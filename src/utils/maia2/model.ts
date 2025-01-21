@@ -228,7 +228,17 @@ function processOutputs(
     moveProbs[legalMovesMirrored[i]] = probs[i]
   }
 
-  return { policy: moveProbs, value: winProb }
+  const sortedMoveProbs = Object.keys(moveProbs)
+    .sort((a, b) => moveProbs[b] - moveProbs[a])
+    .reduce(
+      (acc, key) => {
+        acc[key] = moveProbs[key]
+        return acc
+      },
+      {} as Record<string, number>,
+    )
+
+  return { policy: sortedMoveProbs, value: winProb }
 }
 
 export default Maia
