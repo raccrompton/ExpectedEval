@@ -31,6 +31,7 @@
     "react-dom": "^18.2.0",
     "react-markdown": "^8.0.2",
     "react-tooltip": "^5.28.0",
+    "recharts": "^2.15.0",
     "sass": "^1.47.0"
   },
   "devDependencies": {
