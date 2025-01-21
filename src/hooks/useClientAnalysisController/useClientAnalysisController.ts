@@ -229,6 +229,59 @@ export const useClientAnalysisController = (
     }
   }, [moveEvaluation])
 
+  const movesByRating = useMemo(() => {
+    if (
+      !maiaEvaluations[controller.currentIndex] ||
+      !stockfishEvaluations[controller.currentIndex]
+    )
+      return
+
+    const maia = maiaEvaluations[controller.currentIndex]
+    const stockfish = stockfishEvaluations[controller.currentIndex]
+
+    const candidates: string[][] = []
+
+    // Get top 3 Maia moves from selected rating level
+    for (const move of Object.keys(maia[currentMaiaModel].policy).slice(0, 3)) {
+      if (candidates.find((c) => c[0] === move)) continue
+      candidates.push([move, move])
+    }
+
+    // Get top 3 Stockfish moves
+    for (const move of Object.keys(stockfish.cp_vec).slice(0, 3)) {
+      if (candidates.find((c) => c[0] === move)) continue
+      candidates.push([move, move])
+    }
+
+    // Get top Maia move from each rating level
+    for (const rating of MAIA_MODELS) {
+      const move = Object.keys(maia[rating].policy)[0]
+      if (candidates.find((c) => c[0] === move)) continue
+      candidates.push([move, move])
+    }
+
+    const data = []
+    for (const rating of MAIA_MODELS) {
+      const entry: { [key: string]: number } = {
+        rating: parseInt(rating.slice(-4)),
+      }
+
+      for (const move of candidates) {
+        const probability = maia[rating].policy[move[0]] * 100
+        entry[move[1]] = probability
+      }
+
+      data.push(entry)
+    }
+
+    return data
+  }, [
+    controller.currentIndex,
+    maiaEvaluations,
+    stockfishEvaluations,
+    currentMaiaModel,
+  ])
+
   const move = useMemo(() => {
     if (
       currentMove &&
@@ -253,6 +306,7 @@ export const useClientAnalysisController = (
     currentMove,
     setCurrentMove,
     moveEvaluation,
+    movesByRating,
     blunderMeter,
     stockfishEvaluations,
     maiaEvaluations,

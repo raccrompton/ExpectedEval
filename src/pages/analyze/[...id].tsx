@@ -25,6 +25,7 @@ import {
   GameInfo,
   GameBoard,
   BlunderMeter,
+  MovesByRating,
   MovesContainer,
   BoardController,
   AnalysisGameList,
@@ -232,6 +233,7 @@ const Analysis: React.FC<Props> = ({
     stockfishEvaluations,
     maiaEvaluations,
     blunderMeter,
+    movesByRating,
   } = useClientAnalysisController(
     analyzedGame,
     initialIndex,
@@ -374,10 +376,10 @@ const Analysis: React.FC<Props> = ({
   )
 
   const desktopLayout = (
-    <>
-      <div className="flex h-full flex-1 flex-col justify-center gap-2">
-        <div className="flex w-full flex-row items-center justify-center gap-2">
-          <div
+    <div className="flex h-full w-full flex-col items-center py-4 md:py-10">
+      <div className="flex h-full w-[90%] flex-1 flex-col justify-center gap-2">
+        <div className="flex h-[90vh] w-full flex-row items-start justify-start gap-2">
+          {/* <div
             style={{ maxWidth: 'min(20vw, 100vw - 75vh)' }}
             className="flex h-[75vh] max-h-[70vw] w-[40vh] flex-col justify-start gap-2 overflow-hidden"
           >
@@ -408,60 +410,64 @@ const Analysis: React.FC<Props> = ({
               loadNewLichessGames={getAndSetLichessGames}
               loadNewUserGames={getAndSetUserGames}
             />
+          </div> */}
+          <div className="flex flex-col items-start">
+            <div className="flex flex-row items-start">
+              <div className="relative flex aspect-square w-[60vh]">
+                <GameBoard
+                  game={analyzedGame}
+                  moves={moves}
+                  setCurrentMove={setCurrentMove}
+                  move={move}
+                  shapes={
+                    movePlotHover
+                      ? [movePlotHover, ...topArrows]
+                      : [...topArrows]
+                  }
+                />
+              </div>
+              <div>
+                <VerticalEvaluationBar
+                  value={moveEvaluation?.maia?.value}
+                  label="Maia White Win %"
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-center">
+              <HorizontalEvaluationBar
+                min={0}
+                max={800}
+                value={
+                  moveEvaluation
+                    ? 400 + moveEvaluation?.stockfish?.model_optimal_cp
+                    : void 0
+                }
+                label="Stockfish Evaluation"
+              />
+            </div>
           </div>
-          <div className="relative flex aspect-square w-full max-w-[75vh]">
-            <GameBoard
-              game={analyzedGame}
-              moves={moves}
-              setCurrentMove={setCurrentMove}
-              move={move}
-              shapes={
-                movePlotHover ? [movePlotHover, ...topArrows] : [...topArrows]
-              }
-            />
+          <div className="grid h-full w-full grid-rows-3">
+            <div className="grid grid-cols-3 gap-2"></div>
+            <div className="grid grid-cols-3 gap-2"></div>
+            <div className="grid h-full grid-cols-3 gap-2 overflow-y-hidden">
+              <MovesByRating moves={movesByRating} />
+              <div className="flex flex-col">
+                {/* <MovesContainer
+                    game={analyzedGame}
+                    setCurrentMove={setCurrentMove}
+                    termination={analyzedGame.termination}
+                    currentMaiaModel={currentMaiaModel}
+                  /> */}
+                <BoardController setCurrentMove={setCurrentMove} />
+              </div>
+            </div>
           </div>
-          <div>
-            <VerticalEvaluationBar
-              value={moveEvaluation?.maia?.value}
-              label="Maia White Win %"
-            />
-          </div>
-          <div
+          {/* <div
             style={{
               maxWidth: 'min(20vw, 100vw - 75vh)',
             }}
             className="flex h-[75vh] w-[40vh] flex-col gap-1"
           >
-            <div className="flex">
-              <div
-                style={{
-                  maxHeight: 'min(20vw, 100vw - 75vh)',
-                  maxWidth: 'min(20vw, 100vw - 75vh)',
-                }}
-                className="flex h-[40vh] w-[40vh] [&>div]:h-[inherit] [&>div]:max-h-[inherit] [&>div]:max-w-[inherit]"
-              >
-                {/* <MovePlot
-                  data={data}
-                  onMove={setCurrentMove}
-                  onMouseEnter={showArrow}
-                  onMouseLeave={() => setMovePlotHover(null)}
-                /> */}
-              </div>
-              <div
-                style={{
-                  background:
-                    'linear-gradient(0deg, rgb(36, 36, 36) 0%, rgb(255, 137, 70) 100%)',
-                }}
-                className="-mr-1 h-full w-1"
-              />
-            </div>
-            <div
-              style={{
-                background:
-                  'linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(83, 167, 162) 100%)',
-              }}
-              className="-mt-1 h-1 w-full"
-            />
             <div className="flex-none">
               <div className="flex w-full flex-col overflow-hidden rounded">
                 <div className="flex items-center justify-center bg-background-1 py-2">
@@ -510,22 +516,10 @@ const Analysis: React.FC<Props> = ({
             <div className="flex-none">
               <BoardController setCurrentMove={setCurrentMove} />
             </div>
-          </div>
-        </div>
-        <div className="mr-8 flex items-center justify-center">
-          <HorizontalEvaluationBar
-            min={0}
-            max={800}
-            value={
-              moveEvaluation
-                ? 400 + moveEvaluation?.stockfish?.model_optimal_cp
-                : void 0
-            }
-            label="Stockfish Evaluation"
-          />
+          </div> */}
         </div>
       </div>
-    </>
+    </div>
   )
 
   const mobileLayout = (
@@ -581,30 +575,6 @@ const Analysis: React.FC<Props> = ({
               </div>
               <BlunderMeter {...blunderMeter} />
             </div> */}
-            <div className="flex">
-              <div className="h-[20vh] max-h-[200px] w-screen !flex-none">
-                {/* <MovePlot
-                  data={data}
-                  onMove={setCurrentMove}
-                  onMouseEnter={showArrow}
-                  onMouseLeave={() => setMovePlotHover(null)}
-                /> */}
-              </div>
-              <div
-                style={{
-                  background:
-                    'linear-gradient(0deg, rgb(36, 36, 36) 0%, rgb(255, 137, 70) 100%)',
-                }}
-                className="-mt-1 h-full w-1"
-              />
-            </div>
-            <div
-              style={{
-                background:
-                  'linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(83, 167, 162) 100%)',
-              }}
-              className="-mt-1 h-1 w-full"
-            />
             <div className="relative bottom-0 h-full flex-1 overflow-auto">
               <MovesContainer
                 game={analyzedGame}
