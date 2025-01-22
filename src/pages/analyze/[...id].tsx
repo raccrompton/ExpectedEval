@@ -26,7 +26,7 @@ import {
   GameInfo,
   Highlight,
   GameBoard,
-  BlunderMeter,
+  ExportGame,
   MovesByRating,
   MovesContainer,
   BoardController,
@@ -36,7 +36,6 @@ import {
   AuthenticatedWrapper,
   VerticalEvaluationBar,
   HorizontalEvaluationBar,
-  ExportGame,
 } from 'src/components'
 import { Color, PlayedGame } from 'src/types'
 import { useClientAnalysisController } from 'src/hooks'
@@ -334,19 +333,12 @@ const Analysis: React.FC<Props> = ({
     <div className="flex h-full w-full flex-col items-center py-4 md:py-10">
       <div className="flex h-full w-[90%] flex-1 flex-col justify-center gap-2">
         <div className="flex w-full flex-row items-start justify-start gap-2">
-          {/* <div
-            style={{ maxWidth: 'min(20vw, 100vw - 75vh)' }}
-            className="flex h-[75vh] max-h-[70vw] w-[40vh] flex-col justify-start gap-2 overflow-hidden"
+          <div
+            style={{
+              width: 'calc(60vh + 1.5rem)',
+            }}
+            className="flex flex-col gap-2"
           >
-            <AnalysisGameList
-              currentId={currentId}
-              currentMaiaModel={currentMaiaModel}
-              loadNewTournamentGame={getAndSetTournamentGame}
-              loadNewLichessGames={getAndSetLichessGames}
-              loadNewUserGames={getAndSetUserGames}
-            />
-          </div> */}
-          <div className="flex flex-col gap-2">
             <div className="flex flex-col overflow-hidden rounded-sm">
               <Player
                 name={
@@ -363,8 +355,8 @@ const Analysis: React.FC<Props> = ({
                 termination={analyzedGame.termination.winner}
               />
               <div className="flex flex-col items-start">
-                <div className="-mb-1 flex flex-row items-start">
-                  <div className="relative -mr-1 flex aspect-square w-[60vh]">
+                <div className="flex flex-row items-start">
+                  <div className="relative flex aspect-square w-[60vh]">
                     <GameBoard
                       game={analyzedGame}
                       moves={moves}
@@ -416,6 +408,12 @@ const Analysis: React.FC<Props> = ({
                   const selected = s.id === screen.id
                   return (
                     <div
+                      key={s.id}
+                      tabIndex={0}
+                      role="button"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') setScreen(s)
+                      }}
                       onClick={() => setScreen(s)}
                       className={`relative flex cursor-pointer select-none flex-row px-4 py-2 ${selected ? 'bg-white/5' : 'hover:bg-white hover:bg-opacity-[0.02]'} transition duration-200`}
                     >

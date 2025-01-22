@@ -2,7 +2,7 @@
 import { Chess } from 'chess.ts'
 import { useContext, useEffect, useState } from 'react'
 
-import { Move, PlayedGame } from 'src/types'
+import { PlayedGame } from 'src/types'
 import { GameControllerContext } from 'src/contexts'
 
 interface Props {
@@ -20,6 +20,7 @@ export const ExportGame: React.FC<Props> = ({
 }) => {
   const [fen, setFen] = useState('')
   const [pgn, setPgn] = useState('')
+  const [fullPgn, setFullPgn] = useState(true)
   const { currentIndex } = useContext(GameControllerContext)
 
   useEffect(() => {
@@ -46,22 +47,23 @@ export const ExportGame: React.FC<Props> = ({
       }
     }
     game.moves.forEach((move, index) => {
-      if (!move.san || index > currentIndex) {
+      if (!move.san || (!fullPgn && index > currentIndex)) {
         return
       }
 
       initial.move(move.san)
     })
+
     setFen(game.moves[currentIndex].board)
     setPgn(initial.pgn())
-  }, [currentIndex, game.moves])
+  }, [currentIndex, game.moves, fullPgn])
 
   const copy = (content: string) => {
     navigator.clipboard.writeText(content)
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-0.5">
         <div className="flex items-center justify-between">
           <p className="select-none text-sm font-semibold tracking-wider text-secondary">
@@ -89,9 +91,22 @@ export const ExportGame: React.FC<Props> = ({
       </div>
       <div className="flex flex-col gap-0.5">
         <div className="flex items-center justify-between">
-          <p className="select-none text-sm font-semibold tracking-wider text-secondary">
-            PGN
-          </p>
+          <div className="flex items-center">
+            <p className="select-none text-sm font-semibold tracking-wider text-secondary">
+              PGN
+            </p>
+            <div className="ml-4 flex items-center gap-1">
+              <input
+                type="checkbox"
+                checked={fullPgn}
+                onChange={(e) => setFullPgn(e.target.checked)}
+              />
+              <p className="text-xs text-secondary">
+                Export PGN of entire game
+              </p>
+            </div>
+          </div>
+
           <i
             tabIndex={0}
             role="button"
