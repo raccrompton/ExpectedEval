@@ -16,7 +16,7 @@ const AnalysisPage: NextPage = () => {
       )
       const [firstPart, games] = entries[0]
       const gameId = firstPart.split('---')[0] + '/' + games[0].game_index
-      push('/analysis/' + gameId)
+      push('/analysis/legacy/' + gameId)
     }
   }, [analysisTournamentList, push])
 
