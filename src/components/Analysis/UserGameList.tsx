@@ -44,7 +44,7 @@ export const UserGameList = ({
 }: Props) => {
   return (
     <div className="flex w-full flex-col">
-      <div className="grid select-none grid-cols-4 border-b-2 border-white border-opacity-10">
+      <div className="grid select-none grid-cols-5 border-b-2 border-white border-opacity-10">
         <Header
           label="Play"
           name="play"
@@ -66,6 +66,12 @@ export const UserGameList = ({
         <Header
           label="Lichess"
           name="pgn"
+          selected={selected}
+          setSelected={setSelected}
+        />
+        <Header
+          label="WC Matches"
+          name="tournament"
           selected={selected}
           setSelected={setSelected}
         />
@@ -132,7 +138,7 @@ function Header({
   setSelected,
 }: {
   label: string
-  name: 'play' | 'hand' | 'brain' | 'pgn'
+  name: 'tournament' | 'play' | 'hand' | 'brain' | 'pgn'
   selected: 'tournament' | 'play' | 'hand' | 'brain' | 'pgn'
   setSelected: (name: 'tournament' | 'play' | 'hand' | 'brain' | 'pgn') => void
 }) {

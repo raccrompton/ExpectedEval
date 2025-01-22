@@ -17,7 +17,7 @@ export const ConfigureAnalysis: React.FC<Props> = ({
   MAIA_MODELS,
 }: Props) => {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 p-4">
       <div className="flex flex-col gap-0.5">
         <p className="text-sm text-secondary">Analyze using:</p>
         <select

@@ -35,6 +35,7 @@ import {
   MoveRecommendations,
   AuthenticatedWrapper,
   VerticalEvaluationBar,
+  ClientAnalysisGameList,
   HorizontalEvaluationBar,
 } from 'src/components'
 import { Color, PlayedGame } from 'src/types'
@@ -222,6 +223,10 @@ const Analysis: React.FC<Props> = ({
   getAndSetUserGames,
 }: Props) => {
   const screens = [
+    {
+      id: 'select',
+      name: 'Select Game',
+    },
     {
       id: 'configure',
       name: 'Configure',
@@ -432,8 +437,16 @@ const Analysis: React.FC<Props> = ({
                   )
                 })}
               </div>
-              <div className="flex flex-col bg-backdrop/30 p-4">
-                {screen.id === 'configure' ? (
+              <div className="flex flex-col bg-backdrop/30">
+                {screen.id === 'select' ? (
+                  <ClientAnalysisGameList
+                    currentId={currentId}
+                    currentMaiaModel={currentMaiaModel}
+                    loadNewTournamentGame={getAndSetTournamentGame}
+                    loadNewLichessGames={getAndSetLichessGames}
+                    loadNewUserGames={getAndSetUserGames}
+                  />
+                ) : screen.id === 'configure' ? (
                   <ConfigureAnalysis
                     currentMaiaModel={currentMaiaModel}
                     setCurrentMaiaModel={setCurrentMaiaModel}
@@ -441,7 +454,7 @@ const Analysis: React.FC<Props> = ({
                     MAIA_MODELS={MAIA_MODELS}
                   />
                 ) : screen.id === 'export' ? (
-                  <div className="flex flex-col">
+                  <div className="flex flex-col p-4">
                     <ExportGame
                       game={analyzedGame as any as PlayedGame}
                       whitePlayer={analyzedGame.whitePlayer.name}
