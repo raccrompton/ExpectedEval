@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from 'recharts'
+import type { DrawShape } from 'chessground/draw'
 
 interface Props {
   moveMap?: { move: string; x: number; y: number }[]
@@ -18,13 +19,26 @@ interface Props {
       color: string
     }
   }
+
+  setHoverArrow: React.Dispatch<React.SetStateAction<DrawShape | null>>
 }
 
 export const MoveMap: React.FC<Props> = ({
   moveMap,
   colorSanMapping,
+  setHoverArrow,
 }: Props) => {
-  console.log(moveMap)
+  const onMouseEnter = (move: string) => {
+    setHoverArrow({
+      orig: move.slice(0, 2) as any,
+      dest: move.slice(2, 4) as any,
+      brush: 'green',
+      modifiers: {
+        lineWidth: 10,
+      },
+    })
+  }
+
   return (
     <div className="flex h-full max-h-full flex-col overflow-hidden rounded bg-background-1/60">
       <p className="p-4 text-lg text-white">Move Map</p>
@@ -143,6 +157,11 @@ export const MoveMap: React.FC<Props> = ({
                 <Cell
                   key={`cell-${entry.move}${index}`}
                   fill={colorSanMapping[entry.move].color || '#fff'}
+                  onMouseEnter={() => onMouseEnter(entry.move)}
+                  onMouseOutCapture={() => {
+                    console.log('beep')
+                    setHoverArrow(null)
+                  }}
                 />
               ))}
             </Scatter>

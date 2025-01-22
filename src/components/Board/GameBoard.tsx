@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { defaults } from 'chessground/state'
 import { useCallback, useContext } from 'react'
-import type { DrawShape } from 'chessground/draw'
 import Chessground from '@react-chess/chessground'
+import type { DrawBrush, DrawBrushes, DrawShape } from 'chessground/draw'
 
 import { BaseGame, Check } from 'src/types'
 import { GameControllerContext } from 'src/contexts'
@@ -17,6 +18,7 @@ interface Props {
     check?: Check
   }
   shapes?: DrawShape[]
+  brushes?: DrawBrushes
 }
 
 export const GameBoard: React.FC<Props> = ({
@@ -26,6 +28,7 @@ export const GameBoard: React.FC<Props> = ({
   setCurrentMove,
   setCurrentSquare,
   shapes,
+  brushes,
 }: Props) => {
   const { currentIndex, orientation } = useContext(GameControllerContext)
 
@@ -56,6 +59,7 @@ export const GameBoard: React.FC<Props> = ({
         },
         drawable: {
           autoShapes: shapes || [],
+          brushes: { ...defaults().drawable.brushes, ...brushes },
         },
         fen: move ? move.fen : game.moves[currentIndex]?.board,
         lastMove: move
