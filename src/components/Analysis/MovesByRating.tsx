@@ -141,8 +141,24 @@ export const MovesByRating: React.FC<Props> = ({
                       const prob = Math.round((point.value as number) * 10) / 10
                       return (
                         <div className="flex items-center justify-between px-3">
-                          <p className="text-xs">{san}</p>
-                          <p className="font-mono text-xs">{prob}%</p>
+                          <p
+                            style={{
+                              color:
+                                colorSanMapping[point.name as string].color,
+                            }}
+                            className="text-xs"
+                          >
+                            {san}
+                          </p>
+                          <p
+                            style={{
+                              color:
+                                colorSanMapping[point.name as string].color,
+                            }}
+                            className="font-mono text-xs"
+                          >
+                            {prob}%
+                          </p>
                         </div>
                       )
                     })}

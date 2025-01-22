@@ -187,7 +187,7 @@ export const GameplayInterface: React.FC<Props> = (
                 game={game}
                 whitePlayer={whitePlayer ?? 'Unknown'}
                 blackPlayer={blackPlayer ?? 'Unknown'}
-                maiaVersion={maiaTitle}
+                event={`Play vs. ${maiaTitle}`}
               />
               <StatsDisplay stats={stats} hideSession={true} />
             </div>
@@ -277,7 +277,7 @@ export const GameplayInterface: React.FC<Props> = (
               game={game}
               whitePlayer={whitePlayer ?? 'Unknown'}
               blackPlayer={blackPlayer ?? 'Unknown'}
-              maiaVersion={maiaTitle}
+              event={`Play vs. ${maiaTitle}`}
             />
           </div>
         </div>
