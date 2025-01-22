@@ -14,7 +14,7 @@ export const BlunderMeter: React.FC<Props> = ({
   goodMoveChance,
 }: Props) => {
   return (
-    <div className="flex flex-col gap-1 bg-background-1 p-4">
+    <div className="flex flex-col gap-1 bg-background-1">
       <Tooltip id="probability" />
       <p className="text-sm">
         <span className="text-green-500">Good</span> –{' '}

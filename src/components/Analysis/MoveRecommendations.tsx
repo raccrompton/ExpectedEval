@@ -1,3 +1,4 @@
+import type { DrawShape } from 'chessground/draw'
 interface Props {
   recommendations: {
     maia?: { move: string; prob: number }[]
@@ -9,12 +10,26 @@ interface Props {
       color: string
     }
   }
+
+  setHoverArrow: React.Dispatch<React.SetStateAction<DrawShape | null>>
 }
 
 export const MoveRecommendations: React.FC<Props> = ({
   recommendations,
   colorSanMapping,
+  setHoverArrow,
 }: Props) => {
+  const onMouseEnter = (move: string) => {
+    setHoverArrow({
+      orig: move.slice(0, 2) as any,
+      dest: move.slice(2, 4) as any,
+      brush: 'green',
+      modifiers: {
+        lineWidth: 10,
+      },
+    })
+  }
+
   return (
     <div className="col-span-2 grid h-full max-h-full grid-cols-2 flex-col overflow-hidden rounded">
       <div className="flex flex-col gap-2 bg-background-1 p-5">
@@ -36,7 +51,13 @@ export const MoveRecommendations: React.FC<Props> = ({
                 color: colorSanMapping[move].color,
               }}
             >
-              <p className="font-mono">{colorSanMapping[move].san}</p>
+              <p
+                className="cursor-default font-mono hover:underline"
+                onMouseEnter={() => onMouseEnter(move)}
+                onMouseOutCapture={() => setHoverArrow(null)}
+              >
+                {colorSanMapping[move].san}
+              </p>
               <p className="font-mono text-sm">
                 {Math.round(prob * 1000) / 10}%
               </p>
@@ -63,7 +84,13 @@ export const MoveRecommendations: React.FC<Props> = ({
                 color: colorSanMapping[move].color,
               }}
             >
-              <p className="font-mono">{colorSanMapping[move].san}</p>
+              <p
+                className="cursor-default font-mono hover:underline"
+                onMouseEnter={() => onMouseEnter(move)}
+                onMouseOutCapture={() => setHoverArrow(null)}
+              >
+                {colorSanMapping[move].san}
+              </p>
               <p className="font-mono text-sm">{cp / 100}</p>
             </div>
           ))}

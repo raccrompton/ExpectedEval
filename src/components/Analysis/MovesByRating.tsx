@@ -6,6 +6,7 @@ import {
   ResponsiveContainer,
   XAxis,
   YAxis,
+  Tooltip,
 } from 'recharts'
 
 interface Props {
@@ -77,6 +78,34 @@ export const MovesByRating: React.FC<Props> = ({
               tickLine={false}
               tickFormatter={(value) => `${value}%`}
             />
+            <defs>
+              {moves &&
+                Object.keys(moves[0]).map((move, i) => {
+                  if (move === 'rating') {
+                    return null
+                  }
+                  return (
+                    <linearGradient
+                      id={`color${move}`}
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="5%"
+                        stopColor={colorSanMapping[move].color}
+                        stopOpacity={0.5}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor={colorSanMapping[move].color}
+                        stopOpacity={0}
+                      />
+                    </linearGradient>
+                  )
+                })}
+            </defs>
             {moves &&
               Object.keys(moves[0]).map((move, i) => {
                 if (move === 'rating') {
@@ -88,21 +117,47 @@ export const MovesByRating: React.FC<Props> = ({
                     yAxisId="left"
                     dataKey={move}
                     dot={{
+                      r: 3,
                       stroke: colorSanMapping[move].color,
-                      strokeWidth: 1,
+                      strokeWidth: 3,
                     }}
                     stroke={colorSanMapping[move].color}
-                    fill={colorSanMapping[move].color}
-                    fillOpacity={0.1}
+                    fill={`url(#color${move})`}
                     strokeWidth={3}
                   />
                 )
               })}
+            <Tooltip
+              content={({ payload }) => {
+                return (
+                  <div className="flex w-32 flex-col rounded border border-white/10 bg-background-1 pb-2">
+                    <div className="flex px-3 py-2">
+                      {payload ? (
+                        <p className="text-sm">{payload[0]?.payload.rating}</p>
+                      ) : null}
+                    </div>
+                    {payload?.map((point) => {
+                      const san = colorSanMapping[point.name as string].san
+                      const prob = Math.round((point.value as number) * 10) / 10
+                      return (
+                        <div className="flex items-center justify-between px-3">
+                          <p className="text-xs">{san}</p>
+                          <p className="font-mono text-xs">{prob}%</p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              }}
+            />
             <Legend
-              verticalAlign="top"
               align="right"
+              verticalAlign="top"
               wrapperStyle={{ top: -14, right: 20, fontSize: 14 }}
               iconSize={0}
+              formatter={(value) => {
+                return colorSanMapping[value as string].san
+              }}
             />
           </AreaChart>
         </ResponsiveContainer>

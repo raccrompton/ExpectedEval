@@ -1,7 +1,6 @@
 import { Chess } from 'chess.ts'
 import { useEffect, useMemo, useState } from 'react'
 
-import { generateColor } from 'src/utils'
 import { useGameController, useStockfishEngine, useMaiaEngine } from '..'
 import {
   Color,
@@ -23,8 +22,8 @@ const MAIA_MODELS = [
   'maia_kdd_1900',
 ]
 
-const MAIA_COLORS = ['#FE7F6D', '#DE6F5F', '#BF5F52', '#9F4F44']
-const STOCKFISH_COLORS = ['#76ADDD', '#5A9DD7', '#3F8CD0', '#237CC9']
+const MAIA_COLORS = ['#fe7f6d', '#f08a4c', '#ecaa4f', '#eccd4f']
+const STOCKFISH_COLORS = ['#A3C6F8', '#8fadd9', '#7a95ba', '#667c9b']
 
 export const useClientAnalysisController = (
   game: ClientAnalyzedGame,
@@ -135,38 +134,28 @@ export const useClientAnalysisController = (
       const maia = maiaEvaluations[controller.currentIndex]
       const stockfish = stockfishEvaluations[controller.currentIndex]
 
+      if (stockfish) {
+        stockfishRank = Object.keys(stockfish.cp_vec).indexOf(lan) + 1
+
+        if (stockfishRank <= 4) {
+          color = STOCKFISH_COLORS[stockfishRank]
+        }
+      }
+
       if (maia) {
         maiaRank =
           Object.keys(
             maiaEvaluations[controller.currentIndex][currentMaiaModel].policy,
           ).indexOf(lan) + 1
-      }
 
-      if (stockfish) {
-        stockfishRank = Object.keys(stockfish.cp_vec).indexOf(lan) + 1
-      }
-
-      if (maiaRank && stockfishRank) {
-        color = generateColor(
-          stockfishRank,
-          maiaRank,
-          moves.length,
-          MAIA_COLORS[0],
-          STOCKFISH_COLORS[0],
-        )
-      } else {
-        if (maiaRank) {
-          color = MAIA_COLORS[Math.min(4, maiaRank)]
-        } else if (stockfishRank) {
-          color = STOCKFISH_COLORS[Math.min(4, stockfishRank)]
-        } else {
-          color = '#FFFFFF'
+        if (maiaRank <= 4) {
+          color = MAIA_COLORS[maiaRank]
         }
       }
 
       mapping[lan] = {
         san: move.san,
-        color,
+        color: color || '#FFFFFF',
       }
     }
 
@@ -202,7 +191,7 @@ export const useClientAnalysisController = (
         cp_vec,
         cp_relative_vec,
         model_optimal_cp,
-      }
+      } as StockfishEvaluation
     }
 
     let maia

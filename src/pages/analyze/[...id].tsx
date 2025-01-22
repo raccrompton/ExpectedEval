@@ -11,7 +11,7 @@ import Head from 'next/head'
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
-import type { DrawShape } from 'chessground/draw'
+import type { DrawBrushes, DrawShape } from 'chessground/draw'
 
 import {
   getLichessGamePGN,
@@ -23,6 +23,7 @@ import {
   Loading,
   MoveMap,
   GameInfo,
+  Highlight,
   GameBoard,
   BlunderMeter,
   MovesByRating,
@@ -37,7 +38,11 @@ import {
 } from 'src/components'
 import { Color } from 'src/types'
 import { useClientAnalysisController } from 'src/hooks'
-import { ClientAnalyzedGame } from 'src/types/analysis'
+import {
+  ClientAnalyzedGame,
+  MaiaEvaluation,
+  StockfishEvaluation,
+} from 'src/types/analysis'
 import { ThemeContext, ModalContext, WindowSizeContext } from 'src/contexts'
 import { GameControllerContext } from 'src/contexts/GameControllerContext/GameControllerContext'
 
@@ -219,8 +224,9 @@ const Analysis: React.FC<Props> = ({
   const { theme } = useContext(ThemeContext)
   const { width } = useContext(WindowSizeContext)
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
-  const [movePlotHover, setMovePlotHover] = useState<DrawShape | null>(null)
-  const [topArrows, setTopArrows] = useState<DrawShape[]>([])
+  const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
+  const [arrows, setArrows] = useState<DrawShape[]>([])
+  const [brushes, setBrushes] = useState<DrawBrushes>({})
 
   const {
     move,
@@ -244,7 +250,7 @@ const Analysis: React.FC<Props> = ({
   )
 
   useEffect(() => {
-    setMovePlotHover(null)
+    setHoverArrow(null)
   }, [controller.currentIndex])
 
   const launchContinue = useCallback(() => {
@@ -254,129 +260,64 @@ const Analysis: React.FC<Props> = ({
     window.open(url)
   }, [analyzedGame.moves, controller])
 
-  const showArrow = (node: { data: { move: string } }) => {
-    const move = node.data.move
-    const orig = move.slice(0, 2)
-    const dest = move.slice(2, 4)
-    setMovePlotHover({
-      brush: 'green',
-      orig: orig as Key,
-      dest: dest as Key,
-    })
-  }
+  useEffect(() => {
+    const arr = []
 
-  // useEffect(() => {
-  //   let topStockfishMove, topMaiaMove
-  //   const maia =
-  //     analyzedGame.maiaEvaluations[controller.currentIndex][currentMaiaModel]
-  //       .policy
+    if (moveEvaluation?.maia) {
+      const maia = Object.entries(moveEvaluation?.maia?.policy)[0]
+      arr.push({
+        brush: 'red',
+        orig: maia[0].slice(0, 2) as Key,
+        dest: maia[0].slice(2, 4) as Key,
+      } as DrawShape)
+    }
 
-  //   if (maia) {
-  //     topMaiaMove = Object.keys(maia).reduce(
-  //       (max, key) => (maia[key] > maia[max] ? key : max),
-  //       Object.keys(maia)[0],
-  //     )
-  //   }
+    if (moveEvaluation?.stockfish) {
+      const stockfish = Object.entries(moveEvaluation?.stockfish.cp_vec)[0]
+      arr.push({
+        brush: 'blue',
+        orig: stockfish[0].slice(0, 2) as Key,
+        dest: stockfish[0].slice(2, 4) as Key,
+        modifiers: { lineWidth: 8 },
+      })
+    }
 
-  //   if (analyzedGame.type === 'tournament') {
-  //     const stockfish = analyzedGame.stockfishEvaluations[
-  //       controller.currentIndex
-  //     ] as MoveMap
-  //     if (stockfish) {
-  //       topStockfishMove = Object.keys(stockfish).reduce(
-  //         (max, key) => (stockfish[key] > stockfish[max] ? key : max),
-  //         Object.keys(stockfish)[0],
-  //       )
-  //     }
-  //   } else {
-  //     const stockfish = stockfishEvaluations[controller.currentIndex]?.cp_vec
-  //     if (stockfish) {
-  //       topStockfishMove = Object.keys(stockfish).reduce(
-  //         (max, key) => (stockfish[key] > stockfish[max] ? key : max),
-  //         Object.keys(stockfish)[0],
-  //       )
-  //     }
-  //   }
+    setArrows(arr)
+  }, [stockfishEvaluations, maiaEvaluations, controller.currentIndex])
 
-  //   const arrows = []
-  //   if (topStockfishMove && topStockfishMove === topMaiaMove) {
-  //     arrows.push({
-  //       brush: 'yellow',
-  //       orig: topMaiaMove.slice(0, 2) as Key,
-  //       dest: topMaiaMove.slice(2, 4) as Key,
-  //     })
-  //   } else {
-  //     if (topStockfishMove) {
-  //       arrows.push({
-  //         brush: 'blue',
-  //         orig: topStockfishMove.slice(0, 2) as Key,
-  //         dest: topStockfishMove.slice(2, 4) as Key,
-  //       })
-  //     }
-  //     if (topMaiaMove) {
-  //       arrows.push({
-  //         brush: 'red',
-  //         orig: topMaiaMove.slice(0, 2) as Key,
-  //         dest: topMaiaMove.slice(2, 4) as Key,
-  //       })
-  //     }
-  //   }
-
-  //   setTopArrows(arrows)
-  // }, [
-  //   controller.currentIndex,
-  //   stockfishEvaluations,
-  //   analyzedGame.maiaEvaluations,
-  //   analyzedGame.stockfishEvaluations,
-  // ])
-
-  const Info = (
-    <>
-      <div className="flex w-full items-center justify-between text-secondary">
-        <p>
-          {theme == 'dark' ? '●' : '○'}{' '}
-          {analyzedGame.whitePlayer?.name ?? 'Unknown'}{' '}
-          {analyzedGame.whitePlayer?.rating
-            ? `(${analyzedGame.whitePlayer.rating})`
-            : null}
-        </p>
-        <p>
-          {analyzedGame.termination.winner === 'white' ? (
-            <span className="text-engine-3">1</span>
-          ) : analyzedGame.termination.winner === 'black' ? (
-            <span className="text-human-3">0</span>
-          ) : (
-            <span>1/2</span>
-          )}
-        </p>
+  const Player = ({
+    name,
+    rating,
+    color,
+    termination,
+  }: {
+    name: string
+    color: string
+    rating?: number
+    termination?: string
+  }) => {
+    return (
+      <div className="flex w-full items-center justify-between bg-background-1 px-4 py-2">
+        <div className="flex items-center gap-1.5">
+          <div
+            className={`h-2.5 w-2.5 rounded-full ${color === 'white' ? 'bg-white' : 'border bg-black'}`}
+          />
+          <p>
+            {name ?? 'Unknown'} {rating ? `(${rating})` : null}
+          </p>
+        </div>
+        {termination === color ? (
+          <p className="text-engine-3">1</p>
+        ) : termination !== 'none' ? (
+          <p className="text-human-3">0</p>
+        ) : termination === undefined ? (
+          <></>
+        ) : (
+          <p>1/2</p>
+        )}
       </div>
-      <div className="flex w-full items-center justify-between text-secondary">
-        <p>
-          {theme == 'light' ? '●' : '○'}{' '}
-          {analyzedGame.blackPlayer?.name ?? 'Unknown'}{' '}
-          {analyzedGame.blackPlayer?.rating
-            ? `(${analyzedGame.blackPlayer.rating})`
-            : null}
-        </p>
-        <p>
-          {analyzedGame.termination.winner === 'black' ? (
-            <span className="text-engine-3">1</span>
-          ) : analyzedGame.termination.winner === 'white' ? (
-            <span className="text-human-3">0</span>
-          ) : (
-            <span>1/2</span>
-          )}
-        </p>
-      </div>{' '}
-      {analyzedGame.termination ? (
-        <p className="text-center capitalize text-secondary">
-          {analyzedGame.termination.winner !== 'none'
-            ? `${analyzedGame.termination.winner} wins`
-            : 'draw'}
-        </p>
-      ) : null}
-    </>
-  )
+    )
+  }
 
   const desktopLayout = (
     <div className="flex h-full w-full flex-col items-center py-4 md:py-10">
@@ -414,49 +355,93 @@ const Analysis: React.FC<Props> = ({
               loadNewUserGames={getAndSetUserGames}
             />
           </div> */}
-          <div className="flex flex-col items-start">
-            <div className="flex flex-row items-start">
-              <div className="relative flex aspect-square w-[60vh]">
-                <GameBoard
-                  game={analyzedGame}
-                  moves={moves}
-                  setCurrentMove={setCurrentMove}
-                  move={move}
-                  shapes={
-                    movePlotHover
-                      ? [movePlotHover, ...topArrows]
-                      : [...topArrows]
-                  }
-                />
-              </div>
-              <div>
+          <div className="flex flex-col">
+            <Player
+              name={
+                controller.orientation === 'white'
+                  ? analyzedGame.blackPlayer.name
+                  : analyzedGame.whitePlayer.name
+              }
+              rating={
+                controller.orientation === 'white'
+                  ? analyzedGame.blackPlayer.rating
+                  : analyzedGame.whitePlayer.rating
+              }
+              color={controller.orientation === 'white' ? 'black' : 'white'}
+              termination={analyzedGame.termination.winner}
+            />
+            <div className="flex flex-col items-start">
+              <div className="-mb-1 flex flex-row items-start">
+                <div className="relative -mr-1 flex aspect-square w-[60vh]">
+                  <GameBoard
+                    game={analyzedGame}
+                    moves={moves}
+                    setCurrentMove={setCurrentMove}
+                    move={move}
+                    brushes={brushes}
+                    shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
+                  />
+                </div>
                 <VerticalEvaluationBar
                   value={moveEvaluation?.maia?.value}
                   label="Maia White Win %"
                 />
               </div>
+              <div className="flex items-center justify-center">
+                <HorizontalEvaluationBar
+                  min={0}
+                  max={800}
+                  value={
+                    moveEvaluation
+                      ? 400 + moveEvaluation?.stockfish?.model_optimal_cp
+                      : void 0
+                  }
+                  label="Stockfish Evaluation"
+                />
+                <div className="h-6 w-6 bg-black" />
+              </div>
             </div>
-            <div className="flex items-center justify-center">
-              <HorizontalEvaluationBar
-                min={0}
-                max={800}
-                value={
-                  moveEvaluation
-                    ? 400 + moveEvaluation?.stockfish?.model_optimal_cp
-                    : void 0
-                }
-                label="Stockfish Evaluation"
-              />
-            </div>
+            <Player
+              name={
+                controller.orientation === 'white'
+                  ? analyzedGame.whitePlayer.name
+                  : analyzedGame.blackPlayer.name
+              }
+              rating={
+                controller.orientation === 'white'
+                  ? analyzedGame.whitePlayer.rating
+                  : analyzedGame.blackPlayer.rating
+              }
+              color={controller.orientation === 'white' ? 'white' : 'black'}
+              termination={analyzedGame.termination.winner}
+            />
           </div>
           <div className="grid w-full grid-rows-3 gap-2">
-            <div className="h-[calc((90vh - 1rem)/3)] grid grid-cols-3 gap-2"></div>
-            <div className="h-[calc((90vh - 1rem)/3)] grid grid-cols-3 gap-2">
+            <div className="h-[calc((90vh - 1rem)/3)] flex gap-2">
+              <Highlight
+                moveEvaluation={
+                  moveEvaluation as {
+                    maia?: MaiaEvaluation
+                    stockfish?: StockfishEvaluation
+                  }
+                }
+                colorSanMapping={colorSanMapping}
+                blunderMeter={blunderMeter}
+              />
+            </div>
+            <div className="h-[calc((90vh - 1rem)/3)] grid grid-cols-2 gap-2 2xl:grid-cols-3">
               <MoveRecommendations
                 recommendations={moveRecommendations}
                 colorSanMapping={colorSanMapping}
+                setHoverArrow={setHoverArrow}
               />
-              <MoveMap moveMap={moveMap} colorSanMapping={colorSanMapping} />
+              <div className="hidden h-full flex-col 2xl:flex">
+                <MoveMap
+                  moveMap={moveMap}
+                  colorSanMapping={colorSanMapping}
+                  setHoverArrow={setHoverArrow}
+                />
+              </div>
             </div>
             <div className="h-[calc((90vh - 1rem)/3)] grid grid-cols-3 gap-2 overflow-y-hidden">
               <MovesByRating
@@ -474,61 +459,6 @@ const Analysis: React.FC<Props> = ({
               </div>
             </div>
           </div>
-          {/* <div
-            style={{
-              maxWidth: 'min(20vw, 100vw - 75vh)',
-            }}
-            className="flex h-[75vh] w-[40vh] flex-col gap-1"
-          >
-            <div className="flex-none">
-              <div className="flex w-full flex-col overflow-hidden rounded">
-                <div className="flex items-center justify-center bg-background-1 py-2">
-                  <p className="text-sm text-secondary">Current Position</p>
-                </div>
-                <div className="grid grid-cols-2">
-                  <div className="relative flex flex-col items-center py-4">
-                    <div className="absolute left-0 top-0 z-0 h-full w-full bg-human-2 opacity-5" />
-                    <p className="z-10 text-sm text-primary">
-                      Maia White Win %
-                    </p>
-                    <p className="z-10 text-2xl font-bold text-human-2">
-                      {moveEvaluation?.maia?.value &&
-                      moveEvaluation.maia.value > 0
-                        ? `${Math.round(moveEvaluation.maia.value * 1000) / 10}%`
-                        : '-'}
-                    </p>
-                  </div>
-                  <div className="relative flex flex-col items-center py-4">
-                    <div className="absolute left-0 top-0 z-0 h-full w-full bg-engine-1 opacity-5" />
-                    <p className="text-sm text-primary">
-                      SF Eval{' '}
-                      {stockfishEvaluations?.[controller.currentIndex]?.depth
-                        ? `(Depth ${stockfishEvaluations?.[controller.currentIndex]?.depth})`
-                        : ''}
-                    </p>
-                    <p className="text-2xl font-bold text-engine-2">
-                      {moveEvaluation?.stockfish !== undefined &&
-                      Number.isNaN(moveEvaluation.stockfish) === false
-                        ? `${moveEvaluation.stockfish.model_optimal_cp >= 0 ? '+' : ''}${(Math.round(moveEvaluation.stockfish.model_optimal_cp) / 100).toFixed(2)}`
-                        : '-'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <BlunderMeter {...blunderMeter} />
-            </div>
-            <div className="relative bottom-0 h-full min-h-[38px] flex-1 overflow-auto">
-              <MovesContainer
-                game={analyzedGame}
-                setCurrentMove={setCurrentMove}
-                termination={analyzedGame.termination}
-                currentMaiaModel={currentMaiaModel}
-              />
-            </div>
-            <div className="flex-none">
-              <BoardController setCurrentMove={setCurrentMove} />
-            </div>
-          </div> */}
         </div>
       </div>
     </div>
@@ -539,7 +469,7 @@ const Analysis: React.FC<Props> = ({
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
         <div className="flex w-full flex-col items-start justify-start gap-1">
           <GameInfo title="Analysis" icon="bar_chart" type="analysis">
-            {Info}
+            <></>
           </GameInfo>
           <div className="relative flex h-[100vw] w-screen">
             <GameBoard
@@ -547,9 +477,8 @@ const Analysis: React.FC<Props> = ({
               moves={moves}
               setCurrentMove={setCurrentMove}
               move={move}
-              shapes={
-                movePlotHover ? [movePlotHover, ...topArrows] : [...topArrows]
-              }
+              brushes={brushes}
+              shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
             />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
