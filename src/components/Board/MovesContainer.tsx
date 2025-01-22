@@ -4,11 +4,11 @@ import { Tooltip } from 'react-tooltip'
 import { useCallback, useContext, useMemo } from 'react'
 
 import { CheckIcon } from '../Icons/icons'
-import { AnalyzedGame, BaseGame, Move, Termination } from 'src/types'
+import { LegacyAnalyzedGame, BaseGame, Move, Termination } from 'src/types'
 import { GameControllerContext, WindowSizeContext } from 'src/contexts'
 
 interface Props {
-  game: BaseGame | AnalyzedGame
+  game: BaseGame | LegacyAnalyzedGame
   setCurrentMove?: (move: [string, string] | null) => void
   highlightIndices?: number[]
   mobile?: boolean

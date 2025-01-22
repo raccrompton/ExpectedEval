@@ -15,9 +15,9 @@ import type { DrawShape } from 'chessground/draw'
 
 import {
   getLichessGamePGN,
-  getAnalyzedUserGame,
-  getAnalyzedLichessGame,
-  getAnalyzedTournamentGame,
+  getLegacyAnalyzedUserGame,
+  getLegacyAnalyzedLichessGame,
+  getLegacyAnalyzedTournamentGame,
 } from 'src/api'
 import {
   Loading,
@@ -27,15 +27,15 @@ import {
   BlunderMeter,
   MovesContainer,
   BoardController,
-  AnalysisGameList,
+  LegacyAnalysisGameList,
   ContinueAgainstMaia,
   AuthenticatedWrapper,
   VerticalEvaluationBar,
   HorizontalEvaluationBar,
 } from 'src/components'
 import { Color } from 'src/types'
-import { useAnalysisController } from 'src/hooks'
-import { AnalyzedGame, MoveMap } from 'src/types/analysis'
+import { useLegacyAnalysisController } from 'src/hooks'
+import { LegacyAnalyzedGame, MoveMap } from 'src/types/analysis'
 import { ThemeContext, ModalContext, WindowSizeContext } from 'src/contexts'
 import { GameControllerContext } from 'src/contexts/GameControllerContext/GameControllerContext'
 
@@ -65,9 +65,9 @@ const AnalysisPage: NextPage = () => {
   const router = useRouter()
   const { id, index, orientation } = router.query
 
-  const [analyzedGame, setAnalyzedGame] = useState<AnalyzedGame | undefined>(
-    undefined,
-  )
+  const [analyzedGame, setAnalyzedGame] = useState<
+    LegacyAnalyzedGame | undefined
+  >(undefined)
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
 
   const getAndSetTournamentGame = useCallback(
@@ -77,7 +77,7 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getAnalyzedTournamentGame(newId)
+        game = await getLegacyAnalyzedTournamentGame(newId)
       } catch (e) {
         router.push('/401')
         return
@@ -101,7 +101,7 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getAnalyzedLichessGame(id, pgn, currentMaiaModel)
+        game = await getLegacyAnalyzedLichessGame(id, pgn, currentMaiaModel)
       } catch (e) {
         router.push('/401')
         return
@@ -126,7 +126,7 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getAnalyzedUserGame(id, type, currentMaiaModel)
+        game = await getLegacyAnalyzedUserGame(id, type, currentMaiaModel)
       } catch (e) {
         router.push('/401')
         return
@@ -201,10 +201,10 @@ interface Props {
     setCurrentMove: Dispatch<SetStateAction<number>>,
     currentMaiaModel: string,
   ) => Promise<void>
-  analyzedGame: AnalyzedGame
+  analyzedGame: LegacyAnalyzedGame
   initialIndex: number
   initialOrientation: Color
-  setAnalyzedGame: Dispatch<SetStateAction<AnalyzedGame | undefined>>
+  setAnalyzedGame: Dispatch<SetStateAction<LegacyAnalyzedGame | undefined>>
 }
 
 const Analysis: React.FC<Props> = ({
@@ -235,7 +235,11 @@ const Analysis: React.FC<Props> = ({
     setCurrentMove,
     stockfishEvaluations,
     blunderMeter,
-  } = useAnalysisController(analyzedGame, initialIndex, initialOrientation)
+  } = useLegacyAnalysisController(
+    analyzedGame,
+    initialIndex,
+    initialOrientation,
+  )
 
   useEffect(() => {
     setMovePlotHover(null)
@@ -271,7 +275,7 @@ const Analysis: React.FC<Props> = ({
       let game
       if (analyzedGame.type === 'pgn') {
         try {
-          game = await getAnalyzedLichessGame(
+          game = await getLegacyAnalyzedLichessGame(
             analyzedGame.id,
             analyzedGame.pgn as string,
             model,
@@ -282,7 +286,7 @@ const Analysis: React.FC<Props> = ({
         }
       } else {
         try {
-          game = await getAnalyzedUserGame(
+          game = await getLegacyAnalyzedUserGame(
             analyzedGame.id,
             analyzedGame.type,
             model,
@@ -454,7 +458,7 @@ const Analysis: React.FC<Props> = ({
               </select>
             </div>
             <ContinueAgainstMaia launchContinue={launchContinue} />
-            <AnalysisGameList
+            <LegacyAnalysisGameList
               currentId={currentId}
               currentMaiaModel={currentMaiaModel}
               loadNewTournamentGame={getAndSetTournamentGame}
@@ -676,7 +680,7 @@ const Analysis: React.FC<Props> = ({
               </select>
             </div>
             <ContinueAgainstMaia launchContinue={launchContinue} />
-            <AnalysisGameList
+            <LegacyAnalysisGameList
               currentId={currentId}
               currentMaiaModel={currentMaiaModel}
               loadNewTournamentGame={getAndSetTournamentGame}
