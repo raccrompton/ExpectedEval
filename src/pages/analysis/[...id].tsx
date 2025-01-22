@@ -30,16 +30,16 @@ import {
   MovesByRating,
   MovesContainer,
   BoardController,
-  AnalysisGameList,
+  LegacyAnalysisGameList,
   ContinueAgainstMaia,
   MoveRecommendations,
   AuthenticatedWrapper,
   VerticalEvaluationBar,
-  ClientAnalysisGameList,
+  AnalysisGameList,
   HorizontalEvaluationBar,
 } from 'src/components'
 import { Color, PlayedGame } from 'src/types'
-import { useClientAnalysisController } from 'src/hooks'
+import { useAnalysisController } from 'src/hooks'
 import {
   ClientAnalyzedGame,
   MaiaEvaluation,
@@ -251,11 +251,7 @@ const Analysis: React.FC<Props> = ({
     movesByRating,
     colorSanMapping,
     moveRecommendations,
-  } = useClientAnalysisController(
-    analyzedGame,
-    initialIndex,
-    initialOrientation,
-  )
+  } = useAnalysisController(analyzedGame, initialIndex, initialOrientation)
 
   const { width } = useContext(WindowSizeContext)
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
@@ -439,7 +435,7 @@ const Analysis: React.FC<Props> = ({
               </div>
               <div className="flex flex-col bg-backdrop/30">
                 {screen.id === 'select' ? (
-                  <ClientAnalysisGameList
+                  <AnalysisGameList
                     currentId={currentId}
                     currentMaiaModel={currentMaiaModel}
                     loadNewTournamentGame={getAndSetTournamentGame}
@@ -558,7 +554,7 @@ const Analysis: React.FC<Props> = ({
               </select>
             </div>
             <ContinueAgainstMaia launchContinue={launchContinue} />
-            <AnalysisGameList
+            <LegacyAnalysisGameList
               currentId={currentId}
               currentMaiaModel={currentMaiaModel}
               loadNewTournamentGame={getAndSetTournamentGame}

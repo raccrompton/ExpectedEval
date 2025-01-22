@@ -1,27 +1,32 @@
 import { Chess } from 'chess.ts'
 import { useEffect, useMemo, useState } from 'react'
 
-import { useGameController, useStockfishEngine } from '..'
-import { normalize, normalizeEvaluation, pseudoNL } from 'src/utils'
-import { AnalyzedGame, Color, MoveMap, StockfishEvaluation } from 'src/types'
+import { useGameController, useStockfishEngine, useMaiaEngine } from '..'
+import {
+  Color,
+  MoveMap,
+  MaiaEvaluation,
+  ClientAnalyzedGame,
+  StockfishEvaluation,
+} from 'src/types'
 
-function parseMaiaWinRate(
-  turnPlayed: string,
-  currentMaiaModel: string,
-  maiaValues?: { [key: string]: number },
-) {
-  if (maiaValues === undefined) return -1
+const MAIA_MODELS = [
+  'maia_kdd_1100',
+  'maia_kdd_1200',
+  'maia_kdd_1300',
+  'maia_kdd_1400',
+  'maia_kdd_1500',
+  'maia_kdd_1600',
+  'maia_kdd_1700',
+  'maia_kdd_1800',
+  'maia_kdd_1900',
+]
 
-  let maiaWr = maiaValues ? maiaValues[currentMaiaModel] : -1
-  if (maiaWr !== -1 && turnPlayed === 'white') {
-    maiaWr = 1 - maiaWr
-  }
-
-  return maiaWr
-}
+const MAIA_COLORS = ['#fe7f6d', '#f08a4c', '#ecaa4f', '#eccd4f']
+const STOCKFISH_COLORS = ['#A3C6F8', '#8fadd9', '#7a95ba', '#667c9b']
 
 export const useAnalysisController = (
-  game: AnalyzedGame,
+  game: ClientAnalyzedGame,
   initialIndex: number,
   initialOrientation: Color,
 ) => {
@@ -39,22 +44,57 @@ export const useAnalysisController = (
     })
   }
 
+  const maia = useMaiaEngine()
   const engine = useStockfishEngine(parseStockfishEvaluation)
   const [currentMove, setCurrentMove] = useState<null | [string, string]>(null)
   const [stockfishEvaluations, setStockfishEvaluations] = useState<
     StockfishEvaluation[]
   >([])
-  const maiaModels = useMemo(
-    () => Object.keys(game.maiaEvaluations).sort(),
-    [game.maiaEvaluations],
-  )
-  const [currentMaiaModel, setCurrentMaiaModel] = useState(maiaModels[0])
+  const [maiaEvaluations, setMaiaEvaluations] = useState<
+    { [rating: string]: MaiaEvaluation }[]
+  >([])
+  const [currentMaiaModel, setCurrentMaiaModel] = useState(MAIA_MODELS[0])
 
   useEffect(() => {
     if (game.type === 'tournament') return
-    if (stockfishEvaluations[controller.currentIndex]?.depth == 18) return
+    const board = new Chess(game.moves[controller.currentIndex].board)
+
+    ;(async () => {
+      if (!maia.ready || maiaEvaluations[controller.currentIndex]) return
+
+      const { result } = await maia.batchEvaluate(
+        Array(9).fill(board.fen()),
+        [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900],
+        [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900],
+      )
+
+      const output = {
+        maia_kdd_1100: result[0],
+        maia_kdd_1200: result[1],
+        maia_kdd_1300: result[2],
+        maia_kdd_1400: result[3],
+        maia_kdd_1500: result[4],
+        maia_kdd_1600: result[5],
+        maia_kdd_1700: result[6],
+        maia_kdd_1800: result[7],
+        maia_kdd_1900: result[8],
+      }
+
+      setMaiaEvaluations((prev) => {
+        const newEvaluations = [...prev]
+        newEvaluations[controller.currentIndex] = output
+
+        return newEvaluations
+      })
+    })()
+  }, [controller.currentIndex, game.type, maia.ready])
+
+  useEffect(() => {
+    if (game.type === 'tournament') return
 
     const board = new Chess(game.moves[controller.currentIndex].board)
+    if (stockfishEvaluations[controller.currentIndex]?.depth == 18) return
+
     engine.evaluatePosition(
       board.fen(),
       board.moves().length,
@@ -64,270 +104,135 @@ export const useAnalysisController = (
 
   const moves = useMemo(() => {
     const moveMap = new Map<string, string[]>()
-    const currentMaiaEvaluation =
-      game.maiaEvaluations[maiaModels[0]][controller.currentIndex]
 
-    if (currentMaiaEvaluation) {
-      const keys = Object.keys(currentMaiaEvaluation)
-      keys.forEach((key) => {
-        const [from, to] = [key.slice(0, 2), key.slice(2)]
-        moveMap.set(from, (moveMap.get(from) ?? []).concat([to]))
-      })
-    }
-
-    return moveMap
-  }, [controller.currentIndex, game.maiaEvaluations, maiaModels])
-
-  const plotData = useMemo(() => {
-    const data: {
-      [model: string]: {
-        id: string
-        data: {
-          ny: number
-          nx: number
-          x: number
-          y: number
-          move: string
-          san?: string
-        }[]
-      }[][]
-    } = {}
-
-    Object.keys(game.maiaEvaluations).forEach((model) => {
-      data[model] = []
-
-      Object.keys(game.availableMoves).forEach((_, index) => {
-        const maiaEvaluation = game.maiaEvaluations[model][index]
-
-        const maiaValues = Object.values(maiaEvaluation)
-        const maiaMax = Math.max(...maiaValues)
-        const maiaMin = Math.min(...maiaValues)
-
-        if (game.type === 'tournament' && game.stockfishEvaluations) {
-          const stockfishEvaluation = game.stockfishEvaluations[
-            index
-          ] as MoveMap
-
-          const stockfishValues = Object.values(stockfishEvaluation)
-          const max = Math.max(...stockfishValues)
-          const min = Math.min(...stockfishValues)
-
-          const currentData = Object.entries(stockfishEvaluation).map(
-            ([move, evaluation]) => {
-              const parsed = normalize(evaluation, min, max)
-              const ny = normalize(maiaEvaluation[move], maiaMin, maiaMax)
-              const nx = normalize(
-                pseudoNL(normalizeEvaluation(parsed, 0, 1)) + 8,
-                0,
-                7.5,
-              )
-
-              return {
-                id: `${nx}:${ny}`,
-                data: [
-                  {
-                    ny,
-                    nx,
-                    x: pseudoNL(normalizeEvaluation(parsed, 0, 1)),
-                    y: maiaEvaluation[move],
-                    san: game.availableMoves[index][move]?.san,
-                    move,
-                  },
-                ],
-              }
-            },
-          )
-
-          data[model].push(currentData)
-        } else {
-          const stockfishRaw = stockfishEvaluations[index]
-          if (!stockfishRaw || stockfishRaw.depth < 10) {
-            data[model].push([])
-            return
-          }
-          const stockfishEvaluation = stockfishRaw.cp_vec
-          const stockfishValues = Object.values(stockfishEvaluation)
-          const max = Math.max(...stockfishValues)
-          const min = Math.min(...stockfishValues)
-
-          const currentData = Object.entries(stockfishEvaluation).map(
-            ([move, evaluation]) => {
-              const parsed = normalize(evaluation, min, max)
-              const ny = normalize(maiaEvaluation[move], maiaMin, maiaMax)
-              const nx = normalize(
-                pseudoNL(normalizeEvaluation(parsed, 0, 1)) + 8,
-                0,
-                7.5,
-              )
-
-              return {
-                id: `${nx}:${ny}`,
-                data: [
-                  {
-                    ny,
-                    nx,
-                    x: pseudoNL(normalizeEvaluation(parsed, 0, 1)),
-                    y: maiaEvaluation[move],
-                    san: game.availableMoves[index][move]?.san,
-                    move,
-                  },
-                ],
-              }
-            },
-          )
-          data[model].push(currentData)
-        }
-      })
+    const moves = new Chess(game.moves[controller.currentIndex].board).moves({
+      verbose: true,
     })
 
-    return data
+    moves.forEach((key) => {
+      const { from, to } = key
+      moveMap.set(from, (moveMap.get(from) ?? []).concat([to]))
+    })
+
+    return moveMap
+  }, [controller.currentIndex, game.maiaEvaluations, MAIA_MODELS])
+
+  const colorSanMapping = useMemo(() => {
+    const mapping: {
+      [move: string]: {
+        san: string
+        color: string
+      }
+    } = {}
+    const moves = new Chess(game.moves[controller.currentIndex].board).moves({
+      verbose: true,
+    })
+
+    for (const move of moves) {
+      let color, maiaRank, stockfishRank
+      const lan = move.from + move.to + (move.promotion || '')
+      const maia = maiaEvaluations[controller.currentIndex]
+      const stockfish = stockfishEvaluations[controller.currentIndex]
+
+      if (stockfish) {
+        stockfishRank = Object.keys(stockfish.cp_vec).indexOf(lan) + 1
+
+        if (stockfishRank <= 4) {
+          color = STOCKFISH_COLORS[stockfishRank]
+        }
+      }
+
+      if (maia) {
+        maiaRank =
+          Object.keys(
+            maiaEvaluations[controller.currentIndex][currentMaiaModel].policy,
+          ).indexOf(lan) + 1
+
+        if (maiaRank <= 4) {
+          color = MAIA_COLORS[maiaRank]
+        }
+      }
+
+      mapping[lan] = {
+        san: move.san,
+        color: color || '#FFFFFF',
+      }
+    }
+
+    return mapping
   }, [
-    game.type,
-    game.availableMoves,
-    game.maiaEvaluations,
-    game.stockfishEvaluations,
+    maiaEvaluations,
     stockfishEvaluations,
+    controller.currentIndex,
+    game.moves,
   ])
 
-  const data = useMemo(() => {
-    if (!plotData[currentMaiaModel]) return []
-    return plotData[currentMaiaModel][controller.currentIndex]
-  }, [controller.currentIndex, currentMaiaModel, plotData])
-
-  // const positionEvaluation = useMemo(
-  //   () => game.positionEvaluations[currentMaiaModel][controller.currentIndex],
-  //   [controller.currentIndex, currentMaiaModel, game.positionEvaluations],
-  // )
-
   const moveEvaluation = useMemo(() => {
-    if (currentMove) {
-      const maiaEvaluation =
-        game.maiaEvaluations[currentMaiaModel][controller.currentIndex]
-      const maiaValues = game.moves[controller.currentIndex].maia_values
+    let stockfish
 
-      if (game.type === 'tournament') {
-        const stockfishEvaluation = game.stockfishEvaluations[
-          controller.currentIndex
-        ] as MoveMap
-        const turnPlayed = controller.currentIndex % 2 === 0 ? 'black' : 'white'
-        const maiaWr = parseMaiaWinRate(
-          turnPlayed,
-          currentMaiaModel,
-          maiaValues,
-        )
-        const moveEval = {
-          maiaWr,
-          maia: maiaEvaluation[currentMove.join('')],
-          stockfish: stockfishEvaluation[currentMove.join('')],
-        }
-
-        return moveEval
-      } else {
-        const stockfish = stockfishEvaluations[controller.currentIndex]
-        const turnPlayed = controller.currentIndex % 2 === 0 ? 'black' : 'white'
-        const maiaWr = parseMaiaWinRate(
-          turnPlayed,
-          currentMaiaModel,
-          maiaValues,
-        )
-        const moveEval = {
-          maiaWr,
-          maia: maiaEvaluation[currentMove.join('')],
-          stockfish: stockfish?.model_optimal_cp / 100,
-        }
-
-        return moveEval
-      }
+    if (game.type !== 'tournament') {
+      stockfish = stockfishEvaluations[controller.currentIndex]
     } else {
-      if (!controller.currentIndex) return null
       const lastMove = game.moves[controller.currentIndex].lastMove?.join('')
       if (!lastMove) return null
 
-      const maiaEvaluation =
-        game.maiaEvaluations[currentMaiaModel][controller.currentIndex - 1]
-      const maiaValues = game.moves[controller.currentIndex].maia_values
+      const cp_vec = game.stockfishEvaluations[
+        controller.currentIndex
+      ] as MoveMap
+      const model_optimal_cp = Math.max(...Object.values(cp_vec))
+      const cp_relative_vec = Object.fromEntries(
+        Object.entries(cp_vec).map(([move, evaluation]) => [
+          move,
+          model_optimal_cp - evaluation,
+        ]),
+      )
 
-      if (
-        game.type === 'tournament' &&
-        game.stockfishEvaluations &&
-        game.stockfishEvaluations[controller.currentIndex - 1]
-      ) {
-        const stockfishEvaluation = game.stockfishEvaluations[
-          controller.currentIndex - 1
-        ] as MoveMap
-        const turnPlayed = controller.currentIndex % 2 === 0 ? 'black' : 'white'
-        const maiaWr = parseMaiaWinRate(
-          turnPlayed,
-          currentMaiaModel,
-          maiaValues,
-        )
-        const moveEval = {
-          maiaWr,
-          maia: maiaEvaluation[lastMove],
-          stockfish:
-            (turnPlayed == 'black' ? -1 : 1) * stockfishEvaluation[lastMove],
-        }
+      stockfish = {
+        cp_vec,
+        cp_relative_vec,
+        model_optimal_cp,
+      } as StockfishEvaluation
+    }
 
-        if (moveEval.maia === undefined || moveEval.stockfish === undefined)
-          return null
-        return moveEval
-      } else {
-        const stockfish = stockfishEvaluations[controller.currentIndex]
+    let maia
+    if (maiaEvaluations[controller.currentIndex]) {
+      maia = maiaEvaluations[controller.currentIndex][currentMaiaModel]
+    }
 
-        const turnPlayed = controller.currentIndex % 2 === 0 ? 'black' : 'white'
-        const maiaWr = parseMaiaWinRate(
-          turnPlayed,
-          currentMaiaModel,
-          maiaValues,
-        )
-
-        const moveEval = {
-          maiaWr,
-          maia: maiaEvaluation[lastMove],
-          stockfish:
-            (turnPlayed == 'white' ? -1 : 1) * stockfish?.model_optimal_cp,
-        }
-
-        return moveEval
-      }
+    return {
+      maia,
+      stockfish,
     }
   }, [
+    game.id,
     game.moves,
-    currentMove,
+    maiaEvaluations,
     currentMaiaModel,
-    game.maiaEvaluations,
-    controller.currentIndex,
-    game.stockfishEvaluations,
     stockfishEvaluations,
-    game.blackPlayer.rating,
-    game.whitePlayer.rating,
-    game.type,
+    game.stockfishEvaluations,
+    controller.currentIndex,
   ])
 
   const blunderMeter = useMemo(() => {
     let blunderMoveChance = 0
     let okMoveChance = 0
     let goodMoveChance = 0
+    if (!moveEvaluation || !moveEvaluation.maia || !moveEvaluation.stockfish) {
+      return { blunderMoveChance, okMoveChance, goodMoveChance }
+    }
+
+    const { maia, stockfish } = moveEvaluation
 
     if (game.type === 'tournament') {
-      const maia =
-        game.maiaEvaluations[currentMaiaModel][controller.currentIndex]
-
-      const sf_raw = game.stockfishEvaluations[
-        controller.currentIndex
-      ] as MoveMap
-
-      if (!sf_raw || !maia)
-        return { blunderMoveChance, okMoveChance, goodMoveChance }
-
-      const max = Math.max(...Object.values(sf_raw))
+      const max = Math.max(...Object.values(stockfish.cp_vec))
       const sf = Object.fromEntries(
-        Object.entries(sf_raw).map(([key, value]) => [key, max - value]),
+        Object.entries(stockfish.cp_vec).map(([key, value]) => [
+          key,
+          max - value,
+        ]),
       )
 
-      if (!maia) return { blunderMoveChance, okMoveChance, goodMoveChance }
-
-      for (const [move, prob] of Object.entries(maia)) {
+      for (const [move, prob] of Object.entries(maia.policy)) {
         const loss = sf[move]
 
         if (loss === undefined) continue
@@ -343,16 +248,8 @@ export const useAnalysisController = (
 
       return { blunderMoveChance, okMoveChance, goodMoveChance }
     } else {
-      const sf = stockfishEvaluations[controller.currentIndex]?.cp_relative_vec
-
-      const maia =
-        game.maiaEvaluations[currentMaiaModel][controller.currentIndex]
-
-      if (!sf || !maia)
-        return { blunderMoveChance, okMoveChance, goodMoveChance }
-
-      for (const [move, prob] of Object.entries(maia)) {
-        const loss = sf[move]
+      for (const [move, prob] of Object.entries(maia.policy)) {
+        const loss = stockfish.cp_relative_vec[move]
 
         if (loss === undefined) continue
 
@@ -367,14 +264,129 @@ export const useAnalysisController = (
 
       return { blunderMoveChance, okMoveChance, goodMoveChance }
     }
+  }, [moveEvaluation])
+
+  const movesByRating = useMemo(() => {
+    if (
+      !maiaEvaluations[controller.currentIndex] ||
+      !stockfishEvaluations[controller.currentIndex]
+    )
+      return
+
+    const maia = maiaEvaluations[controller.currentIndex]
+    const stockfish = stockfishEvaluations[controller.currentIndex]
+
+    const candidates: string[][] = []
+
+    // Get top 3 Maia moves from selected rating level
+    for (const move of Object.keys(maia[currentMaiaModel].policy).slice(0, 3)) {
+      if (candidates.find((c) => c[0] === move)) continue
+      candidates.push([move, move])
+    }
+
+    // Get top 3 Stockfish moves
+    for (const move of Object.keys(stockfish.cp_vec).slice(0, 3)) {
+      if (candidates.find((c) => c[0] === move)) continue
+      candidates.push([move, move])
+    }
+
+    // Get top Maia move from each rating level
+    for (const rating of MAIA_MODELS) {
+      const move = Object.keys(maia[rating].policy)[0]
+      if (candidates.find((c) => c[0] === move)) continue
+      candidates.push([move, move])
+    }
+
+    const data = []
+    for (const rating of MAIA_MODELS) {
+      const entry: { [key: string]: number } = {
+        rating: parseInt(rating.slice(-4)),
+      }
+
+      for (const move of candidates) {
+        const probability = maia[rating].policy[move[0]] * 100
+        entry[move[1]] = probability
+      }
+
+      data.push(entry)
+    }
+
+    return data
   }, [
-    game.type,
-    stockfishEvaluations,
     controller.currentIndex,
-    game.stockfishEvaluations,
-    game.maiaEvaluations,
+    maiaEvaluations,
+    stockfishEvaluations,
     currentMaiaModel,
   ])
+
+  const moveRecommendations = useMemo(() => {
+    const recommendations: {
+      maia?: { move: string; prob: number }[]
+      stockfish?: { move: string; cp: number }[]
+    } = {}
+
+    if (maiaEvaluations[controller.currentIndex]) {
+      const policy =
+        maiaEvaluations[controller.currentIndex][currentMaiaModel].policy
+
+      const maia = Object.entries(policy)
+        .slice(0, 5)
+        .map(([move, prob]) => {
+          return { move, prob } // Replace this with SAN notation
+        })
+
+      recommendations.maia = maia
+    }
+
+    if (stockfishEvaluations[controller.currentIndex]) {
+      const cp_vec = stockfishEvaluations[controller.currentIndex].cp_vec
+
+      const stockfish = Object.entries(cp_vec)
+        .slice(0, 5)
+        .map(([move, cp]) => {
+          return { move, cp }
+        })
+
+      recommendations.stockfish = stockfish
+    }
+
+    return recommendations
+  }, [controller.currentIndex, maiaEvaluations, stockfishEvaluations])
+
+  const moveMap = useMemo(() => {
+    const maiaRaw = maiaEvaluations[controller.currentIndex]
+    const stockfishRaw = stockfishEvaluations[controller.currentIndex]
+
+    if (!maiaRaw || !stockfishRaw) {
+      return
+    }
+
+    const maia = Object.fromEntries(
+      Object.entries(maiaRaw[currentMaiaModel].policy).slice(0, 3),
+    )
+    const stockfish = Object.fromEntries(
+      Object.entries(stockfishRaw.cp_vec).slice(0, 3),
+    )
+
+    const moves = Array.from(
+      new Set(Object.keys(maia).concat(Object.keys(stockfish))),
+    )
+
+    const data = []
+
+    for (const move of moves) {
+      const cp = Math.max(-4, stockfishRaw.cp_relative_vec[move])
+      const prob = maiaRaw[currentMaiaModel].policy[move] * 100
+
+      data.push({
+        move,
+        x: prob,
+        y: cp,
+      })
+    }
+
+    return data
+  }, [controller.currentIndex, maiaEvaluations, stockfishEvaluations])
 
   const move = useMemo(() => {
     if (
@@ -392,17 +404,20 @@ export const useAnalysisController = (
 
   return {
     move,
-    data,
+    data: {},
     moves,
     controller,
-    maiaModels,
     currentMaiaModel,
     setCurrentMaiaModel,
-    // positionEvaluation,
     currentMove,
+    colorSanMapping,
     setCurrentMove,
     moveEvaluation,
+    movesByRating,
+    moveRecommendations,
+    moveMap,
     blunderMeter,
     stockfishEvaluations,
+    maiaEvaluations,
   }
 }
