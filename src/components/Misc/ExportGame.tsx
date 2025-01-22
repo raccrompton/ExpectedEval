@@ -9,14 +9,14 @@ interface Props {
   game: PlayedGame
   whitePlayer: string
   blackPlayer: string
-  maiaVersion: string
+  event: string
 }
 
 export const ExportGame: React.FC<Props> = ({
   game,
   whitePlayer,
   blackPlayer,
-  maiaVersion,
+  event,
 }) => {
   const [fen, setFen] = useState('')
   const [pgn, setPgn] = useState('')
@@ -35,7 +35,7 @@ export const ExportGame: React.FC<Props> = ({
   useEffect(() => {
     const initial = new Chess(game.moves[0].board)
     initial.addHeader('ID', game.id)
-    initial.addHeader('Event', `Play v. ${maiaVersion}`)
+    initial.addHeader('Event', event)
     initial.addHeader('Site', `https://maiachess.com/`)
     initial.addHeader('White', whitePlayer)
     initial.addHeader('Black', blackPlayer)
@@ -80,7 +80,7 @@ export const ExportGame: React.FC<Props> = ({
           role="button"
           tabIndex={0}
           onClick={() => copy(fen)}
-          className="border-1 group flex cursor-pointer overflow-x-hidden rounded border border-white/5 bg-background-1/50 px-4 py-2"
+          className="border-1 group flex cursor-pointer overflow-x-hidden rounded border border-white/5 bg-background-1/50 px-3 py-2"
         >
           <p className="whitespace-nowrap text-xs text-secondary group-hover:text-secondary/80">
             {fen}
@@ -105,7 +105,7 @@ export const ExportGame: React.FC<Props> = ({
           role="button"
           tabIndex={0}
           onClick={() => copy(pgn)}
-          className="border-1 group flex cursor-pointer overflow-x-hidden rounded border border-white/5 bg-background-1/50 px-4 py-2"
+          className="border-1 group flex max-h-32 cursor-pointer overflow-x-hidden overflow-y-scroll rounded border border-white/5 bg-background-1/50 p-3"
         >
           <p className="whitespace-pre-wrap text-xs text-secondary group-hover:text-secondary/80">
             {pgn}
