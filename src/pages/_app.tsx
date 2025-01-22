@@ -21,9 +21,7 @@ import { Footer, Compose, ErrorBoundary, Header } from 'src/components'
 
 function MaiaPlatform({ Component, pageProps }: AppProps) {
   const router = useRouter()
-  const isAnalysisPage =
-    router.pathname.startsWith('/analysis') ||
-    router.pathname.startsWith('/analyze')
+  const isAnalysisPage = router.pathname.startsWith('/analysis')
 
   return (
     <Compose

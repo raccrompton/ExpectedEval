@@ -9,35 +9,45 @@ import React, {
 } from 'react'
 import Head from 'next/head'
 import type { NextPage } from 'next'
+import { motion } from 'framer-motion'
 import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
-import type { DrawShape } from 'chessground/draw'
+import type { DrawBrushes, DrawShape } from 'chessground/draw'
 
 import {
   getLichessGamePGN,
-  getAnalyzedUserGame,
-  getAnalyzedLichessGame,
-  getAnalyzedTournamentGame,
+  getClientAnalyzedUserGame,
+  getClientAnalyzedLichessGame,
+  getClientAnalyzedTournamentGame,
 } from 'src/api'
 import {
   Loading,
-  MovePlot,
+  MoveMap,
   GameInfo,
+  Highlight,
   GameBoard,
-  BlunderMeter,
+  ExportGame,
+  MovesByRating,
   MovesContainer,
   BoardController,
   AnalysisGameList,
   ContinueAgainstMaia,
+  MoveRecommendations,
   AuthenticatedWrapper,
   VerticalEvaluationBar,
+  ClientAnalysisGameList,
   HorizontalEvaluationBar,
 } from 'src/components'
-import { Color } from 'src/types'
-import { useAnalysisController } from 'src/hooks'
-import { AnalyzedGame, MoveMap } from 'src/types/analysis'
+import { Color, PlayedGame } from 'src/types'
+import { useClientAnalysisController } from 'src/hooks'
+import {
+  ClientAnalyzedGame,
+  MaiaEvaluation,
+  StockfishEvaluation,
+} from 'src/types/analysis'
 import { ThemeContext, ModalContext, WindowSizeContext } from 'src/contexts'
 import { GameControllerContext } from 'src/contexts/GameControllerContext/GameControllerContext'
+import { ConfigureAnalysis } from 'src/components/Analysis/ConfigureAnalysis'
 
 const MAIA_MODELS = [
   'maia_kdd_1100',
@@ -65,9 +75,9 @@ const AnalysisPage: NextPage = () => {
   const router = useRouter()
   const { id, index, orientation } = router.query
 
-  const [analyzedGame, setAnalyzedGame] = useState<AnalyzedGame | undefined>(
-    undefined,
-  )
+  const [analyzedGame, setAnalyzedGame] = useState<
+    ClientAnalyzedGame | undefined
+  >(undefined)
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
 
   const getAndSetTournamentGame = useCallback(
@@ -77,7 +87,7 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getAnalyzedTournamentGame(newId)
+        game = await getClientAnalyzedTournamentGame(newId)
       } catch (e) {
         router.push('/401')
         return
@@ -99,7 +109,7 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getAnalyzedLichessGame(id, pgn, currentMaiaModel)
+        game = await getClientAnalyzedLichessGame(id, pgn, currentMaiaModel)
       } catch (e) {
         router.push('/401')
         return
@@ -124,7 +134,7 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getAnalyzedUserGame(id, type, currentMaiaModel)
+        game = await getClientAnalyzedUserGame(id, type, currentMaiaModel)
       } catch (e) {
         router.push('/401')
         return
@@ -141,7 +151,7 @@ const AnalysisPage: NextPage = () => {
     ;(async () => {
       if (analyzedGame == undefined) {
         const queryId = id as string[]
-        if (queryId[1] === 'licpgnhess') {
+        if (queryId[1] === 'lichess') {
           const pgn = await getLichessGamePGN(queryId[0])
           getAndSetLichessGames(queryId[0], pgn, undefined)
         } else if (['play', 'hand', 'brain'].includes(queryId[1])) {
@@ -197,10 +207,10 @@ interface Props {
     setCurrentMove: Dispatch<SetStateAction<number>>,
     currentMaiaModel: string,
   ) => Promise<void>
-  analyzedGame: AnalyzedGame
+  analyzedGame: ClientAnalyzedGame
   initialIndex: number
   initialOrientation: Color
-  setAnalyzedGame: Dispatch<SetStateAction<AnalyzedGame | undefined>>
+  setAnalyzedGame: Dispatch<SetStateAction<ClientAnalyzedGame | undefined>>
 }
 
 const Analysis: React.FC<Props> = ({
@@ -211,30 +221,51 @@ const Analysis: React.FC<Props> = ({
   getAndSetTournamentGame,
   getAndSetLichessGames,
   getAndSetUserGames,
-  setAnalyzedGame,
 }: Props) => {
-  const router = useRouter()
-  const { theme } = useContext(ThemeContext)
-  const { width } = useContext(WindowSizeContext)
-  const isMobile = useMemo(() => width > 0 && width <= 670, [width])
-  const [movePlotHover, setMovePlotHover] = useState<DrawShape | null>(null)
-  const [topArrows, setTopArrows] = useState<DrawShape[]>([])
-
+  const screens = [
+    {
+      id: 'select',
+      name: 'Select Game',
+    },
+    {
+      id: 'configure',
+      name: 'Configure',
+    },
+    {
+      id: 'export',
+      name: 'Export',
+    },
+  ]
   const {
     move,
     moves,
-    data,
     controller,
     setCurrentMaiaModel,
     currentMaiaModel,
     moveEvaluation,
     setCurrentMove,
     stockfishEvaluations,
+    maiaEvaluations,
     blunderMeter,
-  } = useAnalysisController(analyzedGame, initialIndex, initialOrientation)
+    moveMap,
+    movesByRating,
+    colorSanMapping,
+    moveRecommendations,
+  } = useClientAnalysisController(
+    analyzedGame,
+    initialIndex,
+    initialOrientation,
+  )
+
+  const { width } = useContext(WindowSizeContext)
+  const isMobile = useMemo(() => width > 0 && width <= 670, [width])
+  const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
+  const [arrows, setArrows] = useState<DrawShape[]>([])
+  const [brushes, setBrushes] = useState<DrawBrushes>({})
+  const [screen, setScreen] = useState(screens[0])
 
   useEffect(() => {
-    setMovePlotHover(null)
+    setHoverArrow(null)
   }, [controller.currentIndex])
 
   const launchContinue = useCallback(() => {
@@ -244,332 +275,243 @@ const Analysis: React.FC<Props> = ({
     window.open(url)
   }, [analyzedGame.moves, controller])
 
-  const showArrow = (node: { data: { move: string } }) => {
-    const move = node.data.move
-    const orig = move.slice(0, 2)
-    const dest = move.slice(2, 4)
-    setMovePlotHover({
-      brush: 'green',
-      orig: orig as Key,
-      dest: dest as Key,
-    })
-  }
-
-  const updateMaiaModel = async (model: string) => {
-    if (analyzedGame.type === 'tournament') {
-      setCurrentMaiaModel(model)
-    } else {
-      if (analyzedGame.maiaEvaluations[model]) {
-        setCurrentMaiaModel(model)
-        return
-      }
-
-      let game
-      if (analyzedGame.type === 'pgn') {
-        try {
-          game = await getAnalyzedLichessGame(
-            analyzedGame.id,
-            analyzedGame.pgn as string,
-            model,
-          )
-        } catch (e) {
-          router.push('/401')
-          return
-        }
-      } else {
-        try {
-          game = await getAnalyzedUserGame(
-            analyzedGame.id,
-            analyzedGame.type,
-            model,
-          )
-        } catch (e) {
-          router.push('/401')
-          return
-        }
-      }
-
-      const newAnalyzedGame = { ...analyzedGame }
-      newAnalyzedGame.maiaEvaluations = {
-        ...newAnalyzedGame.maiaEvaluations,
-        ...game.maiaEvaluations,
-      }
-
-      for (let i = 0; i < analyzedGame.moves.length; i++) {
-        const maiaValues = newAnalyzedGame.moves[i].maia_values
-        if (maiaValues) {
-          const newMaiaValues = game.moves[i].maia_values as {
-            [key: string]: number
-          }
-          maiaValues[model] = newMaiaValues[model]
-        }
-      }
-
-      setAnalyzedGame(newAnalyzedGame)
-      setCurrentMaiaModel(model)
-    }
-  }
-
   useEffect(() => {
-    let topStockfishMove, topMaiaMove
-    const maia =
-      analyzedGame.maiaEvaluations[currentMaiaModel][controller.currentIndex]
+    const arr = []
 
-    if (maia) {
-      topMaiaMove = Object.keys(maia).reduce(
-        (max, key) => (maia[key] > maia[max] ? key : max),
-        Object.keys(maia)[0],
-      )
+    if (moveEvaluation?.maia) {
+      const maia = Object.entries(moveEvaluation?.maia?.policy)[0]
+      arr.push({
+        brush: 'red',
+        orig: maia[0].slice(0, 2) as Key,
+        dest: maia[0].slice(2, 4) as Key,
+      } as DrawShape)
     }
 
-    if (analyzedGame.type === 'tournament') {
-      const stockfish = analyzedGame.stockfishEvaluations[
-        controller.currentIndex
-      ] as MoveMap
-      if (stockfish) {
-        topStockfishMove = Object.keys(stockfish).reduce(
-          (max, key) => (stockfish[key] > stockfish[max] ? key : max),
-          Object.keys(stockfish)[0],
-        )
-      }
-    } else {
-      const stockfish = stockfishEvaluations[controller.currentIndex]?.cp_vec
-      if (stockfish) {
-        topStockfishMove = Object.keys(stockfish).reduce(
-          (max, key) => (stockfish[key] > stockfish[max] ? key : max),
-          Object.keys(stockfish)[0],
-        )
-      }
-    }
-
-    const arrows = []
-    if (topStockfishMove && topStockfishMove === topMaiaMove) {
-      arrows.push({
-        brush: 'yellow',
-        orig: topMaiaMove.slice(0, 2) as Key,
-        dest: topMaiaMove.slice(2, 4) as Key,
+    if (moveEvaluation?.stockfish) {
+      const stockfish = Object.entries(moveEvaluation?.stockfish.cp_vec)[0]
+      arr.push({
+        brush: 'blue',
+        orig: stockfish[0].slice(0, 2) as Key,
+        dest: stockfish[0].slice(2, 4) as Key,
+        modifiers: { lineWidth: 8 },
       })
-    } else {
-      if (topStockfishMove) {
-        arrows.push({
-          brush: 'blue',
-          orig: topStockfishMove.slice(0, 2) as Key,
-          dest: topStockfishMove.slice(2, 4) as Key,
-        })
-      }
-      if (topMaiaMove) {
-        arrows.push({
-          brush: 'red',
-          orig: topMaiaMove.slice(0, 2) as Key,
-          dest: topMaiaMove.slice(2, 4) as Key,
-        })
-      }
     }
 
-    setTopArrows(arrows)
-  }, [
-    controller.currentIndex,
-    stockfishEvaluations,
-    analyzedGame.maiaEvaluations,
-    analyzedGame.stockfishEvaluations,
-  ])
+    setArrows(arr)
+  }, [stockfishEvaluations, maiaEvaluations, controller.currentIndex])
 
-  const Info = (
-    <>
-      <div className="flex w-full items-center justify-between text-secondary">
-        <p>
-          {theme == 'dark' ? '●' : '○'}{' '}
-          {analyzedGame.whitePlayer?.name ?? 'Unknown'}{' '}
-          {analyzedGame.whitePlayer?.rating
-            ? `(${analyzedGame.whitePlayer.rating})`
-            : null}
-        </p>
-        <p>
-          {analyzedGame.termination.winner === 'white' ? (
-            <span className="text-engine-3">1</span>
-          ) : analyzedGame.termination.winner === 'black' ? (
-            <span className="text-human-3">0</span>
-          ) : (
-            <span>1/2</span>
-          )}
-        </p>
+  const Player = ({
+    name,
+    rating,
+    color,
+    termination,
+  }: {
+    name: string
+    color: string
+    rating?: number
+    termination?: string
+  }) => {
+    return (
+      <div className="flex w-full items-center justify-between bg-background-1 px-4 py-2">
+        <div className="flex items-center gap-1.5">
+          <div
+            className={`h-2.5 w-2.5 rounded-full ${color === 'white' ? 'bg-white' : 'border bg-black'}`}
+          />
+          <p>
+            {name ?? 'Unknown'} {rating ? `(${rating})` : null}
+          </p>
+        </div>
+        {termination === color ? (
+          <p className="text-engine-3">1</p>
+        ) : termination !== 'none' ? (
+          <p className="text-human-3">0</p>
+        ) : termination === undefined ? (
+          <></>
+        ) : (
+          <p>1/2</p>
+        )}
       </div>
-      <div className="flex w-full items-center justify-between text-secondary">
-        <p>
-          {theme == 'light' ? '●' : '○'}{' '}
-          {analyzedGame.blackPlayer?.name ?? 'Unknown'}{' '}
-          {analyzedGame.blackPlayer?.rating
-            ? `(${analyzedGame.blackPlayer.rating})`
-            : null}
-        </p>
-        <p>
-          {analyzedGame.termination.winner === 'black' ? (
-            <span className="text-engine-3">1</span>
-          ) : analyzedGame.termination.winner === 'white' ? (
-            <span className="text-human-3">0</span>
-          ) : (
-            <span>1/2</span>
-          )}
-        </p>
-      </div>{' '}
-      {analyzedGame.termination ? (
-        <p className="text-center capitalize text-secondary">
-          {analyzedGame.termination.winner !== 'none'
-            ? `${analyzedGame.termination.winner} wins`
-            : 'draw'}
-        </p>
-      ) : null}
-    </>
-  )
+    )
+  }
 
   const desktopLayout = (
-    <>
-      <div className="flex h-full flex-1 flex-col justify-center gap-2">
-        <div className="flex w-full flex-row items-center justify-center gap-2">
-          <div
-            style={{ maxWidth: 'min(20vw, 100vw - 75vh)' }}
-            className="flex h-[75vh] max-h-[70vw] w-[40vh] flex-col justify-start gap-2 overflow-hidden"
-          >
-            <div className="flex w-screen flex-col md:w-auto">
-              <GameInfo title="Analysis" icon="bar_chart" type="analysis">
-                {Info}
-              </GameInfo>
-            </div>
-            <div className="flex flex-col">
-              <p>Analyze using:</p>
-              <select
-                value={currentMaiaModel}
-                className="cursor-pointer rounded border-none bg-human-4 p-2 outline-none"
-                onChange={(e) => updateMaiaModel(e.target.value)}
-              >
-                {MAIA_MODELS.map((model) => (
-                  <option value={model} key={model}>
-                    {model.replace('maia_kdd_', 'Maia ')}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <ContinueAgainstMaia launchContinue={launchContinue} />
-            <AnalysisGameList
-              currentId={currentId}
-              currentMaiaModel={currentMaiaModel}
-              loadNewTournamentGame={getAndSetTournamentGame}
-              loadNewLichessGames={getAndSetLichessGames}
-              loadNewUserGames={getAndSetUserGames}
-            />
-          </div>
-          <div className="relative flex aspect-square w-full max-w-[75vh]">
-            <GameBoard
-              game={analyzedGame}
-              moves={moves}
-              setCurrentMove={setCurrentMove}
-              move={move}
-              shapes={
-                movePlotHover ? [movePlotHover, ...topArrows] : [...topArrows]
-              }
-            />
-          </div>
-          <div>
-            <VerticalEvaluationBar
-              value={moveEvaluation?.maiaWr}
-              label="Maia White Win %"
-            />
-          </div>
+    <div className="flex h-full w-full flex-col items-center py-4 md:py-10">
+      <div className="flex h-full w-[90%] flex-1 flex-col justify-center gap-2">
+        <div className="flex w-full flex-row items-start justify-start gap-2">
           <div
             style={{
-              maxWidth: 'min(20vw, 100vw - 75vh)',
+              width: 'calc(60vh + 1.5rem)',
             }}
-            className="flex h-[75vh] w-[40vh] flex-col gap-1"
+            className="flex flex-col gap-2"
           >
-            <div className="flex">
-              <div
-                style={{
-                  maxHeight: 'min(20vw, 100vw - 75vh)',
-                  maxWidth: 'min(20vw, 100vw - 75vh)',
-                }}
-                className="flex h-[40vh] w-[40vh] [&>div]:h-[inherit] [&>div]:max-h-[inherit] [&>div]:max-w-[inherit]"
-              >
-                <MovePlot
-                  data={data}
-                  onMove={setCurrentMove}
-                  onMouseEnter={showArrow}
-                  onMouseLeave={() => setMovePlotHover(null)}
+            <div className="flex flex-col overflow-hidden rounded-sm">
+              <Player
+                name={
+                  controller.orientation === 'white'
+                    ? analyzedGame.blackPlayer.name
+                    : analyzedGame.whitePlayer.name
+                }
+                rating={
+                  controller.orientation === 'white'
+                    ? analyzedGame.blackPlayer.rating
+                    : analyzedGame.whitePlayer.rating
+                }
+                color={controller.orientation === 'white' ? 'black' : 'white'}
+                termination={analyzedGame.termination.winner}
+              />
+              <div className="flex flex-col items-start">
+                <div className="flex flex-row items-start">
+                  <div className="relative flex aspect-square w-[60vh]">
+                    <GameBoard
+                      game={analyzedGame}
+                      moves={moves}
+                      setCurrentMove={setCurrentMove}
+                      move={move}
+                      brushes={brushes}
+                      shapes={
+                        hoverArrow ? [...arrows, hoverArrow] : [...arrows]
+                      }
+                    />
+                  </div>
+                  <VerticalEvaluationBar
+                    value={moveEvaluation?.maia?.value}
+                    label="Maia White Win %"
+                  />
+                </div>
+                <div className="flex items-center justify-center">
+                  <HorizontalEvaluationBar
+                    min={0}
+                    max={800}
+                    value={
+                      moveEvaluation
+                        ? 400 + moveEvaluation?.stockfish?.model_optimal_cp
+                        : void 0
+                    }
+                    label="Stockfish Evaluation"
+                  />
+                  <div className="h-6 w-6 bg-black" />
+                </div>
+              </div>
+              <Player
+                name={
+                  controller.orientation === 'white'
+                    ? analyzedGame.whitePlayer.name
+                    : analyzedGame.blackPlayer.name
+                }
+                rating={
+                  controller.orientation === 'white'
+                    ? analyzedGame.whitePlayer.rating
+                    : analyzedGame.blackPlayer.rating
+                }
+                color={controller.orientation === 'white' ? 'white' : 'black'}
+                termination={analyzedGame.termination.winner}
+              />
+            </div>
+            <div className="flex flex-1 flex-col overflow-hidden rounded bg-background-1/60">
+              <div className="flex flex-row border-b border-white/10">
+                {screens.map((s) => {
+                  const selected = s.id === screen.id
+                  return (
+                    <div
+                      key={s.id}
+                      tabIndex={0}
+                      role="button"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') setScreen(s)
+                      }}
+                      onClick={() => setScreen(s)}
+                      className={`relative flex cursor-pointer select-none flex-row px-4 py-2 ${selected ? 'bg-white/5' : 'hover:bg-white hover:bg-opacity-[0.02]'} transition duration-200`}
+                    >
+                      <p
+                        className={`${selected ? 'text-primary' : 'text-secondary'} transition duration-200`}
+                      >
+                        {s.name}
+                      </p>
+                      {selected ? (
+                        <motion.div
+                          layoutId="selectedScreen"
+                          className="absolute bottom-0 left-0 h-[1px] w-full bg-white"
+                        />
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="flex flex-col bg-backdrop/30">
+                {screen.id === 'select' ? (
+                  <ClientAnalysisGameList
+                    currentId={currentId}
+                    currentMaiaModel={currentMaiaModel}
+                    loadNewTournamentGame={getAndSetTournamentGame}
+                    loadNewLichessGames={getAndSetLichessGames}
+                    loadNewUserGames={getAndSetUserGames}
+                  />
+                ) : screen.id === 'configure' ? (
+                  <ConfigureAnalysis
+                    currentMaiaModel={currentMaiaModel}
+                    setCurrentMaiaModel={setCurrentMaiaModel}
+                    launchContinue={launchContinue}
+                    MAIA_MODELS={MAIA_MODELS}
+                  />
+                ) : screen.id === 'export' ? (
+                  <div className="flex flex-col p-4">
+                    <ExportGame
+                      game={analyzedGame as any as PlayedGame}
+                      whitePlayer={analyzedGame.whitePlayer.name}
+                      blackPlayer={analyzedGame.blackPlayer.name}
+                      event="Analysis"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+          <div className="grid w-full grid-rows-3 gap-2">
+            <div className="h-[calc((90vh - 1rem)/3)] flex gap-2">
+              <Highlight
+                moveEvaluation={
+                  moveEvaluation as {
+                    maia?: MaiaEvaluation
+                    stockfish?: StockfishEvaluation
+                  }
+                }
+                colorSanMapping={colorSanMapping}
+                blunderMeter={blunderMeter}
+              />
+            </div>
+            <div className="h-[calc((90vh - 1rem)/3)] grid grid-cols-2 gap-2 2xl:grid-cols-3">
+              <MoveRecommendations
+                recommendations={moveRecommendations}
+                colorSanMapping={colorSanMapping}
+                setHoverArrow={setHoverArrow}
+              />
+              <div className="hidden h-full flex-col 2xl:flex">
+                <MoveMap
+                  moveMap={moveMap}
+                  colorSanMapping={colorSanMapping}
+                  setHoverArrow={setHoverArrow}
                 />
               </div>
-              <div
-                style={{
-                  background:
-                    'linear-gradient(0deg, rgb(36, 36, 36) 0%, rgb(255, 137, 70) 100%)',
-                }}
-                className="-mr-1 h-full w-1"
-              />
             </div>
-            <div
-              style={{
-                background:
-                  'linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(83, 167, 162) 100%)',
-              }}
-              className="-mt-1 h-1 w-full"
-            />
-            <div className="flex-none">
-              <div className="flex w-full flex-col overflow-hidden rounded">
-                <div className="flex items-center justify-center bg-background-1 py-2">
-                  <p className="text-sm text-secondary">Current Position</p>
-                </div>
-                <div className="grid grid-cols-2">
-                  <div className="relative flex flex-col items-center py-4">
-                    <div className="absolute left-0 top-0 z-0 h-full w-full bg-human-2 opacity-5" />
-                    <p className="z-10 text-sm text-primary">
-                      Maia White Win %
-                    </p>
-                    <p className="z-10 text-2xl font-bold text-human-2">
-                      {moveEvaluation?.maiaWr && moveEvaluation.maiaWr > 0
-                        ? `${Math.round(moveEvaluation.maiaWr * 1000) / 10}%`
-                        : '-'}
-                    </p>
-                  </div>
-                  <div className="relative flex flex-col items-center py-4">
-                    <div className="absolute left-0 top-0 z-0 h-full w-full bg-engine-1 opacity-5" />
-                    <p className="text-sm text-primary">
-                      SF Eval{' '}
-                      {stockfishEvaluations?.[controller.currentIndex]?.depth
-                        ? `(Depth ${stockfishEvaluations?.[controller.currentIndex]?.depth})`
-                        : ''}
-                    </p>
-                    <p className="text-2xl font-bold text-engine-2">
-                      {moveEvaluation?.stockfish !== undefined &&
-                      Number.isNaN(moveEvaluation.stockfish) === false
-                        ? `${moveEvaluation.stockfish >= 0 ? '+' : ''}${(Math.round(moveEvaluation.stockfish) / 100).toFixed(2)}`
-                        : '-'}
-                    </p>
-                  </div>
-                </div>
+            <div className="h-[calc((90vh - 1rem)/3)] grid grid-cols-3 gap-2 overflow-y-hidden">
+              <MovesByRating
+                moves={movesByRating}
+                colorSanMapping={colorSanMapping}
+              />
+              <div className="ovrerflow-y-scroll flex h-[30vh] flex-col">
+                <BoardController setCurrentMove={setCurrentMove} />
+                <MovesContainer
+                  game={analyzedGame}
+                  setCurrentMove={setCurrentMove}
+                  termination={analyzedGame.termination}
+                  currentMaiaModel={currentMaiaModel}
+                />
               </div>
-              <BlunderMeter {...blunderMeter} />
-            </div>
-            <div className="relative bottom-0 h-full min-h-[38px] flex-1 overflow-auto">
-              <MovesContainer
-                game={analyzedGame}
-                setCurrentMove={setCurrentMove}
-                termination={analyzedGame.termination}
-                currentMaiaModel={currentMaiaModel}
-              />
-            </div>
-            <div className="flex-none">
-              <BoardController setCurrentMove={setCurrentMove} />
             </div>
           </div>
         </div>
-        <div className="mr-8 flex items-center justify-center">
-          <HorizontalEvaluationBar
-            min={0}
-            max={800}
-            value={moveEvaluation ? 400 + moveEvaluation.stockfish : void 0}
-            label="Stockfish Evaluation"
-          />
-        </div>
       </div>
-    </>
+    </div>
   )
 
   const mobileLayout = (
@@ -577,7 +519,7 @@ const Analysis: React.FC<Props> = ({
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
         <div className="flex w-full flex-col items-start justify-start gap-1">
           <GameInfo title="Analysis" icon="bar_chart" type="analysis">
-            {Info}
+            <></>
           </GameInfo>
           <div className="relative flex h-[100vw] w-screen">
             <GameBoard
@@ -585,70 +527,14 @@ const Analysis: React.FC<Props> = ({
               moves={moves}
               setCurrentMove={setCurrentMove}
               move={move}
-              shapes={
-                movePlotHover ? [movePlotHover, ...topArrows] : [...topArrows]
-              }
+              brushes={brushes}
+              shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
             />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="w-screen !flex-grow-0">
               <BoardController setCurrentMove={setCurrentMove} />
             </div>
-            <div className="flex-none">
-              <div className="flex w-full flex-col overflow-hidden rounded">
-                <div className="flex items-center justify-center bg-background-1 py-2">
-                  <p className="text-sm text-secondary">Current Position</p>
-                </div>
-                <div className="grid grid-cols-2">
-                  <div className="relative flex flex-col items-center py-4">
-                    <div className="absolute left-0 top-0 z-0 h-full w-full bg-human-2 opacity-5" />
-                    <p className="z-10 text-sm text-primary">
-                      Maia White Win %
-                    </p>
-                    <p className="z-10 text-2xl font-bold text-human-2">
-                      {moveEvaluation?.maiaWr && moveEvaluation.maiaWr > 0
-                        ? `${Math.round(moveEvaluation.maiaWr * 1000) / 10}%`
-                        : '-'}
-                    </p>
-                  </div>
-                  <div className="relative flex flex-col items-center py-4">
-                    <div className="absolute left-0 top-0 z-0 h-full w-full bg-engine-1 opacity-5" />
-                    <p className="text-sm text-primary">Stockfish Eval</p>
-                    <p className="text-2xl font-bold text-engine-2">
-                      {moveEvaluation?.stockfish !== undefined &&
-                      Number.isNaN(moveEvaluation.stockfish) === false
-                        ? `${moveEvaluation.stockfish >= 0 ? '+' : ''}${(Math.round(moveEvaluation.stockfish) / 100).toFixed(2)}`
-                        : '-'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <BlunderMeter {...blunderMeter} />
-            </div>
-            <div className="flex">
-              <div className="h-[20vh] max-h-[200px] w-screen !flex-none">
-                <MovePlot
-                  data={data}
-                  onMove={setCurrentMove}
-                  onMouseEnter={showArrow}
-                  onMouseLeave={() => setMovePlotHover(null)}
-                />
-              </div>
-              <div
-                style={{
-                  background:
-                    'linear-gradient(0deg, rgb(36, 36, 36) 0%, rgb(255, 137, 70) 100%)',
-                }}
-                className="-mt-1 h-full w-1"
-              />
-            </div>
-            <div
-              style={{
-                background:
-                  'linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(83, 167, 162) 100%)',
-              }}
-              className="-mt-1 h-1 w-full"
-            />
             <div className="relative bottom-0 h-full flex-1 overflow-auto">
               <MovesContainer
                 game={analyzedGame}
@@ -662,7 +548,7 @@ const Analysis: React.FC<Props> = ({
               <select
                 className="w-full cursor-pointer rounded border-none bg-human-4 p-2 outline-none"
                 value={currentMaiaModel}
-                onChange={(e) => updateMaiaModel(e.target.value)}
+                onChange={(e) => setCurrentMaiaModel(e.target.value)}
               >
                 {MAIA_MODELS.map((model) => (
                   <option value={model} key={model}>
