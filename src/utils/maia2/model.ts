@@ -1,9 +1,9 @@
-import * as ort from 'onnxruntime-web'
+import { InferenceSession, Tensor } from 'onnxruntime-web'
 
 import { mirrorMove, preprocess, allPossibleMovesReversed } from './utils'
 
 class Maia {
-  public model!: ort.InferenceSession
+  public model!: InferenceSession
   public ready: boolean
 
   constructor(options: { model: string }) {
@@ -11,7 +11,7 @@ class Maia {
     ;(async () => {
       try {
         const buffer = await this.getCachedModel(options.model)
-        this.model = await ort.InferenceSession.create(buffer)
+        this.model = await InferenceSession.create(buffer)
 
         this.ready = true
       } catch (e) {
@@ -49,13 +49,13 @@ class Maia {
       preprocess(board, eloSelf, eloOppo)
 
     // Load and run the model
-    const feeds: Record<string, ort.Tensor> = {
-      boards: new ort.Tensor('float32', boardInput, [1, 18, 8, 8]),
-      elo_self: new ort.Tensor(
+    const feeds: Record<string, Tensor> = {
+      boards: new Tensor('float32', boardInput, [1, 18, 8, 8]),
+      elo_self: new Tensor(
         'int64',
         BigInt64Array.from([BigInt(eloSelfCategory)]),
       ),
-      elo_oppo: new ort.Tensor(
+      elo_oppo: new Tensor(
         'int64',
         BigInt64Array.from([BigInt(eloOppoCategory)]),
       ),
@@ -113,19 +113,14 @@ class Maia {
       combinedBoardInputs.set(boardInputs[i], i * 18 * 8 * 8)
     }
 
-    const feeds: Record<string, ort.Tensor> = {
-      boards: new ort.Tensor('float32', combinedBoardInputs, [
-        batchSize,
-        18,
-        8,
-        8,
-      ]),
-      elo_self: new ort.Tensor(
+    const feeds: Record<string, Tensor> = {
+      boards: new Tensor('float32', combinedBoardInputs, [batchSize, 18, 8, 8]),
+      elo_self: new Tensor(
         'int64',
         BigInt64Array.from(eloSelfCategories.map(BigInt)),
         [batchSize],
       ),
-      elo_oppo: new ort.Tensor(
+      elo_oppo: new Tensor(
         'int64',
         BigInt64Array.from(eloOppoCategories.map(BigInt)),
         [batchSize],
@@ -147,11 +142,11 @@ class Maia {
         startIdx,
         endIdx,
       ) as Float32Array
-      const policyTensor = new ort.Tensor('float32', policyLogitsArray, [
+      const policyTensor = new Tensor('float32', policyLogitsArray, [
         logitsPerItem,
       ])
       const valueLogit = logits_value.data[i] as number
-      const valueTensor = new ort.Tensor('float32', [valueLogit], [1])
+      const valueTensor = new Tensor('float32', [valueLogit], [1])
 
       const { policy, value: winProb } = processOutputs(
         boards[i],
@@ -181,8 +176,8 @@ class Maia {
  */
 function processOutputs(
   fen: string,
-  logits_maia: ort.Tensor,
-  logits_value: ort.Tensor,
+  logits_maia: Tensor,
+  logits_value: Tensor,
   legalMoves: Float32Array,
 ) {
   const logits = logits_maia.data as Float32Array

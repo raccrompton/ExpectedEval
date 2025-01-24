@@ -9,7 +9,9 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from 'recharts'
+import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
+import { ContentType } from 'recharts/types/component/Label'
 
 interface Props {
   moveMap?: { move: string; x: number; y: number }[]
@@ -30,8 +32,8 @@ export const MoveMap: React.FC<Props> = ({
 }: Props) => {
   const onMouseEnter = (move: string) => {
     setHoverArrow({
-      orig: move.slice(0, 2) as any,
-      dest: move.slice(2, 4) as any,
+      orig: move.slice(0, 2) as Key,
+      dest: move.slice(2, 4) as Key,
       brush: 'green',
       modifiers: {
         lineWidth: 10,
@@ -136,22 +138,34 @@ export const MoveMap: React.FC<Props> = ({
                 position="top"
                 fontSize={12}
                 fill="white"
-                content={({ x, y, value, index }: any) => {
-                  return (
-                    <text
-                      x={x}
-                      y={y}
-                      key={index}
-                      fontSize={12}
-                      textAnchor="middle"
-                      dx={x < 100 ? 24 : 0}
-                      dy={x < 100 ? 0 : y < 55 ? 24 : -5}
-                      fill={colorSanMapping[value].color || '#fff'}
-                    >
-                      {colorSanMapping[value].san}
-                    </text>
-                  )
-                }}
+                content={
+                  (({
+                    x,
+                    y,
+                    value,
+                    index,
+                  }: {
+                    x: number
+                    y: number
+                    value: string
+                    index: number
+                  }) => {
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        key={index}
+                        fontSize={12}
+                        textAnchor="middle"
+                        dx={x < 100 ? 24 : 0}
+                        dy={x < 100 ? 0 : y < 55 ? 24 : -5}
+                        fill={colorSanMapping[value].color || '#fff'}
+                      >
+                        {colorSanMapping[value].san}
+                      </text>
+                    )
+                  }) as ContentType
+                }
               />
               {moveMap?.map((entry, index) => (
                 <Cell
