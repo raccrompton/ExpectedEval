@@ -86,6 +86,7 @@ export const MovesByRating: React.FC<Props> = ({
                   }
                   return (
                     <linearGradient
+                      key={`color${move}`}
                       id={`color${move}`}
                       x1="0"
                       y1="0"
@@ -140,7 +141,10 @@ export const MovesByRating: React.FC<Props> = ({
                       const san = colorSanMapping[point.name as string].san
                       const prob = Math.round((point.value as number) * 10) / 10
                       return (
-                        <div className="flex items-center justify-between px-3">
+                        <div
+                          key={san}
+                          className="flex items-center justify-between px-3"
+                        >
                           <p
                             style={{
                               color:

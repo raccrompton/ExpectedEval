@@ -1,4 +1,6 @@
+import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
+
 interface Props {
   recommendations: {
     maia?: { move: string; prob: number }[]
@@ -21,8 +23,8 @@ export const MoveRecommendations: React.FC<Props> = ({
 }: Props) => {
   const onMouseEnter = (move: string) => {
     setHoverArrow({
-      orig: move.slice(0, 2) as any,
-      dest: move.slice(2, 4) as any,
+      orig: move.slice(0, 2) as Key,
+      dest: move.slice(2, 4) as Key,
       brush: 'green',
       modifiers: {
         lineWidth: 10,
