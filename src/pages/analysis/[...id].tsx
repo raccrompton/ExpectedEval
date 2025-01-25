@@ -379,8 +379,8 @@ const Analysis: React.FC<Props> = ({
                     min={0}
                     max={800}
                     value={
-                      moveEvaluation
-                        ? 400 + moveEvaluation?.stockfish?.model_optimal_cp
+                      moveEvaluation?.stockfish
+                        ? 400 + moveEvaluation.stockfish.model_optimal_cp
                         : void 0
                     }
                     label="Stockfish Evaluation"

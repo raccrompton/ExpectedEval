@@ -56,7 +56,6 @@ export const useAnalysisController = (
   const [currentMaiaModel, setCurrentMaiaModel] = useState(MAIA_MODELS[0])
 
   useEffect(() => {
-    if (game.type === 'tournament') return
     const board = new Chess(game.moves[controller.currentIndex].board)
 
     ;(async () => {
@@ -176,22 +175,28 @@ export const useAnalysisController = (
       const lastMove = game.moves[controller.currentIndex].lastMove?.join('')
       if (!lastMove) return null
 
-      const cp_vec = game.stockfishEvaluations[
-        controller.currentIndex
-      ] as MoveMap
-      const model_optimal_cp = Math.max(...Object.values(cp_vec))
-      const cp_relative_vec = Object.fromEntries(
-        Object.entries(cp_vec).map(([move, evaluation]) => [
-          move,
-          model_optimal_cp - evaluation,
-        ]),
+      const cp_vec = Object.fromEntries(
+        Object.entries(
+          game.stockfishEvaluations[controller.currentIndex] as MoveMap,
+        ).sort(([, a], [, b]) => b - a),
       )
 
-      stockfish = {
-        cp_vec,
-        cp_relative_vec,
-        model_optimal_cp,
-      } as StockfishEvaluation
+      if (cp_vec) {
+        const model_optimal_cp = Math.max(...Object.values(cp_vec))
+
+        const cp_relative_vec = Object.fromEntries(
+          Object.entries(cp_vec).map(([move, evaluation]) => [
+            move,
+            model_optimal_cp - evaluation,
+          ]),
+        )
+
+        stockfish = {
+          cp_vec,
+          cp_relative_vec,
+          model_optimal_cp,
+        } as StockfishEvaluation
+      }
     }
 
     let maia
@@ -325,27 +330,20 @@ export const useAnalysisController = (
       stockfish?: { move: string; cp: number }[]
     } = {}
 
-    if (maiaEvaluations[controller.currentIndex]) {
-      const policy =
-        maiaEvaluations[controller.currentIndex][currentMaiaModel].policy
-
+    if (moveEvaluation?.maia) {
+      const policy = moveEvaluation.maia.policy
       const maia = Object.entries(policy)
         .slice(0, 5)
-        .map(([move, prob]) => {
-          return { move, prob } // Replace this with SAN notation
-        })
+        .map(([move, prob]) => ({ move, prob }))
 
       recommendations.maia = maia
     }
 
-    if (stockfishEvaluations[controller.currentIndex]) {
-      const cp_vec = stockfishEvaluations[controller.currentIndex].cp_vec
-
+    if (moveEvaluation?.stockfish) {
+      const cp_vec = moveEvaluation.stockfish.cp_vec
       const stockfish = Object.entries(cp_vec)
         .slice(0, 5)
-        .map(([move, cp]) => {
-          return { move, cp }
-        })
+        .map(([move, cp]) => ({ move, cp }))
 
       recommendations.stockfish = stockfish
     }
@@ -354,18 +352,15 @@ export const useAnalysisController = (
   }, [controller.currentIndex, maiaEvaluations, stockfishEvaluations])
 
   const moveMap = useMemo(() => {
-    const maiaRaw = maiaEvaluations[controller.currentIndex]
-    const stockfishRaw = stockfishEvaluations[controller.currentIndex]
-
-    if (!maiaRaw || !stockfishRaw) {
+    if (!moveEvaluation?.maia || !moveEvaluation?.stockfish) {
       return
     }
 
     const maia = Object.fromEntries(
-      Object.entries(maiaRaw[currentMaiaModel].policy).slice(0, 3),
+      Object.entries(moveEvaluation.maia.policy).slice(0, 3),
     )
     const stockfish = Object.fromEntries(
-      Object.entries(stockfishRaw.cp_vec).slice(0, 3),
+      Object.entries(moveEvaluation.stockfish.cp_vec).slice(0, 3),
     )
 
     const moves = Array.from(
@@ -375,8 +370,8 @@ export const useAnalysisController = (
     const data = []
 
     for (const move of moves) {
-      const cp = Math.max(-4, stockfishRaw.cp_relative_vec[move])
-      const prob = maiaRaw[currentMaiaModel].policy[move] * 100
+      const cp = Math.max(-4, moveEvaluation.stockfish.cp_relative_vec[move])
+      const prob = moveEvaluation?.maia.policy[move] * 100
 
       data.push({
         move,
@@ -386,7 +381,7 @@ export const useAnalysisController = (
     }
 
     return data
-  }, [controller.currentIndex, maiaEvaluations, stockfishEvaluations])
+  }, [controller.currentIndex, moveEvaluation])
 
   const move = useMemo(() => {
     if (
