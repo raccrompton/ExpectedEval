@@ -173,7 +173,6 @@ export const MoveMap: React.FC<Props> = ({
                   fill={colorSanMapping[entry.move].color || '#fff'}
                   onMouseEnter={() => onMouseEnter(entry.move)}
                   onMouseOutCapture={() => {
-                    console.log('beep')
                     setHoverArrow(null)
                   }}
                 />

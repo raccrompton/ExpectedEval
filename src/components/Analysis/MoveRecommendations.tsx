@@ -45,26 +45,28 @@ export const MoveRecommendations: React.FC<Props> = ({
               %
             </p>
           </div>
-          {recommendations.maia?.map(({ move, prob }, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between"
-              style={{
-                color: colorSanMapping[move].color,
-              }}
-            >
-              <p
-                className="cursor-default font-mono hover:underline"
-                onMouseEnter={() => onMouseEnter(move)}
-                onMouseOutCapture={() => setHoverArrow(null)}
+          {recommendations.maia?.map(({ move, prob }, index) => {
+            return (
+              <div
+                key={index}
+                className="flex items-center justify-between"
+                style={{
+                  color: colorSanMapping[move].color,
+                }}
               >
-                {colorSanMapping[move].san}
-              </p>
-              <p className="font-mono text-sm">
-                {Math.round(prob * 1000) / 10}%
-              </p>
-            </div>
-          ))}
+                <p
+                  className="cursor-default font-mono hover:underline"
+                  onMouseEnter={() => onMouseEnter(move)}
+                  onMouseOutCapture={() => setHoverArrow(null)}
+                >
+                  {colorSanMapping[move]?.san ?? move}
+                </p>
+                <p className="font-mono text-sm">
+                  {Math.round(prob * 1000) / 10}%
+                </p>
+              </div>
+            )
+          })}
         </div>
       </div>
       <div className="flex flex-col gap-2 bg-background-1/60 p-5">
@@ -83,7 +85,7 @@ export const MoveRecommendations: React.FC<Props> = ({
               key={index}
               className="flex items-center justify-between"
               style={{
-                color: colorSanMapping[move].color,
+                color: colorSanMapping[move].color ?? '#FFFFFF',
               }}
             >
               <p

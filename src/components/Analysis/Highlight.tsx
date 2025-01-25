@@ -31,8 +31,9 @@ export const Highlight: React.FC<Props> = ({
           <p className="text-xl font-semibold">Current Position</p>
           <p className="text-sm text-secondary">
             Maia predicts that Black will play{' '}
-            {moveEvaluation.maia
-              ? colorSanMapping[Object.keys(moveEvaluation.maia.policy)[0]].san
+            {moveEvaluation?.maia
+              ? (colorSanMapping[Object.keys(moveEvaluation.maia.policy)[0]]
+                  ?.san ?? Object.keys(moveEvaluation.maia.policy)[0])
               : '...'}{' '}
             next. This is a blunder.
           </p>
@@ -41,7 +42,7 @@ export const Highlight: React.FC<Props> = ({
           <div className="flex flex-col items-center justify-center bg-human-3/5 py-4">
             <p className="text-sm text-human-2">Maia White Win %</p>
             <p className="text-2xl font-bold text-human-1">
-              {moveEvaluation.maia
+              {moveEvaluation?.maia
                 ? `${Math.round(moveEvaluation.maia?.value * 1000) / 10}%`
                 : '...'}
             </p>
@@ -49,12 +50,12 @@ export const Highlight: React.FC<Props> = ({
           <div className="flex flex-col items-center justify-center bg-engine-3/5 py-4">
             <p className="text-sm text-engine-2">
               SF Eval
-              {moveEvaluation.stockfish?.depth
+              {moveEvaluation?.stockfish?.depth
                 ? ` (D${moveEvaluation.stockfish?.depth})`
                 : ''}
             </p>
             <p className="text-2xl font-bold text-engine-1">
-              {moveEvaluation.stockfish
+              {moveEvaluation?.stockfish
                 ? `${moveEvaluation.stockfish.model_optimal_cp / 100 > 0 ? '+' : ''}${moveEvaluation.stockfish.model_optimal_cp / 100}`
                 : '...'}
             </p>
