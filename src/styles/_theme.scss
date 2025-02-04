@@ -1,3 +1,7 @@
+@use 'sass:map';
+
+$theme-map: null !default;
+
 $themes: (
   light: (
     backdrop: #f6f6f6,
@@ -28,8 +32,8 @@ $themes: (
     :global(.theme-#{$theme}) & {
       $theme-map: () !global;
       @each $key, $submap in $map {
-        $value: map-get($map, '#{$key}');
-        $theme-map: map-merge(
+        $value: map.get($map, '#{$key}');
+        $theme-map: map.merge(
           $theme-map,
           (
             $key: $value,
@@ -45,8 +49,8 @@ $themes: (
     .theme-#{$theme} & {
       $theme-map: () !global;
       @each $key, $submap in $map {
-        $value: map-get($map, '#{$key}');
-        $theme-map: map-merge(
+        $value: map.get($map, '#{$key}');
+        $theme-map: map.merge(
           $theme-map,
           (
             $key: $value,
@@ -60,5 +64,5 @@ $themes: (
 }
 
 @function themed-colour($key) {
-  @return map-get($theme-map, $key);
+  @return map.get($theme-map, $key);
 }

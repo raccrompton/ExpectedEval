@@ -1,7 +1,7 @@
-@import './theme';
-@import './layout';
-@import './fonts';
-@import './base';
+@use 'theme';
+@use 'layout';
+@use 'fonts';
+@use 'base';
 
 button {
   &:disabled {
@@ -31,12 +31,12 @@ a {
 
   width: 100%;
   min-height: 100vh;
-  @include themed-styles {
-    background-color: themed-colour(backdrop);
-    color: themed-colour(text-primary);
+  @include theme.themed-styles {
+    background-color: theme.themed-colour(backdrop);
+    color: theme.themed-colour(text-primary);
   }
 
-  @include mobile {
+  @include layout.mobile {
     flex-direction: column;
     overflow-x: hidden;
   }
@@ -45,7 +45,7 @@ a {
 .content-container {
   flex-grow: 1;
   position: relative;
-  @include rounded;
+  @include base.rounded;
   display: flex;
   flex-direction: column;
 }
@@ -65,7 +65,7 @@ h5 {
   flex-grow: 1;
   margin-left: 2vw;
 
-  @include mobile {
+  @include layout.mobile {
     flex-direction: column;
     margin-left: 0px;
   }
@@ -79,7 +79,7 @@ h5 {
   flex-grow: 1;
   padding: 2em;
 
-  @include mobile {
+  @include layout.mobile {
     width: 100%;
     padding: 1em;
     max-width: none;
@@ -96,7 +96,7 @@ h5 {
   gap: 10px;
   margin: 10px;
 
-  @include mobile {
+  @include layout.mobile {
     margin: 0px;
     width: 100%;
     max-width: none;
@@ -104,7 +104,7 @@ h5 {
 }
 
 .action {
-  @include boxed;
+  @include base.boxed;
   width: 100%;
   padding: 25px;
 }
