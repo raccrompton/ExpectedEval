@@ -109,7 +109,7 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getClientAnalyzedLichessGame(id, pgn, currentMaiaModel)
+        game = await getClientAnalyzedLichessGame(id, pgn)
       } catch (e) {
         router.push('/401')
         return
@@ -134,7 +134,7 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getClientAnalyzedUserGame(id, type, currentMaiaModel)
+        game = await getClientAnalyzedUserGame(id, type)
       } catch (e) {
         router.push('/401')
         return
@@ -258,7 +258,7 @@ const Analysis: React.FC<Props> = ({
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
   const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
   const [arrows, setArrows] = useState<DrawShape[]>([])
-  const [brushes, setBrushes] = useState<DrawBrushes>({})
+  const [brushes, setBrushes] = useState<DrawBrushes>({} as DrawBrushes)
   const [screen, setScreen] = useState(screens[0])
 
   useEffect(() => {

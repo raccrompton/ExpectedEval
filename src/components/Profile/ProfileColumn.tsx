@@ -1,5 +1,7 @@
+import React from 'react'
+
 interface Props {
-  icon: JSX.Element
+  icon: React.JSX.Element
   name: string
   data: {
     rating: number
