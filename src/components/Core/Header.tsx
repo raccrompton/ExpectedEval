@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { useCallback, useContext, useEffect, useState } from 'react'
 
+import { PlayType } from 'src/types'
 import { ThemeButton } from 'src/components'
 import { AuthContext, ModalContext, WindowSizeContext } from 'src/contexts'
 import { MenuIcon, UserIcon, DiscordIcon } from 'src/components/Icons/icons'
@@ -20,7 +21,7 @@ export const Header: React.FC = () => {
   const { setPlaySetupModalProps } = useContext(ModalContext)
 
   const startGame = useCallback(
-    (playType) => {
+    (playType: PlayType) => {
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur()
       }

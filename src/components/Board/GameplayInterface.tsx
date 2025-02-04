@@ -29,7 +29,7 @@ interface Props {
   playAgain?: () => void
 }
 
-export const GameplayInterface: React.FC<Props> = (
+export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
   props: React.PropsWithChildren<Props>,
 ) => {
   const {
@@ -57,7 +57,7 @@ export const GameplayInterface: React.FC<Props> = (
   const setCurrentIndex = controller.setCurrentIndex
 
   const setCurrentMove = useCallback(
-    (move) => {
+    (move: [string, string] | null) => {
       if (move) {
         const matching = availableMoves.filter(
           (m) => m.from == move[0] && m.to == move[1],
@@ -78,7 +78,7 @@ export const GameplayInterface: React.FC<Props> = (
   )
 
   const selectPromotion = useCallback(
-    (piece) => {
+    (piece: string) => {
       if (!promotionFromTo) {
         return
       }
