@@ -288,38 +288,4 @@ function swapColorsInRank(rank: string): string {
   return swappedRank
 }
 
-/**
- * Swap castling rights between white and black.
- *
- * @param castling - The castling rights string.
- * @returns The swapped castling rights string.
- */
-function swapCastlingRights(castling: string): string {
-  const castlingMap: { [key: string]: string } = {
-    K: 'k',
-    Q: 'q',
-    k: 'K',
-    q: 'Q',
-  }
-  return castling
-    .split('')
-    .map((char) => castlingMap[char] || char)
-    .join('')
-}
-
-/**
- * Mirrors the en passant target square by flipping the rank.
- * @param square The en passant target square to be mirrored.
- * @returns The mirrored en passant target square.
- */
-function mirrorEnPassant(square: string): string {
-  const file = square[0]
-  const rank = square[1]
-
-  // Flip the rank: '1' ↔ '8', '2' ↔ '7', etc.
-  const mirroredRank = (9 - parseInt(rank, 10)).toString()
-
-  return `${file}${mirroredRank}`
-}
-
 export { preprocess, mirrorMove, allPossibleMovesReversed }

@@ -59,7 +59,8 @@ export const useAnalysisController = (
     const board = new Chess(game.moves[controller.currentIndex].board)
 
     ;(async () => {
-      if (!maia.ready || maiaEvaluations[controller.currentIndex]) return
+      if (maia?.status !== 'ready' || maiaEvaluations[controller.currentIndex])
+        return
 
       const { result } = await maia.batchEvaluate(
         Array(9).fill(board.fen()),
@@ -86,7 +87,7 @@ export const useAnalysisController = (
         return newEvaluations
       })
     })()
-  }, [controller.currentIndex, game.type, maia.ready])
+  }, [controller.currentIndex, game.type, maia?.status])
 
   useEffect(() => {
     if (game.type === 'tournament') return
@@ -398,8 +399,8 @@ export const useAnalysisController = (
   }, [controller.currentIndex, currentMove, game.availableMoves])
 
   return {
+    maia,
     move,
-    data: {},
     moves,
     controller,
     currentMaiaModel,

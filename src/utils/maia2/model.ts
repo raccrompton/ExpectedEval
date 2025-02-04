@@ -4,36 +4,56 @@ import { mirrorMove, preprocess, allPossibleMovesReversed } from './utils'
 
 class Maia {
   public model!: InferenceSession
-  public ready: boolean
+  public type: 'rapid' | 'blitz'
+  public status: 'loading' | 'no-cache' | 'downloading' | 'ready'
 
-  constructor(options: { model: string }) {
-    this.ready = false
+  constructor(options: { model: string; type: 'rapid' | 'blitz' }) {
+    this.status = 'loading'
+    this.type = options.type ?? 'rapid'
     ;(async () => {
       try {
-        const buffer = await this.getCachedModel(options.model)
-        this.model = await InferenceSession.create(buffer)
-
-        this.ready = true
+        console.log('Getting cached')
+        const buffer = await this.getCachedModel(options.model, options.type)
+        await this.initializeModel(buffer)
       } catch (e) {
-        this.ready = false
+        console.log('Missing cache')
+        this.status = 'no-cache'
       }
     })()
   }
 
-  private async getCachedModel(url: string): Promise<ArrayBuffer> {
-    const cache = await caches.open('maia2-model')
+  public getStatus() {
+    return this.status
+  }
+
+  public async getCachedModel(
+    url: string,
+    type: 'rapid' | 'blitz',
+  ): Promise<ArrayBuffer> {
+    const cache = await caches.open(`MAIA2-${type.toUpperCase()}-MODEL`)
     const response = await cache.match(url)
     if (response) {
       return response.arrayBuffer()
     } else {
-      const response = await fetch(url)
-      if (response.ok) {
-        await cache.put(url, response.clone())
-        return response.arrayBuffer()
-      } else {
-        throw new Error('Failed to fetch model')
-      }
+      throw new Error('Model not found in cache')
     }
+  }
+
+  public async fetchModel(url: string, type: 'rapid' | 'blitz') {
+    const cache = await caches.open(`MAIA2-${type.toUpperCase()}-MODEL`)
+    const response = await fetch(url)
+    if (response.ok) {
+      await cache.put(url, response.clone())
+      return response.arrayBuffer()
+    } else {
+      throw new Error('Failed to fetch model')
+    }
+  }
+
+  public async initializeModel(buffer: ArrayBuffer) {
+    this.model = await InferenceSession.create(buffer)
+    this.status = 'ready'
+    console.log('initialized')
   }
 
   /**
