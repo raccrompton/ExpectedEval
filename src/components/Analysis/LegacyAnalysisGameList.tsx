@@ -150,11 +150,13 @@ export const LegacyAnalysisGameList: React.FC<LegacyAnalysisGameListProps> = ({
               index={i}
               openIndex={openIndex}
               currentId={currentId}
-              openElement={openElement}
+              openElement={openElement as React.RefObject<HTMLDivElement>}
               setOpenIndex={setOpenIndex}
               loadingIndex={loadingIndex}
               setLoadingIndex={setLoadingIndex}
-              selectedGameElement={selectedGameElement}
+              selectedGameElement={
+                selectedGameElement as React.RefObject<HTMLButtonElement>
+              }
               loadNewTournamentGame={loadNewTournamentGame}
               analysisTournamentList={analysisTournamentList}
               setCurrentMove={controller.setCurrentIndex}

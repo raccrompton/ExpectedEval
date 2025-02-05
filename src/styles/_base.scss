@@ -1,20 +1,20 @@
-@import './theme';
-@import './layout';
+@use 'theme';
+@use 'layout';
 
 @mixin rounded {
   border-radius: 10px;
 }
 
 @mixin shadowed {
-  @include themed-styles {
-    filter: drop-shadow(0px 2px 8px rgba(themed-colour('background0'), 1));
+  @include theme.themed-styles {
+    filter: drop-shadow(0px 2px 8px rgba(theme.themed-colour('background0'), 1));
   }
 }
 
 @mixin boxed {
   @include rounded;
-  @include themed-styles {
-    background-color: rgba(themed-colour('background0'), 0.75);
+  @include theme.themed-styles {
+    background-color: rgba(theme.themed-colour('background0'), 0.75);
   }
 }
 
@@ -22,7 +22,7 @@
   &::-webkit-scrollbar {
     width: 7px;
 
-    @include mobile {
+    @include layout.mobile {
       width: 4px;
       height: 8px;
     }
@@ -36,13 +36,13 @@
     border-radius: 1px;
     transition: 150ms;
 
-    @include themed-styles {
-      background-color: rgba(themed-colour('human-accent'), 0.4);
+    @include theme.themed-styles {
+      background-color: rgba(theme.themed-colour('human-accent'), 0.4);
     }
 
     &:hover {
-      @include themed-styles {
-        background-color: rgba(themed-colour('human-accent'), 0.65);
+      @include theme.themed-styles {
+        background-color: rgba(theme.themed-colour('human-accent'), 0.65);
       }
     }
   }

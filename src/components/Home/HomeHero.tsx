@@ -9,6 +9,7 @@ import {
   TrainIcon,
   RegularPlayIcon,
 } from 'src/components/Icons/icons'
+import { PlayType } from 'src/types'
 import { getPlayerStats } from 'src/api/home'
 import { AuthContext, ModalContext } from 'src/contexts'
 
@@ -20,7 +21,7 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
   const { setPlaySetupModalProps } = useContext(ModalContext)
 
   const startGame = useCallback(
-    (playType) => {
+    (playType: PlayType) => {
       setPlaySetupModalProps({ playType: playType })
     },
     [setPlaySetupModalProps],

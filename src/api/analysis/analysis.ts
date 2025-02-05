@@ -28,7 +28,7 @@ const readStream = (processLine: (data: any) => void) => (response: any) => {
         })
         buf += chunk
 
-        const parts = buf.split(matcher)
+        const parts = (buf || '').split(matcher)
         buf = parts.pop() as string
         for (const i of parts.filter((p) => p)) processLine(JSON.parse(i))
 
@@ -317,11 +317,11 @@ export const getLegacyAnalyzedUserGame = async (
 
   const maiaPattern = /maia_kdd_1\d00/
 
-  if (maiaPattern.test(blackPlayer.name)) {
+  if (blackPlayer.name && maiaPattern.test(blackPlayer.name)) {
     blackPlayer.name = blackPlayer.name.replace('maia_kdd_', 'Maia ')
   }
 
-  if (maiaPattern.test(whitePlayer.name)) {
+  if (whitePlayer.name && maiaPattern.test(whitePlayer.name)) {
     whitePlayer.name = whitePlayer.name.replace('maia_kdd_', 'Maia ')
   }
 
@@ -601,11 +601,11 @@ export const getClientAnalyzedUserGame = async (
 
   const maiaPattern = /maia_kdd_1\d00/
 
-  if (maiaPattern.test(blackPlayer.name)) {
+  if (blackPlayer.name && maiaPattern.test(blackPlayer.name)) {
     blackPlayer.name = blackPlayer.name.replace('maia_kdd_', 'Maia ')
   }
 
-  if (maiaPattern.test(whitePlayer.name)) {
+  if (whitePlayer.name && maiaPattern.test(whitePlayer.name)) {
     whitePlayer.name = whitePlayer.name.replace('maia_kdd_', 'Maia ')
   }
 

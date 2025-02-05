@@ -97,7 +97,13 @@ const TrainPage: NextPage = () => {
   }, [currentIndex])
 
   const logGuess = useCallback(
-    async (gameId, move, status, setStatus, rating) => {
+    async (
+      gameId: string,
+      move: [string, string] | null,
+      status: Status,
+      setStatus: Dispatch<SetStateAction<Status>>,
+      rating: number,
+    ) => {
       if (currentIndex != trainingGames.length - 1) {
         return // No logging for past puzzles
       }
@@ -206,7 +212,7 @@ interface Props {
   getNewGame: () => Promise<void>
   logGuess: (
     gameId: string,
-    move: string[] | null,
+    move: [string, string] | null,
     status: Status,
     setStatus: Dispatch<SetStateAction<Status>>,
     rating: number,
