@@ -44,9 +44,9 @@ export const useAnalysisController = (
     })
   }
 
-  const maia = useMaiaEngine()
+  const { maia, status } = useMaiaEngine()
   const engine = useStockfishEngine(parseStockfishEvaluation)
-  const [currentMove, setCurrentMove] = useState<null | [string, string]>(null)
+  const [currentMove, setCurrentMove] = useState<[string, string] | null>()
   const [stockfishEvaluations, setStockfishEvaluations] = useState<
     StockfishEvaluation[]
   >([])
@@ -59,8 +59,7 @@ export const useAnalysisController = (
     const board = new Chess(game.moves[controller.currentIndex].board)
 
     ;(async () => {
-      if (maia?.status !== 'ready' || maiaEvaluations[controller.currentIndex])
-        return
+      if (status !== 'ready' || maiaEvaluations[controller.currentIndex]) return
 
       const { result } = await maia.batchEvaluate(
         Array(9).fill(board.fen()),
@@ -87,7 +86,7 @@ export const useAnalysisController = (
         return newEvaluations
       })
     })()
-  }, [controller.currentIndex, game.type, maia?.status])
+  }, [controller.currentIndex, game.type, status])
 
   useEffect(() => {
     if (game.type === 'tournament') return

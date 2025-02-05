@@ -1,18 +1,38 @@
-import { useState, useMemo, useEffect } from 'react'
-
-import Maia from 'src/utils/maia2'
+import Maia from './model'
+import { MaiaStatus } from 'src/types'
+import { useState, useMemo } from 'react'
 
 export const useMaiaEngine = () => {
-  const [maia, setMaia] = useState<Maia>()
+  const [status, setStatus] = useState<MaiaStatus>('loading')
+  const [progress, setProgress] = useState(0)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    setMaia(new Maia({ model: '/maia2/maia_rapid.onnx', type: 'rapid' }))
+  const maia = useMemo(() => {
+    const model = new Maia({
+      model: '/maia2/maia_rapid.onnx',
+      type: 'rapid',
+      setStatus: setStatus,
+      setProgress: setProgress,
+      setError: setError,
+    })
+    return model
   }, [])
 
-  // const maia = useMemo(() => {
-  //   const model = new Maia({ model: '/maia2/maia_rapid.onnx', type: 'rapid' })
-  //   return model
-  // }, [])
+  const downloadModel = async () => {
+    try {
+      setStatus('downloading')
+      await maia.downloadModel()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to download model')
+      setStatus('error')
+    }
+  }
 
-  return maia
+  return {
+    maia,
+    status,
+    progress,
+    error,
+    downloadModel,
+  }
 }

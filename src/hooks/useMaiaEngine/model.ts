@@ -1,29 +1,74 @@
+import { MaiaStatus } from 'src/types'
 import { InferenceSession, Tensor } from 'onnxruntime-web'
 
 import { mirrorMove, preprocess, allPossibleMovesReversed } from './utils'
 
-class Maia {
-  public model!: InferenceSession
-  public type: 'rapid' | 'blitz'
-  public status: 'loading' | 'no-cache' | 'downloading' | 'ready'
+interface MaiaOptions {
+  model: string
+  type: 'rapid' | 'blitz'
+  setStatus: (status: MaiaStatus) => void
+  setProgress: (progress: number) => void
+  setError: (error: string) => void
+}
 
-  constructor(options: { model: string; type: 'rapid' | 'blitz' }) {
-    this.status = 'loading'
-    this.type = options.type ?? 'rapid'
-    ;(async () => {
-      try {
-        console.log('Getting cached')
-        const buffer = await this.getCachedModel(options.model, options.type)
-        await this.initializeModel(buffer)
-      } catch (e) {
-        console.log('Missing cache')
-        this.status = 'no-cache'
-      }
-    })()
+class Maia {
+  private model!: InferenceSession
+  private type: 'rapid' | 'blitz'
+  private modelUrl: string
+  private options: MaiaOptions
+
+  constructor(options: MaiaOptions) {
+    this.type = options.type
+    this.modelUrl = options.model
+    this.options = options
+
+    this.initialize()
   }
 
-  public getStatus() {
-    return this.status
+  private async initialize() {
+    try {
+      const buffer = await this.getCachedModel(this.modelUrl, this.type)
+      await this.initializeModel(buffer)
+      this.options.setStatus('ready')
+    } catch (e) {
+      this.options.setStatus('no-cache')
+    }
+  }
+
+  public async downloadModel() {
+    const response = await fetch(this.modelUrl)
+    if (!response.ok) throw new Error('Failed to fetch model')
+
+    const reader = response.body?.getReader()
+    const contentLength = +(response.headers.get('Content-Length') ?? 0)
+
+    if (!reader) throw new Error('No response body')
+
+    const chunks: Uint8Array[] = []
+    let receivedLength = 0
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      chunks.push(value)
+      receivedLength += value.length
+
+      this.options.setProgress((receivedLength / contentLength) * 100)
+    }
+
+    const buffer = new Uint8Array(receivedLength)
+    let position = 0
+    for (const chunk of chunks) {
+      buffer.set(chunk, position)
+      position += chunk.length
+    }
+
+    const cache = await caches.open(`MAIA2-${this.type.toUpperCase()}-MODEL`)
+    await cache.put(this.modelUrl, new Response(buffer.buffer))
+
+    await this.initializeModel(buffer.buffer)
+    this.options.setStatus('ready')
   }
 
   public async getCachedModel(
@@ -52,8 +97,7 @@ class Maia {
 
   public async initializeModel(buffer: ArrayBuffer) {
     this.model = await InferenceSession.create(buffer)
-    this.status = 'ready'
-    console.log('initialized')
+    this.options.setStatus('ready')
   }
 
   /**
