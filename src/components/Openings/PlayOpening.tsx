@@ -207,12 +207,12 @@ function Switcher({
   setSelected: (selected: { id: string; name: string }) => void
 }) {
   return (
-    (<div className="flex w-full flex-col gap-0.5 px-4">
+    <div className="flex w-full flex-col gap-0.5 px-4">
       <p className="text-sm text-secondary">{label}</p>
       <div className="flex w-full flex-row overflow-hidden rounded-sm bg-background-2/80">
         {options.map((option, index) => (
           // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-          (<div
+          <div
             key={index}
             role="button"
             tabIndex={0}
@@ -220,11 +220,11 @@ function Switcher({
             className={`flex flex-1 cursor-pointer items-center justify-center px-2 py-1.5 ${selected.id === option.id ? 'bg-human-4/60' : 'hover:bg-human-4/10'}`}
           >
             <p className="select-none text-sm">{option.name}</p>
-          </div>)
+          </div>
         ))}
       </div>
-    </div>)
-  );
+    </div>
+  )
 }
 
 function ColorPicker({

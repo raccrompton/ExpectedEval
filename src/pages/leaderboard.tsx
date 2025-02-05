@@ -1,6 +1,5 @@
-import React from 'react'
 import Head from 'next/head'
-import { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import {
   BrainIcon,

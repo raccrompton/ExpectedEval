@@ -39,6 +39,10 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
     >
       <Head>
         <link rel="icon" type="image/png" href="/favicon.png" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&display=swap"
+        />
       </Head>
       <div className={`${OpenSans.className} app-container`}>
         <Header />

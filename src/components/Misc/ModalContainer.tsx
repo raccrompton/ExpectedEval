@@ -14,7 +14,7 @@ export const ModalContainer: React.FC<Props> = ({
   return (
     // Modal always has dismiss button so not required for a11y
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-    (<motion.div
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -33,6 +33,6 @@ export const ModalContainer: React.FC<Props> = ({
       >
         {children}
       </motion.div>
-    </motion.div>)
-  );
+    </motion.div>
+  )
 }

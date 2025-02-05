@@ -51,15 +51,17 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
 
   const listKeys = useMemo(() => {
     return analysisTournamentList
-      ? Array.from(analysisTournamentList.keys()).sort((a, b) =>
-          b.split('---')[1].localeCompare(a.split('---')[1]),
+      ? Array.from(analysisTournamentList.keys()).sort(
+          (a, b) =>
+            b?.split('---')?.[1]?.localeCompare(a?.split('---')?.[1] ?? '') ??
+            0,
         )
       : []
   }, [analysisTournamentList])
 
   const initialOpenIndex = useMemo(() => {
     if (analysisTournamentList && currentId) {
-      return listKeys.map((m) => m.split('---')[0]).indexOf(currentId[0])
+      return listKeys.map((m) => m?.split('---')?.[0]).indexOf(currentId[0])
     } else {
       return null
     }
