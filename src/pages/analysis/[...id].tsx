@@ -453,7 +453,7 @@ const Analysis: React.FC<Props> = ({
                 ) : screen.id === 'export' ? (
                   <div className="flex flex-col p-4">
                     <ExportGame
-                      game={analyzedGame as any as PlayedGame}
+                      game={analyzedGame as unknown as PlayedGame}
                       whitePlayer={analyzedGame.whitePlayer.name}
                       blackPlayer={analyzedGame.blackPlayer.name}
                       event="Analysis"
