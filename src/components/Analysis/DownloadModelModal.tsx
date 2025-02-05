@@ -21,18 +21,17 @@ export const DownloadModelModal: React.FC<Props> = ({
 
   return (
     <AnimatePresence>
-      <div className="absolute left-0 top-0 z-20 flex h-screen w-screen flex-col items-center justify-center bg-black/90">
-        <div
-          style={{ width: 'min(750px, 50vw)' }}
-          className="flex flex-col gap-5 rounded-md border border-background-1 bg-backdrop p-8"
-        >
+      <div className="absolute left-0 top-0 z-20 flex h-screen w-screen flex-col items-center justify-center bg-black/90 px-4 md:px-0">
+        <div className="flex w-full flex-col gap-5 rounded-md border border-background-1 bg-backdrop p-5 md:w-[min(750px,50vw)] md:p-8">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-3xl">
+            <span className="material-symbols-outlined text-2xl md:text-3xl">
               auto_awesome
             </span>
-            <h1 className="text-3xl font-bold">Download Our New Model</h1>
+            <h1 className="text-2xl font-bold md:text-3xl">
+              Download Our New Model
+            </h1>
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 text-sm md:text-base">
             <p className="text-primary/80">
               Our newest model, Maia 2, provides richer and more in-depth
               analysis, allowing for:
@@ -58,9 +57,12 @@ export const DownloadModelModal: React.FC<Props> = ({
           </div>
           <div className="mt-6 flex flex-row items-center justify-end gap-2">
             {progress ? (
-              <div className="flex h-10 flex-1 items-center overflow-hidden rounded bg-human-4/20">
+              <div className="relative flex h-8 flex-1 items-center justify-start overflow-hidden rounded bg-human-4/20 px-3 md:h-10">
+                <p className="text-sm text-primary md:text-base">
+                  {Math.round(progress)}%
+                </p>
                 <div
-                  className="h-10 rounded-l bg-human-4/80"
+                  className="absolute left-0 top-0 h-10 rounded-l bg-human-4/80"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -68,7 +70,7 @@ export const DownloadModelModal: React.FC<Props> = ({
             <div
               tabIndex={0}
               role="button"
-              className="flex h-10 cursor-pointer select-none items-center gap-1 self-end rounded bg-human-4 px-4 transition duration-200 hover:bg-human-4/90"
+              className="flex h-8 cursor-pointer select-none items-center gap-1 self-end rounded bg-human-4 px-3 text-sm transition duration-200 hover:bg-human-4/90 md:h-10 md:px-4 md:text-base"
               onClick={download}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -76,7 +78,9 @@ export const DownloadModelModal: React.FC<Props> = ({
                 }
               }}
             >
-              <span className="material-symbols-outlined">download</span>
+              <span className="material-symbols-outlined text-lg md:text-xl">
+                download
+              </span>
               <p>
                 Download Maia 2{' '}
                 <span className="text-xs text-primary/60">(90mb)</span>
