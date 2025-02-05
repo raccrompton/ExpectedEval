@@ -37,6 +37,7 @@ import {
   VerticalEvaluationBar,
   AnalysisGameList,
   HorizontalEvaluationBar,
+  DownloadModelModal,
 } from 'src/components'
 import { Color, PlayedGame } from 'src/types'
 import { useAnalysisController } from 'src/hooks'
@@ -45,7 +46,7 @@ import {
   MaiaEvaluation,
   StockfishEvaluation,
 } from 'src/types/analysis'
-import { ThemeContext, ModalContext, WindowSizeContext } from 'src/contexts'
+import { ModalContext, WindowSizeContext } from 'src/contexts'
 import { GameControllerContext } from 'src/contexts/GameControllerContext/GameControllerContext'
 import { ConfigureAnalysis } from 'src/components/Analysis/ConfigureAnalysis'
 
@@ -105,7 +106,6 @@ const AnalysisPage: NextPage = () => {
       id: string,
       pgn: string,
       setCurrentMove?: Dispatch<SetStateAction<number>>,
-      currentMaiaModel = 'maia_kdd_1500',
     ) => {
       let game
       try {
@@ -130,7 +130,6 @@ const AnalysisPage: NextPage = () => {
       id: string,
       type: 'play' | 'hand' | 'brain',
       setCurrentMove?: Dispatch<SetStateAction<number>>,
-      currentMaiaModel = 'maia_kdd_1500',
     ) => {
       let game
       try {
@@ -237,7 +236,6 @@ const Analysis: React.FC<Props> = ({
     },
   ]
   const {
-    maia,
     move,
     moves,
     controller,
@@ -252,6 +250,9 @@ const Analysis: React.FC<Props> = ({
     movesByRating,
     colorSanMapping,
     moveRecommendations,
+    maiaStatus,
+    maiaProgress,
+    downloadMaia,
   } = useAnalysisController(analyzedGame, initialIndex, initialOrientation)
 
   const { width } = useContext(WindowSizeContext)
@@ -577,7 +578,9 @@ const Analysis: React.FC<Props> = ({
           content="Collection of chess training and analysis tools centered around Maia."
         />
       </Head>
-
+      {maiaStatus === 'no-cache' || maiaStatus === 'downloading' ? (
+        <DownloadModelModal progress={maiaProgress} download={downloadMaia} />
+      ) : null}
       <GameControllerContext.Provider value={{ ...controller }}>
         {analyzedGame && (isMobile ? mobileLayout : desktopLayout)}
       </GameControllerContext.Provider>
