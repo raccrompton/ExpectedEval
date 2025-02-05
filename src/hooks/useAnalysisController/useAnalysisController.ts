@@ -86,6 +86,7 @@ export const useAnalysisController = (
         maia_kdd_1900: result[8],
       }
 
+      console.log(output)
       setMaiaEvaluations((prev) => {
         const newEvaluations = [...prev]
         newEvaluations[controller.currentIndex] = output
@@ -279,14 +280,10 @@ export const useAnalysisController = (
   }, [moveEvaluation])
 
   const movesByRating = useMemo(() => {
-    if (
-      !maiaEvaluations[controller.currentIndex] ||
-      !stockfishEvaluations[controller.currentIndex]
-    )
-      return
+    if (!maiaEvaluations[controller.currentIndex]) return
 
     const maia = maiaEvaluations[controller.currentIndex]
-    const stockfish = stockfishEvaluations[controller.currentIndex]
+    const stockfish = moveEvaluation?.stockfish
 
     const candidates: string[][] = []
 
@@ -297,9 +294,11 @@ export const useAnalysisController = (
     }
 
     // Get top 3 Stockfish moves
-    for (const move of Object.keys(stockfish.cp_vec).slice(0, 3)) {
-      if (candidates.find((c) => c[0] === move)) continue
-      candidates.push([move, move])
+    if (stockfish) {
+      for (const move of Object.keys(stockfish.cp_vec).slice(0, 3)) {
+        if (candidates.find((c) => c[0] === move)) continue
+        candidates.push([move, move])
+      }
     }
 
     // Get top Maia move from each rating level
@@ -328,6 +327,7 @@ export const useAnalysisController = (
     controller.currentIndex,
     maiaEvaluations,
     stockfishEvaluations,
+    moveEvaluation,
     currentMaiaModel,
   ])
 
