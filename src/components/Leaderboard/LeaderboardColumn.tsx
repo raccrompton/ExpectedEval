@@ -1,9 +1,10 @@
+import React from 'react'
 import { LeaderboardEntry } from 'src/components'
 
 interface Props {
   id: 'regular' | 'train' | 'turing' | 'hand' | 'brain'
   name: 'Regular' | 'Train' | 'Bot/Not' | 'Hand' | 'Brain'
-  icon: JSX.Element
+  icon: React.JSX.Element
   ranking: {
     display_name: string
     elo: number
