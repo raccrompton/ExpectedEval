@@ -29,7 +29,6 @@ class Maia {
     try {
       const buffer = await this.getCachedModel(this.modelUrl, this.type)
       await this.initializeModel(buffer)
-      this.options.setStatus('ready')
     } catch (e) {
       this.options.setStatus('no-cache')
     }

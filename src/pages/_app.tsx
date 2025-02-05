@@ -1,4 +1,5 @@
 import Head from 'next/head'
+import { Toaster } from 'react-hot-toast'
 import Script from 'next/script'
 import { useRouter } from 'next/router'
 import type { AppProps } from 'next/app'
@@ -51,6 +52,7 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
         </div>
         <Footer />
       </div>
+      <Toaster position="bottom-right" />
       <Analytics />
       <Script async src="/analytics.js?id=G-SNP84LXLKY" />
       <Script id="analytics">
