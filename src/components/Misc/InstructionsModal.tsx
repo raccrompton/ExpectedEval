@@ -40,7 +40,7 @@ const content = {
   turing: turingModalText,
 }
 
-export interface Props {
+interface Props {
   instructionsType: InstructionsType
 }
 
