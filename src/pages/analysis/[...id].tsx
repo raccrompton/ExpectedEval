@@ -278,21 +278,25 @@ const Analysis: React.FC<Props> = ({
 
     if (moveEvaluation?.maia) {
       const maia = Object.entries(moveEvaluation?.maia?.policy)[0]
-      arr.push({
-        brush: 'red',
-        orig: maia[0].slice(0, 2) as Key,
-        dest: maia[0].slice(2, 4) as Key,
-      } as DrawShape)
+      if (maia) {
+        arr.push({
+          brush: 'red',
+          orig: maia[0].slice(0, 2) as Key,
+          dest: maia[0].slice(2, 4) as Key,
+        } as DrawShape)
+      }
     }
 
     if (moveEvaluation?.stockfish) {
       const stockfish = Object.entries(moveEvaluation?.stockfish.cp_vec)[0]
-      arr.push({
-        brush: 'blue',
-        orig: stockfish[0].slice(0, 2) as Key,
-        dest: stockfish[0].slice(2, 4) as Key,
-        modifiers: { lineWidth: 8 },
-      })
+      if (stockfish) {
+        arr.push({
+          brush: 'blue',
+          orig: stockfish[0].slice(0, 2) as Key,
+          dest: stockfish[0].slice(2, 4) as Key,
+          modifiers: { lineWidth: 8 },
+        })
+      }
     }
 
     setArrows(arr)
@@ -379,10 +383,16 @@ const Analysis: React.FC<Props> = ({
                 <div className="flex items-center justify-center">
                   <HorizontalEvaluationBar
                     min={0}
-                    max={800}
+                    max={1200}
                     value={
                       moveEvaluation?.stockfish
-                        ? 400 + moveEvaluation.stockfish.model_optimal_cp
+                        ? 600 +
+                          moveEvaluation.stockfish.model_optimal_cp *
+                            (analyzedGame.moves[
+                              controller.currentIndex
+                            ].board.split(' ')[1] !== controller.orientation[0]
+                              ? 1
+                              : -1)
                         : void 0
                     }
                     label="Stockfish Evaluation"

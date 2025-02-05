@@ -138,6 +138,11 @@ class Maia {
       legalMoves,
     )
 
+    console.log({
+      policy,
+      value,
+    })
+
     return {
       policy,
       value,
