@@ -46,6 +46,7 @@ class Maia {
 
     const chunks: Uint8Array[] = []
     let receivedLength = 0
+    let lastReportedProgress = 0
 
     while (true) {
       const { done, value } = await reader.read()
@@ -54,7 +55,11 @@ class Maia {
       chunks.push(value)
       receivedLength += value.length
 
-      this.options.setProgress((receivedLength / contentLength) * 100)
+      const currentProgress = Math.floor((receivedLength / contentLength) * 100)
+      if (currentProgress >= lastReportedProgress + 10) {
+        this.options.setProgress(currentProgress)
+        lastReportedProgress = currentProgress
+      }
     }
 
     const buffer = new Uint8Array(receivedLength)

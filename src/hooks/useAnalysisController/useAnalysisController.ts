@@ -44,7 +44,13 @@ export const useAnalysisController = (
     })
   }
 
-  const { maia, status } = useMaiaEngine()
+  const {
+    maia,
+    error: maiaError,
+    status: maiaStatus,
+    progress: maiaProgress,
+    downloadModel: downloadMaia,
+  } = useMaiaEngine()
   const engine = useStockfishEngine(parseStockfishEvaluation)
   const [currentMove, setCurrentMove] = useState<[string, string] | null>()
   const [stockfishEvaluations, setStockfishEvaluations] = useState<
@@ -398,7 +404,9 @@ export const useAnalysisController = (
   }, [controller.currentIndex, currentMove, game.availableMoves])
 
   return {
-    maia,
+    maiaStatus,
+    downloadMaia,
+    maiaProgress,
     move,
     moves,
     controller,

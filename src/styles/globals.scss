@@ -42,7 +42,7 @@ a {
 
 .content-container {
   flex-grow: 1;
-  position: relative;
+  // position: relative;
   @include base.rounded;
   display: flex;
   flex-direction: column;
