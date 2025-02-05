@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast'
 import React, {
   useMemo,
   Dispatch,
@@ -6,6 +7,7 @@ import React, {
   useContext,
   useCallback,
   SetStateAction,
+  useRef,
 } from 'react'
 import Head from 'next/head'
 import type { NextPage } from 'next'
@@ -261,10 +263,25 @@ const Analysis: React.FC<Props> = ({
   const [arrows, setArrows] = useState<DrawShape[]>([])
   const [brushes, setBrushes] = useState<DrawBrushes>({} as DrawBrushes)
   const [screen, setScreen] = useState(screens[0])
+  const toastId = useRef<string>(null)
 
   useEffect(() => {
     setHoverArrow(null)
   }, [controller.currentIndex])
+
+  useEffect(() => {
+    if (maiaStatus === 'loading' && !toastId.current) {
+      toastId.current = toast.loading('Loading Maia Model...')
+    } else if (maiaStatus === 'ready') {
+      if (toastId.current) {
+        toast.success('Loaded Maia! Analysis is ready', {
+          id: toastId.current,
+        })
+      } else {
+        toast.success('Loaded Maia! Analysis is ready')
+      }
+    }
+  }, [maiaStatus])
 
   const launchContinue = useCallback(() => {
     const fen = analyzedGame.moves[controller.currentIndex].board
