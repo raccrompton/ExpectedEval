@@ -9,7 +9,7 @@ import React, {
 } from 'react'
 import Head from 'next/head'
 import type { NextPage } from 'next'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
@@ -578,9 +578,12 @@ const Analysis: React.FC<Props> = ({
           content="Collection of chess training and analysis tools centered around Maia."
         />
       </Head>
-      {maiaStatus === 'no-cache' || maiaStatus === 'downloading' ? (
-        <DownloadModelModal progress={maiaProgress} download={downloadMaia} />
-      ) : null}
+      <AnimatePresence>
+        {maiaStatus === 'no-cache' || maiaStatus === 'downloading' ? (
+          <DownloadModelModal progress={maiaProgress} download={downloadMaia} />
+        ) : null}
+      </AnimatePresence>
+
       <GameControllerContext.Provider value={{ ...controller }}>
         {analyzedGame && (isMobile ? mobileLayout : desktopLayout)}
       </GameControllerContext.Provider>

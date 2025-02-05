@@ -37,14 +37,14 @@ export const ConfigureAnalysis: React.FC<Props> = ({
         background="bg-human-4/60 hover:bg-human-4/80 text-primary/70 hover:text-primary"
       />
       <p className="mt-2 text-sm text-secondary">
-        If you are having performance issues, you can switch to our legacy{' '}
+        If you are having performance issues, you can switch to our{' '}
         <Link
           href={window.location.href.replace('/analysis', '/analysis/legacy')}
           className="text-primary/80 underline transition duration-200 hover:text-primary/100"
         >
-          Analysis Lite
+          Legacy Analysis
         </Link>{' '}
-        to continue your analysis without Maia 2.
+        page to continue your analysis without Maia 2.
       </p>
     </div>
   )
