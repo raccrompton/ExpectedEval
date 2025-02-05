@@ -65,7 +65,8 @@ export const useAnalysisController = (
     const board = new Chess(game.moves[controller.currentIndex].board)
 
     ;(async () => {
-      if (status !== 'ready' || maiaEvaluations[controller.currentIndex]) return
+      if (maiaStatus !== 'ready' || maiaEvaluations[controller.currentIndex])
+        return
 
       const { result } = await maia.batchEvaluate(
         Array(9).fill(board.fen()),

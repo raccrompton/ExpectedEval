@@ -51,7 +51,7 @@ export const MoveRecommendations: React.FC<Props> = ({
                 key={index}
                 className="flex items-center justify-between"
                 style={{
-                  color: colorSanMapping[move].color,
+                  color: colorSanMapping[move]?.color || '#fff',
                 }}
               >
                 <p
@@ -95,7 +95,10 @@ export const MoveRecommendations: React.FC<Props> = ({
               >
                 {colorSanMapping[move].san}
               </p>
-              <p className="font-mono text-sm">{cp / 100}</p>
+              <p className="font-mono text-sm">
+                {cp > 0 ? '+' : null}
+                {cp / 100}
+              </p>
             </div>
           ))}
         </div>
