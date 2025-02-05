@@ -72,3 +72,10 @@ export interface StockfishEvaluation {
   cp_vec: { [key: string]: number }
   cp_relative_vec: { [key: string]: number }
 }
+
+export type MaiaStatus =
+  | 'loading'
+  | 'no-cache'
+  | 'downloading'
+  | 'ready'
+  | 'error'

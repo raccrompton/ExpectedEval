@@ -577,15 +577,7 @@ const Analysis: React.FC<Props> = ({
           content="Collection of chess training and analysis tools centered around Maia."
         />
       </Head>
-      {maia?.status !== 'ready' ? (
-        <>
-          <div className="absolute left-0 top-0 z-50 flex h-screen w-screen flex-col bg-black">
-            <p className="text-white">{maia?.status}</p>
-          </div>
-        </>
-      ) : (
-        <></>
-      )}
+
       <GameControllerContext.Provider value={{ ...controller }}>
         {analyzedGame && (isMobile ? mobileLayout : desktopLayout)}
       </GameControllerContext.Provider>
