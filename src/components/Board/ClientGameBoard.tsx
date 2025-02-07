@@ -1,17 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { defaults } from 'chessground/state'
-import { useCallback, useContext } from 'react'
+import type { Key } from 'chessground/types'
 import Chessground from '@react-chess/chessground'
-import type { DrawBrush, DrawBrushes, DrawShape } from 'chessground/draw'
+import {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useContext,
+  useMemo,
+} from 'react'
+import type { DrawBrushes, DrawShape } from 'chessground/draw'
 
 import { BaseGame, Check } from 'src/types'
-import { GameControllerContext } from 'src/contexts'
+import { ClientGameControllerContext } from 'src/contexts'
 
 interface Props {
   game: BaseGame
   moves?: Map<string, string[]>
   setCurrentMove?: (move: [string, string] | null) => void
-  setCurrentSquare?: (key: string | null) => void
+  setCurrentSquare?: Dispatch<SetStateAction<Key | null>>
   move?: {
     fen: string
     move: [string, string]
@@ -21,7 +28,7 @@ interface Props {
   brushes?: DrawBrushes
 }
 
-export const GameBoard: React.FC<Props> = ({
+export const ClientGameBoard: React.FC<Props> = ({
   game,
   moves,
   move,
@@ -30,7 +37,7 @@ export const GameBoard: React.FC<Props> = ({
   shapes,
   brushes,
 }: Props) => {
-  const { currentIndex, orientation } = useContext(GameControllerContext)
+  const { currentNode, orientation } = useContext(ClientGameControllerContext)
 
   const after = useCallback(
     (from: string, to: string) => {
@@ -39,6 +46,21 @@ export const GameBoard: React.FC<Props> = ({
     },
     [setCurrentMove, setCurrentSquare],
   )
+
+  const currentMove = useMemo(() => {
+    if (!currentNode) return null
+
+    return {
+      fen: currentNode.fen,
+      move: currentNode.move
+        ? ([currentNode.move.slice(0, 2), currentNode.move.slice(2, 4)] as [
+            Key,
+            Key,
+          ])
+        : undefined,
+      check: currentNode.check,
+    }
+  }, [currentNode])
 
   return (
     <Chessground
@@ -61,11 +83,9 @@ export const GameBoard: React.FC<Props> = ({
           autoShapes: shapes || [],
           brushes: { ...defaults().drawable.brushes, ...brushes },
         },
-        fen: move ? move.fen : game.moves[currentIndex]?.board,
-        lastMove: move
-          ? move.move
-          : [...((game.moves[currentIndex]?.lastMove ?? []) as any)],
-        check: move ? move.check : game.moves[currentIndex]?.check,
+        fen: currentMove?.fen,
+        lastMove: currentMove?.move as Key[],
+        check: currentMove?.check,
         orientation,
       }}
     />
