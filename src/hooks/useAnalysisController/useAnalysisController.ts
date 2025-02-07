@@ -34,10 +34,11 @@ export const useAnalysisController = (
 
   const parseStockfishEvaluation = (
     message: StockfishEvaluation,
-    moveIndex: number,
+    fen: string,
   ) => {
     setStockfishEvaluations((prev) => {
       const newEvaluations = [...prev]
+      const moveIndex = game.moves.findIndex((move) => move.board === fen)
       newEvaluations[moveIndex] = message
 
       return newEvaluations
@@ -63,7 +64,7 @@ export const useAnalysisController = (
 
   useEffect(() => {
     const board = new Chess(game.moves[controller.currentIndex].board)
-    console.log(game.tree)
+
     ;(async () => {
       if (maiaStatus !== 'ready' || maiaEvaluations[controller.currentIndex])
         return
@@ -101,11 +102,7 @@ export const useAnalysisController = (
     const board = new Chess(game.moves[controller.currentIndex].board)
     if (stockfishEvaluations[controller.currentIndex]?.depth == 18) return
 
-    engine.evaluatePosition(
-      board.fen(),
-      board.moves().length,
-      controller.currentIndex,
-    )
+    engine.evaluatePosition(board.fen(), board.moves().length)
   }, [controller.currentIndex, game.moves, game.type, engine])
 
   const moves = useMemo(() => {
