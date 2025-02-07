@@ -51,7 +51,7 @@ export const MoveRecommendations: React.FC<Props> = ({
                 key={index}
                 className="flex items-center justify-between"
                 style={{
-                  color: colorSanMapping[move]?.color || '#fff',
+                  color: colorSanMapping[move]?.color ?? '#fff',
                 }}
               >
                 <p
@@ -85,7 +85,7 @@ export const MoveRecommendations: React.FC<Props> = ({
               key={index}
               className="flex items-center justify-between"
               style={{
-                color: colorSanMapping[move].color ?? '#FFFFFF',
+                color: colorSanMapping[move]?.color ?? '#fff',
               }}
             >
               <p
