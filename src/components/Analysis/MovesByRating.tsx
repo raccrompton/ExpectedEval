@@ -95,12 +95,12 @@ export const MovesByRating: React.FC<Props> = ({
                     >
                       <stop
                         offset="5%"
-                        stopColor={colorSanMapping[move].color}
+                        stopColor={colorSanMapping[move]?.color ?? '#fff'}
                         stopOpacity={0.5}
                       />
                       <stop
                         offset="95%"
-                        stopColor={colorSanMapping[move].color}
+                        stopColor={colorSanMapping[move]?.color ?? '#fff'}
                         stopOpacity={0}
                       />
                     </linearGradient>

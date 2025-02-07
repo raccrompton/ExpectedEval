@@ -1,6 +1,5 @@
-import { useMemo, useRef, useCallback } from 'react'
 import Engine from './engine'
-import { StockfishEvaluation } from 'src/types'
+import { useMemo, useRef, useCallback } from 'react'
 
 export const useStockfishEngine = () => {
   const engineRef = useRef<Engine | null>(null)

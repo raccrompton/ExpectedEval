@@ -5,16 +5,16 @@ import { StockfishEvaluation } from 'src/types'
 
 class Engine {
   private fen: string
-  private stockfish: StockfishWeb | null
   private moves: string[]
   private isEvaluating: boolean
+  private stockfish: StockfishWeb | null = null
 
   private store: {
     [key: string]: StockfishEvaluation
   }
   private legalMoveCount: number
   private evaluationResolver: ((value: StockfishEvaluation) => void) | null
-  private evaluationRejecter: ((reason?: any) => void) | null
+  private evaluationRejecter: ((reason?: unknown) => void) | null
   private evaluationPromise: Promise<StockfishEvaluation> | null
   private evaluationGenerator: AsyncGenerator<StockfishEvaluation> | null
 
@@ -121,6 +121,12 @@ class Engine {
 
     if (!isNaN(mate) && isNaN(cp)) {
       cp = mate > 0 ? 10000 : -10000
+    }
+
+    const board = new Chess(this.fen)
+    const isWhiteTurn = board.turn() === 'w'
+    if (!isWhiteTurn) {
+      cp *= -1
     }
 
     if (this.store[depth]) {
