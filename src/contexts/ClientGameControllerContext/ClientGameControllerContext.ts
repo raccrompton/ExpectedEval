@@ -1,5 +1,6 @@
 import React from 'react'
-import { useGameController } from 'src/hooks'
+
+import { useClientGameController } from 'src/hooks'
 
 type IClientGameControllerContext = ReturnType<typeof useClientGameController>
 
