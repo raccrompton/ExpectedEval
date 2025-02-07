@@ -96,7 +96,7 @@ const AnalysisPage: NextPage = () => {
         return
       }
       if (setCurrentMove) setCurrentMove(0)
-      console.log(game)
+
       setAnalyzedGame({ ...game, type: 'tournament' })
       setCurrentId(newId)
       router.push(`/analysis/${newId.join('/')}`, undefined, { shallow: true })
@@ -118,7 +118,7 @@ const AnalysisPage: NextPage = () => {
         return
       }
       if (setCurrentMove) setCurrentMove(0)
-      console.log(game)
+
       setAnalyzedGame({
         ...game,
         type: 'pgn',
@@ -144,7 +144,6 @@ const AnalysisPage: NextPage = () => {
       }
       if (setCurrentMove) setCurrentMove(0)
 
-      console.log(game)
       setAnalyzedGame({ ...game, type })
       setCurrentId([id, type])
       router.push(`/analysis/${id}/${type}`, undefined, { shallow: true })
