@@ -1,5 +1,5 @@
 import { Chess } from 'chess.ts'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 
 import {
   Color,
@@ -32,19 +32,6 @@ export const useAnalysisController = (
 ) => {
   const controller = useGameController(game, initialIndex, initialOrientation)
 
-  const parseStockfishEvaluation = (
-    message: StockfishEvaluation,
-    fen: string,
-  ) => {
-    setStockfishEvaluations((prev) => {
-      const newEvaluations = [...prev]
-      const moveIndex = game.moves.findIndex((move) => move.board === fen)
-      newEvaluations[moveIndex] = message
-
-      return newEvaluations
-    })
-  }
-
   const {
     maia,
     error: maiaError,
@@ -52,7 +39,7 @@ export const useAnalysisController = (
     progress: maiaProgress,
     downloadModel: downloadMaia,
   } = useMaiaEngine()
-  const engine = useStockfishEngine(parseStockfishEvaluation)
+  const { streamEvaluations, stopEvaluation } = useStockfishEngine()
   const [currentMove, setCurrentMove] = useState<[string, string] | null>()
   const [stockfishEvaluations, setStockfishEvaluations] = useState<
     StockfishEvaluation[]
@@ -61,6 +48,19 @@ export const useAnalysisController = (
     { [rating: string]: MaiaEvaluation }[]
   >([])
   const [currentMaiaModel, setCurrentMaiaModel] = useState(MAIA_MODELS[0])
+
+  const parseStockfishEvaluation = useCallback(
+    (evaluation: StockfishEvaluation, fen: string) => {
+      setStockfishEvaluations((prev) => {
+        const newEvaluations = [...prev]
+        const moveIndex = game.moves.findIndex((move) => move.board === fen)
+        newEvaluations[moveIndex] = evaluation
+
+        return newEvaluations
+      })
+    },
+    [game.moves],
+  )
 
   useEffect(() => {
     const board = new Chess(game.moves[controller.currentIndex].board)
@@ -102,8 +102,30 @@ export const useAnalysisController = (
     const board = new Chess(game.moves[controller.currentIndex].board)
     if (stockfishEvaluations[controller.currentIndex]?.depth == 18) return
 
-    engine.evaluatePosition(board.fen(), board.moves().length)
-  }, [controller.currentIndex, game.moves, game.type, engine])
+    const evaluationStream = streamEvaluations(
+      board.fen(),
+      board.moves().length,
+    )
+
+    if (evaluationStream) {
+      ;(async () => {
+        for await (const evaluation of evaluationStream) {
+          parseStockfishEvaluation(evaluation, board.fen())
+        }
+      })()
+    }
+
+    return () => {
+      stopEvaluation()
+    }
+  }, [
+    controller.currentIndex,
+    game.moves,
+    game.type,
+    streamEvaluations,
+    stopEvaluation,
+    parseStockfishEvaluation,
+  ])
 
   const moves = useMemo(() => {
     const moveMap = new Map<string, string[]>()
@@ -227,7 +249,7 @@ export const useAnalysisController = (
     let okMoveChance = 0
     let goodMoveChance = 0
     if (!moveEvaluation || !moveEvaluation.maia || !moveEvaluation.stockfish) {
-      return { blunderMoveChance, okMoveChance, goodMoveChance }
+      return { blunderMoveChance: 0, okMoveChance: 0, goodMoveChance: 0 }
     }
 
     const { maia, stockfish } = moveEvaluation

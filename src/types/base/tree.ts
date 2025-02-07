@@ -198,7 +198,6 @@ export class GameNode {
   }
 
   addStockfishAnalysis(stockfishEval: StockfishEvaluation): void {
-    console.log('stockfish added')
     this._analysis.stockfish = stockfishEval
   }
 

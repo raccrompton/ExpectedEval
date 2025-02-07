@@ -32,22 +32,6 @@ export const useClientAnalysisController = (game: AnalyzedGame) => {
 
   const [analysisState, setAnalysisState] = useState(0)
 
-  const parseStockfishEvaluation = (
-    message: StockfishEvaluation,
-    fen: string,
-  ) => {
-    console.log('Receiving Evaluation')
-    console.log(
-      fen === controller.currentNode?.fen,
-      fen,
-      controller.currentNode?.fen,
-    )
-    if (controller.currentNode && controller.currentNode.fen === fen) {
-      controller.currentNode.addStockfishAnalysis(message)
-      setAnalysisState((state) => state + 1)
-    }
-  }
-
   const {
     maia,
     error: maiaError,
@@ -55,7 +39,8 @@ export const useClientAnalysisController = (game: AnalyzedGame) => {
     progress: maiaProgress,
     downloadModel: downloadMaia,
   } = useMaiaEngine()
-  const engine = useStockfishEngine(parseStockfishEvaluation)
+
+  const { streamEvaluations, stopEvaluation } = useStockfishEngine()
   const [currentMove, setCurrentMove] = useState<[string, string] | null>()
   const [currentMaiaModel, setCurrentMaiaModel] = useState(MAIA_MODELS[0])
 
@@ -94,10 +79,28 @@ export const useClientAnalysisController = (game: AnalyzedGame) => {
     const board = new Chess(controller.currentNode.fen)
     if (controller.currentNode.analysis.stockfish?.depth == 18) return
 
-    console.log('Requesting evaluation')
+    const evaluationStream = streamEvaluations(
+      board.fen(),
+      board.moves().length,
+    )
 
-    engine.evaluatePosition(board.fen(), board.moves().length)
-  }, [controller.currentNode, game.type, engine])
+    if (evaluationStream) {
+      ;(async () => {
+        for await (const evaluation of evaluationStream) {
+          if (!controller.currentNode) {
+            stopEvaluation()
+            break
+          }
+          controller.currentNode.addStockfishAnalysis(evaluation)
+          setAnalysisState((state) => state + 1)
+        }
+      })()
+    }
+
+    return () => {
+      stopEvaluation()
+    }
+  }, [controller.currentNode, game.type, streamEvaluations, stopEvaluation])
 
   const moves = useMemo(() => {
     if (!controller.currentNode) return new Map<string, string[]>()

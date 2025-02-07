@@ -7,21 +7,29 @@ class Engine {
   private fen: string
   private stockfish: StockfishWeb | null
   private moves: string[]
+  private isEvaluating: boolean
 
   private store: {
     [key: string]: StockfishEvaluation
   }
   private legalMoveCount: number
-  private callback: (data: StockfishEvaluation, fen: string) => void
+  private evaluationResolver: ((value: StockfishEvaluation) => void) | null
+  private evaluationRejecter: ((reason?: any) => void) | null
+  private evaluationPromise: Promise<StockfishEvaluation> | null
+  private evaluationGenerator: AsyncGenerator<StockfishEvaluation> | null
 
-  constructor(callback: (data: StockfishEvaluation, fen: string) => void) {
+  constructor() {
     this.fen = ''
     this.store = {}
     this.moves = []
+    this.isEvaluating = false
 
     this.legalMoveCount = 0
-    this.callback = callback
-    this.stockfish = null
+    this.evaluationResolver = null
+    this.evaluationRejecter = null
+    this.evaluationPromise = null
+    this.evaluationGenerator = null
+
     this.onMessage = this.onMessage.bind(this)
 
     setupStockfish().then((stockfish: StockfishWeb) => {
@@ -34,7 +42,10 @@ class Engine {
     })
   }
 
-  evaluatePosition(fen: string, legalMoveCount: number) {
+  async *streamEvaluations(
+    fen: string,
+    legalMoveCount: number,
+  ): AsyncGenerator<StockfishEvaluation> {
     if (this.stockfish) {
       if (typeof global.gc === 'function') {
         global.gc()
@@ -45,12 +56,39 @@ class Engine {
       const board = new Chess(fen)
       this.moves = board.moves({ verbose: true }).map((x) => x.from + x.to)
       this.fen = fen
+      this.isEvaluating = true
+      this.evaluationGenerator = this.createEvaluationGenerator()
 
       this.sendMessage('stop')
       this.sendMessage('ucinewgame')
       this.sendMessage(`position fen ${fen}`)
       this.sendMessage('go depth 18')
+
+      while (this.isEvaluating) {
+        try {
+          const evaluation = await this.getNextEvaluation()
+          if (evaluation) {
+            yield evaluation
+          } else {
+            break
+          }
+        } catch (error) {
+          console.error('Error in evaluation stream:', error)
+          break
+        }
+      }
     }
+  }
+
+  private async getNextEvaluation(): Promise<StockfishEvaluation | null> {
+    return new Promise((resolve, reject) => {
+      this.evaluationResolver = resolve
+      this.evaluationRejecter = reject
+    })
+  }
+
+  private createEvaluationGenerator(): AsyncGenerator<StockfishEvaluation> | null {
+    return null
   }
 
   private sendMessage(message: string) {
@@ -103,12 +141,26 @@ class Engine {
     if (!this.store[depth].sent && multipv === this.legalMoveCount) {
       this.store[depth].sent = true
 
-      this.callback(this.store[depth], this.fen)
+      if (this.evaluationResolver) {
+        this.evaluationResolver(this.store[depth])
+        this.evaluationResolver = null
+        this.evaluationRejecter = null
+      }
     }
   }
 
   private onError(msg: string) {
     console.error(msg)
+    if (this.evaluationRejecter) {
+      this.evaluationRejecter(msg)
+      this.evaluationResolver = null
+      this.evaluationRejecter = null
+    }
+    this.isEvaluating = false
+  }
+  stopEvaluation() {
+    this.isEvaluating = false
+    this.sendMessage('stop')
   }
 }
 
