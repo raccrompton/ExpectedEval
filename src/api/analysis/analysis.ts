@@ -2,15 +2,38 @@
 import {
   Player,
   MoveMap,
+  GameTree,
+  AnalyzedGame,
   MaiaEvaluation,
-  ClientAnalyzedGame,
   LegacyAnalyzedGame,
   PositionEvaluation,
   StockfishEvaluation,
   AnalysisTournamentGame,
 } from 'src/types'
 import { buildUrl } from '../utils'
+
 import { AvailableMoves } from 'src/types/training'
+
+function buildGameTree(moves: any[], initialFen: string) {
+  const tree = new GameTree(initialFen)
+  let currentNode = tree.getRoot()
+
+  for (let i = 0; i < moves.length; i++) {
+    const move = moves[i]
+
+    if (move.lastMove) {
+      const [from, to] = move.lastMove
+      currentNode = tree.addMainMove(
+        currentNode,
+        move.board,
+        from + to,
+        move.san || '',
+      )
+    }
+  }
+
+  return tree
+}
 
 const readStream = (processLine: (data: any) => void) => (response: any) => {
   const stream = response.body.getReader()
@@ -389,9 +412,7 @@ export const getLegacyAnalyzedUserGame = async (
   } as LegacyAnalyzedGame
 }
 
-export const getClientAnalyzedTournamentGame = async (
-  gameId = ['FkgYSri1'],
-) => {
+export const getAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
   const res = await fetch(
     buildUrl(`analysis/analysis_list/${gameId.join('/')}`),
   )
@@ -459,6 +480,8 @@ export const getClientAnalyzedTournamentGame = async (
 
   const maiaEvaluations = [] as { [rating: number]: MaiaEvaluation }[]
 
+  const tree = buildGameTree(moves, moves[0].board)
+
   return {
     id,
     blackPlayer,
@@ -469,10 +492,11 @@ export const getClientAnalyzedTournamentGame = async (
     availableMoves,
     gameType,
     termination,
-  } as any as ClientAnalyzedGame
+    tree,
+  } as any as AnalyzedGame
 }
 
-export const getClientAnalyzedLichessGame = async (id: string, pgn: string) => {
+export const getAnalyzedLichessGame = async (id: string, pgn: string) => {
   const res = await fetch(buildUrl('analysis/analyze_user_game'), {
     method: 'POST',
     body: pgn,
@@ -549,6 +573,7 @@ export const getClientAnalyzedLichessGame = async (id: string, pgn: string) => {
 
   const maiaEvaluations = [] as { [rating: number]: MaiaEvaluation }[]
   const stockfishEvaluations: StockfishEvaluation[] = []
+  const tree = buildGameTree(moves, moves[0].board)
 
   return {
     id,
@@ -560,12 +585,13 @@ export const getClientAnalyzedLichessGame = async (id: string, pgn: string) => {
     termination,
     maiaEvaluations,
     stockfishEvaluations,
+    tree,
     type: 'brain',
     pgn,
-  } as ClientAnalyzedGame
+  } as AnalyzedGame
 }
 
-export const getClientAnalyzedUserGame = async (
+export const getAnalyzedUserGame = async (
   id: string,
   game_type: 'play' | 'hand' | 'brain',
 ) => {
@@ -656,6 +682,7 @@ export const getClientAnalyzedUserGame = async (
 
   const maiaEvaluations = [] as { [rating: number]: MaiaEvaluation }[]
   const stockfishEvaluations: StockfishEvaluation[] = []
+  const tree = buildGameTree(moves, moves[0].board)
 
   return {
     id,
@@ -667,6 +694,7 @@ export const getClientAnalyzedUserGame = async (
     termination,
     maiaEvaluations,
     stockfishEvaluations,
+    tree,
     type: 'brain',
-  } as ClientAnalyzedGame
+  } as AnalyzedGame
 }

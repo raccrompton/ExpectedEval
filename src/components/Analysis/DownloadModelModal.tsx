@@ -81,10 +81,10 @@ export const DownloadModelModal: React.FC<Props> = ({
             .
           </p>
         </div>
-        <div className="mt-6 flex flex-row items-center justify-end gap-2">
+        <div className="mt-6 flex w-full flex-col items-center justify-end gap-2 md:flex-row">
           {progress ? (
-            <div className="relative flex h-8 flex-1 items-center justify-start overflow-hidden rounded bg-human-4/20 px-3 md:h-10">
-              <p className="z-10 text-sm text-primary md:text-base">
+            <div className="relative order-3 flex h-8 w-full items-center justify-start overflow-hidden rounded bg-human-4/20 px-3 md:order-1 md:h-10 md:w-auto md:flex-1">
+              <p className="z-10 text-xs text-primary md:text-base">
                 {Math.round(progress)}%
               </p>
               <div
@@ -96,7 +96,20 @@ export const DownloadModelModal: React.FC<Props> = ({
           <div
             tabIndex={0}
             role="button"
-            className="flex h-8 cursor-pointer select-none items-center gap-1 self-end rounded bg-human-4 px-3 text-sm transition duration-200 hover:bg-human-4/90 md:h-10 md:px-4 md:text-base"
+            className="order-1 flex h-8 cursor-pointer select-none items-center gap-1 self-end rounded bg-background-3 px-3 text-sm transition duration-200 hover:bg-background-2/90 md:order-2 md:h-10 md:px-4 md:text-base"
+            onClick={download}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                download()
+              }
+            }}
+          >
+            <p>Use Legacy Analysis by Default</p>
+          </div>
+          <div
+            tabIndex={0}
+            role="button"
+            className="order-2 flex h-8 cursor-pointer select-none items-center gap-1 self-end rounded bg-human-4 px-3 text-sm transition duration-200 hover:bg-human-4/90 md:order-3 md:h-10 md:px-4 md:text-base"
             onClick={download}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
