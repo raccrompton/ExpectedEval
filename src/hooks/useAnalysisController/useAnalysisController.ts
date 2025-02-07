@@ -1,14 +1,14 @@
 import { Chess } from 'chess.ts'
 import { useEffect, useMemo, useState } from 'react'
 
-import { useGameController, useStockfishEngine, useMaiaEngine } from '..'
 import {
   Color,
   MoveMap,
   MaiaEvaluation,
-  ClientAnalyzedGame,
+  AnalyzedGame,
   StockfishEvaluation,
 } from 'src/types'
+import { useGameController, useStockfishEngine, useMaiaEngine } from '..'
 
 const MAIA_MODELS = [
   'maia_kdd_1100',
@@ -26,7 +26,7 @@ const MAIA_COLORS = ['#fe7f6d', '#f08a4c', '#ecaa4f', '#eccd4f']
 const STOCKFISH_COLORS = ['#A3C6F8', '#8fadd9', '#7a95ba', '#667c9b']
 
 export const useAnalysisController = (
-  game: ClientAnalyzedGame,
+  game: AnalyzedGame,
   initialIndex: number,
   initialOrientation: Color,
 ) => {
@@ -63,7 +63,7 @@ export const useAnalysisController = (
 
   useEffect(() => {
     const board = new Chess(game.moves[controller.currentIndex].board)
-
+    console.log(game.tree)
     ;(async () => {
       if (maiaStatus !== 'ready' || maiaEvaluations[controller.currentIndex])
         return
@@ -86,7 +86,6 @@ export const useAnalysisController = (
         maia_kdd_1900: result[8],
       }
 
-      console.log(output)
       setMaiaEvaluations((prev) => {
         const newEvaluations = [...prev]
         newEvaluations[controller.currentIndex] = output

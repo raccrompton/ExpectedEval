@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast'
 import React, {
+  useRef,
   useMemo,
   Dispatch,
   useState,
@@ -7,7 +8,6 @@ import React, {
   useContext,
   useCallback,
   SetStateAction,
-  useRef,
 } from 'react'
 import Head from 'next/head'
 import type { NextPage } from 'next'
@@ -18,9 +18,9 @@ import type { DrawBrushes, DrawShape } from 'chessground/draw'
 
 import {
   getLichessGamePGN,
-  getClientAnalyzedUserGame,
-  getClientAnalyzedLichessGame,
-  getClientAnalyzedTournamentGame,
+  getAnalyzedUserGame,
+  getAnalyzedLichessGame,
+  getAnalyzedTournamentGame,
 } from 'src/api'
 import {
   Loading,
@@ -44,7 +44,7 @@ import {
 import { Color, PlayedGame } from 'src/types'
 import { useAnalysisController } from 'src/hooks'
 import {
-  ClientAnalyzedGame,
+  AnalyzedGame,
   MaiaEvaluation,
   StockfishEvaluation,
 } from 'src/types/analysis'
@@ -78,9 +78,9 @@ const AnalysisPage: NextPage = () => {
   const router = useRouter()
   const { id, index, orientation } = router.query
 
-  const [analyzedGame, setAnalyzedGame] = useState<
-    ClientAnalyzedGame | undefined
-  >(undefined)
+  const [analyzedGame, setAnalyzedGame] = useState<AnalyzedGame | undefined>(
+    undefined,
+  )
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
 
   const getAndSetTournamentGame = useCallback(
@@ -90,12 +90,13 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getClientAnalyzedTournamentGame(newId)
+        game = await getAnalyzedTournamentGame(newId)
       } catch (e) {
         router.push('/401')
         return
       }
       if (setCurrentMove) setCurrentMove(0)
+      console.log(game)
       setAnalyzedGame({ ...game, type: 'tournament' })
       setCurrentId(newId)
       router.push(`/analysis/${newId.join('/')}`, undefined, { shallow: true })
@@ -111,12 +112,13 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getClientAnalyzedLichessGame(id, pgn)
+        game = await getAnalyzedLichessGame(id, pgn)
       } catch (e) {
         router.push('/401')
         return
       }
       if (setCurrentMove) setCurrentMove(0)
+      console.log(game)
       setAnalyzedGame({
         ...game,
         type: 'pgn',
@@ -135,12 +137,14 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getClientAnalyzedUserGame(id, type)
+        game = await getAnalyzedUserGame(id, type)
       } catch (e) {
         router.push('/401')
         return
       }
       if (setCurrentMove) setCurrentMove(0)
+
+      console.log(game)
       setAnalyzedGame({ ...game, type })
       setCurrentId([id, type])
       router.push(`/analysis/${id}/${type}`, undefined, { shallow: true })
@@ -208,10 +212,10 @@ interface Props {
     setCurrentMove: Dispatch<SetStateAction<number>>,
     currentMaiaModel: string,
   ) => Promise<void>
-  analyzedGame: ClientAnalyzedGame
+  analyzedGame: AnalyzedGame
   initialIndex: number
   initialOrientation: Color
-  setAnalyzedGame: Dispatch<SetStateAction<ClientAnalyzedGame | undefined>>
+  setAnalyzedGame: Dispatch<SetStateAction<AnalyzedGame | undefined>>
 }
 
 const Analysis: React.FC<Props> = ({
