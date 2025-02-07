@@ -1,6 +1,6 @@
 import Head from 'next/head'
 import type { DrawShape } from 'chessground/draw'
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 
 import {
   AuthContext,
@@ -14,13 +14,12 @@ import {
   GameBoard,
   ExportGame,
   StatsDisplay,
-  ClientMovesContainer,
-  BoardController,
   PromotionOverlay,
+  ClientMovesContainer,
+  ClientBoardController,
 } from 'src/components'
 import { useUnload } from 'src/hooks/useUnload'
 import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
-import { GameNode } from 'src/types/analysis'
 
 interface Props {
   boardShapes?: DrawShape[]
@@ -46,17 +45,7 @@ export const ClientGameplayInterface: React.FC<
   const { theme } = useContext(ThemeContext)
   const { isMobile } = useContext(WindowSizeContext)
 
-  const {
-    currentNode,
-    setCurrentNode,
-    orientation,
-    setOrientation,
-    goToNode,
-    goToNextNode,
-    goToPreviousNode,
-    goToRootNode,
-    plyCount,
-  } = useContext(ClientGameControllerContext)
+  const controller = useContext(ClientGameControllerContext)
 
   const { user } = useContext(AuthContext)
 
@@ -225,14 +214,12 @@ export const ClientGameplayInterface: React.FC<
             <div className="relative bottom-0 h-full min-h-[38px] flex-1">
               <ClientMovesContainer
                 game={game}
-                currentNode={currentNode}
-                setCurrentNode={setCurrentNode}
                 termination={game.termination}
               />
             </div>
             <div>{props.children}</div>
             <div className="flex-none">
-              <BoardController />
+              <ClientBoardController />
             </div>
             {timeControl != 'unlimited' ? (
               <GameClock player={controller.orientation} reversed={true} />
@@ -276,7 +263,7 @@ export const ClientGameplayInterface: React.FC<
               <GameClock player={controller.orientation} reversed={true} />
             ) : null}
             <div className="flex-none">
-              <BoardController />
+              <ClientBoardController />
             </div>
             <div className="w-screen">{props.children}</div>
             <StatsDisplay stats={stats} hideSession={true} />
