@@ -7,18 +7,18 @@ class Engine {
   private fen: string
   private stockfish: StockfishWeb | null
   private moves: string[]
-  private moveIndex: number
+
   private store: {
     [key: string]: StockfishEvaluation
   }
   private legalMoveCount: number
-  private callback: (data: StockfishEvaluation, index: number) => void
+  private callback: (data: StockfishEvaluation, fen: string) => void
 
-  constructor(callback: (data: StockfishEvaluation, index: number) => void) {
+  constructor(callback: (data: StockfishEvaluation, fen: string) => void) {
     this.fen = ''
     this.store = {}
     this.moves = []
-    this.moveIndex = 0
+
     this.legalMoveCount = 0
     this.callback = callback
     this.stockfish = null
@@ -34,7 +34,7 @@ class Engine {
     })
   }
 
-  evaluatePosition(fen: string, legalMoveCount: number, index: number) {
+  evaluatePosition(fen: string, legalMoveCount: number) {
     if (this.stockfish) {
       if (typeof global.gc === 'function') {
         global.gc()
@@ -44,7 +44,6 @@ class Engine {
       this.legalMoveCount = legalMoveCount
       const board = new Chess(fen)
       this.moves = board.moves({ verbose: true }).map((x) => x.from + x.to)
-      this.moveIndex = index
       this.fen = fen
 
       this.sendMessage('stop')
@@ -104,7 +103,7 @@ class Engine {
     if (!this.store[depth].sent && multipv === this.legalMoveCount) {
       this.store[depth].sent = true
 
-      this.callback(this.store[depth], this.moveIndex)
+      this.callback(this.store[depth], this.fen)
     }
   }
 

@@ -1,5 +1,5 @@
 import { Chess, Color } from 'chess.ts'
-import { StockfishEvaluation, MaiaEvaluation } from '.'
+import { StockfishEvaluation, MaiaEvaluation } from '..'
 
 interface NodeAnalysis {
   maia?: { [rating: string]: MaiaEvaluation }
@@ -68,8 +68,6 @@ export class GameTree {
 
       return line
     }
-
-    const moves = buildLine(this.root)
 
     const result = this.headers.get('Result')
     if (result) {
@@ -195,20 +193,13 @@ export class GameNode {
     return child
   }
 
-  addAnalysis(
-    maiaRating?: string,
-    maiaEval?: MaiaEvaluation,
-    stockfishEval?: StockfishEvaluation,
-  ): void {
-    if (maiaRating && maiaEval) {
-      if (!this._analysis.maia) {
-        this._analysis.maia = {}
-      }
-      this._analysis.maia[maiaRating] = maiaEval
-    }
-    if (stockfishEval) {
-      this._analysis.stockfish = stockfishEval
-    }
+  addMaiaAnalysis(maiaEval: { [rating: string]: MaiaEvaluation }): void {
+    this._analysis.maia = maiaEval
+  }
+
+  addStockfishAnalysis(stockfishEval: StockfishEvaluation): void {
+    console.log('stockfish added')
+    this._analysis.stockfish = stockfishEval
   }
 
   getMainLine(): GameNode[] {
