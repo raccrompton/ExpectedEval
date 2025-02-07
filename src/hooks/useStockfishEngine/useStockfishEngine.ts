@@ -4,7 +4,7 @@ import Engine from './engine'
 import { StockfishEvaluation } from 'src/types'
 
 export const useStockfishEngine = (
-  callback: (message: StockfishEvaluation, index: number) => void,
+  callback: (message: StockfishEvaluation, fen: string) => void,
 ) => {
   const engine = useMemo(() => new Engine(callback), [])
   return engine
