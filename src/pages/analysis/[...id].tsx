@@ -420,14 +420,14 @@ const Analysis: React.FC<Props> = ({
                 name={
                   controller.orientation === 'white'
                     ? analyzedGame.whitePlayer.name
-                    : analyzedGame.whitePlayer.name
+                    : analyzedGame.blackPlayer.name
                 }
                 rating={
                   controller.orientation === 'white'
                     ? analyzedGame.whitePlayer.rating
-                    : analyzedGame.whitePlayer.rating
+                    : analyzedGame.blackPlayer.rating
                 }
-                color={controller.orientation === 'white' ? 'black' : 'white'}
+                color={controller.orientation === 'white' ? 'white' : 'black'}
                 termination={analyzedGame.termination.winner}
               />
             </div>
