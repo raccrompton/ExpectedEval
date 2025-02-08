@@ -74,10 +74,12 @@ export const useClientAnalysisController = (game: AnalyzedGame) => {
 
   useEffect(() => {
     if (!controller.currentNode) return
-    if (game.type === 'tournament') return
-
     const board = new Chess(controller.currentNode.fen)
-    if (controller.currentNode.analysis.stockfish?.depth == 18) return
+    if (
+      controller.currentNode.analysis.stockfish &&
+      controller.currentNode.analysis.stockfish?.depth >= 18
+    )
+      return
 
     const evaluationStream = streamEvaluations(
       board.fen(),
