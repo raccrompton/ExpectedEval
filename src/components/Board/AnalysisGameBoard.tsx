@@ -1,10 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Chess } from 'chess.ts'
-import { defaults } from 'chessground/state'
-import type { Key } from 'chessground/types'
-import Chessground from '@react-chess/chessground'
-import { ClientBaseGame, Check, GameNode, Color } from 'src/types'
-import type { DrawBrushes, DrawShape } from 'chessground/draw'
 import {
   useMemo,
   Dispatch,
@@ -12,25 +6,31 @@ import {
   SetStateAction,
   useEffect,
 } from 'react'
+import { Chess } from 'chess.ts'
+import { defaults } from 'chessground/state'
+import type { Key } from 'chessground/types'
+import Chessground from '@react-chess/chessground'
+import { ClientBaseGame, Check, GameNode, Color } from 'src/types'
+import type { DrawBrushes, DrawShape } from 'chessground/draw'
 
 interface Props {
-  game: ClientBaseGame
-  moves?: Map<string, string[]>
-  currentNode: GameNode
-  orientation: Color
-  goToNode: (node: GameNode) => void
-  setCurrentMove?: (move: [string, string] | null) => void
-  setCurrentSquare?: Dispatch<SetStateAction<Key | null>>
   move?: {
     fen: string
     move: [string, string]
     check?: Check
   }
+  orientation: Color
+  game: ClientBaseGame
+  currentNode: GameNode
   shapes?: DrawShape[]
   brushes?: DrawBrushes
+  moves?: Map<string, string[]>
+  goToNode: (node: GameNode) => void
+  setCurrentMove?: (move: [string, string] | null) => void
+  setCurrentSquare?: Dispatch<SetStateAction<Key | null>>
 }
 
-export const ClientGameBoard: React.FC<Props> = ({
+export const AnalysisGameBoard: React.FC<Props> = ({
   game,
   moves,
   move,
