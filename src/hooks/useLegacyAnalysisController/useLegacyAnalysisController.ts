@@ -32,19 +32,7 @@ export const useLegacyAnalysisController = (
 ) => {
   const controller = useGameController(game, initialIndex, initialOrientation)
 
-  const parseStockfishEvaluation = (
-    message: StockfishEvaluation,
-    moveIndex: number,
-  ) => {
-    setStockfishEvaluations((prev) => {
-      const newEvaluations = [...prev]
-      newEvaluations[moveIndex] = message
-
-      return newEvaluations
-    })
-  }
-
-  const engine = useStockfishEngine(parseStockfishEvaluation)
+  const { streamEvaluations, stopEvaluation } = useStockfishEngine()
   const [currentMove, setCurrentMove] = useState<null | [string, string]>(null)
   const [stockfishEvaluations, setStockfishEvaluations] = useState<
     StockfishEvaluation[]
@@ -57,15 +45,37 @@ export const useLegacyAnalysisController = (
 
   useEffect(() => {
     if (game.type === 'tournament') return
-    if (stockfishEvaluations[controller.currentIndex]?.depth == 18) return
 
     const board = new Chess(game.moves[controller.currentIndex].board)
-    engine.evaluatePosition(
+    if (stockfishEvaluations[controller.currentIndex]?.depth == 18) return
+
+    const evaluationStream = streamEvaluations(
       board.fen(),
       board.moves().length,
-      controller.currentIndex,
     )
-  }, [controller.currentIndex, game.moves, game.type, engine])
+
+    if (evaluationStream) {
+      ;(async () => {
+        for await (const evaluation of evaluationStream) {
+          setStockfishEvaluations((prev) => {
+            const newEvaluations = [...prev]
+            newEvaluations[controller.currentIndex] = evaluation
+            return newEvaluations
+          })
+        }
+      })()
+    }
+
+    return () => {
+      stopEvaluation()
+    }
+  }, [
+    controller.currentIndex,
+    game.moves,
+    game.type,
+    streamEvaluations,
+    stopEvaluation,
+  ])
 
   const moves = useMemo(() => {
     const moveMap = new Map<string, string[]>()
