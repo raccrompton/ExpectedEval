@@ -583,9 +583,8 @@ const Analysis: React.FC<Props> = ({
               </select>
             </div>
             <ContinueAgainstMaia launchContinue={launchContinue} />
-            <LegacyAnalysisGameList
+            <AnalysisGameList
               currentId={currentId}
-              currentMaiaModel={currentMaiaModel}
               loadNewTournamentGame={getAndSetTournamentGame}
               loadNewLichessGames={getAndSetLichessGames}
               loadNewUserGames={getAndSetUserGames}
