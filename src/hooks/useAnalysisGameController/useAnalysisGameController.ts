@@ -1,7 +1,7 @@
 import { Color, GameTree, GameNode } from 'src/types'
 import { useState, useMemo, useCallback } from 'react'
 
-export const useClientGameController = (
+export const useAnalysisGameController = (
   gameTree: GameTree,
   initialNode?: GameNode,
   initialOrientation: Color = 'white',

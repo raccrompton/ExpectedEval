@@ -2,9 +2,9 @@ import { useCallback, useContext, useEffect, useMemo } from 'react'
 
 import { useWindowSize } from 'src/hooks'
 import { FlipIcon } from 'src/components/Icons/icons'
-import { ClientGameControllerContext } from 'src/contexts/'
+import { AnalysisGameControllerContext } from 'src/contexts/'
 
-export const ClientBoardController: React.FC = () => {
+export const AnalysisBoardController: React.FC = () => {
   const { width } = useWindowSize()
   const {
     orientation,
@@ -15,7 +15,7 @@ export const ClientBoardController: React.FC = () => {
     goToPreviousNode,
     goToRootNode,
     plyCount,
-  } = useContext(ClientGameControllerContext)
+  } = useContext(AnalysisGameControllerContext)
 
   const toggleBoardOrientation = useCallback(() => {
     setOrientation(orientation === 'white' ? 'black' : 'white')

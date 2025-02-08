@@ -1,11 +1,13 @@
 import React from 'react'
 
-import { useClientGameController } from 'src/hooks'
+import { useAnalysisGameController } from 'src/hooks'
 
-type IClientGameControllerContext = ReturnType<typeof useClientGameController>
+type IAnalysisGameControllerContext = ReturnType<
+  typeof useAnalysisGameController
+>
 
-export const ClientGameControllerContext =
-  React.createContext<IClientGameControllerContext>({
+export const AnalysisGameControllerContext =
+  React.createContext<IAnalysisGameControllerContext>({
     currentNode: undefined,
     setCurrentNode: () => {
       throw new Error('poorly provided context')
