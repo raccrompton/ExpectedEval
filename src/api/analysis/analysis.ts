@@ -3,6 +3,7 @@ import {
   Player,
   MoveMap,
   GameTree,
+  GameNode,
   AnalyzedGame,
   MaiaEvaluation,
   LegacyAnalyzedGame,
@@ -33,6 +34,37 @@ function buildGameTree(moves: any[], initialFen: string) {
   }
 
   return tree
+}
+
+function convertMoveMapToStockfishEval(
+  moveMap: MoveMap,
+  moveKey: string,
+): StockfishEvaluation {
+  const cp_vec: { [key: string]: number } = {}
+  const cp_relative_vec: { [key: string]: number } = {}
+  let model_optimal_cp = -Infinity
+  let model_move = ''
+
+  for (const move in moveMap) {
+    cp_vec[move] = moveMap[move]
+    if (moveMap[move] > model_optimal_cp) {
+      model_optimal_cp = moveMap[move]
+      model_move = move
+    }
+  }
+
+  for (const move in cp_vec) {
+    cp_relative_vec[move] = model_optimal_cp - cp_vec[move]
+  }
+
+  return {
+    sent: true,
+    depth: 20,
+    model_move: model_move,
+    model_optimal_cp: model_optimal_cp,
+    cp_vec: cp_vec,
+    cp_relative_vec: cp_relative_vec,
+  }
 }
 
 const readStream = (processLine: (data: any) => void) => (response: any) => {
@@ -481,6 +513,26 @@ export const getAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
   const maiaEvaluations = [] as { [rating: number]: MaiaEvaluation }[]
 
   const tree = buildGameTree(moves, moves[0].board)
+
+  let currentNode = tree.getRoot() as GameNode
+  for (let i = 0; i < moves.length; i++) {
+    const move = moves[i]
+
+    if (move.lastMove) {
+      const [from, to] = move.lastMove
+      const moveKey = from + to
+      const stockfishEval = stockfishEvaluations[i]
+        ? convertMoveMapToStockfishEval(stockfishEvaluations[i], moveKey)
+        : undefined
+
+      if (stockfishEval) {
+        currentNode = currentNode.mainChild
+        if (currentNode) {
+          currentNode.addStockfishAnalysis(stockfishEval)
+        }
+      }
+    }
+  }
 
   return {
     id,
