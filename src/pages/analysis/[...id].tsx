@@ -203,13 +203,11 @@ interface Props {
     id: string,
     pgn: string,
     setCurrentMove?: Dispatch<SetStateAction<number>>,
-    currentMaiaModel?: string,
   ) => Promise<void>
   getAndSetUserGames: (
     id: string,
     type: 'play' | 'hand' | 'brain',
-    setCurrentMove: Dispatch<SetStateAction<number>>,
-    currentMaiaModel: string,
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
   analyzedGame: AnalyzedGame
   initialIndex: number
@@ -469,7 +467,6 @@ const Analysis: React.FC<Props> = ({
                 {screen.id === 'select' ? (
                   <AnalysisGameList
                     currentId={currentId}
-                    currentMaiaModel={currentMaiaModel}
                     loadNewTournamentGame={getAndSetTournamentGame}
                     loadNewLichessGames={getAndSetLichessGames}
                     loadNewUserGames={getAndSetUserGames}
