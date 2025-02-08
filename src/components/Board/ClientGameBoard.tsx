@@ -1,22 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Chess } from 'chess.ts'
 import { defaults } from 'chessground/state'
 import type { Key } from 'chessground/types'
 import Chessground from '@react-chess/chessground'
-import {
-  Dispatch,
-  SetStateAction,
-  useCallback,
-  useContext,
-  useMemo,
-} from 'react'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
-
-import { BaseGame, Check } from 'src/types'
-import { ClientGameControllerContext } from 'src/contexts'
+import { ClientBaseGame, Check, GameNode, Color } from 'src/types'
+import {
+  useMemo,
+  Dispatch,
+  useCallback,
+  SetStateAction,
+  useEffect,
+} from 'react'
 
 interface Props {
-  game: BaseGame
+  game: ClientBaseGame
   moves?: Map<string, string[]>
+  currentNode: GameNode
+  orientation: Color
+  goToNode: (node: GameNode) => void
   setCurrentMove?: (move: [string, string] | null) => void
   setCurrentSquare?: Dispatch<SetStateAction<Key | null>>
   move?: {
@@ -32,19 +34,48 @@ export const ClientGameBoard: React.FC<Props> = ({
   game,
   moves,
   move,
+  currentNode,
+  orientation,
+  goToNode,
   setCurrentMove,
   setCurrentSquare,
   shapes,
   brushes,
 }: Props) => {
-  const { currentNode, orientation } = useContext(ClientGameControllerContext)
+  useEffect(() => {
+    console.log(currentNode)
+  }, [currentNode])
 
   const after = useCallback(
     (from: string, to: string) => {
+      if (!game.tree || !currentNode) return
+
       if (setCurrentMove) setCurrentMove([from, to])
       if (setCurrentSquare) setCurrentSquare(null)
+
+      const chess = new Chess(currentNode.fen) // Use currentNode.fen
+
+      const moveAttempt = chess.move({ from: from, to: to })
+
+      if (moveAttempt) {
+        const newFen = chess.fen()
+        const moveString = from + to
+        const san = moveAttempt.san
+
+        if (currentNode.mainChild?.move === moveString) {
+          goToNode(currentNode.mainChild)
+        } else {
+          const newVariation = game.tree.addVariation(
+            currentNode,
+            newFen,
+            moveString,
+            san,
+          )
+          goToNode(newVariation)
+        }
+      }
     },
-    [setCurrentMove, setCurrentSquare],
+    [setCurrentMove, setCurrentSquare, currentNode, game.tree, goToNode],
   )
 
   const currentMove = useMemo(() => {

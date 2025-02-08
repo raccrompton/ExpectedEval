@@ -49,6 +49,7 @@ import {
   AnalyzedGame,
   MaiaEvaluation,
   StockfishEvaluation,
+  GameNode,
 } from 'src/types'
 import { useClientAnalysisController, useClientGameController } from 'src/hooks'
 import {
@@ -398,6 +399,9 @@ const Analysis: React.FC<Props> = ({
                       shapes={
                         hoverArrow ? [...arrows, hoverArrow] : [...arrows]
                       }
+                      currentNode={controller.currentNode as GameNode}
+                      orientation={controller.orientation}
+                      goToNode={controller.goToNode}
                     />
                   </div>
                   <VerticalEvaluationBar
@@ -557,6 +561,9 @@ const Analysis: React.FC<Props> = ({
               moves={moves}
               setCurrentSquare={setCurrentSquare}
               shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
+              currentNode={controller.currentNode as GameNode}
+              orientation={controller.orientation}
+              goToNode={controller.goToNode}
             />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
