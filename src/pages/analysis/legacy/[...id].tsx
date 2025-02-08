@@ -96,8 +96,8 @@ const AnalysisPage: NextPage = () => {
     async (
       id: string,
       pgn: string,
-      setCurrentMove?: Dispatch<SetStateAction<number>>,
       currentMaiaModel = 'maia_kdd_1500',
+      setCurrentMove?: Dispatch<SetStateAction<number>>,
     ) => {
       let game
       try {
@@ -121,8 +121,8 @@ const AnalysisPage: NextPage = () => {
     async (
       id: string,
       type: 'play' | 'hand' | 'brain',
-      setCurrentMove?: Dispatch<SetStateAction<number>>,
       currentMaiaModel = 'maia_kdd_1500',
+      setCurrentMove?: Dispatch<SetStateAction<number>>,
     ) => {
       let game
       try {
@@ -192,14 +192,14 @@ interface Props {
   getAndSetLichessGames: (
     id: string,
     pgn: string,
+    currentMaiaModel: string,
     setCurrentMove?: Dispatch<SetStateAction<number>>,
-    currentMaiaModel?: string,
   ) => Promise<void>
   getAndSetUserGames: (
     id: string,
     type: 'play' | 'hand' | 'brain',
-    setCurrentMove: Dispatch<SetStateAction<number>>,
     currentMaiaModel: string,
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
   analyzedGame: LegacyAnalyzedGame
   initialIndex: number

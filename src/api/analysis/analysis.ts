@@ -514,7 +514,7 @@ export const getAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
 
   const tree = buildGameTree(moves, moves[0].board)
 
-  let currentNode = tree.getRoot() as GameNode
+  let currentNode = tree.getRoot()
   for (let i = 0; i < moves.length; i++) {
     const move = moves[i]
 
@@ -526,7 +526,7 @@ export const getAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
         : undefined
 
       if (stockfishEval) {
-        currentNode = currentNode.mainChild
+        currentNode = currentNode.mainChild as GameNode
         if (currentNode) {
           currentNode.addStockfishAnalysis(stockfishEval)
         }
