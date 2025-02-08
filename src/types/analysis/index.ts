@@ -1,4 +1,4 @@
-import { Game } from '../base'
+import { ClientGame, Game } from '../base'
 import { AvailableMoves } from '../training'
 
 type EvaluationType = 'tournament' | 'pgn' | 'play' | 'hand' | 'brain'
@@ -35,7 +35,7 @@ export interface LegacyAnalyzedGame extends Game {
   pgn?: string
 }
 
-export interface ClientAnalyzedGame extends Game {
+export interface AnalyzedGame extends ClientGame {
   maiaEvaluations: { [rating: string]: MaiaEvaluation }[]
   stockfishEvaluations: StockfishEvaluations<EvaluationType>
   availableMoves: AvailableMoves[]

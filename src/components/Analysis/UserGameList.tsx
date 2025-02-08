@@ -16,14 +16,14 @@ interface Props {
   loadNewLichessGames: (
     id: string,
     pgn: string,
-    setCurrentMove: Dispatch<SetStateAction<number>>,
     currentMaiaModel: string,
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => void
   loadNewUserGames: (
     id: string,
     type: 'play' | 'hand' | 'brain',
-    setCurrentMove: Dispatch<SetStateAction<number>>,
     currentMaiaModel: string,
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => void
   currentMaiaModel: string
 }
@@ -89,15 +89,15 @@ export const UserGameList = ({
                   await loadNewLichessGames(
                     game.id,
                     game.pgn as string,
-                    setCurrentIndex,
                     currentMaiaModel,
+                    setCurrentIndex,
                   )
                 } else {
                   await loadNewUserGames(
                     game.id,
                     game.type as 'play' | 'hand' | 'brain',
-                    setCurrentIndex,
                     currentMaiaModel,
+                    setCurrentIndex,
                   )
                 }
                 setLoadingIndex(null)

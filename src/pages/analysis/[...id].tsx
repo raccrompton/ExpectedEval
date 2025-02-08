@@ -1,5 +1,5 @@
-import toast from 'react-hot-toast'
 import React, {
+  useRef,
   useMemo,
   Dispatch,
   useState,
@@ -7,49 +7,51 @@ import React, {
   useContext,
   useCallback,
   SetStateAction,
-  useRef,
 } from 'react'
-import Head from 'next/head'
-import type { NextPage } from 'next'
-import { AnimatePresence, motion } from 'framer-motion'
-import { useRouter } from 'next/router'
-import type { Key } from 'chessground/types'
-import type { DrawBrushes, DrawShape } from 'chessground/draw'
-
 import {
   getLichessGamePGN,
-  getClientAnalyzedUserGame,
-  getClientAnalyzedLichessGame,
-  getClientAnalyzedTournamentGame,
+  getAnalyzedUserGame,
+  getAnalyzedLichessGame,
+  getAnalyzedTournamentGame,
 } from 'src/api'
+import {
+  PlayedGame,
+  AnalyzedGame,
+  MaiaEvaluation,
+  StockfishEvaluation,
+  GameNode,
+} from 'src/types'
+import {
+  ModalContext,
+  WindowSizeContext,
+  AnalysisGameControllerContext,
+} from 'src/contexts'
 import {
   Loading,
   MoveMap,
   GameInfo,
   Highlight,
-  GameBoard,
   ExportGame,
   MovesByRating,
-  MovesContainer,
-  BoardController,
-  LegacyAnalysisGameList,
-  ContinueAgainstMaia,
-  MoveRecommendations,
-  AuthenticatedWrapper,
-  VerticalEvaluationBar,
   AnalysisGameList,
-  HorizontalEvaluationBar,
+  AnalysisGameBoard,
   DownloadModelModal,
+  MoveRecommendations,
+  ContinueAgainstMaia,
+  AuthenticatedWrapper,
+  AnalysisMovesContainer,
+  VerticalEvaluationBar,
+  HorizontalEvaluationBar,
+  AnalysisBoardController,
 } from 'src/components'
-import { Color, PlayedGame } from 'src/types'
+import Head from 'next/head'
+import type { NextPage } from 'next'
+import toast from 'react-hot-toast'
+import { useRouter } from 'next/router'
+import type { Key } from 'chessground/types'
 import { useAnalysisController } from 'src/hooks'
-import {
-  ClientAnalyzedGame,
-  MaiaEvaluation,
-  StockfishEvaluation,
-} from 'src/types/analysis'
-import { ModalContext, WindowSizeContext } from 'src/contexts'
-import { GameControllerContext } from 'src/contexts/GameControllerContext/GameControllerContext'
+import { AnimatePresence, motion } from 'framer-motion'
+import type { DrawBrushes, DrawShape } from 'chessground/draw'
 import { ConfigureAnalysis } from 'src/components/Analysis/ConfigureAnalysis'
 
 const MAIA_MODELS = [
@@ -76,11 +78,11 @@ const AnalysisPage: NextPage = () => {
   }, [setInstructionsModalProps, openedModals.analysis])
 
   const router = useRouter()
-  const { id, index, orientation } = router.query
+  const { id } = router.query
 
-  const [analyzedGame, setAnalyzedGame] = useState<
-    ClientAnalyzedGame | undefined
-  >(undefined)
+  const [analyzedGame, setAnalyzedGame] = useState<AnalyzedGame | undefined>(
+    undefined,
+  )
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
 
   const getAndSetTournamentGame = useCallback(
@@ -90,15 +92,18 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getClientAnalyzedTournamentGame(newId)
+        game = await getAnalyzedTournamentGame(newId)
       } catch (e) {
         router.push('/401')
         return
       }
       if (setCurrentMove) setCurrentMove(0)
+
       setAnalyzedGame({ ...game, type: 'tournament' })
       setCurrentId(newId)
-      router.push(`/analysis/${newId.join('/')}`, undefined, { shallow: true })
+      router.push(`/analysis/${newId.join('/')}`, undefined, {
+        shallow: true,
+      })
     },
     [router],
   )
@@ -111,12 +116,13 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getClientAnalyzedLichessGame(id, pgn)
+        game = await getAnalyzedLichessGame(id, pgn)
       } catch (e) {
         router.push('/401')
         return
       }
       if (setCurrentMove) setCurrentMove(0)
+
       setAnalyzedGame({
         ...game,
         type: 'pgn',
@@ -135,15 +141,18 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getClientAnalyzedUserGame(id, type)
+        game = await getAnalyzedUserGame(id, type)
       } catch (e) {
         router.push('/401')
         return
       }
       if (setCurrentMove) setCurrentMove(0)
+
       setAnalyzedGame({ ...game, type })
       setCurrentId([id, type])
-      router.push(`/analysis/${id}/${type}`, undefined, { shallow: true })
+      router.push(`/analysis/${id}/${type}`, undefined, {
+        shallow: true,
+      })
     },
     [],
   )
@@ -176,9 +185,6 @@ const AnalysisPage: NextPage = () => {
         <Analysis
           currentId={currentId}
           analyzedGame={analyzedGame}
-          setAnalyzedGame={setAnalyzedGame}
-          initialIndex={index ? Number(index) : 0}
-          initialOrientation={orientation == 'black' ? 'black' : 'white'}
           getAndSetTournamentGame={getAndSetTournamentGame}
           getAndSetLichessGames={getAndSetLichessGames}
           getAndSetUserGames={getAndSetUserGame}
@@ -192,6 +198,8 @@ const AnalysisPage: NextPage = () => {
 
 interface Props {
   currentId: string[]
+  analyzedGame: AnalyzedGame
+
   getAndSetTournamentGame: (
     newId: string[],
     setCurrentMove?: Dispatch<SetStateAction<number>>,
@@ -200,25 +208,17 @@ interface Props {
     id: string,
     pgn: string,
     setCurrentMove?: Dispatch<SetStateAction<number>>,
-    currentMaiaModel?: string,
   ) => Promise<void>
   getAndSetUserGames: (
     id: string,
     type: 'play' | 'hand' | 'brain',
-    setCurrentMove: Dispatch<SetStateAction<number>>,
-    currentMaiaModel: string,
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
-  analyzedGame: ClientAnalyzedGame
-  initialIndex: number
-  initialOrientation: Color
-  setAnalyzedGame: Dispatch<SetStateAction<ClientAnalyzedGame | undefined>>
 }
 
 const Analysis: React.FC<Props> = ({
   currentId,
   analyzedGame,
-  initialIndex,
-  initialOrientation,
   getAndSetTournamentGame,
   getAndSetLichessGames,
   getAndSetUserGames,
@@ -237,25 +237,6 @@ const Analysis: React.FC<Props> = ({
       name: 'Export',
     },
   ]
-  const {
-    move,
-    moves,
-    controller,
-    setCurrentMaiaModel,
-    currentMaiaModel,
-    moveEvaluation,
-    setCurrentMove,
-    stockfishEvaluations,
-    maiaEvaluations,
-    blunderMeter,
-    moveMap,
-    movesByRating,
-    colorSanMapping,
-    moveRecommendations,
-    maiaStatus,
-    maiaProgress,
-    downloadMaia,
-  } = useAnalysisController(analyzedGame, initialIndex, initialOrientation)
 
   const { width } = useContext(WindowSizeContext)
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
@@ -264,10 +245,28 @@ const Analysis: React.FC<Props> = ({
   const [brushes, setBrushes] = useState<DrawBrushes>({} as DrawBrushes)
   const [screen, setScreen] = useState(screens[0])
   const toastId = useRef<string>(null)
+  const [currentSquare, setCurrentSquare] = useState<Key | null>(null)
+
+  const {
+    maiaStatus,
+    downloadMaia,
+    maiaProgress,
+    controller,
+    move,
+    moves,
+    currentMaiaModel,
+    setCurrentMaiaModel,
+    colorSanMapping,
+    moveEvaluation,
+    movesByRating,
+    moveRecommendations,
+    moveMap,
+    blunderMeter,
+  } = useAnalysisController(analyzedGame)
 
   useEffect(() => {
     setHoverArrow(null)
-  }, [controller.currentIndex])
+  }, [controller.currentNode])
 
   useEffect(() => {
     if (maiaStatus === 'loading' && !toastId.current) {
@@ -284,11 +283,11 @@ const Analysis: React.FC<Props> = ({
   }, [maiaStatus])
 
   const launchContinue = useCallback(() => {
-    const fen = analyzedGame.moves[controller.currentIndex].board
+    const fen = controller.currentNode?.fen as string
     const url = '/play' + '?fen=' + encodeURIComponent(fen)
 
     window.open(url)
-  }, [analyzedGame.moves, controller])
+  }, [controller.currentNode])
 
   useEffect(() => {
     const arr = []
@@ -317,7 +316,7 @@ const Analysis: React.FC<Props> = ({
     }
 
     setArrows(arr)
-  }, [stockfishEvaluations, maiaEvaluations, controller.currentIndex])
+  }, [moveEvaluation, controller.currentNode, controller.orientation])
 
   const Player = ({
     name,
@@ -381,15 +380,16 @@ const Analysis: React.FC<Props> = ({
               <div className="flex flex-col items-start">
                 <div className="flex flex-row items-start">
                   <div className="relative flex aspect-square w-[60vh]">
-                    <GameBoard
+                    <AnalysisGameBoard
                       game={analyzedGame}
                       moves={moves}
-                      setCurrentMove={setCurrentMove}
-                      move={move}
-                      brushes={brushes}
+                      setCurrentSquare={setCurrentSquare}
                       shapes={
                         hoverArrow ? [...arrows, hoverArrow] : [...arrows]
                       }
+                      currentNode={controller.currentNode as GameNode}
+                      orientation={controller.orientation}
+                      goToNode={controller.goToNode}
                     />
                   </div>
                   <VerticalEvaluationBar
@@ -405,9 +405,8 @@ const Analysis: React.FC<Props> = ({
                       moveEvaluation?.stockfish
                         ? 600 +
                           moveEvaluation.stockfish.model_optimal_cp *
-                            (analyzedGame.moves[
-                              controller.currentIndex
-                            ].board.split(' ')[1] !== controller.orientation[0]
+                            (analyzedGame.moves[0].board.split(' ')[1] !==
+                            controller.orientation[0]
                               ? 1
                               : -1)
                         : void 0
@@ -466,7 +465,6 @@ const Analysis: React.FC<Props> = ({
                 {screen.id === 'select' ? (
                   <AnalysisGameList
                     currentId={currentId}
-                    currentMaiaModel={currentMaiaModel}
                     loadNewTournamentGame={getAndSetTournamentGame}
                     loadNewLichessGames={getAndSetLichessGames}
                     loadNewUserGames={getAndSetUserGames}
@@ -524,12 +522,10 @@ const Analysis: React.FC<Props> = ({
                 colorSanMapping={colorSanMapping}
               />
               <div className="ovrerflow-y-scroll flex h-[30vh] flex-col">
-                <BoardController setCurrentMove={setCurrentMove} />
-                <MovesContainer
+                <AnalysisBoardController />
+                <AnalysisMovesContainer
                   game={analyzedGame}
-                  setCurrentMove={setCurrentMove}
                   termination={analyzedGame.termination}
-                  currentMaiaModel={currentMaiaModel}
                 />
               </div>
             </div>
@@ -547,25 +543,24 @@ const Analysis: React.FC<Props> = ({
             <></>
           </GameInfo>
           <div className="relative flex h-[100vw] w-screen">
-            <GameBoard
+            <AnalysisGameBoard
               game={analyzedGame}
               moves={moves}
-              setCurrentMove={setCurrentMove}
-              move={move}
-              brushes={brushes}
+              setCurrentSquare={setCurrentSquare}
               shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
+              currentNode={controller.currentNode as GameNode}
+              orientation={controller.orientation}
+              goToNode={controller.goToNode}
             />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="w-screen !flex-grow-0">
-              <BoardController setCurrentMove={setCurrentMove} />
+              <AnalysisBoardController />
             </div>
             <div className="relative bottom-0 h-full flex-1 overflow-auto">
-              <MovesContainer
+              <AnalysisMovesContainer
                 game={analyzedGame}
-                setCurrentMove={setCurrentMove}
                 termination={analyzedGame.termination}
-                currentMaiaModel={currentMaiaModel}
               />
             </div>
             <div>
@@ -583,9 +578,8 @@ const Analysis: React.FC<Props> = ({
               </select>
             </div>
             <ContinueAgainstMaia launchContinue={launchContinue} />
-            <LegacyAnalysisGameList
+            <AnalysisGameList
               currentId={currentId}
-              currentMaiaModel={currentMaiaModel}
               loadNewTournamentGame={getAndSetTournamentGame}
               loadNewLichessGames={getAndSetLichessGames}
               loadNewUserGames={getAndSetUserGames}
@@ -610,10 +604,9 @@ const Analysis: React.FC<Props> = ({
           <DownloadModelModal progress={maiaProgress} download={downloadMaia} />
         ) : null}
       </AnimatePresence>
-
-      <GameControllerContext.Provider value={{ ...controller }}>
+      <AnalysisGameControllerContext.Provider value={{ ...controller }}>
         {analyzedGame && (isMobile ? mobileLayout : desktopLayout)}
-      </GameControllerContext.Provider>
+      </AnalysisGameControllerContext.Provider>
     </>
   )
 }

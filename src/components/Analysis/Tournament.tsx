@@ -7,6 +7,23 @@ import {
   CaretDownIcon,
 } from 'src/components/Icons/icons'
 import { AnalysisTournamentGame } from 'src/types'
+type Props = {
+  id: string
+  index: number
+  currentId: string[] | null
+  openIndex: number | null
+  setOpenIndex: (index: number | null) => void
+  loadingIndex: number | null
+  setLoadingIndex: (index: number | null) => void
+  openElement: React.RefObject<HTMLDivElement>
+  selectedGameElement: React.RefObject<HTMLButtonElement>
+  analysisTournamentList: Map<string, AnalysisTournamentGame[]>
+  loadNewTournamentGame: (
+    id: string[],
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
+  ) => Promise<void>
+  setCurrentMove?: Dispatch<SetStateAction<number>>
+}
 
 export const Tournament = ({
   id,
@@ -21,23 +38,7 @@ export const Tournament = ({
   analysisTournamentList,
   loadNewTournamentGame,
   setCurrentMove,
-}: {
-  id: string
-  index: number
-  currentId: string[] | null
-  openIndex: number | null
-  setOpenIndex: (index: number | null) => void
-  loadingIndex: number | null
-  setLoadingIndex: (index: number | null) => void
-  openElement: React.RefObject<HTMLDivElement>
-  selectedGameElement: React.RefObject<HTMLButtonElement>
-  analysisTournamentList: Map<string, AnalysisTournamentGame[]>
-  loadNewTournamentGame: (
-    id: string[],
-    setCurrentMove: Dispatch<SetStateAction<number>>,
-  ) => Promise<void>
-  setCurrentMove: Dispatch<SetStateAction<number>>
-}) => {
+}: Props) => {
   const games = analysisTournamentList.get(id)
   const [sectionId, title] = id.split('---')
   const opened = openIndex == index
