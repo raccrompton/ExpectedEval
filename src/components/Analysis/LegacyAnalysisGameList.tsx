@@ -17,19 +17,19 @@ interface LegacyAnalysisGameListProps {
   currentMaiaModel: string
   loadNewTournamentGame: (
     newId: string[],
-    setCurrentMove: Dispatch<SetStateAction<number>>,
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
   loadNewLichessGames: (
     id: string,
     pgn: string,
-    setCurrentMove: Dispatch<SetStateAction<number>>,
     currentMaiaModel: string,
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
   loadNewUserGames: (
     id: string,
     type: 'play' | 'hand' | 'brain',
-    setCurrentMove: Dispatch<SetStateAction<number>>,
     currentMaiaModel: string,
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
 }
 

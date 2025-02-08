@@ -8,39 +8,33 @@ import React, {
   SetStateAction,
 } from 'react'
 import { motion } from 'framer-motion'
-
 import { Tournament } from 'src/components'
-import { AnalysisListContext, GameControllerContext } from 'src/contexts'
+import { AnalysisListContext } from 'src/contexts'
 
 interface AnalysisGameListProps {
   currentId: string[] | null
-  currentMaiaModel: string
   loadNewTournamentGame: (
     newId: string[],
-    setCurrentMove: Dispatch<SetStateAction<number>>,
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
   loadNewLichessGames: (
     id: string,
     pgn: string,
-    setCurrentMove: Dispatch<SetStateAction<number>>,
-    currentMaiaModel: string,
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
   loadNewUserGames: (
     id: string,
     type: 'play' | 'hand' | 'brain',
-    setCurrentMove: Dispatch<SetStateAction<number>>,
-    currentMaiaModel: string,
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
 }
 
 export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   currentId,
-  currentMaiaModel,
   loadNewTournamentGame,
   loadNewLichessGames,
   loadNewUserGames,
 }) => {
-  const controller = useContext(GameControllerContext)
   const {
     analysisPlayList,
     analysisHandList,
@@ -134,7 +128,6 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                   }
                   loadNewTournamentGame={loadNewTournamentGame}
                   analysisTournamentList={analysisTournamentList}
-                  setCurrentMove={controller.setCurrentIndex}
                 />
               ))}
             </>
@@ -155,18 +148,11 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                     onClick={async () => {
                       setLoadingIndex(index)
                       if (game.type === 'pgn') {
-                        await loadNewLichessGames(
-                          game.id,
-                          game.pgn as string,
-                          controller.setCurrentIndex,
-                          currentMaiaModel,
-                        )
+                        await loadNewLichessGames(game.id, game.pgn as string)
                       } else {
                         await loadNewUserGames(
                           game.id,
                           game.type as 'play' | 'hand' | 'brain',
-                          controller.setCurrentIndex,
-                          currentMaiaModel,
                         )
                       }
                       setLoadingIndex(null)
