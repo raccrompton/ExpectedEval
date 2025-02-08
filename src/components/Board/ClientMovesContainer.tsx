@@ -2,10 +2,8 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import { Tooltip } from 'react-tooltip'
 import { useContext, useMemo } from 'react'
-
-import { CheckIcon } from '../Icons/icons'
-import { GameNode, AnalyzedGame, Termination, ClientBaseGame } from 'src/types'
 import { ClientGameControllerContext, WindowSizeContext } from 'src/contexts'
+import { GameNode, AnalyzedGame, Termination, ClientBaseGame } from 'src/types'
 
 interface Props {
   game: ClientBaseGame | AnalyzedGame

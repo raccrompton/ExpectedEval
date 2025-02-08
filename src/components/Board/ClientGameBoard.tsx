@@ -3,8 +3,8 @@ import { Chess } from 'chess.ts'
 import { defaults } from 'chessground/state'
 import type { Key } from 'chessground/types'
 import Chessground from '@react-chess/chessground'
-import type { DrawBrushes, DrawShape } from 'chessground/draw'
 import { ClientBaseGame, Check, GameNode, Color } from 'src/types'
+import type { DrawBrushes, DrawShape } from 'chessground/draw'
 import {
   useMemo,
   Dispatch,
@@ -53,7 +53,7 @@ export const ClientGameBoard: React.FC<Props> = ({
       if (setCurrentMove) setCurrentMove([from, to])
       if (setCurrentSquare) setCurrentSquare(null)
 
-      const chess = new Chess(currentNode.fen) // Use currentNode.fen
+      const chess = new Chess(currentNode.fen)
 
       const moveAttempt = chess.move({ from: from, to: to })
 

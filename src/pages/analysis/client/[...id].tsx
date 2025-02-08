@@ -29,16 +29,14 @@ import {
   Highlight,
   ExportGame,
   MovesByRating,
-  BoardController,
   ClientGameBoard,
-  AnalysisGameList,
   DownloadModelModal,
   MoveRecommendations,
   ContinueAgainstMaia,
   AuthenticatedWrapper,
   ClientMovesContainer,
   VerticalEvaluationBar,
-  LegacyAnalysisGameList,
+  ClientAnalysisGameList,
   HorizontalEvaluationBar,
   ClientBoardController,
 } from 'src/components'
@@ -190,8 +188,6 @@ const AnalysisPage: NextPage = () => {
         <Analysis
           currentId={currentId}
           analyzedGame={analyzedGame}
-          setAnalyzedGame={setAnalyzedGame}
-          initialOrientation={orientation == 'black' ? 'black' : 'white'}
           getAndSetTournamentGame={getAndSetTournamentGame}
           getAndSetLichessGames={getAndSetLichessGames}
           getAndSetUserGames={getAndSetUserGame}
@@ -206,8 +202,7 @@ const AnalysisPage: NextPage = () => {
 interface Props {
   currentId: string[]
   analyzedGame: AnalyzedGame
-  initialOrientation: Color
-  setAnalyzedGame: Dispatch<SetStateAction<AnalyzedGame | undefined>>
+
   getAndSetTournamentGame: (
     newId: string[],
     setCurrentMove?: Dispatch<SetStateAction<number>>,
@@ -216,21 +211,17 @@ interface Props {
     id: string,
     pgn: string,
     setCurrentMove?: Dispatch<SetStateAction<number>>,
-    currentMaiaModel?: string,
   ) => Promise<void>
   getAndSetUserGames: (
     id: string,
     type: 'play' | 'hand' | 'brain',
-    setCurrentMove: Dispatch<SetStateAction<number>>,
-    currentMaiaModel: string,
+    setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
 }
 
 const Analysis: React.FC<Props> = ({
   currentId,
   analyzedGame,
-  initialOrientation,
-  setAnalyzedGame,
   getAndSetTournamentGame,
   getAndSetLichessGames,
   getAndSetUserGames,
@@ -475,9 +466,8 @@ const Analysis: React.FC<Props> = ({
               </div>
               <div className="flex flex-col bg-backdrop/30">
                 {screen.id === 'select' ? (
-                  <AnalysisGameList
+                  <ClientAnalysisGameList
                     currentId={currentId}
-                    currentMaiaModel={currentMaiaModel}
                     loadNewTournamentGame={getAndSetTournamentGame}
                     loadNewLichessGames={getAndSetLichessGames}
                     loadNewUserGames={getAndSetUserGames}
@@ -591,9 +581,8 @@ const Analysis: React.FC<Props> = ({
               </select>
             </div>
             <ContinueAgainstMaia launchContinue={launchContinue} />
-            <LegacyAnalysisGameList
+            <ClientAnalysisGameList
               currentId={currentId}
-              currentMaiaModel={currentMaiaModel}
               loadNewTournamentGame={getAndSetTournamentGame}
               loadNewLichessGames={getAndSetLichessGames}
               loadNewUserGames={getAndSetUserGames}

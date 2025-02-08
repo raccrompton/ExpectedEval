@@ -10,11 +10,10 @@ import React, {
 import { motion } from 'framer-motion'
 
 import { Tournament } from 'src/components'
-import { AnalysisListContext, GameControllerContext } from 'src/contexts'
+import { AnalysisListContext } from 'src/contexts'
 
 interface AnalysisGameListProps {
   currentId: string[] | null
-
   loadNewTournamentGame: (
     newId: string[],
     setCurrentMove?: Dispatch<SetStateAction<number>>,
@@ -31,13 +30,12 @@ interface AnalysisGameListProps {
   ) => Promise<void>
 }
 
-export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
+export const ClientAnalysisGameList: React.FC<AnalysisGameListProps> = ({
   currentId,
   loadNewTournamentGame,
   loadNewLichessGames,
   loadNewUserGames,
 }) => {
-  const controller = useContext(GameControllerContext)
   const {
     analysisPlayList,
     analysisHandList,
@@ -131,7 +129,6 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                   }
                   loadNewTournamentGame={loadNewTournamentGame}
                   analysisTournamentList={analysisTournamentList}
-                  setCurrentMove={controller.setCurrentIndex}
                 />
               ))}
             </>
@@ -152,16 +149,11 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                     onClick={async () => {
                       setLoadingIndex(index)
                       if (game.type === 'pgn') {
-                        await loadNewLichessGames(
-                          game.id,
-                          game.pgn as string,
-                          controller.setCurrentIndex,
-                        )
+                        await loadNewLichessGames(game.id, game.pgn as string)
                       } else {
                         await loadNewUserGames(
                           game.id,
                           game.type as 'play' | 'hand' | 'brain',
-                          controller.setCurrentIndex,
                         )
                       }
                       setLoadingIndex(null)
