@@ -14,10 +14,10 @@ export const VerticalEvaluationBar: React.FC<Props> = ({
   const height = ((value ?? min - min) / (max - min)) * 100
 
   return (
-    <div className="relative flex h-[60vh] max-h-[70vw] w-6 flex-col justify-end overflow-hidden bg-human-3/30">
+    <div className="relative flex h-[55vh] max-h-[55vw] w-6 flex-col justify-end overflow-hidden bg-engine-3/30">
       <p className="z-10 mb-3 -rotate-90 whitespace-nowrap text-xs">{label}</p>
       <div
-        className="absolute bottom-0 left-0 z-0 h-full w-full transform rounded-t-sm bg-human-3 duration-300"
+        className="absolute bottom-0 left-0 z-0 h-full w-full transform rounded-t-sm bg-engine-3 duration-300"
         style={{ height: `${height}%` }}
       />
     </div>
