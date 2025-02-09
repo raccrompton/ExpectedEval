@@ -43,7 +43,7 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
       {moves.map(([whiteNode, blackNode], index) => {
         return (
           <div key={index} className="flex w-full flex-row">
-            <span className="flex w-1/6 items-center justify-center bg-background-2 py-1 text-sm text-secondary">
+            <span className="flex w-9 items-center justify-center bg-background-2 py-1 text-sm text-secondary">
               {index + 1}
             </span>
             <div
@@ -51,7 +51,7 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
                 goToNode(whiteNode)
               }}
               data-index={index * 2 + 1}
-              className={`flex flex-1 cursor-pointer flex-row items-center justify-between px-2 hover:bg-background-2 ${currentNode === whiteNode && 'bg-engine-3/90'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
+              className={`flex flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${currentNode === whiteNode && 'bg-background-2'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
             >
               {whiteNode?.san ?? whiteNode?.move}
             </div>
@@ -60,7 +60,7 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
                 if (blackNode) goToNode(blackNode)
               }}
               data-index={index * 2 + 2}
-              className={`flex flex-1 cursor-pointer flex-row items-center justify-between px-2 hover:bg-background-2 ${currentNode === blackNode && 'bg-engine-3/90'} ${highlightSet.has(index * 2 + 2) && 'bg-human-3/80'}`}
+              className={`flex flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${currentNode === blackNode && 'bg-background-2'} ${highlightSet.has(index * 2 + 2) && 'bg-human-3/80'}`}
             >
               {blackNode?.san ?? blackNode?.move}
             </div>

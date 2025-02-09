@@ -25,7 +25,7 @@ type Props = {
   setCurrentMove?: Dispatch<SetStateAction<number>>
 }
 
-export const Tournament = ({
+export const LegacyTournament = ({
   id,
   index,
   currentId,
@@ -58,7 +58,7 @@ export const Tournament = ({
       >
         <div className="flex items-center gap-1">
           <div className="w-4">{openIndex == index ? MinusIcon : PlusIcon}</div>
-          <div className="text-left text-sm">{title}</div>
+          <div className="text-left">{title}</div>
         </div>
         <div className="w-2">
           {openIndex == index ? CaretUpIcon : CaretDownIcon}
@@ -90,21 +90,19 @@ export const Tournament = ({
             >
               <div className="flex items-center justify-start gap-2">
                 <div
-                  className={`flex h-full w-9 justify-center py-1 ${selected ? 'bg-background-3' : 'bg-background-2 group-hover:bg-background-3'}`}
+                  className={`flex h-full w-10 justify-center py-1 ${selected ? 'bg-background-3' : 'bg-background-2 group-hover:bg-background-3'}`}
                 >
                   {loadingIndex === j ? (
                     <div className="spinner" />
                   ) : (
-                    <p className="text-sm text-secondary">{game.game_index}</p>
+                    <p className="text-primary">{game.game_index}</p>
                   )}
                 </div>
-                <div className="items-center whitespace-nowrap text-sm">
+                <div className="flex items-center whitespace-nowrap py-1">
                   {game.white.split(',')[0]} – {game.black.split(',')[0]}
                 </div>
               </div>
-              <div className="whitespace-nowrap text-sm font-light text-secondary">
-                {game.result?.replace('1/2', '½').replace('1/2', '½')}
-              </div>
+              <div>{game.result}</div>
             </button>
           )
         })}

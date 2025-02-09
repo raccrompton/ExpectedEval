@@ -24,8 +24,8 @@ export const MovesByRating: React.FC<Props> = ({
   colorSanMapping,
 }: Props) => {
   return (
-    <div className="col-span-2 flex h-full max-h-full flex-col rounded bg-background-1/60">
-      <p className="p-4 text-lg text-white">Moves by Rating</p>
+    <div className="flex h-full w-full flex-col rounded bg-background-1/60">
+      <p className="p-3 text-lg text-white">Moves by Rating</p>
       <div className="flex h-full w-full flex-col">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={moves} margin={{ left: -5, right: 0, bottom: 0 }}>
