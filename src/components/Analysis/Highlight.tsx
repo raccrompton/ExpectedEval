@@ -1,5 +1,5 @@
 import { MaiaEvaluation, StockfishEvaluation } from 'src/types'
-import { BlunderMeter } from './BlunderMeter'
+import { LegacyBlunderMeter } from './LegacyBlunderMeter'
 import { MovesByRating } from './MovesByRating'
 
 interface Props {
@@ -18,18 +18,14 @@ interface Props {
     maia?: { move: string; prob: number }[]
     stockfish?: { move: string; cp: number }[]
   }
-  blunderMeter: {
-    blunderMoveChance: number
-    okMoveChance: number
-    goodMoveChance: number
-  }
+
   movesByRating: { [key: string]: number }[] | undefined
 }
 
 export const Highlight: React.FC<Props> = ({
   currentMaiaModel,
   recommendations,
-  blunderMeter,
+
   moveEvaluation,
   colorSanMapping,
   movesByRating,

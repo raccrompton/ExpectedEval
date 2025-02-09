@@ -43,7 +43,7 @@ export const MoveMap: React.FC<Props> = ({
 
   return (
     <div className="flex h-full max-h-full flex-col overflow-hidden rounded bg-background-1/60">
-      <p className="p-4 text-lg text-white">Move Map</p>
+      <p className="p-3 text-lg text-white">Move Map</p>
       <div className="flex h-full w-full flex-col">
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ left: 0, top: 0, right: 30, bottom: 20 }}>

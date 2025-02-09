@@ -316,8 +316,6 @@ export const useAnalysisController = (game: AnalyzedGame) => {
       )
       const prob = moveEvaluation?.maia.policy[move] * 100
 
-      console.log(prob)
-
       data.push({
         move,
         x: prob,

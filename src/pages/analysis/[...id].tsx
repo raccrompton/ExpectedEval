@@ -32,7 +32,7 @@ import {
   GameInfo,
   Highlight,
   ExportGame,
-  MovesByRating,
+  BlunderMeter,
   AnalysisGameList,
   AnalysisGameBoard,
   DownloadModelModal,
@@ -40,8 +40,6 @@ import {
   ContinueAgainstMaia,
   AuthenticatedWrapper,
   AnalysisMovesContainer,
-  VerticalEvaluationBar,
-  HorizontalEvaluationBar,
   AnalysisBoardController,
 } from 'src/components'
 import Head from 'next/head'
@@ -435,7 +433,6 @@ const Analysis: React.FC<Props> = ({
                 }
                 movesByRating={movesByRating}
                 colorSanMapping={colorSanMapping}
-                blunderMeter={blunderMeter}
               />
             </div>
             <div className="flex h-[calc((55vh+4.5rem)/2)] flex-row gap-2">
@@ -446,11 +443,7 @@ const Analysis: React.FC<Props> = ({
                   setHoverArrow={setHoverArrow}
                 />
               </div>
-              <MoveRecommendations
-                recommendations={moveRecommendations}
-                colorSanMapping={colorSanMapping}
-                setHoverArrow={setHoverArrow}
-              />
+              <BlunderMeter {...blunderMeter} />
             </div>
           </div>
         </div>
