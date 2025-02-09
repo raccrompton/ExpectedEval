@@ -42,10 +42,6 @@ export const AnalysisGameBoard: React.FC<Props> = ({
   shapes,
   brushes,
 }: Props) => {
-  useEffect(() => {
-    console.log(currentNode)
-  }, [currentNode])
-
   const after = useCallback(
     (from: string, to: string) => {
       if (!game.tree || !currentNode) return

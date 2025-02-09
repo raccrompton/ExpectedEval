@@ -355,8 +355,31 @@ const Analysis: React.FC<Props> = ({
   const desktopLayout = (
     <div className="flex h-full w-full flex-col items-center py-4 md:py-10">
       <div className="flex h-full w-[90%] flex-1 flex-col justify-center gap-2">
-        <div className="flex w-full flex-row items-start justify-start gap-2">
+        <div className="flex h-full w-full flex-row gap-2">
           <div
+            id="navigation"
+            className="flex h-[80vh] w-72 min-w-72 max-w-72 flex-col gap-2 overflow-hidden"
+          >
+            <div className="flex max-h-[35vh] min-h-[35vh] flex-col bg-backdrop/30">
+              <AnalysisGameList
+                currentId={currentId}
+                loadNewTournamentGame={getAndSetTournamentGame}
+                loadNewLichessGames={getAndSetLichessGames}
+                loadNewUserGames={getAndSetUserGames}
+              />
+            </div>
+            <div className="flex h-1/2 w-full flex-1 flex-col gap-2">
+              <div className="flex h-full flex-col overflow-y-scroll">
+                <AnalysisMovesContainer
+                  game={analyzedGame}
+                  termination={analyzedGame.termination}
+                />
+                <AnalysisBoardController />
+              </div>
+            </div>
+          </div>
+          <div
+            id="board+players+eval"
             style={{
               width: 'calc(60vh + 1.5rem)',
             }}
@@ -431,66 +454,9 @@ const Analysis: React.FC<Props> = ({
                 termination={analyzedGame.termination.winner}
               />
             </div>
-            <div className="flex flex-1 flex-col overflow-hidden rounded bg-background-1/60">
-              <div className="flex flex-row border-b border-white/10">
-                {screens.map((s) => {
-                  const selected = s.id === screen.id
-                  return (
-                    <div
-                      key={s.id}
-                      tabIndex={0}
-                      role="button"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') setScreen(s)
-                      }}
-                      onClick={() => setScreen(s)}
-                      className={`relative flex cursor-pointer select-none flex-row px-4 py-2 ${selected ? 'bg-white/5' : 'hover:bg-white hover:bg-opacity-[0.02]'} transition duration-200`}
-                    >
-                      <p
-                        className={`${selected ? 'text-primary' : 'text-secondary'} transition duration-200`}
-                      >
-                        {s.name}
-                      </p>
-                      {selected ? (
-                        <motion.div
-                          layoutId="selectedScreen"
-                          className="absolute bottom-0 left-0 h-[1px] w-full bg-white"
-                        />
-                      ) : null}
-                    </div>
-                  )
-                })}
-              </div>
-              <div className="flex flex-col bg-backdrop/30">
-                {screen.id === 'select' ? (
-                  <AnalysisGameList
-                    currentId={currentId}
-                    loadNewTournamentGame={getAndSetTournamentGame}
-                    loadNewLichessGames={getAndSetLichessGames}
-                    loadNewUserGames={getAndSetUserGames}
-                  />
-                ) : screen.id === 'configure' ? (
-                  <ConfigureAnalysis
-                    currentMaiaModel={currentMaiaModel}
-                    setCurrentMaiaModel={setCurrentMaiaModel}
-                    launchContinue={launchContinue}
-                    MAIA_MODELS={MAIA_MODELS}
-                  />
-                ) : screen.id === 'export' ? (
-                  <div className="flex flex-col p-4">
-                    <ExportGame
-                      game={analyzedGame as unknown as PlayedGame}
-                      whitePlayer={analyzedGame.whitePlayer.name}
-                      blackPlayer={analyzedGame.blackPlayer.name}
-                      event="Analysis"
-                    />
-                  </div>
-                ) : null}
-              </div>
-            </div>
           </div>
-          <div className="grid w-full grid-rows-3 gap-2">
-            <div className="h-[calc((90vh - 1rem)/3)] flex gap-2">
+          <div id="analysis" className="flex h-[80vh] w-full flex-col gap-2">
+            <div className="h-[calc((80vh - 1rem)/3)] flex gap-2">
               <Highlight
                 moveEvaluation={
                   moveEvaluation as {
@@ -498,36 +464,30 @@ const Analysis: React.FC<Props> = ({
                     stockfish?: StockfishEvaluation
                   }
                 }
+                movesByRating={movesByRating}
                 colorSanMapping={colorSanMapping}
                 blunderMeter={blunderMeter}
               />
             </div>
-            <div className="h-[calc((90vh - 1rem)/3)] grid grid-cols-2 gap-2 2xl:grid-cols-3">
-              <MoveRecommendations
-                recommendations={moveRecommendations}
-                colorSanMapping={colorSanMapping}
-                setHoverArrow={setHoverArrow}
-              />
-              <div className="hidden h-full flex-col 2xl:flex">
+            <div className="h-[calc((80vh - 1rem)/3)] flex flex-row gap-2">
+              <div className="flex h-full w-full flex-col">
                 <MoveMap
                   moveMap={moveMap}
                   colorSanMapping={colorSanMapping}
                   setHoverArrow={setHoverArrow}
                 />
               </div>
+              <MoveRecommendations
+                recommendations={moveRecommendations}
+                colorSanMapping={colorSanMapping}
+                setHoverArrow={setHoverArrow}
+              />
             </div>
-            <div className="h-[calc((90vh - 1rem)/3)] grid grid-cols-3 gap-2 overflow-y-hidden">
+            <div className="h-[calc((80vh - 1rem)/3)] flex w-full">
               <MovesByRating
                 moves={movesByRating}
                 colorSanMapping={colorSanMapping}
               />
-              <div className="ovrerflow-y-scroll flex h-[30vh] flex-col">
-                <AnalysisBoardController />
-                <AnalysisMovesContainer
-                  game={analyzedGame}
-                  termination={analyzedGame.termination}
-                />
-              </div>
             </div>
           </div>
         </div>

@@ -75,8 +75,8 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   }, [selected])
 
   return analysisTournamentList ? (
-    <div className="flex flex-col items-start justify-start overflow-hidden rounded bg-background-1">
-      <div className="flex w-full flex-col">
+    <div className="flex h-full flex-col items-start justify-start overflow-hidden rounded bg-background-1">
+      <div className="flex h-full w-full flex-col">
         <div className="grid select-none grid-cols-5 border-b-2 border-white border-opacity-10">
           <Header
             label="Play"
@@ -103,13 +103,13 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
             setSelected={setSelected}
           />
           <Header
-            label="WC Matches"
+            label="WC"
             name="tournament"
             selected={selected}
             setSelected={setSelected}
           />
         </div>
-        <div className="red-scrollbar flex max-h-64 flex-col overflow-y-scroll md:max-h-[60vh]">
+        <div className="red-scrollbar flex h-full flex-col overflow-y-scroll">
           {selected === 'tournament' ? (
             <>
               {listKeys.map((id, i) => (
@@ -157,18 +157,18 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                       }
                       setLoadingIndex(null)
                     }}
-                    className={`group flex w-full cursor-pointer items-center gap-2 pr-2 ${selectedGame ? 'bg-background-2 font-bold' : index % 2 === 0 ? 'bg-background-1/30 hover:bg-background-2' : 'bg-background-1/10 hover:bg-background-2'}`}
+                    className={`group flex w-full cursor-pointer items-center gap-2 pr-1 ${selectedGame ? 'bg-background-2 font-bold' : index % 2 === 0 ? 'bg-background-1/30 hover:bg-background-2' : 'bg-background-1/10 hover:bg-background-2'}`}
                   >
                     <div
-                      className={`flex h-full w-10 items-center justify-center py-1 ${selectedGame ? 'bg-background-3' : 'bg-background-2 group-hover:bg-white/5'}`}
+                      className={`flex h-full w-9 items-center justify-center ${selectedGame ? 'bg-background-3' : 'bg-background-2 group-hover:bg-white/5'}`}
                     >
-                      <p className="text-secondary">{index + 1}</p>
+                      <p className="text-sm text-secondary">{index + 1}</p>
                     </div>
                     <div className="flex flex-1 items-center justify-between overflow-hidden py-1">
-                      <p className="overflow-hidden text-ellipsis whitespace-nowrap text-primary">
+                      <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-primary">
                         {game.label}
                       </p>
-                      <p className="whitespace-nowrap text-secondary">
+                      <p className="whitespace-nowrap text-sm font-light text-secondary">
                         {game.result}
                       </p>
                     </div>
@@ -177,6 +177,13 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
               })}
             </>
           )}
+          <div className="flex flex-1 items-center justify-center gap-1 py-2">
+            <span className="material-symbols-outlined text-sm text-secondary">
+              chess_pawn
+            </span>
+            <p className="text-xs text-secondary">Play more games...</p>
+            <p className="ml-2 text-xs text-secondary">₍^. .^₎⟆</p>
+          </div>
         </div>
       </div>
     </div>
@@ -197,11 +204,11 @@ function Header({
   return (
     <button
       onClick={() => setSelected(name)}
-      className={`relative flex items-center justify-center py-0.5 ${selected === name ? 'bg-human-4/30' : 'bg-background-1/80 hover:bg-background-2'} transition duration-200`}
+      className={`relative flex items-center justify-center py-1 ${selected === name ? 'bg-human-4/30' : 'bg-background-1/80 hover:bg-background-2'} `}
     >
-      <div className="flex items-center justify-start gap-1">
+      <div className="flex items-center justify-start">
         <p
-          className={`text-sm transition duration-200 ${selected === name ? 'text-human-2' : 'text-primary'}`}
+          className={`text-xs transition duration-200 ${selected === name ? 'text-human-2' : 'text-primary'}`}
         >
           {label}
         </p>
