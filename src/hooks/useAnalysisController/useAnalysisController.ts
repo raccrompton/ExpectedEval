@@ -310,8 +310,13 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     const data = []
 
     for (const move of moves) {
-      const cp = Math.max(-4, moveEvaluation.stockfish.cp_relative_vec[move])
+      const cp = Math.max(
+        -4,
+        moveEvaluation.stockfish.cp_relative_vec[move] / 100,
+      )
       const prob = moveEvaluation?.maia.policy[move] * 100
+
+      console.log(prob)
 
       data.push({
         move,

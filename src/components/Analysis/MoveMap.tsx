@@ -46,64 +46,62 @@ export const MoveMap: React.FC<Props> = ({
       <p className="p-4 text-lg text-white">Move Map</p>
       <div className="flex h-full w-full flex-col">
         <ResponsiveContainer width="100%" height="100%">
-          <ScatterChart margin={{ left: -14, top: 0, right: 30, bottom: 10 }}>
+          <ScatterChart margin={{ left: 0, top: 0, right: 30, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#3C3C3C" />
-            <YAxis
-              dataKey="y"
+            <XAxis
+              dataKey="x"
               type="number"
               axisLine={false}
               label={{
                 value: 'Maia',
-                position: 'insideLeft',
                 fill: '#FE7F6D',
-                angle: -90,
-                fontSize: 14,
+                position: 'insideBottom',
+                fontSize: 18,
                 fontWeight: 600,
-                offset: 26,
-                dy: 20,
+                offset: -8,
+                dx: -12,
               }}
               tickCount={4}
               tickLine={false}
               tickMargin={0}
               tick={{ fill: 'white', fontSize: 10 }}
               tickFormatter={(value) => `${value}%`}
-              domain={([dataMin, dataMax]) => [0, dataMax > 75 ? 100 : 75]}
+              domain={([dataMin, dataMax]) => [0, dataMax > 60 ? 100 : 60]}
             >
               <Label
                 value="← Unlikely"
                 position="insideBottomLeft"
-                offset={32}
-                angle={-90}
-                fontSize={10}
-                fontWeight={500}
                 fill="#BF5F52"
-                dy={60}
+                fontSize={12}
+                fontWeight={500}
+                dy={10}
+                dx={-18}
               />
               <Label
                 value="Likely →"
-                position="insideTopLeft"
-                offset={24}
-                angle={-90}
-                fontSize={10}
-                fontWeight={500}
+                position="insideBottomRight"
+                fontSize={12}
                 fill="#BF5F52"
-                dy={14}
+                fontWeight={500}
+                dy={10}
+                dx={18}
               />
-            </YAxis>
-            <XAxis
+            </XAxis>
+            <YAxis
               scale="sqrt"
-              dataKey="x"
+              dataKey="y"
               type="number"
               axisLine={false}
               domain={[-4, 0]}
               label={{
-                value: 'SF Eval Loss',
-                position: 'insideBottom',
+                value: 'SF Loss',
                 fill: '#76ADDD',
-                fontSize: 14,
+                position: 'insideLeft',
+                angle: -90,
+                fontSize: 16,
                 fontWeight: 600,
-                offset: 0,
-                dx: -12,
+                dx: 10,
+                dy: 48,
               }}
               ticks={[-4, -2, -1, 0]}
               tick={{
@@ -115,23 +113,25 @@ export const MoveMap: React.FC<Props> = ({
             >
               <Label
                 value="← Blunders"
-                position="insideLeft"
-                fontSize={10}
+                dx={24}
+                angle={-90}
+                fontSize={12}
                 fontWeight={500}
+                dy={140}
+                position="insideLeft"
                 fill="#5A9DD7"
-                dy={11}
-                offset={-20}
               />
               <Label
                 value="Best Moves →"
-                position="insideRight"
-                fontSize={10}
-                fontWeight={500}
                 fill="#5A9DD7"
-                dy={11}
-                offset={-10}
+                position="insideLeft"
+                fontSize={12}
+                dx={24}
+                angle={-90}
+                fontWeight={500}
+                dy={-16}
               />
-            </XAxis>
+            </YAxis>
             <Scatter name="Moves" data={moveMap}>
               <LabelList
                 dataKey="move"
