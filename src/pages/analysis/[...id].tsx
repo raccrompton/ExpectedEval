@@ -330,7 +330,7 @@ const Analysis: React.FC<Props> = ({
     termination?: string
   }) => {
     return (
-      <div className="flex w-full items-center justify-between bg-background-1 px-4 py-2">
+      <div className="flex h-10 w-full items-center justify-between bg-background-1 px-4">
         <div className="flex items-center gap-1.5">
           <div
             className={`h-2.5 w-2.5 rounded-full ${color === 'white' ? 'bg-white' : 'border bg-black'}`}
@@ -360,7 +360,7 @@ const Analysis: React.FC<Props> = ({
             id="navigation"
             className="flex h-[80vh] w-72 min-w-72 max-w-72 flex-col gap-2 overflow-hidden"
           >
-            <div className="flex max-h-[35vh] min-h-[35vh] flex-col bg-backdrop/30">
+            <div className="flex max-h-[30vh] min-h-[30vh] flex-col bg-backdrop/30">
               <AnalysisGameList
                 currentId={currentId}
                 loadNewTournamentGame={getAndSetTournamentGame}
@@ -378,86 +378,55 @@ const Analysis: React.FC<Props> = ({
               </div>
             </div>
           </div>
-          <div
-            id="board+players+eval"
-            style={{
-              width: 'calc(60vh + 1.5rem)',
-            }}
-            className="flex flex-col gap-2"
-          >
-            <div className="flex flex-col overflow-hidden rounded-sm">
-              <Player
-                name={
-                  controller.orientation === 'white'
-                    ? analyzedGame.blackPlayer.name
-                    : analyzedGame.whitePlayer.name
-                }
-                rating={
-                  controller.orientation === 'white'
-                    ? analyzedGame.blackPlayer.rating
-                    : analyzedGame.whitePlayer.rating
-                }
-                color={controller.orientation === 'white' ? 'black' : 'white'}
-                termination={analyzedGame.termination.winner}
-              />
-              <div className="flex flex-col items-start">
-                <div className="flex flex-row items-start">
-                  <div className="relative flex aspect-square w-[60vh]">
-                    <AnalysisGameBoard
-                      game={analyzedGame}
-                      moves={moves}
-                      setCurrentSquare={setCurrentSquare}
-                      shapes={
-                        hoverArrow ? [...arrows, hoverArrow] : [...arrows]
-                      }
-                      currentNode={controller.currentNode as GameNode}
-                      orientation={controller.orientation}
-                      goToNode={controller.goToNode}
-                    />
-                  </div>
-                  <VerticalEvaluationBar
-                    value={moveEvaluation?.maia?.value}
-                    label="Maia White Win %"
-                  />
-                </div>
-                <div className="flex items-center justify-center">
-                  <HorizontalEvaluationBar
-                    min={0}
-                    max={1200}
-                    value={
-                      moveEvaluation?.stockfish
-                        ? 600 +
-                          moveEvaluation.stockfish.model_optimal_cp *
-                            (analyzedGame.moves[0].board.split(' ')[1] !==
-                            controller.orientation[0]
-                              ? 1
-                              : -1)
-                        : void 0
-                    }
-                    label="Stockfish Evaluation"
-                  />
-                  <div className="h-6 w-6 bg-black" />
-                </div>
-              </div>
-              <Player
-                name={
-                  controller.orientation === 'white'
-                    ? analyzedGame.whitePlayer.name
-                    : analyzedGame.blackPlayer.name
-                }
-                rating={
-                  controller.orientation === 'white'
-                    ? analyzedGame.whitePlayer.rating
-                    : analyzedGame.blackPlayer.rating
-                }
-                color={controller.orientation === 'white' ? 'white' : 'black'}
-                termination={analyzedGame.termination.winner}
+          <div id="board+players+eval" className="flex w-[55vh] flex-col">
+            <Player
+              name={
+                controller.orientation === 'white'
+                  ? analyzedGame.blackPlayer.name
+                  : analyzedGame.whitePlayer.name
+              }
+              rating={
+                controller.orientation === 'white'
+                  ? analyzedGame.blackPlayer.rating
+                  : analyzedGame.whitePlayer.rating
+              }
+              color={controller.orientation === 'white' ? 'black' : 'white'}
+              termination={analyzedGame.termination.winner}
+            />
+            <div className="relative flex aspect-square w-[55vh]">
+              <AnalysisGameBoard
+                game={analyzedGame}
+                moves={moves}
+                setCurrentSquare={setCurrentSquare}
+                shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
+                currentNode={controller.currentNode as GameNode}
+                orientation={controller.orientation}
+                goToNode={controller.goToNode}
               />
             </div>
+            <Player
+              name={
+                controller.orientation === 'white'
+                  ? analyzedGame.whitePlayer.name
+                  : analyzedGame.blackPlayer.name
+              }
+              rating={
+                controller.orientation === 'white'
+                  ? analyzedGame.whitePlayer.rating
+                  : analyzedGame.blackPlayer.rating
+              }
+              color={controller.orientation === 'white' ? 'white' : 'black'}
+              termination={analyzedGame.termination.winner}
+            />
           </div>
-          <div id="analysis" className="flex h-[80vh] w-full flex-col gap-2">
-            <div className="h-[calc((80vh - 1rem)/3)] flex gap-2">
+          <div
+            id="analysis"
+            className="flex h-[calc(55vh+5rem)] w-full flex-col gap-2"
+          >
+            <div className="flex h-[calc((55vh+4.5rem)/2)]">
               <Highlight
+                currentMaiaModel={currentMaiaModel}
+                recommendations={moveRecommendations}
                 moveEvaluation={
                   moveEvaluation as {
                     maia?: MaiaEvaluation
@@ -469,7 +438,7 @@ const Analysis: React.FC<Props> = ({
                 blunderMeter={blunderMeter}
               />
             </div>
-            <div className="h-[calc((80vh - 1rem)/3)] flex flex-row gap-2">
+            <div className="flex h-[calc((55vh+4.5rem)/2)] flex-row gap-2">
               <div className="flex h-full w-full flex-col">
                 <MoveMap
                   moveMap={moveMap}
@@ -481,12 +450,6 @@ const Analysis: React.FC<Props> = ({
                 recommendations={moveRecommendations}
                 colorSanMapping={colorSanMapping}
                 setHoverArrow={setHoverArrow}
-              />
-            </div>
-            <div className="h-[calc((80vh - 1rem)/3)] flex w-full">
-              <MovesByRating
-                moves={movesByRating}
-                colorSanMapping={colorSanMapping}
               />
             </div>
           </div>
