@@ -77,12 +77,12 @@ svg {
 }
 
 .red-scrollbar::-webkit-scrollbar {
-  width: 7px;
+  width: 5px;
 }
 
 .red-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgb(var(--color-human-accent3));
-  border-radius: 3px;
+  border-radius: 1px;
 }
 
 .red-scrollbar::-webkit-scrollbar-thumb:hover {

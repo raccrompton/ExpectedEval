@@ -16,7 +16,7 @@ export const BlunderMeter: React.FC<Props> = ({
   return (
     <div className="flex flex-col gap-1 bg-background-1">
       <Tooltip id="probability" />
-      <p className="text-sm">
+      <p className="text-xs">
         <span className="text-green-500">Good</span> –{' '}
         <span className="text-yellow-500">OK</span> –{' '}
         <span className="text-red-500">Blunder</span> Move Probability
