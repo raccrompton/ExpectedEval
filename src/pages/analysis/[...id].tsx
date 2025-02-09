@@ -15,7 +15,6 @@ import {
   getAnalyzedTournamentGame,
 } from 'src/api'
 import {
-  PlayedGame,
   AnalyzedGame,
   MaiaEvaluation,
   StockfishEvaluation,
@@ -443,7 +442,10 @@ const Analysis: React.FC<Props> = ({
                   setHoverArrow={setHoverArrow}
                 />
               </div>
-              <BlunderMeter {...blunderMeter} />
+              <BlunderMeter
+                data={blunderMeter}
+                colorSanMapping={colorSanMapping}
+              />
             </div>
           </div>
         </div>

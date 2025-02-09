@@ -73,6 +73,33 @@ export interface StockfishEvaluation {
   cp_relative_vec: { [key: string]: number }
 }
 
+export interface ColorSanMapping {
+  [move: string]: {
+    san: string
+    color: string
+  }
+}
+
+export interface BlunderInfo {
+  move: string
+  probability: number
+}
+
+export interface BlunderMeterResult {
+  blunderMoves: {
+    probability: number
+    moves: BlunderInfo[]
+  }
+  okMoves: {
+    probability: number
+    moves: BlunderInfo[]
+  }
+  goodMoves: {
+    probability: number
+    moves: BlunderInfo[]
+  }
+}
+
 export type MaiaStatus =
   | 'loading'
   | 'no-cache'
