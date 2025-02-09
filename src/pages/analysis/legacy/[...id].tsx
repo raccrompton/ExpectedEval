@@ -24,7 +24,7 @@ import {
   MovePlot,
   GameInfo,
   GameBoard,
-  BlunderMeter,
+  LegacyBlunderMeter,
   MovesContainer,
   BoardController,
   LegacyAnalysisGameList,
@@ -553,7 +553,7 @@ const Analysis: React.FC<Props> = ({
                   </div>
                 </div>
               </div>
-              <BlunderMeter {...blunderMeter} />
+              <LegacyBlunderMeter {...blunderMeter} />
             </div>
             <div className="relative bottom-0 h-full min-h-[38px] flex-1 overflow-auto">
               <MovesContainer
@@ -631,7 +631,7 @@ const Analysis: React.FC<Props> = ({
                   </div>
                 </div>
               </div>
-              <BlunderMeter {...blunderMeter} />
+              <LegacyBlunderMeter {...blunderMeter} />
             </div>
             <div className="flex">
               <div className="h-[20vh] max-h-[200px] w-screen !flex-none">

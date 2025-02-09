@@ -23,16 +23,24 @@ export const MovesByRating: React.FC<Props> = ({
   moves,
   colorSanMapping,
 }: Props) => {
+  const maxValue = moves
+    ? Math.max(
+        ...moves.flatMap((move) =>
+          Object.entries(move)
+            .filter(([key]) => key !== 'rating')
+            .map(([, value]) => value as number),
+        ),
+      )
+    : 100
+
+  const domainMax = maxValue > 60 ? 100 : 60
+  const domain = [0, domainMax]
+
   return (
     <div className="flex h-full w-full flex-col rounded bg-background-1/60">
       <p className="p-3 text-lg text-white">Moves by Rating</p>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart
-          data={moves}
-          width={200}
-          height={200}
-          margin={{ left: 0, right: 0, bottom: 0 }}
-        >
+        <AreaChart data={moves} margin={{ left: 0, right: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#3C3C3C" />
           <XAxis
             dataKey="rating"
@@ -48,7 +56,7 @@ export const MovesByRating: React.FC<Props> = ({
             yAxisId="left"
             orientation="left"
             axisLine={false}
-            domain={[0, 60]}
+            domain={domain}
             tick={{
               fill: 'white',
               fontSize: 10,
@@ -63,7 +71,7 @@ export const MovesByRating: React.FC<Props> = ({
               fontWeight: 600,
               fontSize: 14,
             }}
-            tickCount={4}
+            tickCount={5}
             tickMargin={2}
             tickLine={false}
             tickFormatter={(value) => `${value}%`}
@@ -72,13 +80,13 @@ export const MovesByRating: React.FC<Props> = ({
             yAxisId="right"
             orientation="right"
             axisLine={false}
-            domain={[0, 60]}
+            domain={domain}
             tick={{
               fill: 'white',
               fontSize: 10,
             }}
-            tickCount={4}
-            tickMargin={5}
+            tickCount={5}
+            tickMargin={2}
             tickLine={false}
             tickFormatter={(value) => `${value}%`}
           />
