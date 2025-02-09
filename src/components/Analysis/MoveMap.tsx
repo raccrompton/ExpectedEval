@@ -9,18 +9,14 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from 'recharts'
+import { ColorSanMapping } from 'src/types'
 import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
 import { ContentType } from 'recharts/types/component/Label'
 
 interface Props {
   moveMap?: { move: string; x: number; y: number }[]
-  colorSanMapping: {
-    [move: string]: {
-      san: string
-      color: string
-    }
-  }
+  colorSanMapping: ColorSanMapping
 
   setHoverArrow: React.Dispatch<React.SetStateAction<DrawShape | null>>
 }

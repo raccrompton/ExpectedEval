@@ -1,6 +1,6 @@
-import { MaiaEvaluation, StockfishEvaluation } from 'src/types'
-import { LegacyBlunderMeter } from './LegacyBlunderMeter'
 import { MovesByRating } from './MovesByRating'
+import { LegacyBlunderMeter } from './LegacyBlunderMeter'
+import { MaiaEvaluation, StockfishEvaluation, ColorSanMapping } from 'src/types'
 
 interface Props {
   currentMaiaModel: string
@@ -8,12 +8,7 @@ interface Props {
     maia?: MaiaEvaluation
     stockfish?: StockfishEvaluation
   }
-  colorSanMapping: {
-    [move: string]: {
-      san: string
-      color: string
-    }
-  }
+  colorSanMapping: ColorSanMapping
   recommendations: {
     maia?: { move: string; prob: number }[]
     stockfish?: { move: string; cp: number }[]

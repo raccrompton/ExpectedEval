@@ -1,22 +1,18 @@
 import {
   Area,
-  AreaChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
   XAxis,
   YAxis,
+  Legend,
   Tooltip,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
 } from 'recharts'
+import { ColorSanMapping } from 'src/types'
 
 interface Props {
   moves: { [key: string]: number }[] | undefined
-  colorSanMapping: {
-    [move: string]: {
-      san: string
-      color: string
-    }
-  }
+  colorSanMapping: ColorSanMapping
 }
 
 export const MovesByRating: React.FC<Props> = ({
@@ -137,6 +133,7 @@ export const MovesByRating: React.FC<Props> = ({
                   stroke={colorSanMapping[move].color}
                   fill={`url(#color${move})`}
                   strokeWidth={3}
+                  animationDuration={300}
                 />
               )
             })}
