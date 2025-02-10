@@ -36,37 +36,6 @@ function buildGameTree(moves: any[], initialFen: string) {
   return tree
 }
 
-function convertMoveMapToStockfishEval(
-  moveMap: MoveMap,
-  moveKey: string,
-): StockfishEvaluation {
-  const cp_vec: { [key: string]: number } = {}
-  const cp_relative_vec: { [key: string]: number } = {}
-  let model_optimal_cp = -Infinity
-  let model_move = ''
-
-  for (const move in moveMap) {
-    cp_vec[move] = moveMap[move]
-    if (moveMap[move] > model_optimal_cp) {
-      model_optimal_cp = moveMap[move]
-      model_move = move
-    }
-  }
-
-  for (const move in cp_vec) {
-    cp_relative_vec[move] = model_optimal_cp - cp_vec[move]
-  }
-
-  return {
-    sent: true,
-    depth: 20,
-    model_move: model_move,
-    model_optimal_cp: model_optimal_cp,
-    cp_vec: cp_vec,
-    cp_relative_vec: cp_relative_vec,
-  }
-}
-
 const readStream = (processLine: (data: any) => void) => (response: any) => {
   const stream = response.body.getReader()
   const matcher = /\r?\n/
@@ -444,6 +413,49 @@ export const getLegacyAnalyzedUserGame = async (
   } as LegacyAnalyzedGame
 }
 
+function convertMoveMapToStockfishEval(
+  moveMap: MoveMap,
+  turn: 'w' | 'b',
+): StockfishEvaluation {
+  const cp_vec: { [key: string]: number } = {}
+  const cp_relative_vec: { [key: string]: number } = {}
+  let model_optimal_cp = -Infinity
+  let model_move = ''
+
+  for (const move in moveMap) {
+    const cp = moveMap[move]
+    cp_vec[move] = cp
+    if (cp > model_optimal_cp) {
+      model_optimal_cp = cp
+      model_move = move
+    }
+  }
+
+  for (const move in cp_vec) {
+    const cp = moveMap[move]
+    cp_relative_vec[move] = model_optimal_cp - cp
+  }
+
+  if (turn === 'b') {
+    model_optimal_cp *= -1
+    for (const move in cp_vec) {
+      cp_vec[move] *= -1
+    }
+    for (const move in cp_relative_vec) {
+      cp_relative_vec[move] *= -1
+    }
+  }
+
+  return {
+    sent: true,
+    depth: 20,
+    model_move: model_move,
+    model_optimal_cp: model_optimal_cp,
+    cp_vec: cp_vec,
+    cp_relative_vec: cp_relative_vec,
+  }
+}
+
 export const getAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
   const res = await fetch(
     buildUrl(`analysis/analysis_list/${gameId.join('/')}`),
@@ -514,24 +526,26 @@ export const getAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
 
   const tree = buildGameTree(moves, moves[0].board)
 
-  let currentNode = tree.getRoot()
+  let currentNode: GameNode | null = tree.getRoot()
+
   for (let i = 0; i < moves.length; i++) {
-    const move = moves[i]
-
-    if (move.lastMove) {
-      const [from, to] = move.lastMove
-      const moveKey = from + to
-      const stockfishEval = stockfishEvaluations[i]
-        ? convertMoveMapToStockfishEval(stockfishEvaluations[i], moveKey)
-        : undefined
-
-      if (stockfishEval) {
-        currentNode = currentNode.mainChild as GameNode
-        if (currentNode) {
-          currentNode.addStockfishAnalysis(stockfishEval)
-        }
-      }
+    if (!currentNode) {
+      break
     }
+
+    // console.log(currentNode.fen === moves[i].board)
+
+    const stockfishEval = stockfishEvaluations[i]
+      ? convertMoveMapToStockfishEval(
+          stockfishEvaluations[i],
+          moves[i].board.split(' ')[1],
+        )
+      : undefined
+
+    if (stockfishEval) {
+      currentNode.addStockfishAnalysis(stockfishEval)
+    }
+    currentNode = currentNode?.mainChild
   }
 
   return {
