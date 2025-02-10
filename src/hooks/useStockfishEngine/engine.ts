@@ -123,6 +123,19 @@ class Engine {
       cp = mate > 0 ? 10000 : -10000
     }
 
+    /*
+      The Stockfish engine, by default, reports centipawn (CP) scores from White's perspective.
+      This means a positive CP indicates an advantage for White, while a negative CP indicates
+      an advantage for Black.
+
+      However, when it's Black's turn to move, we want to interpret the CP score from Black's
+      perspective. To achieve this, we invert the sign of the CP score when it's Black's turn.
+      This ensures that a positive CP always represents an advantage for the player whose turn it is.
+
+      For example:
+        - If Stockfish reports CP = 100 (White's advantage) and it's White's turn, we keep CP = 100.
+        - If Stockfish reports CP = 100 (White's advantage) and it's Black's turn, we change CP to -100, indicating that Black is at a disadvantage.
+    */
     const board = new Chess(this.fen)
     const isBlackTurn = board.turn() === 'b'
     if (isBlackTurn) {
@@ -130,9 +143,22 @@ class Engine {
     }
 
     if (this.store[depth]) {
+      /*
+        The cp_relative_vec (centipawn relative vector) is calculated to determine how much worse or better a given move is compared to the engine's "optimal" move (model_move) at the same depth.
+
+        Because the centipawn score (cp) has already been flipped to be relative to the current player's perspective (positive is good for the current player),
+        we need to ensure that the comparison to the optimal move (model_optimal_cp) is done in a consistent manner.
+        Therefore, we also flip the sign of model_optimal_cp when it is black's turn, so that the relative value is calculated correctly.
+
+        For example:
+          - If the engine evaluates the optimal move as CP = 50 when it's Black's turn, model_optimal_cp will be -50 after the initial flip.
+          - To calculate the relative value of another move with CP = 20, we use modelOptimalCp - cp, which is (-50) - (-20) = 30
+          - This indicates that the move with CP = 20 is significantly worse than the optimal move from Black's perspective.
+      */
       this.store[depth].cp_vec[move] = cp
-      this.store[depth].cp_relative_vec[move] =
-        this.store[depth].model_optimal_cp - cp
+      this.store[depth].cp_relative_vec[move] = isBlackTurn
+        ? this.store[depth].model_optimal_cp - cp
+        : cp - this.store[depth].model_optimal_cp
     } else {
       this.store[depth] = {
         depth: depth,
@@ -143,10 +169,8 @@ class Engine {
         sent: false,
       }
     }
-
     if (!this.store[depth].sent && multipv === this.legalMoveCount) {
       this.store[depth].sent = true
-
       if (this.evaluationResolver) {
         this.evaluationResolver(this.store[depth])
         this.evaluationResolver = null

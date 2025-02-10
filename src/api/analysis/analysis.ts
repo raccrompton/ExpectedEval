@@ -433,16 +433,21 @@ function convertMoveMapToStockfishEval(
 
   for (const move in cp_vec) {
     const cp = moveMap[move]
-    cp_relative_vec[move] = model_optimal_cp - cp
+    cp_relative_vec[move] = cp - model_optimal_cp
   }
+
+  const cp_vec_sorted = Object.fromEntries(
+    Object.entries(cp_vec).sort(([, a], [, b]) => b - a),
+  )
+
+  const cp_relative_vec_sorted = Object.fromEntries(
+    Object.entries(cp_relative_vec).sort(([, a], [, b]) => b - a),
+  )
 
   if (turn === 'b') {
     model_optimal_cp *= -1
-    for (const move in cp_vec) {
-      cp_vec[move] *= -1
-    }
-    for (const move in cp_relative_vec) {
-      cp_relative_vec[move] *= -1
+    for (const move in cp_vec_sorted) {
+      cp_vec_sorted[move] *= -1
     }
   }
 
@@ -451,8 +456,8 @@ function convertMoveMapToStockfishEval(
     depth: 20,
     model_move: model_move,
     model_optimal_cp: model_optimal_cp,
-    cp_vec: cp_vec,
-    cp_relative_vec: cp_relative_vec,
+    cp_vec: cp_vec_sorted,
+    cp_relative_vec: cp_relative_vec_sorted,
   }
 }
 
@@ -532,8 +537,6 @@ export const getAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
     if (!currentNode) {
       break
     }
-
-    // console.log(currentNode.fen === moves[i].board)
 
     const stockfishEval = stockfishEvaluations[i]
       ? convertMoveMapToStockfishEval(
