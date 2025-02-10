@@ -127,10 +127,10 @@ export const MovesByRating: React.FC<Props> = ({
                   dataKey={move}
                   dot={{
                     r: 3,
-                    stroke: colorSanMapping[move].color,
+                    stroke: colorSanMapping[move]?.color ?? '#fff',
                     strokeWidth: 3,
                   }}
-                  stroke={colorSanMapping[move].color}
+                  stroke={colorSanMapping[move]?.color ?? '#fff'}
                   fill={`url(#color${move})`}
                   strokeWidth={3}
                   animationDuration={300}
@@ -147,7 +147,8 @@ export const MovesByRating: React.FC<Props> = ({
                     ) : null}
                   </div>
                   {payload?.map((point) => {
-                    const san = colorSanMapping[point.name as string].san
+                    const san =
+                      colorSanMapping[point.name as string]?.san ?? point.name
                     const prob = Math.round((point.value as number) * 10) / 10
                     return (
                       <div
@@ -156,7 +157,9 @@ export const MovesByRating: React.FC<Props> = ({
                       >
                         <p
                           style={{
-                            color: colorSanMapping[point.name as string].color,
+                            color:
+                              colorSanMapping[point.name as string]?.color ??
+                              '#fff',
                           }}
                           className="text-xs"
                         >
@@ -164,7 +167,9 @@ export const MovesByRating: React.FC<Props> = ({
                         </p>
                         <p
                           style={{
-                            color: colorSanMapping[point.name as string].color,
+                            color:
+                              colorSanMapping[point.name as string]?.color ??
+                              '#fff',
                           }}
                           className="font-mono text-xs"
                         >
@@ -183,7 +188,7 @@ export const MovesByRating: React.FC<Props> = ({
             wrapperStyle={{ top: -14, right: 20, fontSize: 14 }}
             iconSize={0}
             formatter={(value) => {
-              return colorSanMapping[value as string].san
+              return colorSanMapping[value as string]?.san ?? value
             }}
           />
         </AreaChart>

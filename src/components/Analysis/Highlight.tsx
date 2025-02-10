@@ -1,5 +1,4 @@
 import { MovesByRating } from './MovesByRating'
-import { LegacyBlunderMeter } from './LegacyBlunderMeter'
 import { MaiaEvaluation, StockfishEvaluation, ColorSanMapping } from 'src/types'
 
 interface Props {
@@ -20,7 +19,6 @@ interface Props {
 export const Highlight: React.FC<Props> = ({
   currentMaiaModel,
   recommendations,
-
   moveEvaluation,
   colorSanMapping,
   movesByRating,
@@ -51,7 +49,7 @@ export const Highlight: React.FC<Props> = ({
             </p>
             <p className="text-2xl font-bold text-engine-1">
               {moveEvaluation?.stockfish
-                ? `${moveEvaluation.stockfish.model_optimal_cp / 100 > 0 ? '+' : ''}${moveEvaluation.stockfish.model_optimal_cp / 100}`
+                ? `${moveEvaluation.stockfish.model_optimal_cp > 0 ? '+' : ''}${moveEvaluation.stockfish.model_optimal_cp / 100}`
                 : '...'}
             </p>
           </div>

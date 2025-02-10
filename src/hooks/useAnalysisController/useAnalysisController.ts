@@ -203,52 +203,44 @@ export const useAnalysisController = (game: AnalyzedGame) => {
 
     const { maia, stockfish } = moveEvaluation
 
-    if (game.type === 'tournament') {
+    if (!maia || !stockfish)
       return {
         blunderMoves: { probability: 0, moves: [] },
         okMoves: { probability: 0, moves: [] },
         goodMoves: { probability: 0, moves: [] },
       }
-    } else {
-      if (!maia || !stockfish)
-        return {
-          blunderMoves: { probability: 0, moves: [] },
-          okMoves: { probability: 0, moves: [] },
-          goodMoves: { probability: 0, moves: [] },
-        }
-      for (const [move, prob] of Object.entries(maia.policy)) {
-        const loss = stockfish.cp_relative_vec[move]
+    for (const [move, prob] of Object.entries(maia.policy)) {
+      const loss = stockfish.cp_relative_vec[move]
 
-        if (loss === undefined) continue
+      if (loss === undefined) continue
 
-        const probability = prob * 100
+      const probability = prob * 100
 
-        if (loss <= 50) {
-          goodMoveProbability += probability
-          goodMoveChanceInfo.push({ move, probability })
-        } else if (loss <= 150) {
-          okMoveProbability += probability
-          okMoveChanceInfo.push({ move, probability })
-        } else {
-          blunderMoveProbability += probability
-          blunderMoveChanceInfo.push({ move, probability })
-        }
+      if (loss <= 50) {
+        goodMoveProbability += probability
+        goodMoveChanceInfo.push({ move, probability })
+      } else if (loss <= 150) {
+        okMoveProbability += probability
+        okMoveChanceInfo.push({ move, probability })
+      } else {
+        blunderMoveProbability += probability
+        blunderMoveChanceInfo.push({ move, probability })
       }
+    }
 
-      return {
-        blunderMoves: {
-          probability: blunderMoveProbability,
-          moves: blunderMoveChanceInfo,
-        },
-        okMoves: {
-          probability: okMoveProbability,
-          moves: okMoveChanceInfo,
-        },
-        goodMoves: {
-          probability: goodMoveProbability,
-          moves: goodMoveChanceInfo,
-        },
-      }
+    return {
+      blunderMoves: {
+        probability: blunderMoveProbability,
+        moves: blunderMoveChanceInfo,
+      },
+      okMoves: {
+        probability: okMoveProbability,
+        moves: okMoveChanceInfo,
+      },
+      goodMoves: {
+        probability: goodMoveProbability,
+        moves: goodMoveChanceInfo,
+      },
     }
   }, [moveEvaluation])
 

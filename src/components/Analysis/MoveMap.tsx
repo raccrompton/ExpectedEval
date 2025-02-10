@@ -155,9 +155,9 @@ export const MoveMap: React.FC<Props> = ({
                         textAnchor="middle"
                         dx={x < 100 ? 24 : 0}
                         dy={x < 100 ? 0 : y < 55 ? 24 : -5}
-                        fill={colorSanMapping[value].color || '#fff'}
+                        fill={colorSanMapping[value]?.color ?? '#fff'}
                       >
-                        {colorSanMapping[value].san}
+                        {colorSanMapping[value]?.san ?? value}
                       </text>
                     )
                   }) as ContentType
@@ -166,7 +166,7 @@ export const MoveMap: React.FC<Props> = ({
               {moveMap?.map((entry, index) => (
                 <Cell
                   key={`cell-${entry.move}${index}`}
-                  fill={colorSanMapping[entry.move].color || '#fff'}
+                  fill={colorSanMapping[entry.move]?.color ?? '#fff'}
                   onMouseEnter={() => onMouseEnter(entry.move)}
                   onMouseOutCapture={() => {
                     setHoverArrow(null)

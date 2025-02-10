@@ -124,8 +124,8 @@ class Engine {
     }
 
     const board = new Chess(this.fen)
-    const isWhiteTurn = board.turn() === 'w'
-    if (!isWhiteTurn) {
+    const isBlackTurn = board.turn() === 'b'
+    if (isBlackTurn) {
       cp *= -1
     }
 
