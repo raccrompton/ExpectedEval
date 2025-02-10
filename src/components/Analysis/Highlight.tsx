@@ -98,7 +98,7 @@ export const Highlight: React.FC<Props> = ({
                     {cp > 0 ? '+' : null}
                     {`${(cp / 100).toFixed(2)}`}
                   </p>
-                  <p className="font-mono text-sm">
+                  <p className="text-left font-mono text-sm">
                     {colorSanMapping[move]?.san ?? move}
                   </p>
                 </button>

@@ -34,7 +34,7 @@ export const MovesByRating: React.FC<Props> = ({
 
   return (
     <div className="flex h-full w-full flex-col rounded bg-background-1/60">
-      <p className="p-3 text-lg text-white">Moves by Rating</p>
+      <p className="p-3 text-lg text-primary">Moves by Rating</p>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={moves} margin={{ left: 0, right: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#3C3C3C" />
