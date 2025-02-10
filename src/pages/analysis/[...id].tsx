@@ -19,6 +19,7 @@ import {
   MaiaEvaluation,
   StockfishEvaluation,
   GameNode,
+  PlayedGame,
 } from 'src/types'
 import {
   ModalContext,
@@ -222,10 +223,6 @@ const Analysis: React.FC<Props> = ({
 }: Props) => {
   const screens = [
     {
-      id: 'select',
-      name: 'Select Game',
-    },
-    {
       id: 'configure',
       name: 'Configure',
     },
@@ -260,8 +257,6 @@ const Analysis: React.FC<Props> = ({
     moveMap,
     blunderMeter,
   } = useAnalysisController(analyzedGame)
-
-  console.log(analyzedGame)
 
   useEffect(() => {
     setHoverArrow(null)
@@ -357,7 +352,7 @@ const Analysis: React.FC<Props> = ({
         <div className="flex h-full w-full flex-row gap-2">
           <div
             id="navigation"
-            className="flex h-[80vh] w-72 min-w-72 max-w-72 flex-col gap-2 overflow-hidden"
+            className="flex h-[85vh] w-72 min-w-72 max-w-72 flex-col gap-2 overflow-hidden"
           >
             <GameInfo title="Analysis" icon="bar_chart" type="analysis">
               <div className="flex w-full flex-col">
@@ -409,46 +404,98 @@ const Analysis: React.FC<Props> = ({
               </div>
             </div>
           </div>
-          <div id="board+players+eval" className="flex w-[55vh] flex-col">
-            <Player
-              name={
-                controller.orientation === 'white'
-                  ? analyzedGame.blackPlayer.name
-                  : analyzedGame.whitePlayer.name
-              }
-              rating={
-                controller.orientation === 'white'
-                  ? analyzedGame.blackPlayer.rating
-                  : analyzedGame.whitePlayer.rating
-              }
-              color={controller.orientation === 'white' ? 'black' : 'white'}
-              termination={analyzedGame.termination.winner}
-            />
-            <div className="relative flex aspect-square w-[55vh]">
-              <AnalysisGameBoard
-                game={analyzedGame}
-                moves={moves}
-                setCurrentSquare={setCurrentSquare}
-                shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
-                currentNode={controller.currentNode as GameNode}
-                orientation={controller.orientation}
-                goToNode={controller.goToNode}
+          <div className="flex h-[85vh] w-[55vh] flex-col gap-2">
+            <div className="flex w-full flex-col overflow-hidden rounded">
+              <Player
+                name={
+                  controller.orientation === 'white'
+                    ? analyzedGame.blackPlayer.name
+                    : analyzedGame.whitePlayer.name
+                }
+                rating={
+                  controller.orientation === 'white'
+                    ? analyzedGame.blackPlayer.rating
+                    : analyzedGame.whitePlayer.rating
+                }
+                color={controller.orientation === 'white' ? 'black' : 'white'}
+                termination={analyzedGame.termination.winner}
+              />
+              <div className="relative flex aspect-square w-[55vh]">
+                <AnalysisGameBoard
+                  game={analyzedGame}
+                  moves={moves}
+                  setCurrentSquare={setCurrentSquare}
+                  shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
+                  currentNode={controller.currentNode as GameNode}
+                  orientation={controller.orientation}
+                  goToNode={controller.goToNode}
+                />
+              </div>
+              <Player
+                name={
+                  controller.orientation === 'white'
+                    ? analyzedGame.whitePlayer.name
+                    : analyzedGame.blackPlayer.name
+                }
+                rating={
+                  controller.orientation === 'white'
+                    ? analyzedGame.whitePlayer.rating
+                    : analyzedGame.blackPlayer.rating
+                }
+                color={controller.orientation === 'white' ? 'white' : 'black'}
+                termination={analyzedGame.termination.winner}
               />
             </div>
-            <Player
-              name={
-                controller.orientation === 'white'
-                  ? analyzedGame.whitePlayer.name
-                  : analyzedGame.blackPlayer.name
-              }
-              rating={
-                controller.orientation === 'white'
-                  ? analyzedGame.whitePlayer.rating
-                  : analyzedGame.blackPlayer.rating
-              }
-              color={controller.orientation === 'white' ? 'white' : 'black'}
-              termination={analyzedGame.termination.winner}
-            />
+            <div className="flex flex-1 flex-col overflow-hidden rounded bg-background-1/60">
+              <div className="flex flex-row border-b border-white/10">
+                {screens.map((s) => {
+                  const selected = s.id === screen.id
+                  return (
+                    <div
+                      key={s.id}
+                      tabIndex={0}
+                      role="button"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') setScreen(s)
+                      }}
+                      onClick={() => setScreen(s)}
+                      className={`relative flex cursor-pointer select-none flex-row px-3 py-1.5 ${selected ? 'bg-white/5' : 'hover:bg-white hover:bg-opacity-[0.02]'} transition duration-200`}
+                    >
+                      <p
+                        className={`text-sm transition duration-200 ${selected ? 'text-primary' : 'text-secondary'} `}
+                      >
+                        {s.name}
+                      </p>
+                      {selected ? (
+                        <motion.div
+                          layoutId="selectedScreen"
+                          className="absolute bottom-0 left-0 h-[1px] w-full bg-white"
+                        />
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="red-scrollbar flex flex-col items-start justify-start overflow-y-scroll bg-backdrop/30">
+                {screen.id === 'configure' ? (
+                  <ConfigureAnalysis
+                    currentMaiaModel={currentMaiaModel}
+                    setCurrentMaiaModel={setCurrentMaiaModel}
+                    launchContinue={launchContinue}
+                    MAIA_MODELS={MAIA_MODELS}
+                  />
+                ) : screen.id === 'export' ? (
+                  <div className="flex flex-col p-4">
+                    <ExportGame
+                      game={analyzedGame as unknown as PlayedGame}
+                      whitePlayer={analyzedGame.whitePlayer.name}
+                      blackPlayer={analyzedGame.blackPlayer.name}
+                      event="Analysis"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
           <div
             id="analysis"
