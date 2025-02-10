@@ -36,19 +36,19 @@ import {
   AnalysisGameList,
   AnalysisGameBoard,
   DownloadModelModal,
-  MoveRecommendations,
   ContinueAgainstMaia,
   AuthenticatedWrapper,
   AnalysisMovesContainer,
   AnalysisBoardController,
 } from 'src/components'
 import Head from 'next/head'
-import type { NextPage } from 'next'
 import toast from 'react-hot-toast'
+import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
+import { Chess, PieceSymbol } from 'chess.ts'
 import { useAnalysisController } from 'src/hooks'
-import { AnimatePresence, animateValue, motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
 import { ConfigureAnalysis } from 'src/components/Analysis/ConfigureAnalysis'
 
@@ -316,6 +316,54 @@ const Analysis: React.FC<Props> = ({
     setArrows(arr)
   }, [moveEvaluation, controller.currentNode, controller.orientation])
 
+  const hover = (move?: string) => {
+    if (move) {
+      setHoverArrow({
+        orig: move.slice(0, 2) as Key,
+        dest: move.slice(2, 4) as Key,
+        brush: 'green',
+        modifiers: {
+          lineWidth: 10,
+        },
+      })
+    } else {
+      setHoverArrow(null)
+    }
+  }
+
+  const makeMove = (move: string) => {
+    if (!controller.currentNode || !analyzedGame.tree) return
+
+    const chess = new Chess(controller.currentNode.fen)
+    const moveAttempt = chess.move({
+      from: move.slice(0, 2),
+      to: move.slice(2, 4),
+      promotion: move[4] ? (move[4] as PieceSymbol) : undefined,
+    })
+
+    if (moveAttempt) {
+      const newFen = chess.fen()
+
+      const moveString =
+        moveAttempt.from +
+        moveAttempt.to +
+        (moveAttempt.promotion ? moveAttempt.promotion : '')
+      const san = moveAttempt.san
+
+      if (controller.currentNode.mainChild?.move === moveString) {
+        controller.goToNode(controller.currentNode.mainChild)
+      } else {
+        const newVariation = analyzedGame.tree.addVariation(
+          controller.currentNode,
+          newFen,
+          moveString,
+          san,
+        )
+        controller.goToNode(newVariation)
+      }
+    }
+  }
+
   const Player = ({
     name,
     rating,
@@ -489,7 +537,7 @@ const Analysis: React.FC<Props> = ({
                     MAIA_MODELS={MAIA_MODELS}
                   />
                 ) : screen.id === 'export' ? (
-                  <div className="flex flex-col p-4">
+                  <div className="flex w-full flex-col p-4">
                     <ExportGame
                       game={analyzedGame as unknown as PlayedGame}
                       whitePlayer={analyzedGame.whitePlayer.name}
@@ -507,6 +555,8 @@ const Analysis: React.FC<Props> = ({
           >
             <div className="flex h-[calc((55vh+4.5rem)/2)]">
               <Highlight
+                hover={hover}
+                makeMove={makeMove}
                 currentMaiaModel={currentMaiaModel}
                 recommendations={moveRecommendations}
                 moveEvaluation={
@@ -528,6 +578,8 @@ const Analysis: React.FC<Props> = ({
                 />
               </div>
               <BlunderMeter
+                hover={hover}
+                makeMove={makeMove}
                 data={blunderMeter}
                 colorSanMapping={colorSanMapping}
               />

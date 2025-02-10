@@ -6,10 +6,14 @@ import { BlunderMeterResult, ColorSanMapping } from 'src/types'
 interface Props {
   data: BlunderMeterResult
   colorSanMapping: ColorSanMapping
+  hover: (move?: string) => void
+  makeMove: (move: string) => void
 }
 
 export const BlunderMeter: React.FC<Props> = ({
   data,
+  hover,
+  makeMove,
   colorSanMapping,
 }: Props) => {
   return (
@@ -19,27 +23,33 @@ export const BlunderMeter: React.FC<Props> = ({
       <div className="flex h-full w-full flex-col overflow-hidden">
         <div className="flex h-full w-full select-none flex-col overflow-hidden rounded">
           <Meter
+            hover={hover}
+            makeMove={makeMove}
             title="Good Moves"
             textColor="text-green-600"
+            moves={data.goodMoves.moves}
             bgColor="bg-green-600 rounded-t"
             probability={data.goodMoves.probability}
-            moves={data.goodMoves.moves}
             colorSanMapping={colorSanMapping}
           />
           <Meter
+            hover={hover}
             title="OK Moves"
-            textColor="text-yellow-500"
-            bgColor="bg-yellow-500"
-            probability={data.okMoves.probability}
+            makeMove={makeMove}
             moves={data.okMoves.moves}
+            bgColor="bg-yellow-500"
+            textColor="text-yellow-500"
+            probability={data.okMoves.probability}
             colorSanMapping={colorSanMapping}
           />
           <Meter
+            hover={hover}
             title="Blunder Moves"
+            makeMove={makeMove}
             textColor="text-red-600"
             bgColor="bg-red-600 rounded-b"
-            probability={data.blunderMoves.probability}
             moves={data.blunderMoves.moves}
+            probability={data.blunderMoves.probability}
             colorSanMapping={colorSanMapping}
           />
         </div>
@@ -48,19 +58,23 @@ export const BlunderMeter: React.FC<Props> = ({
   )
 }
 function Meter({
-  probability,
   moves,
-  textColor,
   bgColor,
   title,
+  hover,
+  makeMove,
+  textColor,
+  probability,
   colorSanMapping,
 }: {
   title: string
   textColor: string
   bgColor: string
   probability: number
-  moves: { move: string; probability: number }[]
+  hover: (move?: string) => void
+  makeMove: (move: string) => void
   colorSanMapping: ColorSanMapping
+  moves: { move: string; probability: number }[]
 }) {
   return (
     <motion.div
@@ -89,10 +103,16 @@ function Meter({
             .slice(0, 6)
             .filter((move) => move.probability >= 2)
             .map((move) => (
-              <span key={move.move} className="hover:underline">
+              <button
+                key={move.move}
+                className="text-left hover:underline"
+                onMouseLeave={() => hover()}
+                onMouseEnter={() => hover(move.move)}
+                onClick={() => makeMove(move.move)}
+              >
                 {colorSanMapping[move.move]?.san || move.move} (
                 {Math.round(move.probability)}%){' '}
-              </span>
+              </button>
             ))}
         </div>
       </div>

@@ -50,7 +50,6 @@ export const AnalysisGameBoard: React.FC<Props> = ({
       if (setCurrentSquare) setCurrentSquare(null)
 
       const chess = new Chess(currentNode.fen)
-
       const moveAttempt = chess.move({ from: from, to: to })
 
       if (moveAttempt) {
