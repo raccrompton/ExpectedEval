@@ -19,7 +19,7 @@ export const BlunderMeter: React.FC<Props> = ({
   return (
     <div className="flex h-full max-h-full min-w-[40%] max-w-[40%] flex-col gap-2 overflow-hidden rounded bg-background-1/60 p-3">
       <Tooltip id="probability" />
-      <p className="text-lg text-white">Blunder Meter</p>
+      <p className="text-lg text-primary">Blunder Meter</p>
       <div className="flex h-full w-full flex-col overflow-hidden">
         <div className="flex h-full w-full select-none flex-col overflow-hidden rounded">
           <Meter
