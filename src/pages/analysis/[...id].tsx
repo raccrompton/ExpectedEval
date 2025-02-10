@@ -47,7 +47,7 @@ import toast from 'react-hot-toast'
 import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
 import { useAnalysisController } from 'src/hooks'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, animateValue, motion } from 'framer-motion'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
 import { ConfigureAnalysis } from 'src/components/Analysis/ConfigureAnalysis'
 
@@ -261,6 +261,8 @@ const Analysis: React.FC<Props> = ({
     blunderMeter,
   } = useAnalysisController(analyzedGame)
 
+  console.log(analyzedGame)
+
   useEffect(() => {
     setHoverArrow(null)
   }, [controller.currentNode])
@@ -357,7 +359,39 @@ const Analysis: React.FC<Props> = ({
             id="navigation"
             className="flex h-[80vh] w-72 min-w-72 max-w-72 flex-col gap-2 overflow-hidden"
           >
-            <div className="flex max-h-[30vh] min-h-[30vh] flex-col bg-backdrop/30">
+            <GameInfo title="Analysis" icon="bar_chart" type="analysis">
+              <div className="flex w-full flex-col">
+                {[analyzedGame.whitePlayer, analyzedGame.blackPlayer].map(
+                  (player, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`h-2 w-2 rounded-full ${index === 0 ? 'bg-white' : 'border-[0.5px] bg-black'}`}
+                        />
+                        <p className="text-sm">{player.name}</p>
+                        <span className="text-xs">
+                          {player.rating ? <>({player.rating})</> : null}
+                        </span>
+                      </div>
+                      {analyzedGame.termination.winner ===
+                      (index == 0 ? 'white' : 'black') ? (
+                        <p className="text-xs text-engine-3">1</p>
+                      ) : analyzedGame.termination.winner !== 'none' ? (
+                        <p className="text-xs text-human-3">0</p>
+                      ) : analyzedGame.termination === undefined ? (
+                        <></>
+                      ) : (
+                        <p className="text-xs">1/2</p>
+                      )}
+                    </div>
+                  ),
+                )}
+              </div>
+            </GameInfo>
+            <div className="flex max-h-[25vh] min-h-[25vh] flex-col bg-backdrop/30">
               <AnalysisGameList
                 currentId={currentId}
                 loadNewTournamentGame={getAndSetTournamentGame}
