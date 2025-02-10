@@ -216,10 +216,10 @@ export const useAnalysisController = (game: AnalyzedGame) => {
 
       const probability = prob * 100
 
-      if (loss <= 50) {
+      if (loss >= -50) {
         goodMoveProbability += probability
         goodMoveChanceInfo.push({ move, probability })
-      } else if (loss <= 150) {
+      } else if (loss >= -150) {
         okMoveProbability += probability
         okMoveChanceInfo.push({ move, probability })
       } else {

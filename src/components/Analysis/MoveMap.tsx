@@ -42,7 +42,7 @@ export const MoveMap: React.FC<Props> = ({
       <p className="p-3 text-lg text-white">Move Map</p>
       <div className="flex h-full w-full flex-col">
         <ResponsiveContainer width="100%" height="100%">
-          <ScatterChart margin={{ left: 0, top: 0, right: 30, bottom: 20 }}>
+          <ScatterChart margin={{ left: 0, top: 5, right: 30, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#3C3C3C" />
             <XAxis
               dataKey="x"
@@ -153,8 +153,8 @@ export const MoveMap: React.FC<Props> = ({
                         key={index}
                         fontSize={12}
                         textAnchor="middle"
-                        dx={x < 100 ? 24 : 0}
-                        dy={x < 100 ? 0 : y < 55 ? 24 : -5}
+                        dx={x < 100 ? 22 : -15}
+                        dy={y < 100 ? 8 : -25}
                         fill={colorSanMapping[value]?.color ?? '#fff'}
                       >
                         {colorSanMapping[value]?.san ?? value}
