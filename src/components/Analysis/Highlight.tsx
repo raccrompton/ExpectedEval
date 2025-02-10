@@ -12,16 +12,19 @@ interface Props {
     maia?: { move: string; prob: number }[]
     stockfish?: { move: string; cp: number }[]
   }
-
+  hover: (move?: string) => void
+  makeMove: (move: string) => void
   movesByRating: { [key: string]: number }[] | undefined
 }
 
 export const Highlight: React.FC<Props> = ({
-  currentMaiaModel,
-  recommendations,
+  hover,
+  makeMove,
+  movesByRating,
   moveEvaluation,
   colorSanMapping,
-  movesByRating,
+  recommendations,
+  currentMaiaModel,
 }: Props) => {
   return (
     <div className="flex h-full w-full items-start overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1">
@@ -58,12 +61,15 @@ export const Highlight: React.FC<Props> = ({
           <div className="grid grid-rows-2 items-center justify-center p-3">
             {recommendations.maia?.map(({ move, prob }, index) => {
               return (
-                <div
+                <button
                   key={index}
                   className="grid cursor-default grid-cols-2 gap-3 hover:underline"
                   style={{
                     color: colorSanMapping[move]?.color ?? '#fff',
                   }}
+                  onMouseLeave={() => hover()}
+                  onMouseEnter={() => hover(move)}
+                  onClick={() => makeMove(move)}
                 >
                   <p className="text-right font-mono text-sm">
                     {(Math.round(prob * 1000) / 10).toFixed(1)}%
@@ -71,19 +77,22 @@ export const Highlight: React.FC<Props> = ({
                   <p className="text-left font-mono text-sm">
                     {colorSanMapping[move]?.san ?? move}
                   </p>
-                </div>
+                </button>
               )
             })}
           </div>
           <div className="grid grid-rows-2 flex-col items-center justify-center p-3">
             {recommendations.stockfish?.map(({ move, cp }, index) => {
               return (
-                <div
+                <button
                   key={index}
                   className="grid cursor-default grid-cols-2 gap-3 hover:underline"
                   style={{
                     color: colorSanMapping[move]?.color ?? '#fff',
                   }}
+                  onMouseLeave={() => hover()}
+                  onMouseEnter={() => hover(move)}
+                  onClick={() => makeMove(move)}
                 >
                   <p className="w-[42px] text-right font-mono text-sm">
                     {cp > 0 ? '+' : null}
@@ -92,7 +101,7 @@ export const Highlight: React.FC<Props> = ({
                   <p className="font-mono text-sm">
                     {colorSanMapping[move]?.san ?? move}
                   </p>
-                </div>
+                </button>
               )
             })}
           </div>
