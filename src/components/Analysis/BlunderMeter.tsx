@@ -84,17 +84,17 @@ function Meter({
       </motion.div>
       <div className="flex h-full w-full flex-col overflow-hidden">
         <p className={`text-sm font-medium ${textColor}`}>{title}</p>
-        <p className="w-full overflow-hidden overflow-ellipsis text-wrap text-xs text-secondary">
+        <div className="grid w-full grid-cols-3 overflow-hidden overflow-ellipsis text-wrap text-xs text-secondary">
           {moves
-            .slice(0, 10)
-            .filter((move) => move.probability > 2)
+            .slice(0, 6)
+            .filter((move) => move.probability >= 2)
             .map((move) => (
               <span key={move.move} className="hover:underline">
                 {colorSanMapping[move.move]?.san || move.move} (
                 {Math.round(move.probability)}%){' '}
               </span>
             ))}
-        </p>
+        </div>
       </div>
     </motion.div>
   )
