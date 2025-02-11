@@ -76,6 +76,13 @@ function Meter({
   colorSanMapping: ColorSanMapping
   moves: { move: string; probability: number }[]
 }) {
+  const filteredMoves = () => {
+    if (moves.length > 0 && moves[0].probability < 10) {
+      return moves.slice(0, 6).slice(0, 1)
+    }
+    return moves.slice(0, 6).filter((move) => move.probability >= 10)
+  }
+
   return (
     <motion.div
       className="flex min-h-10 w-full flex-row items-start justify-start gap-2 overflow-hidden"
@@ -99,21 +106,18 @@ function Meter({
       <div className="flex h-full w-full flex-col overflow-hidden">
         <p className={`text-sm font-medium ${textColor}`}>{title}</p>
         <div className="grid w-full grid-cols-3 overflow-hidden overflow-ellipsis text-wrap text-xs text-secondary">
-          {moves
-            .slice(0, 6)
-            .filter((move) => move.probability >= 2)
-            .map((move) => (
-              <button
-                key={move.move}
-                className="text-left hover:underline"
-                onMouseLeave={() => hover()}
-                onMouseEnter={() => hover(move.move)}
-                onClick={() => makeMove(move.move)}
-              >
-                {colorSanMapping[move.move]?.san || move.move} (
-                {Math.round(move.probability)}%){' '}
-              </button>
-            ))}
+          {filteredMoves().map((move) => (
+            <button
+              key={move.move}
+              className="text-left hover:underline"
+              onMouseLeave={() => hover()}
+              onMouseEnter={() => hover(move.move)}
+              onClick={() => makeMove(move.move)}
+            >
+              {colorSanMapping[move.move]?.san || move.move} (
+              {Math.round(move.probability)}%){' '}
+            </button>
+          ))}
         </div>
       </div>
     </motion.div>
