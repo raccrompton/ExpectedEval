@@ -60,7 +60,7 @@ export const MoveMap: React.FC<Props> = ({
               tickCount={4}
               tickLine={false}
               tickMargin={0}
-              tick={{ fill: 'white', fontSize: 10 }}
+              tick={{ fill: 'white', fontSize: 11 }}
               tickFormatter={(value) => `${value}%`}
               domain={([dataMin, dataMax]) => [0, dataMax > 60 ? 100 : 60]}
             >
@@ -99,10 +99,10 @@ export const MoveMap: React.FC<Props> = ({
                 dx: 10,
                 dy: 48,
               }}
-              ticks={[-4, -2, -1, 0]}
+              ticks={[-4, -3, -2, -1, 0]}
               tick={{
                 fill: 'white',
-                fontSize: 10,
+                fontSize: 11,
               }}
               tickMargin={0}
               tickLine={false}
@@ -113,7 +113,7 @@ export const MoveMap: React.FC<Props> = ({
                 angle={-90}
                 fontSize={12}
                 fontWeight={500}
-                dy={140}
+                dy={100}
                 position="insideLeft"
                 fill="#5A9DD7"
               />

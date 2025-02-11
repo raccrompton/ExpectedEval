@@ -25,7 +25,7 @@ export const BlunderMeter: React.FC<Props> = ({
           <Meter
             hover={hover}
             makeMove={makeMove}
-            title="Good Moves"
+            title="Best Moves"
             textColor="text-green-600"
             moves={data.goodMoves.moves}
             bgColor="bg-green-600 rounded-t"
@@ -34,7 +34,7 @@ export const BlunderMeter: React.FC<Props> = ({
           />
           <Meter
             hover={hover}
-            title="OK Moves"
+            title="Meh Moves"
             makeMove={makeMove}
             moves={data.okMoves.moves}
             bgColor="bg-yellow-500"
@@ -44,7 +44,7 @@ export const BlunderMeter: React.FC<Props> = ({
           />
           <Meter
             hover={hover}
-            title="Blunder Moves"
+            title="Blunders"
             makeMove={makeMove}
             textColor="text-red-600"
             bgColor="bg-red-600 rounded-b"

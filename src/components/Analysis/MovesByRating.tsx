@@ -43,7 +43,7 @@ export const MovesByRating: React.FC<Props> = ({
             axisLine={false}
             tick={{
               fill: 'white',
-              fontSize: 10,
+              fontSize: 11, // Increased font size here
             }}
             tickMargin={4}
             ticks={[1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900]}
@@ -55,7 +55,7 @@ export const MovesByRating: React.FC<Props> = ({
             domain={domain}
             tick={{
               fill: 'white',
-              fontSize: 10,
+              fontSize: 11, // Increased font size here
             }}
             label={{
               value: 'Maia Probability',
@@ -63,7 +63,7 @@ export const MovesByRating: React.FC<Props> = ({
               fill: '#FE7F6D',
               position: 'insideLeft',
               dy: 46,
-              offset: 20,
+              offset: 15, // Changed offset here
               fontWeight: 600,
               fontSize: 14,
             }}
@@ -79,7 +79,7 @@ export const MovesByRating: React.FC<Props> = ({
             domain={domain}
             tick={{
               fill: 'white',
-              fontSize: 10,
+              fontSize: 11,
             }}
             tickCount={5}
             tickMargin={2}
