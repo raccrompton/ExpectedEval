@@ -400,7 +400,7 @@ const Analysis: React.FC<Props> = ({
 
   const desktopLayout = (
     <div className="flex h-full w-full flex-col items-center py-4 md:py-10">
-      <div className="flex h-full w-[90%] flex-row gap-2">
+      <div className="flex h-full w-[90%] flex-row gap-4">
         <div
           id="navigation"
           className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72"
