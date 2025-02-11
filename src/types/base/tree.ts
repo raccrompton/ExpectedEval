@@ -103,6 +103,9 @@ export class GameTree {
     move: string,
     san: string,
   ): GameNode {
+    if (node.findVariation(move)) {
+      return node.findVariation(move) as GameNode
+    }
     return node.addChild(fen, move, san, false)
   }
 }
@@ -137,7 +140,7 @@ export class GameNode {
     this._analysis = {}
     this._turn = this.parseTurn(fen)
     this._check = false
-    this._moveNumber = this.parseMoveNumber(fen)
+    this._moveNumber = this.parseMoveNumber(fen, this._turn)
   }
 
   get fen(): string {
@@ -179,9 +182,9 @@ export class GameNode {
     return parts[1] as Color
   }
 
-  private parseMoveNumber(fen: string): number {
+  private parseMoveNumber(fen: string, turn: string): number {
     const parts = fen.split(' ')
-    return parseInt(parts[5])
+    return parseInt(parts[5]) - (turn === 'w' ? 1 : 0)
   }
 
   addChild(fen: string, move: string, san: string, mainline = false): GameNode {
@@ -207,6 +210,7 @@ export class GameNode {
     }
     return [this, ...this._mainChild.getMainLine()]
   }
+
   getVariations(): GameNode[] {
     return this._children.filter((child) => !child.isMainline)
   }
