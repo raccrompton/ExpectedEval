@@ -147,14 +147,7 @@ svg {
   background-color: #be6559;
 }
 
-/* .no-tree-connector::after {
-  display: none !important;
-} */
-
-/* .root > li:first-child::before {
-  display: none;
-} */
-
+.root > li:last-child::before,
 .tree-ul > li:last-child::before {
   bottom: auto;
   height: 0.9rem;
