@@ -102,8 +102,7 @@ function FirstVariation({
     <>
       <div className="col-span-2"></div>
       <div className="col-span-5 py-1">
-        {/* Render the variations as a nested list */}
-        <ul className="ml-2 list-none">
+        <ul className="root list-none pl-6">
           {node.getVariations().map((n) => (
             <VariationTree
               key={n.move}
@@ -133,7 +132,7 @@ function VariationTree({
 }) {
   const variations = node.getVariations()
   return (
-    <li className="mb-1">
+    <li className={`tree-li ${level === 0 ? 'no-tree-connector' : ''}`}>
       <span
         onClick={() => goToNode(node)}
         className={`cursor-pointer text-xs ${
@@ -143,7 +142,6 @@ function VariationTree({
         {node.moveNumber}. {node.turn === 'w' ? '...' : ''} {node.san}
       </span>
       {variations.length === 1 ? (
-        // If only one variation, chain it inline.
         <span className="inline">
           <InlineChain
             node={node}
@@ -153,8 +151,7 @@ function VariationTree({
           />
         </span>
       ) : variations.length > 1 ? (
-        // Multiple variations get rendered as nested list.
-        <ul className="ml-4 list-none">
+        <ul className="tree-ul list-none">
           {variations.map((child) => (
             <VariationTree
               key={child.move}
@@ -208,7 +205,7 @@ function InlineChain({
         ))}
       </span>
       {current.getVariations().length > 1 && (
-        <ul className="ml-4 list-none">
+        <ul className="tree-ul list-none">
           {current.getVariations().map((child) => (
             <VariationTree
               key={child.move}

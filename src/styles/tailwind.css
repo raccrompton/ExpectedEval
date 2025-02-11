@@ -103,3 +103,59 @@ svg {
     transform: rotate(360deg);
   }
 }
+
+.tree-ul {
+  position: relative;
+  margin-left: 0.5rem;
+  padding-left: 0.1rem;
+}
+
+.tree-li {
+  position: relative;
+  padding-left: 0.5rem;
+}
+
+/* Vertical Lines */
+.tree-li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: #be6559;
+}
+
+/* Horizontal Lines */
+.tree-li::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.9rem;
+  width: 0.4rem;
+  border-top: 1px solid #be6559;
+}
+
+/* Vertical Lines */
+.tree-li::backdrop {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.9rem;
+  width: 2rem;
+  height: 2rem;
+  background-color: #be6559;
+}
+
+/* .no-tree-connector::after {
+  display: none !important;
+} */
+
+/* .root > li:first-child::before {
+  display: none;
+} */
+
+.tree-ul > li:last-child::before {
+  bottom: auto;
+  height: 0.9rem;
+}
