@@ -51,12 +51,13 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
                 goToNode(whiteNode)
               }}
               data-index={index * 2 + 1}
-              className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${currentNode === whiteNode && 'bg-background-2'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
+              className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${currentNode === whiteNode && 'bg-human-4/20'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
             >
               {whiteNode?.san ?? whiteNode?.move}
             </div>
             {whiteNode.getVariations().length ? (
               <FirstVariation
+                color="white"
                 node={whiteNode}
                 currentNode={currentNode}
                 goToNode={goToNode}
@@ -67,16 +68,24 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
                 if (blackNode) goToNode(blackNode)
               }}
               data-index={index * 2 + 2}
-              className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${currentNode === blackNode && 'bg-background-2'} ${highlightSet.has(index * 2 + 2) && 'bg-human-3/80'}`}
+              className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${currentNode === blackNode && 'bg-human-4/20'} ${highlightSet.has(index * 2 + 2) && 'bg-human-3/80'}`}
             >
               {blackNode?.san ?? blackNode?.move}
             </div>
+            {blackNode?.getVariations().length ? (
+              <FirstVariation
+                color="black"
+                node={blackNode}
+                currentNode={currentNode}
+                goToNode={goToNode}
+              />
+            ) : null}
           </>
         )
       })}
       {termination && !isMobile && (
         <div
-          className="cursor-pointer rounded-sm border border-primary/10 bg-background-1/90 p-5 text-center opacity-90"
+          className="col-span-5 cursor-pointer rounded-sm border border-primary/10 bg-background-1/90 p-5 text-center opacity-90"
           onClick={() => goToNode(mainLineNodes[mainLineNodes.length - 1])}
         >
           {termination.result}
@@ -91,16 +100,18 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
 }
 function FirstVariation({
   node,
+  color,
   currentNode,
   goToNode,
 }: {
   node: GameNode
+  color: 'white' | 'black'
   currentNode: GameNode | undefined
   goToNode: (node: GameNode) => void
 }) {
   return (
     <>
-      <div className="col-span-2"></div>
+      {color === 'white' ? <div className="col-span-2"></div> : null}
       <div className="col-span-5 py-1">
         <ul className="root list-none pl-6">
           {node.getVariations().map((n) => (
@@ -114,7 +125,7 @@ function FirstVariation({
           ))}
         </ul>
       </div>
-      <div className="col-span-3"></div>
+      {color === 'white' ? <div className="col-span-3"></div> : null}
     </>
   )
 }
@@ -135,11 +146,14 @@ function VariationTree({
     <li className={`tree-li ${level === 0 ? 'no-tree-connector' : ''}`}>
       <span
         onClick={() => goToNode(node)}
-        className={`cursor-pointer text-xs ${
-          currentNode?.fen === node?.fen ? 'text-primary' : 'text-secondary'
+        className={`cursor-pointer px-0.5 text-xs ${
+          currentNode?.fen === node?.fen
+            ? 'rounded bg-human-4/50 text-primary'
+            : 'text-secondary'
         }`}
       >
-        {node.moveNumber}. {node.turn === 'w' ? '...' : ''} {node.san}
+        {node.moveNumber}. {node.turn === 'w' ? '...' : ''}
+        {node.san}
       </span>
       {variations.length === 1 ? (
         <span className="inline">
@@ -193,13 +207,14 @@ function InlineChain({
           <Fragment key={child.move}>
             <span
               onClick={() => goToNode(child)}
-              className={`cursor-pointer text-xs ${
+              className={`cursor-pointer px-0.5 text-xs ${
                 currentNode?.fen === child?.fen
-                  ? 'text-primary'
+                  ? 'rounded bg-human-4/50 text-primary'
                   : 'text-secondary'
               }`}
             >
-              {child.moveNumber}. {child.turn === 'w' ? '...' : ''} {child.san}
+              {child.moveNumber}. {child.turn === 'w' ? '...' : ''}
+              {child.san}
             </span>
           </Fragment>
         ))}
