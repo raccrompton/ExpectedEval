@@ -19,7 +19,6 @@ import {
   MaiaEvaluation,
   StockfishEvaluation,
   GameNode,
-  PlayedGame,
 } from 'src/types'
 import {
   ModalContext,
@@ -31,7 +30,6 @@ import {
   MoveMap,
   GameInfo,
   Highlight,
-  ExportGame,
   BlunderMeter,
   AnalysisGameList,
   AnalysisGameBoard,
@@ -51,6 +49,7 @@ import { useAnalysisController } from 'src/hooks'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
 import { ConfigureAnalysis } from 'src/components/Analysis/ConfigureAnalysis'
+import { AnalysisExportGame } from 'src/components/Misc/AnalysisExportGame'
 
 const MAIA_MODELS = [
   'maia_kdd_1100',
@@ -537,8 +536,9 @@ const Analysis: React.FC<Props> = ({
                 />
               ) : screen.id === 'export' ? (
                 <div className="flex w-full flex-col p-4">
-                  <ExportGame
-                    game={analyzedGame as unknown as PlayedGame}
+                  <AnalysisExportGame
+                    game={analyzedGame}
+                    currentNode={controller.currentNode as GameNode}
                     whitePlayer={analyzedGame.whitePlayer.name}
                     blackPlayer={analyzedGame.blackPlayer.name}
                     event="Analysis"

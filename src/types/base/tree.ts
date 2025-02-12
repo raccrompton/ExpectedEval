@@ -30,7 +30,7 @@ export class GameTree {
     return this.headers.get(key)
   }
 
-  toPGN(includeVariations = true): string {
+  toPGN(): string {
     const chess = new Chess()
 
     if (this.root.fen !== chess.fen()) {
@@ -39,45 +39,21 @@ export class GameTree {
 
     this.headers.forEach((value, key) => {
       chess.addHeader(key, value)
+      chess.addHeader(key, value)
     })
 
-    const buildLine = (node: GameNode): string => {
-      let line = ''
-
-      if (node.san) {
-        chess.move(node.san)
-        line += ' ' + node.san
-      }
-
-      if (includeVariations) {
-        const variations = node.getVariations()
-        if (variations.length > 0) {
-          variations.forEach((variation) => {
-            const boardState = chess.fen()
-            line += ' ('
-            line += buildLine(variation)
-            line += ')'
-            chess.load(boardState)
-          })
-        }
-      }
-
+    let complete = false
+    let node = this.root
+    while (!complete) {
       if (node.mainChild) {
-        line += buildLine(node.mainChild)
+        node = node.mainChild
+        chess.move(node.san || node.move || '')
+      } else {
+        complete = true
       }
-
-      return line
     }
 
-    const result = this.headers.get('Result')
-    if (result) {
-      chess.addHeader('Result', result)
-    }
-
-    return chess
-      .pgn()
-      .replace(/\s{2,}/g, ' ')
-      .trim()
+    return chess.pgn()
   }
 
   getRoot(): GameNode {
