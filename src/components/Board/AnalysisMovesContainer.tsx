@@ -26,10 +26,24 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
   }, [game.tree])
 
   const moves = useMemo(() => {
-    return mainLineNodes.slice(1).reduce((rows: GameNode[][], node, index) => {
-      index % 2 === 0 ? rows.push([node]) : rows[rows.length - 1].push(node)
-      return rows
-    }, [])
+    const nodes = mainLineNodes.slice(1)
+    const rows: (GameNode | null)[][] = []
+
+    const firstNode = nodes[0]
+
+    if (firstNode && firstNode.turn === 'w') {
+      rows.push([null, firstNode])
+      for (let i = 1; i < nodes.length; i += 2) {
+        rows.push([nodes[i], nodes[i + 1]].filter(Boolean))
+      }
+    } else {
+      return nodes.reduce((rows: (GameNode | null)[][], node, index) => {
+        index % 2 === 0 ? rows.push([node]) : rows[rows.length - 1].push(node)
+        return rows
+      }, [])
+    }
+
+    return rows
   }, [mainLineNodes])
 
   const highlightSet = useMemo(
@@ -44,18 +58,18 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
         return (
           <>
             <span className="flex h-7 items-center justify-center bg-background-2 text-sm text-secondary">
-              {index + 1}
+              {(whiteNode || blackNode)?.moveNumber}
             </span>
             <div
               onClick={() => {
-                goToNode(whiteNode)
+                if (whiteNode) goToNode(whiteNode)
               }}
               data-index={index * 2 + 1}
               className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${currentNode === whiteNode && 'bg-human-4/20'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
             >
               {whiteNode?.san ?? whiteNode?.move}
             </div>
-            {whiteNode.getVariations().length ? (
+            {whiteNode?.getVariations().length ? (
               <FirstVariation
                 color="white"
                 node={whiteNode}
