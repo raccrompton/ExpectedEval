@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import React from 'react'
+import { useLocalStorage } from 'src/hooks'
 
 import { ContinueAgainstMaia } from 'src/components'
 
@@ -16,6 +17,11 @@ export const ConfigureAnalysis: React.FC<Props> = ({
   launchContinue,
   MAIA_MODELS,
 }: Props) => {
+  const [, setPreferLegacyAnalysis] = useLocalStorage(
+    'preferLegacyAnalysis',
+    false,
+  )
+
   return (
     <div className="flex w-full flex-col items-start justify-start gap-1 p-4">
       <div className="flex w-full flex-col gap-0.5">
@@ -40,6 +46,7 @@ export const ConfigureAnalysis: React.FC<Props> = ({
         If you are having performance issues, you can switch to our{' '}
         <Link
           href={window.location.href.replace('/analysis', '/analysis/legacy')}
+          onClick={() => setPreferLegacyAnalysis(true)}
           className="text-primary/80 underline transition duration-200 hover:text-primary/100"
         >
           Legacy Analysis
