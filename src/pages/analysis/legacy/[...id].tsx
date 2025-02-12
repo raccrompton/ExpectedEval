@@ -8,6 +8,7 @@ import React, {
   SetStateAction,
 } from 'react'
 import Head from 'next/head'
+import Link from 'next/link'
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
@@ -448,6 +449,23 @@ const Analysis: React.FC<Props> = ({
 
   const desktopLayout = (
     <>
+      <div className="flex w-full items-center justify-center">
+        <Link
+          href={window.location.href.replace('/analysis/legacy', '/analysis')}
+          className="flex cursor-pointer select-none items-center justify-center gap-2 rounded-full bg-white/90 px-4 py-1.5 transition duration-200 hover:bg-white/100"
+          onClick={() => {
+            localStorage.setItem('preferLegacyAnalysis', 'false')
+          }}
+        >
+          <span className="material-symbols-outlined text-sm text-human-3">
+            warning
+          </span>
+          <p className="text-xs text-black/50">
+            You are using our Legacy Analysis with an outdated model. Click here
+            to switch to our new analysis.
+          </p>
+        </Link>
+      </div>
       <div className="flex h-full flex-1 flex-col justify-center gap-2">
         <div className="flex w-full flex-row items-center justify-center gap-2">
           <div
@@ -600,6 +618,21 @@ const Analysis: React.FC<Props> = ({
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
         <div className="flex w-full flex-col items-start justify-start gap-1">
+          <Link
+            href={window.location.href.replace('/analysis/legacy', '/analysis')}
+            className="flex w-full cursor-pointer select-none items-center justify-center gap-2 bg-white/90 px-4 py-1.5 transition duration-200 hover:bg-white/100"
+            onClick={() => {
+              localStorage.setItem('preferLegacyAnalysis', 'false')
+            }}
+          >
+            <span className="material-symbols-outlined text-sm text-human-3">
+              warning
+            </span>
+            <p className="text-xs text-black/50">
+              You are using our Legacy Analysis with an outdated model. Click
+              here to switch to our new analysis.
+            </p>
+          </Link>
           <GameInfo title="Analysis" icon="bar_chart" type="analysis">
             {Info}
           </GameInfo>

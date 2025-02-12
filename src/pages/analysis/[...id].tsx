@@ -292,6 +292,12 @@ const Analysis: React.FC<Props> = ({
   }, [controller.currentNode])
 
   useEffect(() => {
+    return () => {
+      toast.dismiss()
+    }
+  }, [])
+
+  useEffect(() => {
     if (maiaStatus === 'loading' && !toastId.current) {
       toastId.current = toast.loading('Loading Maia Model...')
     } else if (maiaStatus === 'ready') {
