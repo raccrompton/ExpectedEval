@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { useLocalStorage } from 'src/hooks'
 
 interface Props {
   progress: number
@@ -11,6 +12,11 @@ export const DownloadModelModal: React.FC<Props> = ({
   progress,
   download,
 }: Props) => {
+  const [preferLegacyAnalysis, setPreferLegacyAnalysis] = useLocalStorage(
+    'preferLegacyAnalysis',
+    false,
+  )
+
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => {
@@ -67,6 +73,7 @@ export const DownloadModelModal: React.FC<Props> = ({
                 '/analysis',
                 '/analysis/legacy',
               )}
+              onClick={() => setPreferLegacyAnalysis(true)}
               className="text-primary/80 underline transition duration-200 hover:text-primary/100"
             >
               Legacy Analysis
@@ -93,19 +100,13 @@ export const DownloadModelModal: React.FC<Props> = ({
               />
             </div>
           ) : null}
-          <div
-            tabIndex={0}
-            role="button"
+          <Link
+            href={window.location.href.replace('/analysis', '/analysis/legacy')}
             className="order-1 flex h-8 cursor-pointer select-none items-center gap-1 self-end rounded bg-background-3 px-3 text-sm transition duration-200 hover:bg-background-2/90 md:order-2 md:h-10 md:px-4 md:text-base"
-            onClick={download}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                download()
-              }
-            }}
+            onClick={() => setPreferLegacyAnalysis(true)}
           >
             <p>Use Legacy Analysis by Default</p>
-          </div>
+          </Link>
           <div
             tabIndex={0}
             role="button"

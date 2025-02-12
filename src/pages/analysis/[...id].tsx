@@ -45,7 +45,7 @@ import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
 import { Chess, PieceSymbol } from 'chess.ts'
-import { useAnalysisController } from 'src/hooks'
+import { useAnalysisController, useLocalStorage } from 'src/hooks'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
 import { ConfigureAnalysis } from 'src/components/Analysis/ConfigureAnalysis'
@@ -67,6 +67,15 @@ const AnalysisPage: NextPage = () => {
   const { openedModals, setInstructionsModalProps: setInstructionsModalProps } =
     useContext(ModalContext)
 
+  const router = useRouter()
+  const [preferLegacyAnalysis] = useLocalStorage('preferLegacyAnalysis', false)
+
+  useEffect(() => {
+    if (preferLegacyAnalysis) {
+      router.push(window.location.href.replace('/analysis', '/analysis/legacy'))
+    }
+  }, [preferLegacyAnalysis, router])
+
   useEffect(() => {
     if (!openedModals.analysis) {
       setInstructionsModalProps({ instructionsType: 'analysis' })
@@ -74,7 +83,6 @@ const AnalysisPage: NextPage = () => {
     return () => setInstructionsModalProps(undefined)
   }, [setInstructionsModalProps, openedModals.analysis])
 
-  const router = useRouter()
   const { id } = router.query
 
   const [analyzedGame, setAnalyzedGame] = useState<AnalyzedGame | undefined>(
@@ -98,9 +106,15 @@ const AnalysisPage: NextPage = () => {
 
       setAnalyzedGame({ ...game, type: 'tournament' })
       setCurrentId(newId)
-      router.push(`/analysis/${newId.join('/')}`, undefined, {
-        shallow: true,
-      })
+      if (preferLegacyAnalysis) {
+        router.push(`/analysis/legacy/${newId.join('/')}`, undefined, {
+          shallow: true,
+        })
+      } else {
+        router.push(`/analysis/${newId.join('/')}`, undefined, {
+          shallow: true,
+        })
+      }
     },
     [router],
   )
@@ -125,7 +139,13 @@ const AnalysisPage: NextPage = () => {
         type: 'pgn',
       })
       setCurrentId([id, 'pgn'])
-      router.push(`/analysis/${id}/pgn`, undefined, { shallow: true })
+      if (preferLegacyAnalysis) {
+        router.push(`/analysis/legacy/${id}/pgn`, undefined, {
+          shallow: true,
+        })
+      } else {
+        router.push(`/analysis/${id}/pgn`, undefined, { shallow: true })
+      }
     },
     [router],
   )
@@ -147,9 +167,15 @@ const AnalysisPage: NextPage = () => {
 
       setAnalyzedGame({ ...game, type })
       setCurrentId([id, type])
-      router.push(`/analysis/${id}/${type}`, undefined, {
-        shallow: true,
-      })
+      if (preferLegacyAnalysis) {
+        router.push(`/analysis/legacy/${id}/${type}`, undefined, {
+          shallow: true,
+        })
+      } else {
+        router.push(`/analysis/${id}/${type}`, undefined, {
+          shallow: true,
+        })
+      }
     },
     [],
   )
@@ -158,7 +184,7 @@ const AnalysisPage: NextPage = () => {
     ;(async () => {
       if (analyzedGame == undefined) {
         const queryId = id as string[]
-        if (queryId[1] === 'lichess') {
+        if (queryId[1] === 'pgn') {
           const pgn = await getLichessGamePGN(queryId[0])
           getAndSetLichessGames(queryId[0], pgn, undefined)
         } else if (['play', 'hand', 'brain'].includes(queryId[1])) {

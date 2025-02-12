@@ -3,11 +3,13 @@ import { useRouter } from 'next/router'
 import { useContext, useEffect } from 'react'
 
 import { Loading } from 'src/components'
+import { useLocalStorage } from 'src/hooks'
 import { AnalysisListContext } from 'src/contexts'
 
 const AnalysisPage: NextPage = () => {
   const { push } = useRouter()
   const { analysisTournamentList } = useContext(AnalysisListContext)
+  const [preferLegacyAnalysis] = useLocalStorage('preferLegacyAnalysis', false)
 
   useEffect(() => {
     if (analysisTournamentList) {
@@ -16,9 +18,13 @@ const AnalysisPage: NextPage = () => {
       )
       const [firstPart, games] = entries[0]
       const gameId = firstPart.split('---')[0] + '/' + games[0].game_index
-      push('/analysis/legacy/' + gameId)
+      if (preferLegacyAnalysis) {
+        push(`/analysis/legacy/${gameId}`)
+      } else {
+        push(`/analysis/${gameId}`)
+      }
     }
-  }, [analysisTournamentList, push])
+  }, [analysisTournamentList, preferLegacyAnalysis, push])
 
   return <Loading />
 }

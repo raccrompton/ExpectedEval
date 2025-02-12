@@ -34,8 +34,8 @@ import {
   HorizontalEvaluationBar,
 } from 'src/components'
 import { Color } from 'src/types'
-import { useLegacyAnalysisController } from 'src/hooks'
 import { LegacyAnalyzedGame, MoveMap } from 'src/types/analysis'
+import { useLegacyAnalysisController, useLocalStorage } from 'src/hooks'
 import { ThemeContext, ModalContext, WindowSizeContext } from 'src/contexts'
 import { GameControllerContext } from 'src/contexts/GameControllerContext/GameControllerContext'
 
@@ -69,7 +69,7 @@ const AnalysisPage: NextPage = () => {
     LegacyAnalyzedGame | undefined
   >(undefined)
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
-
+  const [preferLegacyAnalysis] = useLocalStorage('preferLegacyAnalysis', false)
   const getAndSetTournamentGame = useCallback(
     async (
       newId: string[],
@@ -85,9 +85,15 @@ const AnalysisPage: NextPage = () => {
       if (setCurrentMove) setCurrentMove(0)
       setAnalyzedGame({ ...game, type: 'tournament' })
       setCurrentId(newId)
-      router.push(`/analysis/legacy/${newId.join('/')}`, undefined, {
-        shallow: true,
-      })
+      if (preferLegacyAnalysis) {
+        router.push(`/analysis/legacy/${newId.join('/')}`, undefined, {
+          shallow: true,
+        })
+      } else {
+        router.push(`/analysis/${newId.join('/')}`, undefined, {
+          shallow: true,
+        })
+      }
     },
     [router],
   )
@@ -112,7 +118,11 @@ const AnalysisPage: NextPage = () => {
         type: 'pgn',
       })
       setCurrentId([id, 'pgn'])
-      router.push(`/analysis/legacy/${id}/pgn`, undefined, { shallow: true })
+      if (preferLegacyAnalysis) {
+        router.push(`/analysis/legacy/${id}/pgn`, undefined, { shallow: true })
+      } else {
+        router.push(`/analysis/${id}/pgn`, undefined, { shallow: true })
+      }
     },
     [router],
   )
@@ -134,9 +144,15 @@ const AnalysisPage: NextPage = () => {
       if (setCurrentMove) setCurrentMove(0)
       setAnalyzedGame({ ...game, type })
       setCurrentId([id, type])
-      router.push(`/analysis/legacy/${id}/${type}`, undefined, {
-        shallow: true,
-      })
+      if (preferLegacyAnalysis) {
+        router.push(`/analysis/legacy/${id}/${type}`, undefined, {
+          shallow: true,
+        })
+      } else {
+        router.push(`/analysis/${id}/${type}`, undefined, {
+          shallow: true,
+        })
+      }
     },
     [],
   )
@@ -145,7 +161,7 @@ const AnalysisPage: NextPage = () => {
     ;(async () => {
       if (analyzedGame == undefined) {
         const queryId = id as string[]
-        if (queryId[1] === 'licpgnhess') {
+        if (queryId[1] === 'pgn') {
           const pgn = await getLichessGamePGN(queryId[0])
           getAndSetLichessGames(queryId[0], pgn, undefined)
         } else if (['play', 'hand', 'brain'].includes(queryId[1])) {
