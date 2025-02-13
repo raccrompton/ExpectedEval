@@ -33,7 +33,7 @@ export const MovesByRating: React.FC<Props> = ({
   const domain = [0, domainMax]
 
   return (
-    <div className="flex h-full w-full flex-col rounded bg-background-1/60">
+    <div className="flex h-64 w-full flex-col rounded bg-background-1/60 md:h-full">
       <p className="p-3 text-lg text-primary">Moves by Rating</p>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={moves} margin={{ left: 0, right: 0, bottom: 0 }}>

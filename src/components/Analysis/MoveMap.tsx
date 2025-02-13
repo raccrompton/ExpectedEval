@@ -38,7 +38,7 @@ export const MoveMap: React.FC<Props> = ({
   }
 
   return (
-    <div className="flex h-full max-h-full flex-col overflow-hidden rounded bg-background-1/60">
+    <div className="flex h-64 max-h-full flex-col overflow-hidden rounded bg-background-1/60 md:h-full">
       <p className="p-3 text-lg text-primary">Move Map</p>
       <div className="flex h-full w-full flex-col">
         <ResponsiveContainer width="100%" height="100%">

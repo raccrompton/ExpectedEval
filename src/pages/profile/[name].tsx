@@ -11,7 +11,6 @@ import { AuthenticatedWrapper, UserProfile } from 'src/components'
 
 const ProfilePage: NextPage = () => {
   const router = useRouter()
-
   const [name, setName] = useState('')
   const [stats, setStats] = useState<PlayerStats>({
     regularRating: 0,
@@ -87,7 +86,15 @@ const Profile: React.FC<Props> = (props: Props) => {
     <div className="flex h-full w-full flex-col items-start justify-center gap-6 px-[4%] md:py-[2%]">
       <div className="flex flex-row items-center gap-4">
         <div className="*:w-16 *:fill-primary">{UserIcon}</div>
-        <h1 className="text-3xl font-semibold">{props.name}</h1>
+        <div className="flex flex-col">
+          <h1 className="text-3xl font-semibold">{props.name}</h1>
+          <a
+            href={`https://lichess.org/@/${props.name}`}
+            className="text-sm text-primary"
+          >
+            View on Lichess
+          </a>
+        </div>
       </div>
       <div className="flex w-full flex-col items-start gap-6 md:flex-row">
         <UserProfile stats={props.stats} wide />

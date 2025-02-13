@@ -50,6 +50,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
 import { ConfigureAnalysis } from 'src/components/Analysis/ConfigureAnalysis'
 import { AnalysisExportGame } from 'src/components/Misc/AnalysisExportGame'
+import { ConfigurableScreens } from 'src/components/Analysis/ConfigurableScreens'
 
 const MAIA_MODELS = [
   'maia_kdd_1100',
@@ -429,6 +430,36 @@ const Analysis: React.FC<Props> = ({
     )
   }
 
+  const NestedGameInfo = () => (
+    <div className="flex w-full flex-col">
+      {[analyzedGame.whitePlayer, analyzedGame.blackPlayer].map(
+        (player, index) => (
+          <div key={index} className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div
+                className={`h-2 w-2 rounded-full ${index === 0 ? 'bg-white' : 'border-[0.5px] bg-black'}`}
+              />
+              <p className="text-sm">{player.name}</p>
+              <span className="text-xs">
+                {player.rating ? <>({player.rating})</> : null}
+              </span>
+            </div>
+            {analyzedGame.termination.winner ===
+            (index == 0 ? 'white' : 'black') ? (
+              <p className="text-xs text-engine-3">1</p>
+            ) : analyzedGame.termination.winner !== 'none' ? (
+              <p className="text-xs text-human-3">0</p>
+            ) : analyzedGame.termination === undefined ? (
+              <></>
+            ) : (
+              <p className="text-xs">1/2</p>
+            )}
+          </div>
+        ),
+      )}
+    </div>
+  )
+
   const desktopLayout = (
     <div className="flex h-full w-full flex-col items-center py-4 md:py-10">
       <div className="flex h-full w-[90%] flex-row gap-4">
@@ -437,36 +468,7 @@ const Analysis: React.FC<Props> = ({
           className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72"
         >
           <GameInfo title="Analysis" icon="bar_chart" type="analysis">
-            <div className="flex w-full flex-col">
-              {[analyzedGame.whitePlayer, analyzedGame.blackPlayer].map(
-                (player, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`h-2 w-2 rounded-full ${index === 0 ? 'bg-white' : 'border-[0.5px] bg-black'}`}
-                      />
-                      <p className="text-sm">{player.name}</p>
-                      <span className="text-xs">
-                        {player.rating ? <>({player.rating})</> : null}
-                      </span>
-                    </div>
-                    {analyzedGame.termination.winner ===
-                    (index == 0 ? 'white' : 'black') ? (
-                      <p className="text-xs text-engine-3">1</p>
-                    ) : analyzedGame.termination.winner !== 'none' ? (
-                      <p className="text-xs text-human-3">0</p>
-                    ) : analyzedGame.termination === undefined ? (
-                      <></>
-                    ) : (
-                      <p className="text-xs">1/2</p>
-                    )}
-                  </div>
-                ),
-              )}
-            </div>
+            <NestedGameInfo />
           </GameInfo>
           <div className="flex max-h-[25vh] min-h-[25vh] flex-col bg-backdrop/30">
             <AnalysisGameList
@@ -528,57 +530,14 @@ const Analysis: React.FC<Props> = ({
               termination={analyzedGame.termination.winner}
             />
           </div>
-          <div className="flex flex-1 flex-col overflow-hidden rounded bg-background-1/60">
-            <div className="flex flex-row border-b border-white/10">
-              {screens.map((s) => {
-                const selected = s.id === screen.id
-                return (
-                  <div
-                    key={s.id}
-                    tabIndex={0}
-                    role="button"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') setScreen(s)
-                    }}
-                    onClick={() => setScreen(s)}
-                    className={`relative flex cursor-pointer select-none flex-row px-3 py-1.5 ${selected ? 'bg-white/5' : 'hover:bg-white hover:bg-opacity-[0.02]'} transition duration-200`}
-                  >
-                    <p
-                      className={`text-sm transition duration-200 ${selected ? 'text-primary' : 'text-secondary'} `}
-                    >
-                      {s.name}
-                    </p>
-                    {selected ? (
-                      <motion.div
-                        layoutId="selectedScreen"
-                        className="absolute bottom-0 left-0 h-[1px] w-full bg-white"
-                      />
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-            <div className="red-scrollbar flex flex-col items-start justify-start overflow-y-scroll bg-backdrop/30">
-              {screen.id === 'configure' ? (
-                <ConfigureAnalysis
-                  currentMaiaModel={currentMaiaModel}
-                  setCurrentMaiaModel={setCurrentMaiaModel}
-                  launchContinue={launchContinue}
-                  MAIA_MODELS={MAIA_MODELS}
-                />
-              ) : screen.id === 'export' ? (
-                <div className="flex w-full flex-col p-4">
-                  <AnalysisExportGame
-                    game={analyzedGame}
-                    currentNode={controller.currentNode as GameNode}
-                    whitePlayer={analyzedGame.whitePlayer.name}
-                    blackPlayer={analyzedGame.blackPlayer.name}
-                    event="Analysis"
-                  />
-                </div>
-              ) : null}
-            </div>
-          </div>
+          <ConfigurableScreens
+            currentMaiaModel={currentMaiaModel}
+            setCurrentMaiaModel={setCurrentMaiaModel}
+            launchContinue={launchContinue}
+            MAIA_MODELS={MAIA_MODELS}
+            game={analyzedGame}
+            currentNode={controller.currentNode as GameNode}
+          />
         </div>
         <div
           id="analysis"
@@ -625,7 +584,7 @@ const Analysis: React.FC<Props> = ({
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
         <div className="flex w-full flex-col items-start justify-start gap-1">
           <GameInfo title="Analysis" icon="bar_chart" type="analysis">
-            <></>
+            <NestedGameInfo />
           </GameInfo>
           <div className="relative flex h-[100vw] w-screen">
             <AnalysisGameBoard
@@ -638,38 +597,52 @@ const Analysis: React.FC<Props> = ({
               goToNode={controller.goToNode}
             />
           </div>
-          <div className="flex h-auto w-full flex-col gap-1">
-            <div className="w-screen !flex-grow-0">
+          <div className="flex w-full flex-col gap-0">
+            <div className="w-full !flex-grow-0">
               <AnalysisBoardController />
             </div>
-            <div className="relative bottom-0 h-full flex-1 overflow-auto">
+            <div className="relative bottom-0 h-48 max-h-48 flex-1 overflow-auto overflow-y-hidden">
               <AnalysisMovesContainer
                 game={analyzedGame}
                 termination={analyzedGame.termination}
               />
             </div>
-            <div>
-              <p>Analyze using:</p>
-              <select
-                className="w-full cursor-pointer rounded border-none bg-human-4 p-2 outline-none"
-                value={currentMaiaModel}
-                onChange={(e) => setCurrentMaiaModel(e.target.value)}
-              >
-                {MAIA_MODELS.map((model) => (
-                  <option value={model} key={model}>
-                    {model.replace('maia_kdd_', 'Maia ')}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <ContinueAgainstMaia launchContinue={launchContinue} />
-            <AnalysisGameList
-              currentId={currentId}
-              loadNewTournamentGame={getAndSetTournamentGame}
-              loadNewLichessGames={getAndSetLichessGames}
-              loadNewUserGames={getAndSetUserGames}
+          </div>
+          <div className="flex w-full flex-col gap-1 overflow-hidden">
+            <Highlight
+              hover={hover}
+              makeMove={makeMove}
+              currentMaiaModel={currentMaiaModel}
+              recommendations={moveRecommendations}
+              moveEvaluation={
+                moveEvaluation as {
+                  maia?: MaiaEvaluation
+                  stockfish?: StockfishEvaluation
+                }
+              }
+              movesByRating={movesByRating}
+              colorSanMapping={colorSanMapping}
+            />
+            <MoveMap
+              moveMap={moveMap}
+              colorSanMapping={colorSanMapping}
+              setHoverArrow={setHoverArrow}
+            />
+            <BlunderMeter
+              hover={hover}
+              makeMove={makeMove}
+              data={blunderMeter}
+              colorSanMapping={colorSanMapping}
             />
           </div>
+          <ConfigurableScreens
+            currentMaiaModel={currentMaiaModel}
+            setCurrentMaiaModel={setCurrentMaiaModel}
+            launchContinue={launchContinue}
+            MAIA_MODELS={MAIA_MODELS}
+            game={analyzedGame}
+            currentNode={controller.currentNode as GameNode}
+          />
         </div>
       </div>
     </>

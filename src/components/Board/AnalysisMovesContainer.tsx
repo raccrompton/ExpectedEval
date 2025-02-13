@@ -52,7 +52,7 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
   )
 
   return (
-    <div className="red-scrollbar grid h-64 auto-rows-min grid-cols-5 overflow-y-auto overflow-x-hidden whitespace-nowrap rounded-sm bg-background-1/60 md:h-full md:w-full">
+    <div className="red-scrollbar grid h-48 auto-rows-min grid-cols-5 overflow-y-auto overflow-x-hidden whitespace-nowrap rounded-sm bg-background-1/60 md:h-full md:w-full">
       <Tooltip id="check" />
       {moves.map(([whiteNode, blackNode], index) => {
         return (
