@@ -232,43 +232,6 @@ function mirrorSquare(square: string): string {
 }
 
 /**
- * Mirrors a FEN string vertically (top-to-bottom flip).
- * The active color, castling rights, and en passant target are adjusted accordingly.
- *
- * @param fen - The FEN string to be mirrored.
- * @returns The mirrored FEN string.
- */
-function mirrorFEN(fen: string): string {
-  const [position, activeColor, castling, enPassant, halfmove, fullmove] =
-    fen.split(' ')
-
-  // Split the position into ranks
-  const ranks = position.split('/')
-
-  // Mirror the ranks (top-to-bottom flip)
-  const mirroredRanks = ranks
-    .slice()
-    .reverse()
-    .map((rank) => swapColorsInRank(rank))
-
-  // Reconstruct the mirrored position
-  const mirroredPosition = mirroredRanks.join('/')
-
-  // Swap active color
-  const mirroredActiveColor = activeColor === 'w' ? 'b' : 'w'
-
-  // Adjust castling rights: Swap uppercase (white) with lowercase (black) and vice versa
-  // const mirroredCastling = swapCastlingRights(castling)
-
-  // En passant square: Mirror the rank only (since flipping top-to-bottom)
-  // const mirroredEnPassant = enPassant !== '-' ? mirrorEnPassant(enPassant) : '-'
-
-  // Return the new FEN
-  // return `${mirroredPosition} ${mirroredActiveColor} ${mirroredCastling} ${mirroredEnPassant} ${halfmove} ${fullmove}`
-  return `${mirroredPosition} ${mirroredActiveColor} ${castling} ${enPassant} ${halfmove} ${fullmove}`
-}
-
-/**
  * Swaps the colors of pieces in a rank by changing uppercase to lowercase and vice versa.
  * @param rank The rank to be mirrored.
  * @returns The mirrored rank.
@@ -286,6 +249,60 @@ function swapColorsInRank(rank: string): string {
     }
   }
   return swappedRank
+}
+
+function swapCastlingRights(castling: string): string {
+  if (castling === '-') return '-'
+
+  // Capture the current rights in a Set.
+  const rights = new Set(castling.split(''))
+  const swapped = new Set<string>()
+
+  // Swap white and black castling rights.
+  if (rights.has('K')) swapped.add('k')
+  if (rights.has('Q')) swapped.add('q')
+  if (rights.has('k')) swapped.add('K')
+  if (rights.has('q')) swapped.add('Q')
+
+  // Output in canonical order: white kingside, white queenside, black kingside, black queenside.
+  let output = ''
+  if (swapped.has('K')) output += 'K'
+  if (swapped.has('Q')) output += 'Q'
+  if (swapped.has('k')) output += 'k'
+  if (swapped.has('q')) output += 'q'
+
+  return output === '' ? '-' : output
+}
+
+/**
+ * Mirrors a FEN string vertically (top-to-bottom flip) while swapping piece colors.
+ * Additionally, the active color, castling rights, and en passant target are adjusted accordingly.
+ *
+ * @param fen - The FEN string to be mirrored.
+ * @returns The mirrored FEN string.
+ */
+function mirrorFEN(fen: string): string {
+  const [position, activeColor, castling, enPassant, halfmove, fullmove] =
+    fen.split(' ')
+
+  // Mirror board rows vertically and swap piece colors.
+  const ranks = position.split('/')
+  const mirroredRanks = ranks
+    .slice()
+    .reverse()
+    .map((rank) => swapColorsInRank(rank))
+  const mirroredPosition = mirroredRanks.join('/')
+
+  // Swap active color.
+  const mirroredActiveColor = activeColor === 'w' ? 'b' : 'w'
+
+  // Swap castling rights.
+  const mirroredCastling = swapCastlingRights(castling)
+
+  // Mirror en passant target square.
+  const mirroredEnPassant = enPassant !== '-' ? mirrorSquare(enPassant) : '-'
+
+  return `${mirroredPosition} ${mirroredActiveColor} ${mirroredCastling} ${mirroredEnPassant} ${halfmove} ${fullmove}`
 }
 
 export { preprocess, mirrorMove, allPossibleMovesReversed }
