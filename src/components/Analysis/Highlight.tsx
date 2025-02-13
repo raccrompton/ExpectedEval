@@ -27,8 +27,8 @@ export const Highlight: React.FC<Props> = ({
   currentMaiaModel,
 }: Props) => {
   return (
-    <div className="flex h-full w-full items-start overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1">
-      <div className="flex h-full min-w-[40%] flex-col border-r-[0.5px] border-white/40">
+    <div className="flex h-full w-full flex-col items-start overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1 md:flex-row">
+      <div className="flex h-full w-full flex-col border-b-[0.5px] border-white/40 md:w-auto md:min-w-[40%] md:border-b-0 md:border-r-[0.5px]">
         <div className="grid grid-cols-2">
           <div className="flex flex-col items-center justify-center gap-1 bg-human-3/5 py-3">
             <p className="text-center text-sm text-human-2">

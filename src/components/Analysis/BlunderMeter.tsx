@@ -17,7 +17,7 @@ export const BlunderMeter: React.FC<Props> = ({
   colorSanMapping,
 }: Props) => {
   return (
-    <div className="flex h-full max-h-full min-w-[40%] max-w-[40%] flex-col gap-2 overflow-hidden rounded bg-background-1/60 p-3">
+    <div className="flex h-64 max-h-full w-full flex-col gap-2 overflow-hidden rounded bg-background-1/60 p-3 md:h-full md:w-auto md:min-w-[40%] md:max-w-[40%]">
       <Tooltip id="probability" />
       <p className="text-lg text-primary">Blunder Meter</p>
       <div className="flex h-full w-full flex-col overflow-hidden">
