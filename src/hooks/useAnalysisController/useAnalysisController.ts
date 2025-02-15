@@ -138,36 +138,24 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     const chess = new Chess(controller.currentNode.fen)
     const moves = chess.moves({ verbose: true })
 
+    const stockfish = controller.currentNode.analysis.stockfish
+    const topMoves = stockfish ? Object.keys(stockfish.cp_vec).slice(0, 4) : []
+
     for (const move of moves) {
-      let color, maiaRank, stockfishRank
       const lan = move.from + move.to + (move.promotion || '')
-      const maia = controller.currentNode.analysis.maia?.[currentMaiaModel]
-      const stockfish = controller.currentNode.analysis.stockfish
-
-      if (stockfish) {
-        stockfishRank = Object.keys(stockfish.cp_vec).indexOf(lan) + 1
-
-        if (stockfishRank <= 4) {
-          color = STOCKFISH_COLORS[stockfishRank]
-        }
+      let color = '#FFFFFF'
+      const topIndex = topMoves.indexOf(lan)
+      if (topIndex !== -1 && topIndex < 4) {
+        color = STOCKFISH_COLORS[topIndex]
       }
-
-      if (maia) {
-        maiaRank = Object.keys(maia.policy).indexOf(lan) + 1
-
-        if (maiaRank <= 4) {
-          color = MAIA_COLORS[maiaRank]
-        }
-      }
-
       mapping[lan] = {
         san: move.san,
-        color: color || '#FFFFFF',
+        color,
       }
     }
 
     return mapping
-  }, [currentMaiaModel, controller.currentNode, analysisState])
+  }, [controller.currentNode, analysisState])
 
   const moveEvaluation = useMemo(() => {
     if (!controller.currentNode) return null
