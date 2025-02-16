@@ -377,12 +377,17 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     const maia = Object.fromEntries(
       Object.entries(moveEvaluation.maia.policy).slice(0, 3),
     )
-    const stockfish = Object.fromEntries(
-      Object.entries(moveEvaluation.stockfish.cp_vec).slice(0, 3),
-    )
+
+    const stockfishMoves = Object.entries(moveEvaluation.stockfish.cp_vec)
+    const topStockfish = Object.fromEntries(stockfishMoves.slice(0, 3))
+    const worstStockfish = Object.fromEntries(stockfishMoves.slice(-2))
 
     const moves = Array.from(
-      new Set(Object.keys(maia).concat(Object.keys(stockfish))),
+      new Set([
+        ...Object.keys(maia),
+        ...Object.keys(topStockfish),
+        ...Object.keys(worstStockfish),
+      ]),
     )
 
     const data = []
