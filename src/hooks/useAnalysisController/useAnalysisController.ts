@@ -259,9 +259,7 @@ export const useAnalysisController = (game: AnalyzedGame) => {
       }
     for (const [move, prob] of Object.entries(maia.policy)) {
       const loss = stockfish.cp_relative_vec[move]
-
       if (loss === undefined) continue
-
       const probability = prob * 100
 
       if (loss >= -50) {

@@ -97,6 +97,7 @@ export class GameNode {
   private _analysis: NodeAnalysis
   private _turn: Color
   private _check: boolean
+  private _blunder: boolean
   private _moveNumber: number
 
   constructor(
@@ -116,6 +117,7 @@ export class GameNode {
     this._analysis = {}
     this._turn = this.parseTurn(fen)
     this._check = false
+    this._blunder = false
     this._moveNumber = this.parseMoveNumber(fen, this._turn)
   }
 
@@ -149,6 +151,9 @@ export class GameNode {
   get check(): boolean {
     return this._check
   }
+  get blunder(): boolean {
+    return this._blunder
+  }
   get moveNumber(): number {
     return this._moveNumber
   }
@@ -169,6 +174,14 @@ export class GameNode {
     if (mainline) {
       this._mainChild = child
     }
+    if (
+      this._analysis.stockfish &&
+      this._analysis.stockfish.depth >= 15 &&
+      move
+    ) {
+      const relative_eval = this._analysis.stockfish.cp_relative_vec[move]
+      child._blunder = relative_eval < -150
+    }
     return child
   }
 
@@ -178,6 +191,15 @@ export class GameNode {
 
   addStockfishAnalysis(stockfishEval: StockfishEvaluation): void {
     this._analysis.stockfish = stockfishEval
+
+    if (stockfishEval.depth >= 15) {
+      for (const child of this._children) {
+        if (child.move) {
+          const relative_eval = stockfishEval.cp_relative_vec[child.move]
+          child._blunder = relative_eval < -150
+        }
+      }
+    }
   }
 
   getMainLine(): GameNode[] {
