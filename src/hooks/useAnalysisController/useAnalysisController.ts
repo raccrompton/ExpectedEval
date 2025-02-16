@@ -348,18 +348,20 @@ export const useAnalysisController = (game: AnalyzedGame) => {
 
     if (moveEvaluation?.maia) {
       const policy = moveEvaluation.maia.policy
-      const maia = Object.entries(policy)
-        .slice(0, 6)
-        .map(([move, prob]) => ({ move, prob }))
+      const maia = Object.entries(policy).map(([move, prob]) => ({
+        move,
+        prob,
+      }))
 
       recommendations.maia = maia
     }
 
     if (moveEvaluation?.stockfish) {
       const cp_vec = moveEvaluation.stockfish.cp_vec
-      const stockfish = Object.entries(cp_vec)
-        .slice(0, 6)
-        .map(([move, cp]) => ({ move, cp }))
+      const stockfish = Object.entries(cp_vec).map(([move, cp]) => ({
+        move,
+        cp,
+      }))
 
       recommendations.stockfish = stockfish
     }
