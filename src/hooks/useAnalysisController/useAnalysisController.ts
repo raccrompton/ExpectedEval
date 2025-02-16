@@ -27,8 +27,21 @@ const MAIA_MODELS = [
   'maia_kdd_1900',
 ]
 
-const MAIA_COLORS = ['#fe7f6d', '#f08a4c', '#ecaa4f', '#eccd4f']
-const STOCKFISH_COLORS = ['#A3C6F8', '#8fadd9', '#7a95ba', '#667c9b']
+// const MAIA_COLORS = ['#fe7f6d', '#f08a4c', '#ecaa4f', '#eccd4f']
+const STOCKFISH_COLORS = [
+  '#1a9850',
+  '#91cf60',
+  '#d9ef8b',
+  '#fee08b',
+  '#fc8d59',
+  '#d73027',
+]
+
+const COLORS = {
+  good: ['#238b45', '#41ab5d', '#74c476', '#a1d99b', '#c7e9c0'],
+  ok: ['#ec7014', '#feb24c', '#fed976', '#ffeda0', '#ffffcc'].reverse(),
+  blunder: ['#cb181d', '#ef3b2c', '#fb6a4a', '#fc9272', '#fcbba1'].reverse(),
+}
 
 export const useAnalysisController = (game: AnalyzedGame) => {
   const controller = useAnalysisGameController(
@@ -137,21 +150,68 @@ export const useAnalysisController = (game: AnalyzedGame) => {
 
     const chess = new Chess(controller.currentNode.fen)
     const moves = chess.moves({ verbose: true })
-
     const stockfish = controller.currentNode.analysis.stockfish
-    const topMoves = stockfish ? Object.keys(stockfish.cp_vec).slice(0, 4) : []
 
-    for (const move of moves) {
-      const lan = move.from + move.to + (move.promotion || '')
-      let color = '#FFFFFF'
-      const topIndex = topMoves.indexOf(lan)
-      if (topIndex !== -1 && topIndex < 4) {
-        color = STOCKFISH_COLORS[topIndex]
+    moves.forEach((m) => {
+      const moveKey = `${m.from}${m.to}`
+      const relativeEval = stockfish?.cp_relative_vec[moveKey]
+
+      let color = '#FFF'
+
+      if (relativeEval !== undefined) {
+        if (relativeEval >= -50) {
+          color = COLORS.good[0]
+        } else if (relativeEval >= -150) {
+          color = COLORS.ok[0]
+        } else {
+          color = COLORS.blunder[0]
+        }
       }
-      mapping[lan] = {
-        san: move.san,
+
+      mapping[moveKey] = {
+        san: m.san,
         color,
       }
+    })
+
+    if (stockfish) {
+      const goodMoves = moves
+        .map((m) => `${m.from}${m.to}`)
+        .filter((move) => stockfish.cp_relative_vec[move] >= -50)
+        .sort(
+          (a, b) => stockfish.cp_relative_vec[b] - stockfish.cp_relative_vec[a],
+        )
+
+      const okMoves = moves
+        .map((m) => `${m.from}${m.to}`)
+        .filter(
+          (move) =>
+            stockfish.cp_relative_vec[move] >= -150 &&
+            stockfish.cp_relative_vec[move] < -50,
+        )
+        .sort(
+          (a, b) => stockfish.cp_relative_vec[b] - stockfish.cp_relative_vec[a],
+        )
+
+      const blunderMoves = moves
+        .map((m) => `${m.from}${m.to}`)
+        .filter((move) => stockfish.cp_relative_vec[move] < -150)
+        .sort(
+          (a, b) => stockfish.cp_relative_vec[b] - stockfish.cp_relative_vec[a],
+        )
+
+      goodMoves.forEach((move, i) => {
+        mapping[move].color = COLORS.good[Math.min(i, COLORS.good.length - 1)]
+      })
+
+      okMoves.forEach((move, i) => {
+        mapping[move].color = COLORS.ok[Math.min(i, COLORS.ok.length - 1)]
+      })
+
+      blunderMoves.forEach((move, i) => {
+        mapping[move].color =
+          COLORS.blunder[Math.min(i, COLORS.blunder.length - 1)]
+      })
     }
 
     return mapping
@@ -289,7 +349,7 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     if (moveEvaluation?.maia) {
       const policy = moveEvaluation.maia.policy
       const maia = Object.entries(policy)
-        .slice(0, 4)
+        .slice(0, 6)
         .map(([move, prob]) => ({ move, prob }))
 
       recommendations.maia = maia
@@ -298,7 +358,7 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     if (moveEvaluation?.stockfish) {
       const cp_vec = moveEvaluation.stockfish.cp_vec
       const stockfish = Object.entries(cp_vec)
-        .slice(0, 4)
+        .slice(0, 6)
         .map(([move, cp]) => ({ move, cp }))
 
       recommendations.stockfish = stockfish
