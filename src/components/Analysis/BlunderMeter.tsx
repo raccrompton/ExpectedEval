@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Tooltip } from 'react-tooltip'
+
 import { BlunderMeterResult, ColorSanMapping } from 'src/types'
 
 interface Props {
@@ -18,7 +18,6 @@ export const BlunderMeter: React.FC<Props> = ({
 }: Props) => {
   return (
     <div className="flex h-64 max-h-full w-full flex-col gap-2 overflow-hidden rounded bg-background-1/60 p-3 md:h-full md:w-auto md:min-w-[40%] md:max-w-[40%]">
-      <Tooltip id="probability" />
       <p className="text-lg text-primary">Blunder Meter</p>
       <div className="flex h-full w-full flex-col overflow-hidden">
         <div className="flex h-full w-full select-none flex-col overflow-hidden rounded">
@@ -93,10 +92,6 @@ function Meter({
       }}
     >
       <motion.div
-        data-tooltip-id="probability"
-        data-tooltip-content={`Maia predicts there is a ${Math.round(
-          probability,
-        )}% chance that the player will make a good move`}
         className={`flex h-full min-h-10 min-w-8 flex-col items-center justify-start py-1 ${bgColor}`}
       >
         <motion.p className="text-xs font-bold text-black text-opacity-50">
