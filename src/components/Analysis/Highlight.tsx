@@ -128,7 +128,7 @@ export const Highlight: React.FC<Props> = ({
               return (
                 <button
                   key={index}
-                  className="grid cursor-default grid-cols-2 gap-3 hover:underline"
+                  className="grid cursor-pointer grid-cols-2 gap-3 hover:underline"
                   style={{
                     color: colorSanMapping[move]?.color ?? '#fff',
                   }}
@@ -159,7 +159,7 @@ export const Highlight: React.FC<Props> = ({
                 return (
                   <button
                     key={index}
-                    className="grid cursor-default grid-cols-2 gap-3 hover:underline"
+                    className="grid cursor-pointer grid-cols-2 gap-3 hover:underline"
                     style={{
                       color: colorSanMapping[move]?.color ?? '#fff',
                     }}

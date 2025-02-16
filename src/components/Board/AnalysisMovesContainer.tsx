@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import { useContext, useMemo, Fragment } from 'react'
+// import { BlunderIcon } from 'src/components/Icons/icons'
 import { AnalysisGameControllerContext, WindowSizeContext } from 'src/contexts'
 import { GameNode, AnalyzedGame, Termination, ClientBaseGame } from 'src/types'
 
@@ -8,6 +9,16 @@ interface Props {
   game: ClientBaseGame | AnalyzedGame
   highlightIndices?: number[]
   termination?: Termination
+}
+
+function BlunderIcon() {
+  return (
+    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500">
+      <span className="text-[0.6rem] font-bold tracking-wide text-white">
+        ??
+      </span>
+    </div>
+  )
 }
 
 export const AnalysisMovesContainer: React.FC<Props> = ({
@@ -66,6 +77,7 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
               className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${currentNode === whiteNode && 'bg-human-4/20'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
             >
               {whiteNode?.san ?? whiteNode?.move}
+              {whiteNode?.blunder && <BlunderIcon />}
             </div>
             {whiteNode?.getVariations().length ? (
               <FirstVariation
@@ -83,6 +95,7 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
               className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${currentNode === blackNode && 'bg-human-4/20'} ${highlightSet.has(index * 2 + 2) && 'bg-human-3/80'}`}
             >
               {blackNode?.san ?? blackNode?.move}
+              {blackNode?.blunder && <BlunderIcon />}
             </div>
             {blackNode?.getVariations().length ? (
               <FirstVariation

@@ -154,7 +154,7 @@ export const MoveMap: React.FC<Props> = ({
                         fontSize={12}
                         textAnchor="middle"
                         dx={x < 100 ? 22 : -15}
-                        dy={y < 100 ? 8 : -25}
+                        dy={8}
                         fill={colorSanMapping[value]?.color ?? '#fff'}
                       >
                         {colorSanMapping[value]?.san ?? value}
