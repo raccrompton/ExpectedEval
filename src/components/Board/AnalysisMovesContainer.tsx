@@ -1,7 +1,6 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import { useContext, useMemo, Fragment } from 'react'
-// import { BlunderIcon } from 'src/components/Icons/icons'
+import React, { useContext, useMemo, Fragment } from 'react'
 import { AnalysisGameControllerContext, WindowSizeContext } from 'src/contexts'
 import { GameNode, AnalyzedGame, Termination, ClientBaseGame } from 'src/types'
 
@@ -13,10 +12,8 @@ interface Props {
 
 function BlunderIcon() {
   return (
-    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500">
-      <span className="text-[0.6rem] font-bold tracking-wide text-white">
-        ??
-      </span>
+    <div className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#d73027] text-[10px] font-bold text-white">
+      !
     </div>
   )
 }
@@ -60,6 +57,102 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
     () => new Set(highlightIndices ?? []),
     [highlightIndices],
   )
+
+  interface MovePair {
+    moveNumber: number
+    whiteMove: GameNode | null
+    blackMove: GameNode | null
+  }
+
+  const mobileMovePairs = useMemo(() => {
+    if (!isMobile) return []
+
+    const nodes = mainLineNodes.slice(1)
+    const pairs: MovePair[] = []
+    let currentPair: MovePair | null = null
+
+    nodes.forEach((node) => {
+      if (!currentPair) {
+        currentPair = {
+          moveNumber: node.moveNumber,
+          whiteMove: null,
+          blackMove: null,
+        }
+      } else {
+        if (currentPair.moveNumber !== node.moveNumber) {
+          pairs.push(currentPair)
+          currentPair = {
+            moveNumber: node.moveNumber,
+            whiteMove: null,
+            blackMove: null,
+          }
+        }
+      }
+
+      if (node.turn === 'b') {
+        currentPair.whiteMove = node
+      } else {
+        currentPair.blackMove = node
+      }
+    })
+
+    if (currentPair) {
+      pairs.push(currentPair)
+    }
+
+    return pairs
+  }, [mainLineNodes, isMobile])
+
+  if (isMobile) {
+    return (
+      <div className="w-full overflow-x-auto">
+        <div className="flex flex-row items-center gap-1 p-2">
+          {mobileMovePairs.map((pair, pairIndex) => (
+            <React.Fragment key={pairIndex}>
+              <div className="flex min-w-fit items-center rounded px-1 py-1 text-xs text-secondary">
+                {pair.moveNumber}.{!pair.whiteMove ? '..' : ''}
+              </div>
+              {pair.whiteMove && (
+                <div
+                  onClick={() => goToNode(pair.whiteMove as GameNode)}
+                  className={`flex min-w-fit cursor-pointer flex-row items-center rounded px-2 py-1 text-sm ${
+                    currentNode === pair.whiteMove
+                      ? 'bg-human-4/20'
+                      : 'hover:bg-background-2'
+                  } ${highlightSet.has(pairIndex * 2 + 1) ? 'bg-human-3/80' : ''}`}
+                >
+                  <span>{pair.whiteMove.san ?? pair.whiteMove.move}</span>
+                  {pair.whiteMove.blunder && <BlunderIcon />}
+                </div>
+              )}
+              {pair.blackMove && (
+                <div
+                  onClick={() => goToNode(pair.blackMove as GameNode)}
+                  className={`flex min-w-fit cursor-pointer flex-row items-center rounded px-2 py-1 text-sm ${
+                    currentNode === pair.blackMove
+                      ? 'bg-human-4/20'
+                      : 'hover:bg-background-2'
+                  } ${highlightSet.has(pairIndex * 2 + 2) ? 'bg-human-3/80' : ''}`}
+                >
+                  <span>{pair.blackMove.san ?? pair.blackMove.move}</span>
+                  {pair.blackMove.blunder && <BlunderIcon />}
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+
+          {termination && (
+            <div
+              className="min-w-fit cursor-pointer rounded border border-primary/10 bg-background-1/90 px-2 py-1 text-sm opacity-90"
+              onClick={() => goToNode(mainLineNodes[mainLineNodes.length - 1])}
+            >
+              {termination.result}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="red-scrollbar grid h-48 auto-rows-min grid-cols-5 overflow-y-auto overflow-x-hidden whitespace-nowrap rounded-sm bg-background-1/60 md:h-full md:w-full">
@@ -123,6 +216,7 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
     </div>
   )
 }
+
 function FirstVariation({
   node,
   color,
@@ -205,6 +299,7 @@ function VariationTree({
     </li>
   )
 }
+
 function InlineChain({
   node,
   currentNode,
