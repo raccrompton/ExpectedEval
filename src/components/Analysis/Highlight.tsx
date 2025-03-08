@@ -124,7 +124,7 @@ export const Highlight: React.FC<Props> = ({
             }}
           />
           <div className="grid grid-rows-2 items-center justify-center p-3">
-            {recommendations.maia?.slice(0, 6).map(({ move, prob }, index) => {
+            {recommendations.maia?.slice(0, 4).map(({ move, prob }, index) => {
               return (
                 <button
                   key={index}
@@ -154,7 +154,7 @@ export const Highlight: React.FC<Props> = ({
           </div>
           <div className="grid grid-rows-2 flex-col items-center justify-center p-3">
             {recommendations.stockfish
-              ?.slice(0, 6)
+              ?.slice(0, 4)
               .map(({ move, cp }, index) => {
                 return (
                   <button
