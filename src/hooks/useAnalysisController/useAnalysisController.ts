@@ -410,8 +410,8 @@ export const useAnalysisController = (game: AnalyzedGame) => {
 
       data.push({
         move,
-        x: prob,
-        y: cp,
+        x: cp,
+        y: prob,
       })
     }
 
