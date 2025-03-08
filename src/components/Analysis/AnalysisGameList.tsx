@@ -61,9 +61,15 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     }
   }, [analysisTournamentList, currentId, listKeys])
 
+  console.log(currentId)
+
   const [selected, setSelected] = useState<
     'tournament' | 'pgn' | 'play' | 'hand' | 'brain'
-  >('pgn')
+  >(
+    ['pgn', 'play', 'hand', 'brain'].includes(currentId?.[1] ?? '')
+      ? (currentId?.[1] as 'pgn' | 'play' | 'hand' | 'brain')
+      : 'tournament',
+  )
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null)
   const [openIndex, setOpenIndex] = useState<number | null>(initialOpenIndex)
 
