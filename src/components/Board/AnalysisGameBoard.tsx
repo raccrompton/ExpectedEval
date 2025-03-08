@@ -12,6 +12,7 @@ import type { Key } from 'chessground/types'
 import Chessground from '@react-chess/chessground'
 import { ClientBaseGame, Check, GameNode, Color } from 'src/types'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
+import { useChessSound } from 'src/hooks'
 
 interface Props {
   move?: {
@@ -42,6 +43,8 @@ export const AnalysisGameBoard: React.FC<Props> = ({
   shapes,
   brushes,
 }: Props) => {
+  const { playSound } = useChessSound()
+
   const after = useCallback(
     (from: string, to: string) => {
       if (!game.tree || !currentNode) return
@@ -50,9 +53,17 @@ export const AnalysisGameBoard: React.FC<Props> = ({
       if (setCurrentSquare) setCurrentSquare(null)
 
       const chess = new Chess(currentNode.fen)
+
+      // Check if there's a piece at the destination before making the move
+      const pieceAtDestination = chess.get(to)
+      const isCapture = !!pieceAtDestination
+
       const moveAttempt = chess.move({ from: from, to: to })
 
       if (moveAttempt) {
+        // Play the appropriate sound
+        playSound(isCapture)
+
         const newFen = chess.fen()
         const moveString = from + to
         const san = moveAttempt.san
@@ -70,7 +81,14 @@ export const AnalysisGameBoard: React.FC<Props> = ({
         }
       }
     },
-    [setCurrentMove, setCurrentSquare, currentNode, game.tree, goToNode],
+    [
+      setCurrentMove,
+      setCurrentSquare,
+      currentNode,
+      game.tree,
+      goToNode,
+      playSound,
+    ],
   )
 
   const currentMove = useMemo(() => {
