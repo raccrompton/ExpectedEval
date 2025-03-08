@@ -49,83 +49,83 @@ export const MoveMap: React.FC<Props> = ({
               type="number"
               axisLine={false}
               label={{
-                value: 'Maia',
-                fill: '#FE7F6D',
+                value: 'SF Loss',
+                fill: '#76ADDD',
                 position: 'insideBottom',
                 fontSize: 18,
                 fontWeight: 600,
                 offset: -8,
                 dx: -12,
               }}
-              tickCount={4}
+              tickCount={5}
               tickLine={false}
               tickMargin={0}
               tick={{ fill: 'white', fontSize: 11 }}
-              tickFormatter={(value) => `${value}%`}
-              domain={([dataMin, dataMax]) => [0, dataMax > 60 ? 100 : 60]}
+              domain={[-4, 0]}
+              ticks={[-4, -3, -2, -1, 0]}
             >
               <Label
-                value="← Unlikely"
+                value="← Blunders"
                 position="insideBottomLeft"
-                fill="#BF5F52"
+                fill="#5A9DD7"
                 fontSize={12}
                 fontWeight={500}
                 dy={10}
                 dx={-18}
               />
               <Label
-                value="Likely →"
+                value="Best Moves →"
                 position="insideBottomRight"
                 fontSize={12}
-                fill="#BF5F52"
+                fill="#5A9DD7"
                 fontWeight={500}
                 dy={10}
                 dx={18}
               />
             </XAxis>
             <YAxis
-              scale="sqrt"
               dataKey="y"
               type="number"
               axisLine={false}
-              domain={[-4, 0]}
               label={{
-                value: 'SF Loss',
-                fill: '#76ADDD',
+                value: 'Maia',
+                fill: '#FE7F6D',
                 position: 'insideLeft',
                 angle: -90,
                 fontSize: 16,
                 fontWeight: 600,
                 dx: 10,
-                dy: 48,
+                dy: 32,
               }}
-              ticks={[-4, -3, -2, -1, 0]}
+              tickCount={4}
               tick={{
                 fill: 'white',
                 fontSize: 11,
               }}
               tickMargin={0}
               tickLine={false}
+              tickFormatter={(value) => `${value}%`}
+              domain={([dataMin, dataMax]) => [0, dataMax > 60 ? 100 : 60]}
             >
               <Label
-                value="← Blunders"
-                dx={24}
+                value="← Unlikely"
+                dx={10}
                 angle={-90}
                 fontSize={12}
                 fontWeight={500}
-                dy={100}
+                dy={140}
                 position="insideLeft"
-                fill="#5A9DD7"
+                fill="#BF5F52"
               />
               <Label
-                value="Best Moves →"
-                fill="#5A9DD7"
+                value="Likely →"
+                fill="#BF5F52"
                 position="insideLeft"
                 fontSize={12}
-                dx={24}
+                dx={10}
                 angle={-90}
                 fontWeight={500}
-                dy={-16}
+                dy={-56}
               />
             </YAxis>
             <Scatter name="Moves" data={moveMap}>
