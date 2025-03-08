@@ -1,7 +1,7 @@
 import { Chess } from 'chess.ts'
 import { useEffect, useMemo, useState } from 'react'
 
-import { useGameController, useStockfishEngine } from '..'
+import { useGameController, useStockfishEngine, useLocalStorage } from '..'
 import { normalize, normalizeEvaluation, pseudoNL } from 'src/utils'
 import {
   LegacyAnalyzedGame,
@@ -41,7 +41,16 @@ export const useLegacyAnalysisController = (
     () => Object.keys(game.maiaEvaluations).sort(),
     [game.maiaEvaluations],
   )
-  const [currentMaiaModel, setCurrentMaiaModel] = useState(maiaModels[0])
+  const [currentMaiaModel, setCurrentMaiaModel] = useLocalStorage(
+    'currentMaiaModel',
+    maiaModels[0],
+  )
+
+  useEffect(() => {
+    if (!maiaModels.includes(currentMaiaModel)) {
+      setCurrentMaiaModel(maiaModels[0])
+    }
+  }, [currentMaiaModel, maiaModels, setCurrentMaiaModel])
 
   useEffect(() => {
     if (game.type === 'tournament') return
