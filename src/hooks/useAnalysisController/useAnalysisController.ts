@@ -13,6 +13,7 @@ import {
   useStockfishEngine,
   useMaiaEngine,
   useAnalysisGameController,
+  useLocalStorage,
 } from '..'
 
 const MAIA_MODELS = [
@@ -61,7 +62,17 @@ export const useAnalysisController = (game: AnalyzedGame) => {
 
   const { streamEvaluations, stopEvaluation } = useStockfishEngine()
   const [currentMove, setCurrentMove] = useState<[string, string] | null>()
-  const [currentMaiaModel, setCurrentMaiaModel] = useState(MAIA_MODELS[0])
+  const [currentMaiaModel, setCurrentMaiaModel] = useLocalStorage(
+    'currentMaiaModel',
+    MAIA_MODELS[0],
+  )
+
+  // Ensure the selected model is valid for the current context
+  useEffect(() => {
+    if (!MAIA_MODELS.includes(currentMaiaModel)) {
+      setCurrentMaiaModel(MAIA_MODELS[0])
+    }
+  }, [currentMaiaModel, MAIA_MODELS, setCurrentMaiaModel])
 
   useEffect(() => {
     if (!controller.currentNode) return
