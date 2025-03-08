@@ -36,7 +36,7 @@ export const MovesByRating: React.FC<Props> = ({
     <div className="flex h-64 w-full flex-col rounded bg-background-1/60 md:h-full">
       <p className="p-3 text-lg text-primary">Moves by Rating</p>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={moves} margin={{ left: 0, right: 0, bottom: 0 }}>
+        <AreaChart data={moves} margin={{ left: 0, right: 50, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#3C3C3C" />
           <XAxis
             dataKey="rating"
@@ -66,20 +66,6 @@ export const MovesByRating: React.FC<Props> = ({
               offset: 15,
               fontWeight: 600,
               fontSize: 14,
-            }}
-            tickCount={5}
-            tickMargin={2}
-            tickLine={false}
-            tickFormatter={(value) => `${value}%`}
-          />
-          <YAxis
-            yAxisId="right"
-            orientation="right"
-            axisLine={false}
-            domain={domain}
-            tick={{
-              fill: 'white',
-              fontSize: 11,
             }}
             tickCount={5}
             tickMargin={2}
@@ -116,27 +102,120 @@ export const MovesByRating: React.FC<Props> = ({
               })}
           </defs>
           {moves &&
-            Object.keys(moves[0]).map((move, i) => {
-              if (move === 'rating') {
-                return null
+            // First, collect all the end points and sort them by y-position
+            (() => {
+              const lastIndex = moves.length - 1
+
+              // Define the type for end points
+              interface EndPoint {
+                move: string
+                value: number
+                san: string
+                color: string
+                yPosition?: number // Actual y-coordinate after rendering
+                adjustment?: number
               }
-              return (
-                <Area
-                  key={i}
-                  yAxisId="left"
-                  dataKey={move}
-                  dot={{
-                    r: 3,
-                    stroke: colorSanMapping[move]?.color ?? '#fff',
-                    strokeWidth: 3,
-                  }}
-                  stroke={colorSanMapping[move]?.color ?? '#fff'}
-                  fill={`url(#color${move})`}
-                  strokeWidth={3}
-                  animationDuration={300}
-                />
-              )
-            })}
+
+              const endPoints = Object.keys(moves[0])
+                .filter((move) => move !== 'rating')
+                .map((move) => {
+                  const value = moves[lastIndex][move] as number
+                  return {
+                    move,
+                    value,
+                    san: colorSanMapping[move]?.san || move,
+                    color: colorSanMapping[move]?.color ?? '#fff',
+                  } as EndPoint
+                })
+                .sort((a, b) => a.value - b.value) // Sort by value (y-position)
+
+              // Return the original map function with adjusted positions
+              return Object.keys(moves[0]).map((move, i) => {
+                if (move === 'rating') {
+                  return null
+                }
+
+                const endPoint = endPoints.find((ep) => ep.move === move)
+                const san = endPoint?.san || move
+
+                return (
+                  <Area
+                    key={i}
+                    yAxisId="left"
+                    dataKey={move}
+                    dot={{
+                      r: 3,
+                      stroke: colorSanMapping[move]?.color ?? '#fff',
+                      strokeWidth: 3,
+                    }}
+                    stroke={colorSanMapping[move]?.color ?? '#fff'}
+                    fill={`url(#color${move})`}
+                    strokeWidth={3}
+                    animationDuration={300}
+                    name={san}
+                    label={(props: {
+                      x: number
+                      y: number
+                      index: number
+                      width: number
+                      height: number
+                    }) => {
+                      if (props.index !== lastIndex) return null
+
+                      if (endPoint) {
+                        endPoint.yPosition = props.y
+                      }
+
+                      const positionedEndPoints = endPoints.filter(
+                        (ep) => ep.yPosition !== undefined,
+                      )
+
+                      positionedEndPoints.sort(
+                        (a, b) => (a.yPosition || 0) - (b.yPosition || 0),
+                      )
+
+                      const currentIndex = positionedEndPoints.findIndex(
+                        (ep) => ep.move === move,
+                      )
+
+                      let adjustment = 0
+                      const minLabelHeight = 16
+
+                      if (currentIndex > 0) {
+                        const prevEndPoint =
+                          positionedEndPoints[currentIndex - 1]
+                        const prevY = prevEndPoint.yPosition || 0
+                        const prevAdjustment = prevEndPoint.adjustment || 0
+                        const adjustedPrevY = prevY - prevAdjustment
+
+                        if (props.y - adjustedPrevY < minLabelHeight) {
+                          adjustment =
+                            minLabelHeight - (props.y - adjustedPrevY) + 2
+                        }
+                      }
+
+                      if (endPoint) {
+                        endPoint.adjustment = adjustment
+                      }
+
+                      return (
+                        <text
+                          x={props.x + 10}
+                          y={props.y - adjustment}
+                          dy={4}
+                          fontSize={11}
+                          fontWeight={600}
+                          fill={colorSanMapping[move]?.color ?? '#fff'}
+                          textAnchor="start"
+                        >
+                          {san}
+                        </text>
+                      )
+                    }}
+                  />
+                )
+              })
+            })()}
           <Tooltip
             content={({ payload }) => {
               return (
@@ -147,9 +226,9 @@ export const MovesByRating: React.FC<Props> = ({
                     ) : null}
                   </div>
                   {payload?.map((point) => {
-                    const san =
-                      colorSanMapping[point.name as string]?.san ?? point.name
+                    const san = point.name
                     const prob = Math.round((point.value as number) * 10) / 10
+
                     return (
                       <div
                         key={san}
@@ -157,9 +236,7 @@ export const MovesByRating: React.FC<Props> = ({
                       >
                         <p
                           style={{
-                            color:
-                              colorSanMapping[point.name as string]?.color ??
-                              '#fff',
+                            color: point.color ?? '#fff',
                           }}
                           className="text-xs"
                         >
@@ -167,9 +244,7 @@ export const MovesByRating: React.FC<Props> = ({
                         </p>
                         <p
                           style={{
-                            color:
-                              colorSanMapping[point.name as string]?.color ??
-                              '#fff',
+                            color: point.color ?? '#fff',
                           }}
                           className="font-mono text-xs"
                         >
