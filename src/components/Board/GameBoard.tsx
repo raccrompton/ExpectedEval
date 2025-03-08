@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Chess } from 'chess.ts'
 import { defaults } from 'chessground/state'
 import { useCallback, useContext } from 'react'
 import Chessground from '@react-chess/chessground'
-import type { DrawBrush, DrawBrushes, DrawShape } from 'chessground/draw'
+import type { DrawBrushes, DrawShape } from 'chessground/draw'
 
+import { useChessSound } from 'src/hooks'
 import { BaseGame, Check } from 'src/types'
 import { GameControllerContext } from 'src/contexts'
 
@@ -31,13 +33,32 @@ export const GameBoard: React.FC<Props> = ({
   brushes,
 }: Props) => {
   const { currentIndex, orientation } = useContext(GameControllerContext)
+  const { playSound } = useChessSound()
 
   const after = useCallback(
     (from: string, to: string) => {
       if (setCurrentMove) setCurrentMove([from, to])
       if (setCurrentSquare) setCurrentSquare(null)
+
+      const currentFen = move ? move.fen : game.moves[currentIndex]?.board
+      if (currentFen) {
+        const chess = new Chess(currentFen)
+        const pieceAtDestination = chess.get(to)
+        const isCapture = !!pieceAtDestination
+
+        playSound(isCapture)
+      } else {
+        playSound(false)
+      }
     },
-    [setCurrentMove, setCurrentSquare],
+    [
+      setCurrentMove,
+      setCurrentSquare,
+      move,
+      game.moves,
+      currentIndex,
+      playSound,
+    ],
   )
 
   return (
