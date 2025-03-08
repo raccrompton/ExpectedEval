@@ -220,7 +220,7 @@ function HorizontalMeter({
 }) {
   return (
     <motion.div
-      className="flex h-6 min-w-10 flex-col items-center justify-start overflow-hidden"
+      className="flex h-6 min-w-8 flex-col items-center justify-start overflow-hidden"
       animate={{
         width: probability + '%',
         maxWidth: probability + '%',
@@ -265,7 +265,7 @@ function Meter({
 
   return (
     <motion.div
-      className="flex min-h-10 w-full flex-row items-start justify-start gap-2 overflow-hidden"
+      className="flex min-h-6 w-full flex-row items-start justify-start gap-2 overflow-hidden"
       animate={{
         height: probability + '%',
         maxHeight: probability + '%',
