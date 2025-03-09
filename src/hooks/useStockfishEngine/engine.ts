@@ -2,6 +2,7 @@ import { Chess } from 'chess.ts'
 import StockfishWeb from 'lila-stockfish-web'
 
 import { StockfishEvaluation } from 'src/types'
+import { cpToWinrate } from 'src/utils/stockfish'
 
 class Engine {
   private fen: string
@@ -155,21 +156,74 @@ class Engine {
           - To calculate the relative value of another move with CP = 20, we use modelOptimalCp - cp, which is (-50) - (-20) = 30
           - This indicates that the move with CP = 20 is significantly worse than the optimal move from Black's perspective.
       */
+
       this.store[depth].cp_vec[move] = cp
       this.store[depth].cp_relative_vec[move] = isBlackTurn
         ? this.store[depth].model_optimal_cp - cp
         : cp - this.store[depth].model_optimal_cp
+
+      const winrate = cpToWinrate(cp * (isBlackTurn ? -1 : 1), false)
+
+      if (!this.store[depth].winrate_vec) {
+        this.store[depth].winrate_vec = {}
+      }
+      if (!this.store[depth].winrate_loss_vec) {
+        this.store[depth].winrate_loss_vec = {}
+      }
+
+      if (this.store[depth].winrate_vec) {
+        this.store[depth].winrate_vec[move] = winrate
+      }
     } else {
+      const winrate = cpToWinrate(cp * (isBlackTurn ? -1 : 1), false)
+
       this.store[depth] = {
         depth: depth,
         model_move: move,
         model_optimal_cp: cp,
         cp_vec: { [move]: cp },
         cp_relative_vec: { [move]: 0 },
+        winrate_vec: { [move]: winrate },
+        winrate_loss_vec: { [move]: 0 },
         sent: false,
       }
     }
+
     if (!this.store[depth].sent && multipv === this.legalMoveCount) {
+      let bestWinrate = -Infinity
+
+      if (this.store[depth].winrate_vec) {
+        for (const m in this.store[depth].winrate_vec) {
+          const wr = this.store[depth].winrate_vec[m]
+          if (wr > bestWinrate) {
+            bestWinrate = wr
+          }
+        }
+      }
+
+      if (this.store[depth].winrate_vec && this.store[depth].winrate_loss_vec) {
+        for (const m in this.store[depth].winrate_vec) {
+          this.store[depth].winrate_loss_vec[m] =
+            this.store[depth].winrate_vec[m] - bestWinrate
+        }
+      }
+
+      if (this.store[depth].winrate_vec) {
+        this.store[depth].winrate_vec = Object.fromEntries(
+          Object.entries(this.store[depth].winrate_vec).sort(
+            ([, a], [, b]) => b - a,
+          ),
+        )
+      }
+
+      if (this.store[depth].winrate_loss_vec) {
+        this.store[depth].winrate_loss_vec = Object.fromEntries(
+          Object.entries(this.store[depth].winrate_loss_vec).sort(
+            ([, a], [, b]) => b - a,
+          ),
+        )
+      }
+
       this.store[depth].sent = true
       if (this.evaluationResolver) {
         this.evaluationResolver(this.store[depth])

@@ -11,7 +11,13 @@ interface Props {
   colorSanMapping: ColorSanMapping
   recommendations: {
     maia?: { move: string; prob: number }[]
-    stockfish?: { move: string; cp: number }[]
+    stockfish?: {
+      move: string
+      cp: number
+      winrate?: number
+      winrate_loss?: number
+    }[]
+    isBlackTurn?: boolean
   }
   hover: (move?: string) => void
   makeMove: (move: string) => void
@@ -40,12 +46,17 @@ export const Highlight: React.FC<Props> = ({
     source: 'maia' | 'stockfish',
     prob?: number,
     cp?: number,
+    winrate?: number,
   ) => {
     const matchingMove = findMatchingMove(move, source)
     const maiaProb =
       source === 'maia' ? prob : (matchingMove as { prob: number })?.prob
     const stockfishCp =
       source === 'stockfish' ? cp : (matchingMove as { cp: number })?.cp
+    const stockfishWinrate =
+      source === 'stockfish'
+        ? winrate
+        : (matchingMove as { winrate?: number })?.winrate
 
     return (
       <div className="flex flex-col gap-1 overflow-hidden rounded border border-background-2 bg-backdrop">
@@ -73,6 +84,12 @@ export const Highlight: React.FC<Props> = ({
                 {stockfishCp > 0 ? '+' : ''}
                 {(stockfishCp / 100).toFixed(2)}
               </span>
+            </div>
+          )}
+          {stockfishWinrate !== undefined && (
+            <div className="flex w-full items-center justify-between gap-2 font-mono">
+              <span className="text-engine-3">Win Rate:</span>
+              <span>{(stockfishWinrate * 100).toFixed(1)}%</span>
             </div>
           )}
         </div>
@@ -119,8 +136,8 @@ export const Highlight: React.FC<Props> = ({
             className="!z-50 !bg-none !p-0 !opacity-100"
             render={({ content }) => {
               if (!content) return null
-              const { move, source, prob, cp } = JSON.parse(content)
-              return getTooltipContent(move, source, prob, cp)
+              const { move, source, prob, cp, winrate } = JSON.parse(content)
+              return getTooltipContent(move, source, prob, cp, winrate)
             }}
           />
           <div className="grid grid-rows-2 items-center justify-center p-3">
@@ -155,7 +172,7 @@ export const Highlight: React.FC<Props> = ({
           <div className="grid grid-rows-2 flex-col items-center justify-center p-3">
             {recommendations.stockfish
               ?.slice(0, 4)
-              .map(({ move, cp }, index) => {
+              .map(({ move, cp, winrate }, index) => {
                 return (
                   <button
                     key={index}
@@ -171,6 +188,7 @@ export const Highlight: React.FC<Props> = ({
                       move,
                       source: 'stockfish',
                       cp,
+                      winrate,
                     })}
                   >
                     <p className="w-[42px] text-right font-mono text-xs md:text-sm">

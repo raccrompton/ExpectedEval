@@ -16,6 +16,15 @@ import {
   useLocalStorage,
 } from '..'
 
+const COLORS = {
+  good: ['#238b45', '#41ab5d', '#74c476', '#a1d99b', '#c7e9c0'],
+  ok: ['#ec7014', '#feb24c', '#fed976', '#ffeda0', '#ffffcc'].reverse(),
+  blunder: ['#cb181d', '#ef3b2c', '#fb6a4a', '#fc9272', '#fcbba1'].reverse(),
+}
+
+// Constants for move classification based on winrate
+const BLUNDER_THRESHOLD = 0.1 // 10% winrate drop
+const INACCURACY_THRESHOLD = 0.05 // 5% winrate drop
 const MAIA_MODELS = [
   'maia_kdd_1100',
   'maia_kdd_1200',
@@ -27,22 +36,6 @@ const MAIA_MODELS = [
   'maia_kdd_1800',
   'maia_kdd_1900',
 ]
-
-// const MAIA_COLORS = ['#fe7f6d', '#f08a4c', '#ecaa4f', '#eccd4f']
-const STOCKFISH_COLORS = [
-  '#1a9850',
-  '#91cf60',
-  '#d9ef8b',
-  '#fee08b',
-  '#fc8d59',
-  '#d73027',
-]
-
-const COLORS = {
-  good: ['#238b45', '#41ab5d', '#74c476', '#a1d99b', '#c7e9c0'],
-  ok: ['#ec7014', '#feb24c', '#fed976', '#ffeda0', '#ffffcc'].reverse(),
-  blunder: ['#cb181d', '#ef3b2c', '#fb6a4a', '#fc9272', '#fcbba1'].reverse(),
-}
 
 export const useAnalysisController = (game: AnalyzedGame) => {
   const controller = useAnalysisGameController(
@@ -67,7 +60,6 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     MAIA_MODELS[0],
   )
 
-  // Ensure the selected model is valid for the current context
   useEffect(() => {
     if (!MAIA_MODELS.includes(currentMaiaModel)) {
       setCurrentMaiaModel(MAIA_MODELS[0])
@@ -268,20 +260,40 @@ export const useAnalysisController = (game: AnalyzedGame) => {
         okMoves: { probability: 0, moves: [] },
         goodMoves: { probability: 0, moves: [] },
       }
-    for (const [move, prob] of Object.entries(maia.policy)) {
-      const loss = stockfish.cp_relative_vec[move]
-      if (loss === undefined) continue
-      const probability = prob * 100
 
-      if (loss >= -50) {
-        goodMoveProbability += probability
-        goodMoveChanceInfo.push({ move, probability })
-      } else if (loss >= -150) {
-        okMoveProbability += probability
-        okMoveChanceInfo.push({ move, probability })
-      } else {
-        blunderMoveProbability += probability
-        blunderMoveChanceInfo.push({ move, probability })
+    if (stockfish.winrate_loss_vec) {
+      for (const [move, prob] of Object.entries(maia.policy)) {
+        const winrate_loss = stockfish.winrate_loss_vec[move]
+        if (winrate_loss === undefined) continue
+        const probability = prob * 100
+
+        if (winrate_loss >= -INACCURACY_THRESHOLD) {
+          goodMoveProbability += probability
+          goodMoveChanceInfo.push({ move, probability })
+        } else if (winrate_loss >= -BLUNDER_THRESHOLD) {
+          okMoveProbability += probability
+          okMoveChanceInfo.push({ move, probability })
+        } else {
+          blunderMoveProbability += probability
+          blunderMoveChanceInfo.push({ move, probability })
+        }
+      }
+    } else {
+      for (const [move, prob] of Object.entries(maia.policy)) {
+        const loss = stockfish.cp_relative_vec[move]
+        if (loss === undefined) continue
+        const probability = prob * 100
+
+        if (loss >= -50) {
+          goodMoveProbability += probability
+          goodMoveChanceInfo.push({ move, probability })
+        } else if (loss >= -150) {
+          okMoveProbability += probability
+          okMoveChanceInfo.push({ move, probability })
+        } else {
+          blunderMoveProbability += probability
+          blunderMoveChanceInfo.push({ move, probability })
+        }
       }
     }
 
@@ -350,10 +362,21 @@ export const useAnalysisController = (game: AnalyzedGame) => {
 
   const moveRecommendations = useMemo(() => {
     if (!moveEvaluation) return {}
+
+    const isBlackTurn = controller.currentNode?.turn === 'b'
+
     const recommendations: {
       maia?: { move: string; prob: number }[]
-      stockfish?: { move: string; cp: number }[]
-    } = {}
+      stockfish?: {
+        move: string
+        cp: number
+        winrate?: number
+        winrate_loss?: number
+      }[]
+      isBlackTurn?: boolean
+    } = {
+      isBlackTurn,
+    }
 
     if (moveEvaluation?.maia) {
       const policy = moveEvaluation.maia.policy
@@ -367,16 +390,21 @@ export const useAnalysisController = (game: AnalyzedGame) => {
 
     if (moveEvaluation?.stockfish) {
       const cp_vec = moveEvaluation.stockfish.cp_vec
+      const winrate_vec = moveEvaluation.stockfish.winrate_vec || {}
+      const winrate_loss_vec = moveEvaluation.stockfish.winrate_loss_vec || {}
+
       const stockfish = Object.entries(cp_vec).map(([move, cp]) => ({
         move,
         cp,
+        winrate: winrate_vec[move] || 0,
+        winrate_loss: winrate_loss_vec[move] || 0,
       }))
 
       recommendations.stockfish = stockfish
     }
 
     return recommendations
-  }, [moveEvaluation])
+  }, [moveEvaluation, controller.currentNode])
 
   const moveMap = useMemo(() => {
     if (!moveEvaluation?.maia || !moveEvaluation?.stockfish) {
@@ -387,8 +415,13 @@ export const useAnalysisController = (game: AnalyzedGame) => {
       Object.entries(moveEvaluation.maia.policy).slice(0, 3),
     )
 
+    // Get the Stockfish moves in their sorted order (best to worst for the current player)
     const stockfishMoves = Object.entries(moveEvaluation.stockfish.cp_vec)
+
+    // Top moves are the first 3 in the sorted order
     const topStockfish = Object.fromEntries(stockfishMoves.slice(0, 3))
+
+    // Worst moves are the last 2 in the sorted order
     const worstStockfish = Object.fromEntries(stockfishMoves.slice(-2))
 
     const moves = Array.from(

@@ -71,6 +71,8 @@ export interface StockfishEvaluation {
   model_optimal_cp: number
   cp_vec: { [key: string]: number }
   cp_relative_vec: { [key: string]: number }
+  winrate_vec?: { [key: string]: number }
+  winrate_loss_vec?: { [key: string]: number }
 }
 
 export interface ColorSanMapping {

@@ -20,7 +20,6 @@ export const pseudoNL = (value: number) => {
   return value
 }
 
-// Lookup table for converting centipawn values to win rate percentages
 export const cpLookup: Record<string, number> = {
   '-10.0': 0.16874792794783955,
   '-9.9': 0.16985049833887045,
@@ -227,15 +226,20 @@ export const cpLookup: Record<string, number> = {
 
 export const cpToWinrate = (cp: number | string, allowNaN = false): number => {
   try {
-    const numCp = typeof cp === 'string' ? parseFloat(cp) : cp
-    const roundedCp = Math.round(numCp * 10) / 10
+    const numCp = (typeof cp === 'string' ? parseFloat(cp) : cp) / 100
+
+    const clampedCp = Math.max(-10.0, Math.min(10.0, numCp))
+    const roundedCp = Math.round(clampedCp * 10) / 10
 
     const key = roundedCp.toFixed(1)
     if (key in cpLookup) {
       return cpLookup[key]
     }
 
-    return allowNaN ? Number.NaN : Number.NaN
+    if (roundedCp < -10.0) return cpLookup['-10.0']
+    if (roundedCp > 10.0) return cpLookup['10.0']
+
+    return allowNaN ? Number.NaN : 0.5
   } catch (error) {
     if (allowNaN) {
       return Number.NaN
