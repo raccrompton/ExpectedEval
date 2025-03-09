@@ -183,7 +183,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
               })}
             </>
           )}
-          <div className="flex flex-1 items-center justify-center gap-1 py-2">
+          <div className="flex flex-1 items-start justify-center gap-1 py-2 md:items-center">
             <span className="material-symbols-outlined text-sm text-secondary">
               chess_pawn
             </span>
@@ -210,7 +210,7 @@ function Header({
   return (
     <button
       onClick={() => setSelected(name)}
-      className={`relative flex items-center justify-center py-1 ${selected === name ? 'bg-human-4/30' : 'bg-background-1/80 hover:bg-background-2'} `}
+      className={`relative flex items-center justify-center md:py-1 ${selected === name ? 'bg-human-4/30' : 'bg-background-1/80 hover:bg-background-2'} `}
     >
       <div className="flex items-center justify-start">
         <p

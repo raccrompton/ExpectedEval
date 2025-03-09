@@ -11,6 +11,8 @@ interface Props {
   currentMaiaModel?: string
   setCurrentMaiaModel?: (model: string) => void
   MAIA_MODELS?: string[]
+  showGameListButton?: boolean
+  onGameListClick?: () => void
 }
 
 export const GameInfo: React.FC<Props> = ({
@@ -21,6 +23,8 @@ export const GameInfo: React.FC<Props> = ({
   currentMaiaModel,
   setCurrentMaiaModel,
   MAIA_MODELS,
+  showGameListButton,
+  onGameListClick,
 }: Props) => {
   const { setInstructionsModalProps } = useContext(ModalContext)
 
@@ -52,14 +56,27 @@ export const GameInfo: React.FC<Props> = ({
             </p>
           )}
         </div>
-        <button
-          className="material-symbols-outlined duration-200 hover:text-human-3"
-          onClick={() => {
-            setInstructionsModalProps({ instructionsType: type })
-          }}
-        >
-          help
-        </button>
+        <div className="flex items-center gap-2">
+          {showGameListButton && (
+            <button
+              className="flex items-center gap-1 rounded bg-human-4/30 px-2 py-1 text-sm text-human-2 duration-200 hover:bg-human-4/50 md:hidden"
+              onClick={onGameListClick}
+            >
+              <span className="material-symbols-outlined text-sm">
+                format_list_bulleted
+              </span>
+              <span>Switch Game</span>
+            </button>
+          )}
+          <button
+            className="material-symbols-outlined duration-200 hover:text-human-3"
+            onClick={() => {
+              setInstructionsModalProps({ instructionsType: type })
+            }}
+          >
+            help
+          </button>
+        </div>
       </div>
       <div className="flex w-full flex-col">{children}</div>
     </div>

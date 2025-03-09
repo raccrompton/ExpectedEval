@@ -459,45 +459,48 @@ const Analysis: React.FC<Props> = ({
           ),
         )}
       </div>
-      <div className="flex w-full items-center justify-between text-sm opacity-80 md:hidden">
-        <div className="flex items-center gap-1.5">
+      <div className="flex w-full items-center justify-between text-xs md:hidden">
+        <div className="flex items-center gap-1">
           <div className="h-2 w-2 rounded-full bg-white" />
           <span className="font-medium">{analyzedGame.whitePlayer.name}</span>
           {analyzedGame.whitePlayer.rating && (
-            <span className="text-primary/70">
+            <span className="text-primary/60">
               ({analyzedGame.whitePlayer.rating})
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
-          <span
-            className={
-              analyzedGame.termination.winner === 'white'
-                ? 'font-medium text-engine-3'
-                : 'text-primary/70'
-            }
-          >
-            {analyzedGame.termination.winner === 'white' ? '1' : '0'}
-          </span>
-          <span className="text-primary/70">-</span>
-          <span
-            className={
-              analyzedGame.termination.winner === 'black'
-                ? 'font-medium text-engine-3'
-                : 'text-primary/70'
-            }
-          >
-            {analyzedGame.termination.winner === 'black' ? '1' : '0'}
-          </span>
-          {analyzedGame.termination.winner === 'none' && (
-            <span className="font-medium text-primary/70">½-½</span>
+        <div className="flex items-center gap-1">
+          {analyzedGame.termination.winner === 'none' ? (
+            <span className="font-medium text-primary/80">½-½</span>
+          ) : (
+            <span className="font-medium">
+              <span
+                className={
+                  analyzedGame.termination.winner === 'white'
+                    ? 'text-engine-3'
+                    : 'text-primary/70'
+                }
+              >
+                {analyzedGame.termination.winner === 'white' ? '1' : '0'}
+              </span>
+              <span className="text-primary/70">-</span>
+              <span
+                className={
+                  analyzedGame.termination.winner === 'black'
+                    ? 'text-engine-3'
+                    : 'text-primary/70'
+                }
+              >
+                {analyzedGame.termination.winner === 'black' ? '1' : '0'}
+              </span>
+            </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <div className="h-2 w-2 rounded-full border-[0.5px] bg-black" />
           <span className="font-medium">{analyzedGame.blackPlayer.name}</span>
           {analyzedGame.blackPlayer.rating && (
-            <span className="text-primary/70">
+            <span className="text-primary/60">
               ({analyzedGame.blackPlayer.rating})
             </span>
           )}
@@ -519,9 +522,15 @@ const Analysis: React.FC<Props> = ({
           <div className="flex max-h-[25vh] min-h-[25vh] flex-col bg-backdrop/30">
             <AnalysisGameList
               currentId={currentId}
-              loadNewTournamentGame={getAndSetTournamentGame}
-              loadNewLichessGames={getAndSetLichessGames}
-              loadNewUserGames={getAndSetUserGames}
+              loadNewTournamentGame={(newId, setCurrentMove) =>
+                getAndSetTournamentGame(newId, setCurrentMove)
+              }
+              loadNewLichessGames={(id, pgn, setCurrentMove) =>
+                getAndSetLichessGames(id, pgn, setCurrentMove)
+              }
+              loadNewUserGames={(id, type, setCurrentMove) =>
+                getAndSetUserGames(id, type, setCurrentMove)
+              }
             />
           </div>
           <div className="flex h-1/2 w-full flex-1 flex-col gap-2">
@@ -625,81 +634,138 @@ const Analysis: React.FC<Props> = ({
     </div>
   )
 
+  const [showGameListMobile, setShowGameListMobile] = useState(false)
+
   const mobileLayout = (
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
-        <div className="flex w-full flex-col items-start justify-start gap-1">
-          <GameInfo
-            title="Analysis"
-            icon="bar_chart"
-            type="analysis"
-            currentMaiaModel={currentMaiaModel}
-            setCurrentMaiaModel={setCurrentMaiaModel}
-            MAIA_MODELS={MAIA_MODELS}
-          >
-            <NestedGameInfo />
-          </GameInfo>
-          <div className="relative flex h-[100vw] w-screen">
-            <AnalysisGameBoard
-              game={analyzedGame}
-              moves={moves}
-              setCurrentSquare={setCurrentSquare}
-              shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
-              currentNode={controller.currentNode as GameNode}
-              orientation={controller.orientation}
-              goToNode={controller.goToNode}
-            />
-          </div>
-          <div className="flex w-full flex-col gap-0">
-            <div className="w-full !flex-grow-0">
-              <AnalysisBoardController />
+        {showGameListMobile ? (
+          <div className="flex w-full flex-col items-start justify-start gap-1">
+            <div className="flex w-full flex-col items-start justify-start overflow-hidden bg-background-1 p-3">
+              <div className="flex w-full items-center justify-between">
+                <div className="flex items-center justify-start gap-1.5">
+                  <span className="material-symbols-outlined text-xl">
+                    format_list_bulleted
+                  </span>
+                  <h2 className="text-xl font-semibold">Switch Game</h2>
+                </div>
+                <button
+                  className="flex items-center gap-1 rounded bg-background-2 px-2 py-1 text-sm duration-200 hover:bg-background-3"
+                  onClick={() => setShowGameListMobile(false)}
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    arrow_back
+                  </span>
+                  <span>Back to Analysis</span>
+                </button>
+              </div>
+              <p className="mt-1 text-sm text-secondary">
+                Select a game to analyze
+              </p>
             </div>
-            <div className="relative bottom-0 h-48 max-h-48 flex-1 overflow-auto overflow-y-hidden">
-              <AnalysisMovesContainer
-                game={analyzedGame}
-                termination={analyzedGame.termination}
+            <div className="flex h-[calc(100vh-10rem)] w-full flex-col overflow-hidden rounded bg-backdrop/30">
+              <AnalysisGameList
+                currentId={currentId}
+                loadNewTournamentGame={(newId, setCurrentMove) =>
+                  loadGameAndCloseList(
+                    getAndSetTournamentGame(newId, setCurrentMove),
+                  )
+                }
+                loadNewLichessGames={(id, pgn, setCurrentMove) =>
+                  loadGameAndCloseList(
+                    getAndSetLichessGames(id, pgn, setCurrentMove),
+                  )
+                }
+                loadNewUserGames={(id, type, setCurrentMove) =>
+                  loadGameAndCloseList(
+                    getAndSetUserGames(id, type, setCurrentMove),
+                  )
+                }
               />
             </div>
           </div>
-          <div className="flex w-full flex-col gap-1 overflow-hidden">
-            <BlunderMeter
-              hover={hover}
-              makeMove={makeMove}
-              data={blunderMeter}
-              colorSanMapping={colorSanMapping}
-            />
-            <Highlight
-              hover={hover}
-              makeMove={makeMove}
+        ) : (
+          <div className="flex w-full flex-col items-start justify-start gap-1">
+            <GameInfo
+              title="Analysis"
+              icon="bar_chart"
+              type="analysis"
               currentMaiaModel={currentMaiaModel}
-              recommendations={moveRecommendations}
-              moveEvaluation={
-                moveEvaluation as {
-                  maia?: MaiaEvaluation
-                  stockfish?: StockfishEvaluation
+              setCurrentMaiaModel={setCurrentMaiaModel}
+              MAIA_MODELS={MAIA_MODELS}
+              onGameListClick={() => setShowGameListMobile(true)}
+              showGameListButton={true}
+            >
+              <NestedGameInfo />
+            </GameInfo>
+            <div className="relative flex h-[100vw] w-screen">
+              <AnalysisGameBoard
+                game={analyzedGame}
+                moves={moves}
+                setCurrentSquare={setCurrentSquare}
+                shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
+                currentNode={controller.currentNode as GameNode}
+                orientation={controller.orientation}
+                goToNode={controller.goToNode}
+              />
+            </div>
+            <div className="flex w-full flex-col gap-0">
+              <div className="w-full !flex-grow-0">
+                <AnalysisBoardController />
+              </div>
+              <div className="relative bottom-0 h-48 max-h-48 flex-1 overflow-auto overflow-y-hidden">
+                <AnalysisMovesContainer
+                  game={analyzedGame}
+                  termination={analyzedGame.termination}
+                />
+              </div>
+            </div>
+            <div className="flex w-full flex-col gap-1 overflow-hidden">
+              <BlunderMeter
+                hover={hover}
+                makeMove={makeMove}
+                data={blunderMeter}
+                colorSanMapping={colorSanMapping}
+              />
+              <Highlight
+                hover={hover}
+                makeMove={makeMove}
+                currentMaiaModel={currentMaiaModel}
+                recommendations={moveRecommendations}
+                moveEvaluation={
+                  moveEvaluation as {
+                    maia?: MaiaEvaluation
+                    stockfish?: StockfishEvaluation
+                  }
                 }
-              }
-              movesByRating={movesByRating}
-              colorSanMapping={colorSanMapping}
-            />
-            <MoveMap
-              moveMap={moveMap}
-              colorSanMapping={colorSanMapping}
-              setHoverArrow={setHoverArrow}
+                movesByRating={movesByRating}
+                colorSanMapping={colorSanMapping}
+              />
+              <MoveMap
+                moveMap={moveMap}
+                colorSanMapping={colorSanMapping}
+                setHoverArrow={setHoverArrow}
+              />
+            </div>
+            <ConfigurableScreens
+              currentMaiaModel={currentMaiaModel}
+              setCurrentMaiaModel={setCurrentMaiaModel}
+              launchContinue={launchContinue}
+              MAIA_MODELS={MAIA_MODELS}
+              game={analyzedGame}
+              currentNode={controller.currentNode as GameNode}
             />
           </div>
-          <ConfigurableScreens
-            currentMaiaModel={currentMaiaModel}
-            setCurrentMaiaModel={setCurrentMaiaModel}
-            launchContinue={launchContinue}
-            MAIA_MODELS={MAIA_MODELS}
-            game={analyzedGame}
-            currentNode={controller.currentNode as GameNode}
-          />
-        </div>
+        )}
       </div>
     </>
   )
+
+  // Helper function to load a game and close the game list
+  const loadGameAndCloseList = async (loadFunction: Promise<void>) => {
+    await loadFunction
+    setShowGameListMobile(false)
+  }
 
   return (
     <>
