@@ -8,7 +8,9 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from 'recharts'
+import { useContext } from 'react'
 import { ColorSanMapping } from 'src/types'
+import { WindowSizeContext } from 'src/contexts'
 
 interface Props {
   moves: { [key: string]: number }[] | undefined
@@ -19,6 +21,8 @@ export const MovesByRating: React.FC<Props> = ({
   moves,
   colorSanMapping,
 }: Props) => {
+  const { isMobile } = useContext(WindowSizeContext)
+
   const maxValue = moves
     ? Math.max(
         ...moves.flatMap((move) =>
@@ -36,7 +40,15 @@ export const MovesByRating: React.FC<Props> = ({
     <div className="flex h-64 w-full flex-col rounded bg-background-1/60 md:h-full">
       <p className="p-3 text-primary md:text-lg">Moves by Rating</p>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={moves} margin={{ left: 0, right: 50, bottom: 0 }}>
+        <AreaChart
+          data={moves}
+          margin={{
+            left: 0,
+            right: isMobile ? 40 : 50,
+            bottom: 0,
+            top: isMobile ? 5 : 0,
+          }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="#3C3C3C" />
           <XAxis
             dataKey="rating"
@@ -46,7 +58,11 @@ export const MovesByRating: React.FC<Props> = ({
               fontSize: 11,
             }}
             tickMargin={4}
-            ticks={[1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900]}
+            ticks={
+              isMobile
+                ? [1100, 1300, 1500, 1700, 1900]
+                : [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900]
+            }
           />
           <YAxis
             yAxisId="left"
@@ -67,8 +83,8 @@ export const MovesByRating: React.FC<Props> = ({
               fontWeight: 600,
               fontSize: 14,
             }}
-            tickCount={5}
-            tickMargin={2}
+            tickCount={isMobile ? 4 : 5}
+            tickMargin={isMobile ? 1 : 2}
             tickLine={false}
             tickFormatter={(value) => `${value}%`}
           />
@@ -144,13 +160,13 @@ export const MovesByRating: React.FC<Props> = ({
                     yAxisId="left"
                     dataKey={move}
                     dot={{
-                      r: 3,
+                      r: isMobile ? 2 : 3,
                       stroke: colorSanMapping[move]?.color ?? '#fff',
-                      strokeWidth: 3,
+                      strokeWidth: isMobile ? 2 : 3,
                     }}
                     stroke={colorSanMapping[move]?.color ?? '#fff'}
                     fill={`url(#color${move})`}
-                    strokeWidth={3}
+                    strokeWidth={isMobile ? 2 : 3}
                     animationDuration={300}
                     name={san}
                     label={(props: {
@@ -179,7 +195,7 @@ export const MovesByRating: React.FC<Props> = ({
                       )
 
                       let adjustment = 0
-                      const minLabelHeight = 16
+                      const minLabelHeight = isMobile ? 14 : 16
 
                       if (currentIndex > 0) {
                         const prevEndPoint =
@@ -200,9 +216,9 @@ export const MovesByRating: React.FC<Props> = ({
 
                       return (
                         <text
-                          x={props.x + 10}
+                          x={props.x + (isMobile ? 6 : 10)}
                           y={props.y - adjustment}
-                          dy={4}
+                          dy={isMobile ? 3 : 4}
                           fontSize={11}
                           fontWeight={600}
                           fill={colorSanMapping[move]?.color ?? '#fff'}
@@ -260,7 +276,11 @@ export const MovesByRating: React.FC<Props> = ({
           <Legend
             align="right"
             verticalAlign="top"
-            wrapperStyle={{ top: -14, right: 20, fontSize: 14 }}
+            wrapperStyle={{
+              top: isMobile ? -10 : -14,
+              right: isMobile ? 10 : 20,
+              fontSize: 14,
+            }}
             iconSize={0}
             formatter={(value) => {
               return colorSanMapping[value as string]?.san ?? value

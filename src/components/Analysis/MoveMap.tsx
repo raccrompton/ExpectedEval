@@ -9,9 +9,11 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from 'recharts'
+import { useContext } from 'react'
 import { ColorSanMapping } from 'src/types'
 import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
+import { WindowSizeContext } from 'src/contexts'
 import { ContentType } from 'recharts/types/component/Label'
 
 interface Props {
@@ -26,6 +28,8 @@ export const MoveMap: React.FC<Props> = ({
   colorSanMapping,
   setHoverArrow,
 }: Props) => {
+  const { isMobile } = useContext(WindowSizeContext)
+
   const onMouseEnter = (move: string) => {
     setHoverArrow({
       orig: move.slice(0, 2) as Key,
@@ -38,7 +42,7 @@ export const MoveMap: React.FC<Props> = ({
   }
 
   return (
-    <div className="flex h-64 max-h-full flex-col overflow-hidden rounded bg-background-1/60 md:h-full">
+    <div className="flex h-64 max-h-full flex-col overflow-hidden bg-background-1/60 md:h-full md:rounded">
       <p className="p-3 text-primary md:text-lg">Move Map</p>
       <div className="flex h-full w-full flex-col">
         <ResponsiveContainer width="100%" height="100%">
@@ -52,10 +56,10 @@ export const MoveMap: React.FC<Props> = ({
                 value: 'SF Loss',
                 fill: '#76ADDD',
                 position: 'insideBottom',
-                fontSize: 18,
+                fontSize: isMobile ? 14 : 18,
                 fontWeight: 600,
                 offset: -8,
-                dx: -12,
+                dx: isMobile ? -6 : -12,
               }}
               tickCount={5}
               tickLine={false}
@@ -71,7 +75,7 @@ export const MoveMap: React.FC<Props> = ({
                 fontSize={12}
                 fontWeight={500}
                 dy={10}
-                dx={-18}
+                dx={isMobile ? -40 : -18}
               />
               <Label
                 value="Best Moves →"
@@ -92,10 +96,10 @@ export const MoveMap: React.FC<Props> = ({
                 fill: '#FE7F6D',
                 position: 'insideLeft',
                 angle: -90,
-                fontSize: 16,
+                fontSize: isMobile ? 14 : 16,
                 fontWeight: 600,
-                dx: 10,
-                dy: 32,
+                dx: isMobile ? 5 : 10,
+                dy: isMobile ? 20 : 32,
               }}
               tickCount={4}
               tick={{
@@ -113,7 +117,7 @@ export const MoveMap: React.FC<Props> = ({
                 angle={-90}
                 fontSize={12}
                 fontWeight={500}
-                dy={140}
+                dy={isMobile ? 100 : 140}
                 position="insideLeft"
                 fill="#BF5F52"
               />
@@ -125,14 +129,14 @@ export const MoveMap: React.FC<Props> = ({
                 dx={10}
                 angle={-90}
                 fontWeight={500}
-                dy={-56}
+                dy={isMobile ? -30 : -56}
               />
             </YAxis>
             <Scatter name="Moves" data={moveMap}>
               <LabelList
                 dataKey="move"
                 position="top"
-                fontSize={12}
+                fontSize={isMobile ? 10 : 12}
                 fill="white"
                 content={
                   (({
@@ -151,10 +155,12 @@ export const MoveMap: React.FC<Props> = ({
                         x={x}
                         y={y}
                         key={index}
-                        fontSize={12}
+                        fontSize={isMobile ? 10 : 12}
                         textAnchor="middle"
-                        dx={x < 100 ? 22 : -15}
-                        dy={8}
+                        dx={
+                          x < 100 ? (isMobile ? 15 : 22) : isMobile ? -10 : -15
+                        }
+                        dy={isMobile ? 6 : 8}
                         fill={colorSanMapping[value]?.color ?? '#fff'}
                       >
                         {colorSanMapping[value]?.san ?? value}
