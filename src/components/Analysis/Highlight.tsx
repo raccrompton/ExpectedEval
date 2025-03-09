@@ -79,7 +79,7 @@ export const Highlight: React.FC<Props> = ({
           )}
           {stockfishCp !== undefined && (
             <div className="flex w-full items-center justify-between gap-2 font-mono">
-              <span className="text-engine-3">Stockfish:</span>
+              <span className="text-engine-3">SF Eval:</span>
               <span>
                 {stockfishCp > 0 ? '+' : ''}
                 {(stockfishCp / 100).toFixed(2)}
@@ -88,7 +88,7 @@ export const Highlight: React.FC<Props> = ({
           )}
           {stockfishWinrate !== undefined && (
             <div className="flex w-full items-center justify-between gap-2 font-mono">
-              <span className="text-engine-3">Win Rate:</span>
+              <span className="text-engine-3">SF Winrate:</span>
               <span>{(stockfishWinrate * 100).toFixed(1)}%</span>
             </div>
           )}
