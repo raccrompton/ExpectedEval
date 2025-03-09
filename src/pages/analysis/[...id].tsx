@@ -432,31 +432,77 @@ const Analysis: React.FC<Props> = ({
 
   const NestedGameInfo = () => (
     <div className="flex w-full flex-col">
-      {[analyzedGame.whitePlayer, analyzedGame.blackPlayer].map(
-        (player, index) => (
-          <div key={index} className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div
-                className={`h-2 w-2 rounded-full ${index === 0 ? 'bg-white' : 'border-[0.5px] bg-black'}`}
-              />
-              <p className="text-sm">{player.name}</p>
-              <span className="text-xs">
-                {player.rating ? <>({player.rating})</> : null}
-              </span>
+      <div className="hidden md:block">
+        {[analyzedGame.whitePlayer, analyzedGame.blackPlayer].map(
+          (player, index) => (
+            <div key={index} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`h-2 w-2 rounded-full ${index === 0 ? 'bg-white' : 'border-[0.5px] bg-black'}`}
+                />
+                <p className="text-sm">{player.name}</p>
+                <span className="text-xs">
+                  {player.rating ? <>({player.rating})</> : null}
+                </span>
+              </div>
+              {analyzedGame.termination.winner ===
+              (index == 0 ? 'white' : 'black') ? (
+                <p className="text-xs text-engine-3">1</p>
+              ) : analyzedGame.termination.winner !== 'none' ? (
+                <p className="text-xs text-human-3">0</p>
+              ) : analyzedGame.termination === undefined ? (
+                <></>
+              ) : (
+                <p className="text-xs">1/2</p>
+              )}
             </div>
-            {analyzedGame.termination.winner ===
-            (index == 0 ? 'white' : 'black') ? (
-              <p className="text-xs text-engine-3">1</p>
-            ) : analyzedGame.termination.winner !== 'none' ? (
-              <p className="text-xs text-human-3">0</p>
-            ) : analyzedGame.termination === undefined ? (
-              <></>
-            ) : (
-              <p className="text-xs">1/2</p>
-            )}
-          </div>
-        ),
-      )}
+          ),
+        )}
+      </div>
+      <div className="flex w-full items-center justify-between text-sm opacity-80 md:hidden">
+        <div className="flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full bg-white" />
+          <span className="font-medium">{analyzedGame.whitePlayer.name}</span>
+          {analyzedGame.whitePlayer.rating && (
+            <span className="text-primary/70">
+              ({analyzedGame.whitePlayer.rating})
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span
+            className={
+              analyzedGame.termination.winner === 'white'
+                ? 'font-medium text-engine-3'
+                : 'text-primary/70'
+            }
+          >
+            {analyzedGame.termination.winner === 'white' ? '1' : '0'}
+          </span>
+          <span className="text-primary/70">-</span>
+          <span
+            className={
+              analyzedGame.termination.winner === 'black'
+                ? 'font-medium text-engine-3'
+                : 'text-primary/70'
+            }
+          >
+            {analyzedGame.termination.winner === 'black' ? '1' : '0'}
+          </span>
+          {analyzedGame.termination.winner === 'none' && (
+            <span className="font-medium text-primary/70">½-½</span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full border-[0.5px] bg-black" />
+          <span className="font-medium">{analyzedGame.blackPlayer.name}</span>
+          {analyzedGame.blackPlayer.rating && (
+            <span className="text-primary/70">
+              ({analyzedGame.blackPlayer.rating})
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   )
 
@@ -616,6 +662,12 @@ const Analysis: React.FC<Props> = ({
             </div>
           </div>
           <div className="flex w-full flex-col gap-1 overflow-hidden">
+            <BlunderMeter
+              hover={hover}
+              makeMove={makeMove}
+              data={blunderMeter}
+              colorSanMapping={colorSanMapping}
+            />
             <Highlight
               hover={hover}
               makeMove={makeMove}
@@ -634,12 +686,6 @@ const Analysis: React.FC<Props> = ({
               moveMap={moveMap}
               colorSanMapping={colorSanMapping}
               setHoverArrow={setHoverArrow}
-            />
-            <BlunderMeter
-              hover={hover}
-              makeMove={makeMove}
-              data={blunderMeter}
-              colorSanMapping={colorSanMapping}
             />
           </div>
           <ConfigurableScreens

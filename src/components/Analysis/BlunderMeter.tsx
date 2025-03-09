@@ -91,66 +91,68 @@ const MobileBlunderMeter: React.FC<Props> = ({
 }: Props) => {
   return (
     <div className="flex w-full flex-col gap-2 overflow-hidden rounded bg-background-1/60 p-3">
-      <p className="text-lg text-primary">Blunder Meter</p>
-      <div className="flex w-full flex-row overflow-hidden">
-        <div className="flex w-full select-none flex-row overflow-hidden rounded">
-          <HorizontalMeter
-            hover={hover}
-            makeMove={makeMove}
+      <p className="text-primary">Blunder Meter</p>
+      <div className="flex w-full flex-col gap-1">
+        <div className="flex w-full flex-row overflow-hidden">
+          <div className="flex w-full select-none flex-row overflow-hidden rounded">
+            <HorizontalMeter
+              hover={hover}
+              makeMove={makeMove}
+              title="Best Moves"
+              textColor="text-[#1a9850]"
+              moves={data.goodMoves.moves}
+              bgColor="bg-[#1a9850] rounded-l"
+              probability={data.goodMoves.probability}
+              colorSanMapping={colorSanMapping}
+            />
+            <HorizontalMeter
+              hover={hover}
+              title="Meh Moves"
+              makeMove={makeMove}
+              moves={data.okMoves.moves}
+              bgColor="bg-[#fee08b]"
+              textColor="text-[#fee08b]"
+              probability={data.okMoves.probability}
+              colorSanMapping={colorSanMapping}
+            />
+            <HorizontalMeter
+              hover={hover}
+              title="Blunders"
+              makeMove={makeMove}
+              textColor="text-[#d73027]"
+              bgColor="bg-[#d73027] rounded-r"
+              moves={data.blunderMoves.moves}
+              probability={data.blunderMoves.probability}
+              colorSanMapping={colorSanMapping}
+            />
+          </div>
+        </div>
+        <div className="grid w-full grid-cols-3 gap-2">
+          <MovesList
             title="Best Moves"
             textColor="text-[#1a9850]"
             moves={data.goodMoves.moves}
-            bgColor="bg-[#1a9850] rounded-l"
-            probability={data.goodMoves.probability}
+            hover={hover}
+            makeMove={makeMove}
             colorSanMapping={colorSanMapping}
           />
-          <HorizontalMeter
-            hover={hover}
+          <MovesList
             title="Meh Moves"
-            makeMove={makeMove}
-            moves={data.okMoves.moves}
-            bgColor="bg-[#fee08b]"
             textColor="text-[#fee08b]"
-            probability={data.okMoves.probability}
+            moves={data.okMoves.moves}
+            hover={hover}
+            makeMove={makeMove}
             colorSanMapping={colorSanMapping}
           />
-          <HorizontalMeter
-            hover={hover}
+          <MovesList
             title="Blunders"
-            makeMove={makeMove}
             textColor="text-[#d73027]"
-            bgColor="bg-[#d73027] rounded-r"
             moves={data.blunderMoves.moves}
-            probability={data.blunderMoves.probability}
+            hover={hover}
+            makeMove={makeMove}
             colorSanMapping={colorSanMapping}
           />
         </div>
-      </div>
-      <div className="mt-2 grid w-full grid-cols-3 gap-2">
-        <MovesList
-          title="Best Moves"
-          textColor="text-[#1a9850]"
-          moves={data.goodMoves.moves}
-          hover={hover}
-          makeMove={makeMove}
-          colorSanMapping={colorSanMapping}
-        />
-        <MovesList
-          title="Meh Moves"
-          textColor="text-[#fee08b]"
-          moves={data.okMoves.moves}
-          hover={hover}
-          makeMove={makeMove}
-          colorSanMapping={colorSanMapping}
-        />
-        <MovesList
-          title="Blunders"
-          textColor="text-[#d73027]"
-          moves={data.blunderMoves.moves}
-          hover={hover}
-          makeMove={makeMove}
-          colorSanMapping={colorSanMapping}
-        />
       </div>
     </div>
   )
