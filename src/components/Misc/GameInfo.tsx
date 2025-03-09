@@ -8,6 +8,9 @@ interface Props {
   title: string
   type: InstructionsType
   children: React.ReactNode
+  currentMaiaModel?: string
+  setCurrentMaiaModel?: (model: string) => void
+  MAIA_MODELS?: string[]
 }
 
 export const GameInfo: React.FC<Props> = ({
@@ -15,14 +18,39 @@ export const GameInfo: React.FC<Props> = ({
   title,
   type,
   children,
+  currentMaiaModel,
+  setCurrentMaiaModel,
+  MAIA_MODELS,
 }: Props) => {
   const { setInstructionsModalProps } = useContext(ModalContext)
+
   return (
     <div className="flex w-full flex-col items-start justify-start gap-1 overflow-hidden bg-background-1 p-3 md:rounded">
       <div className="flex w-full items-center justify-between">
         <div className="flex items-center justify-start gap-1.5">
           <span className="material-symbols-outlined text-xl">{icon}</span>
           <h2 className="text-xl font-semibold">{title}</h2>
+          {currentMaiaModel && setCurrentMaiaModel && (
+            <p className="flex items-center gap-1 text-sm md:hidden">
+              using
+              <div className="relative inline-flex items-center gap-0.5">
+                <select
+                  value={currentMaiaModel}
+                  className="cursor-pointer appearance-none bg-transparent focus:outline-none"
+                  onChange={(e) => setCurrentMaiaModel(e.target.value)}
+                >
+                  {MAIA_MODELS?.map((model) => (
+                    <option value={model} key={model}>
+                      {model.replace('maia_kdd_', 'Maia ')}
+                    </option>
+                  ))}
+                </select>
+                <span className="material-symbols-outlined pointer-events-none text-sm">
+                  arrow_drop_down
+                </span>
+              </div>
+            </p>
+          )}
         </div>
         <button
           className="material-symbols-outlined duration-200 hover:text-human-3"

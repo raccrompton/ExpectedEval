@@ -583,7 +583,14 @@ const Analysis: React.FC<Props> = ({
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
         <div className="flex w-full flex-col items-start justify-start gap-1">
-          <GameInfo title="Analysis" icon="bar_chart" type="analysis">
+          <GameInfo
+            title="Analysis"
+            icon="bar_chart"
+            type="analysis"
+            currentMaiaModel={currentMaiaModel}
+            setCurrentMaiaModel={setCurrentMaiaModel}
+            MAIA_MODELS={MAIA_MODELS}
+          >
             <NestedGameInfo />
           </GameInfo>
           <div className="relative flex h-[100vw] w-screen">
