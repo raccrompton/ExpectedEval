@@ -174,10 +174,7 @@ function MovesList({
   colorSanMapping: ColorSanMapping
 }) {
   const filteredMoves = () => {
-    if (moves.length > 0 && moves[0].probability < 10) {
-      return moves.slice(0, 6).slice(0, 1)
-    }
-    return moves.slice(0, 6).filter((move) => move.probability >= 10)
+    return moves.slice(0, 6).filter((move) => move.probability >= 8)
   }
 
   return (
@@ -259,10 +256,7 @@ function Meter({
   moves: { move: string; probability: number }[]
 }) {
   const filteredMoves = () => {
-    if (moves.length > 0 && moves[0].probability < 10) {
-      return moves.slice(0, 6).slice(0, 1)
-    }
-    return moves.slice(0, 6).filter((move) => move.probability >= 10)
+    return moves.slice(0, 6).filter((move) => move.probability >= 8)
   }
 
   return (

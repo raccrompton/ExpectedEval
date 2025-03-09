@@ -61,8 +61,6 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     }
   }, [analysisTournamentList, currentId, listKeys])
 
-  console.log(currentId)
-
   const [selected, setSelected] = useState<
     'tournament' | 'pgn' | 'play' | 'hand' | 'brain'
   >(

@@ -12,7 +12,7 @@ import {
   AnalysisTournamentGame,
 } from 'src/types'
 import { buildUrl } from '../utils'
-
+import { cpToWinrate } from 'src/utils/stockfish'
 import { AvailableMoves } from 'src/types/training'
 
 function buildGameTree(moves: any[], initialFen: string) {
@@ -444,6 +444,32 @@ function convertMoveMapToStockfishEval(
     Object.entries(cp_relative_vec).sort(([, a], [, b]) => b - a),
   )
 
+  const winrate_vec: { [key: string]: number } = {}
+  let max_winrate = -Infinity
+
+  for (const move in cp_vec_sorted) {
+    const cp = cp_vec_sorted[move]
+    const winrate = cpToWinrate(cp, false)
+    winrate_vec[move] = winrate
+
+    if (winrate_vec[move] > max_winrate) {
+      max_winrate = winrate_vec[move]
+    }
+  }
+
+  const winrate_loss_vec: { [key: string]: number } = {}
+  for (const move in winrate_vec) {
+    winrate_loss_vec[move] = winrate_vec[move] - max_winrate
+  }
+
+  const winrate_vec_sorted = Object.fromEntries(
+    Object.entries(winrate_vec).sort(([, a], [, b]) => b - a),
+  )
+
+  const winrate_loss_vec_sorted = Object.fromEntries(
+    Object.entries(winrate_loss_vec).sort(([, a], [, b]) => b - a),
+  )
+
   if (turn === 'b') {
     model_optimal_cp *= -1
     for (const move in cp_vec_sorted) {
@@ -458,6 +484,8 @@ function convertMoveMapToStockfishEval(
     model_optimal_cp: model_optimal_cp,
     cp_vec: cp_vec_sorted,
     cp_relative_vec: cp_relative_vec_sorted,
+    winrate_vec: winrate_vec_sorted,
+    winrate_loss_vec: winrate_loss_vec_sorted,
   }
 }
 

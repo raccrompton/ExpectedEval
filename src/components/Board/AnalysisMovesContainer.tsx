@@ -18,6 +18,38 @@ function BlunderIcon() {
   )
 }
 
+function InaccuracyIcon() {
+  return (
+    <div className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#f46d43] text-[10px] font-bold text-white">
+      ?
+    </div>
+  )
+}
+
+function GoodMoveIcon() {
+  return (
+    <div className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#74add1] text-[10px] font-bold text-white">
+      !
+    </div>
+  )
+}
+
+function ExcellentMoveIcon() {
+  return (
+    <div className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#4575b4] text-[10px] font-bold text-white">
+      !!
+    </div>
+  )
+}
+
+function BestMoveIcon() {
+  return (
+    <div className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#1a9850] text-[10px] font-bold text-white">
+      ★
+    </div>
+  )
+}
+
 export const AnalysisMovesContainer: React.FC<Props> = ({
   game,
   highlightIndices,
@@ -276,6 +308,11 @@ function VariationTree({
       >
         {node.moveNumber}. {node.turn === 'w' ? '...' : ''}
         {node.san}
+        <span className="inline-flex items-center">
+          {node.blunder && (
+            <span className="ml-0.5 text-[8px] text-[#d73027]">!</span>
+          )}
+        </span>
       </span>
       {variations.length === 1 ? (
         <span className="inline">
@@ -338,6 +375,11 @@ function InlineChain({
             >
               {child.moveNumber}. {child.turn === 'w' ? '...' : ''}
               {child.san}
+              <span className="inline-flex items-center">
+                {child.blunder && (
+                  <span className="ml-0.5 text-[8px] text-[#d73027]">!</span>
+                )}
+              </span>
             </span>
           </Fragment>
         ))}
