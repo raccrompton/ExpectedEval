@@ -35,7 +35,7 @@ export const ConfigurableScreens: React.FC<Props> = ({
   const [screen, setScreen] = useState(screens[0])
 
   return (
-    <div className="flex w-full flex-1 flex-col overflow-hidden rounded bg-background-1/60 md:w-auto">
+    <div className="flex w-full flex-1 flex-col overflow-hidden bg-background-1/60 md:w-auto md:rounded">
       <div className="flex flex-row border-b border-white/10">
         {screens.map((s) => {
           const selected = s.id === screen.id

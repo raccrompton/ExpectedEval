@@ -474,23 +474,11 @@ const Analysis: React.FC<Props> = ({
             <span className="font-medium text-primary/80">½-½</span>
           ) : (
             <span className="font-medium">
-              <span
-                className={
-                  analyzedGame.termination.winner === 'white'
-                    ? 'text-engine-3'
-                    : 'text-primary/70'
-                }
-              >
+              <span className="text-primary/70">
                 {analyzedGame.termination.winner === 'white' ? '1' : '0'}
               </span>
               <span className="text-primary/70">-</span>
-              <span
-                className={
-                  analyzedGame.termination.winner === 'black'
-                    ? 'text-engine-3'
-                    : 'text-primary/70'
-                }
-              >
+              <span className="text-primary/70">
                 {analyzedGame.termination.winner === 'black' ? '1' : '0'}
               </span>
             </span>

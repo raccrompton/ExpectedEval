@@ -81,7 +81,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   }, [selected])
 
   return analysisTournamentList ? (
-    <div className="flex h-full flex-col items-start justify-start overflow-hidden rounded bg-background-1">
+    <div className="flex h-full flex-col items-start justify-start overflow-hidden bg-background-1 md:rounded">
       <div className="flex h-full w-full flex-col">
         <div className="grid select-none grid-cols-5 border-b-2 border-white border-opacity-10">
           <Header
