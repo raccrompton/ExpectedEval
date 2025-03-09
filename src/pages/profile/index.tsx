@@ -81,7 +81,7 @@ const Profile: React.FC<Props> = (props: Props) => {
   const { user } = useContext(AuthContext)
   const { isMobile } = useContext(WindowSizeContext)
 
-  const desktopLayout = () => (
+  const desktopLayout = (
     <div className="flex h-full w-full flex-col items-start justify-center gap-6 px-[4%] md:py-[2%]">
       <div className="flex flex-row items-center gap-4">
         <div className="*:w-16 *:fill-primary">{UserIcon}</div>
@@ -94,20 +94,20 @@ const Profile: React.FC<Props> = (props: Props) => {
     </div>
   )
 
-  const mobileLayout = () => (
+  const mobileLayout = (
     <div className="mt-6 flex flex-col gap-3 px-[4%]">
-      <div className="flex flex-row items-center gap-3">
-        <div className="*:w-12 *:fill-primary">{UserIcon}</div>
+      <div className="flex flex-row items-center gap-2 md:gap-3">
+        <div className="*:w-8 *:fill-primary">{UserIcon}</div>
         <h1 className="text-3xl font-semibold">{user?.displayName}</h1>
       </div>
-      <div className="flex w-full flex-col gap-6">
+      <div className="flex w-full flex-col gap-4">
         <GameList />
         <UserProfile stats={props.stats} />
       </div>
     </div>
   )
 
-  return <>{isMobile ? mobileLayout() : desktopLayout()}</>
+  return <>{isMobile ? mobileLayout : desktopLayout}</>
 }
 
 export default ProfilePage

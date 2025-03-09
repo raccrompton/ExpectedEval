@@ -73,8 +73,8 @@ export const GameList = () => {
 
   return (
     <div className="flex w-full flex-col overflow-hidden rounded border border-white border-opacity-10 md:w-[600px]">
-      <div className="flex flex-row items-center justify-start gap-4 border-b border-white border-opacity-10 bg-background-1 px-4 py-4 md:px-6">
-        <p className="text-2xl font-bold md:text-2xl">Your Games</p>
+      <div className="flex flex-row items-center justify-start gap-4 border-b border-white border-opacity-10 bg-background-1 px-2 py-3 md:px-4">
+        <p className="text-xl font-bold md:text-xl">Your Games</p>
       </div>
       <div className="grid select-none grid-cols-4 border-b-2 border-white border-opacity-10">
         <Header
@@ -114,17 +114,28 @@ export const GameList = () => {
           <a
             key={index}
             href={`/analysis/${game.id}/${selected}`}
-            className={`group flex w-full cursor-pointer items-center gap-2 pr-2 ${index % 2 === 0 ? 'bg-background-1/40' : 'bg-background-1/20'} hover:bg-background-1/80`}
+            className={`group flex w-full cursor-pointer items-center gap-2 pr-1 ${index % 2 === 0 ? 'bg-background-1/30' : 'bg-background-1/10'} hover:bg-background-2`}
           >
-            <div className="flex h-full w-10 items-center justify-center bg-background-1 py-1 group-hover:bg-white/5">
-              <p className="text-secondary">{index + 1}</p>
+            <div className="flex h-full w-9 items-center justify-center bg-background-2 py-1 group-hover:bg-white/5">
+              <p className="text-sm text-secondary">{index + 1}</p>
             </div>
-            <div className="flex flex-1 items-center justify-between py-1">
-              <p className="text-secondary">{game.label}</p>
-              <p className="text-secondary">{game.result}</p>
+            <div className="flex flex-1 items-center justify-between overflow-hidden py-1">
+              <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-primary">
+                {game.label}
+              </p>
+              <p className="whitespace-nowrap text-sm font-light text-secondary">
+                {game.result}
+              </p>
             </div>
           </a>
         ))}
+        <div className="flex flex-1 items-start justify-center gap-1 py-2 md:items-center">
+          <span className="material-symbols-outlined text-sm text-secondary">
+            chess_pawn
+          </span>
+          <p className="text-xs text-secondary">Play more games...</p>
+          <p className="ml-2 text-xs text-secondary">₍^. .^₎⟆</p>
+        </div>
       </div>
     </div>
   )
@@ -144,11 +155,11 @@ function Header({
   return (
     <button
       onClick={() => setSelected(name)}
-      className={`relative flex items-center justify-center py-1 ${selected === name ? 'bg-human-4/20' : 'bg-background-1/60 hover:bg-background-1'} transition duration-200`}
+      className={`relative flex items-center justify-center md:py-1 ${selected === name ? 'bg-human-4/30' : 'bg-background-1/80 hover:bg-background-2'} `}
     >
-      <div className="flex items-center justify-start gap-1">
+      <div className="flex items-center justify-start">
         <p
-          className={`transition duration-200 ${selected === name ? 'text-human-2/80' : 'text-primary/80'} `}
+          className={`text-xs transition duration-200 ${selected === name ? 'text-human-2' : 'text-primary'}`}
         >
           {label}
         </p>
