@@ -88,38 +88,38 @@ export const AnalysisBoardController: React.FC = () => {
   ])
 
   return (
-    <div className="flex w-full flex-row items-center gap-[1px] rounded">
+    <div className="flex w-full flex-row items-center gap-[1px] md:rounded">
       <button
         onClick={toggleBoardOrientation}
-        className="flex h-7 flex-1 items-center justify-center rounded-sm bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40"
+        className="flex h-7 flex-1 items-center justify-center bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40 md:rounded-sm"
       >
         {FlipIcon}
       </button>
       <button
         onClick={getFirst}
         disabled={!hasPrevious}
-        className="flex h-7 flex-1 items-center justify-center rounded-sm bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40"
+        className="flex h-7 flex-1 items-center justify-center bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40 md:rounded-sm"
       >
         &#8249;&#8249;&#8249;
       </button>
       <button
         onClick={getPrevious}
         disabled={!hasPrevious}
-        className="flex h-7 flex-1 items-center justify-center rounded-sm bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40"
+        className="flex h-7 flex-1 items-center justify-center bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40 md:rounded-sm"
       >
         &#8249;
       </button>
       <button
         onClick={getNext}
         disabled={!hasNext}
-        className="flex h-7 flex-1 items-center justify-center rounded-sm bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40"
+        className="flex h-7 flex-1 items-center justify-center bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40 md:rounded-sm"
       >
         &#8250;
       </button>
       <button
         onClick={getLast}
         disabled={!hasNext}
-        className="flex h-7 flex-1 items-center justify-center rounded-sm bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40"
+        className="flex h-7 flex-1 items-center justify-center bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40 md:rounded-sm"
       >
         &#8250;&#8250;&#8250;
       </button>

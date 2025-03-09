@@ -81,30 +81,30 @@ export const Highlight: React.FC<Props> = ({
   }
 
   return (
-    <div className="flex h-full w-full flex-col items-start overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1 md:flex-row">
-      <div className="flex h-full w-full flex-col border-b-[0.5px] border-white/40 md:w-auto md:min-w-[40%] md:border-b-0 md:border-r-[0.5px]">
+    <div className="flex h-full w-full flex-col items-start gap-1 overflow-hidden md:flex-row md:gap-0 md:rounded md:border-[0.5px] md:border-white/40">
+      <div className="flex h-full w-full flex-col border-white/40 bg-background-1 md:w-auto md:min-w-[40%] md:border-r-[0.5px]">
         <div className="grid grid-cols-2">
-          <div className="flex flex-col items-center justify-center gap-1 bg-human-3/5 py-3">
-            <p className="text-center text-sm text-human-2">
+          <div className="flex flex-col items-center justify-center gap-1 bg-human-3/5 py-2 md:py-3">
+            <p className="text-center text-xs text-human-2 md:text-sm">
               Maia {currentMaiaModel.slice(-4)}
               <br />
               White Win %
             </p>
-            <p className="text-2xl font-bold text-human-1">
+            <p className="text-xl font-bold text-human-1 md:text-2xl">
               {moveEvaluation?.maia
                 ? `${Math.round(moveEvaluation.maia?.value * 1000) / 10}%`
                 : '...'}
             </p>
           </div>
-          <div className="flex flex-col items-center justify-center gap-1 bg-engine-3/5 py-3">
-            <p className="text-center text-sm text-engine-2">
+          <div className="flex flex-col items-center justify-center gap-1 bg-engine-3/5 py-2 md:py-3">
+            <p className="text-center text-xs text-engine-2 md:text-sm">
               SF Eval
               <br />
               {moveEvaluation?.stockfish?.depth
                 ? ` (Depth ${moveEvaluation.stockfish?.depth})`
                 : ''}
             </p>
-            <p className="text-2xl font-bold text-engine-1">
+            <p className="text-xl font-bold text-engine-1 md:text-2xl">
               {moveEvaluation?.stockfish
                 ? `${moveEvaluation.stockfish.model_optimal_cp > 0 ? '+' : ''}${moveEvaluation.stockfish.model_optimal_cp / 100}`
                 : '...'}
@@ -142,10 +142,10 @@ export const Highlight: React.FC<Props> = ({
                     prob,
                   })}
                 >
-                  <p className="text-right font-mono text-sm">
+                  <p className="text-right font-mono text-xs md:text-sm">
                     {(Math.round(prob * 1000) / 10).toFixed(1)}%
                   </p>
-                  <p className="text-left font-mono text-sm">
+                  <p className="text-left font-mono text-xs md:text-sm">
                     {colorSanMapping[move]?.san ?? move}
                   </p>
                 </button>
@@ -173,11 +173,11 @@ export const Highlight: React.FC<Props> = ({
                       cp,
                     })}
                   >
-                    <p className="w-[42px] text-right font-mono text-sm">
+                    <p className="w-[42px] text-right font-mono text-xs md:text-sm">
                       {cp > 0 ? '+' : null}
                       {`${(cp / 100).toFixed(2)}`}
                     </p>
-                    <p className="text-left font-mono text-sm">
+                    <p className="text-left font-mono text-xs md:text-sm">
                       {colorSanMapping[move]?.san ?? move}
                     </p>
                   </button>
@@ -186,7 +186,7 @@ export const Highlight: React.FC<Props> = ({
           </div>
         </div>
       </div>
-      <div className="flex h-full w-full flex-col">
+      <div className="flex h-full w-full flex-col bg-background-1">
         <MovesByRating
           moves={movesByRating}
           colorSanMapping={colorSanMapping}

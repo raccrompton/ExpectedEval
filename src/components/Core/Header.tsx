@@ -312,7 +312,7 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      <div className="flex w-screen flex-row items-center justify-center pt-4">
+      <div className="flex w-screen flex-row items-center justify-center pb-1 pt-4 md:pb-0">
         {isMobile ? mobileLayout : desktopLayout}
       </div>
     </>

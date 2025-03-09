@@ -105,8 +105,8 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
 
   if (isMobile) {
     return (
-      <div className="w-full overflow-x-auto">
-        <div className="flex flex-row items-center gap-1 p-2">
+      <div className="w-full overflow-x-auto px-2">
+        <div className="flex flex-row items-center gap-1">
           {mobileMovePairs.map((pair, pairIndex) => (
             <React.Fragment key={pairIndex}>
               <div className="flex min-w-fit items-center rounded px-1 py-1 text-xs text-secondary">
@@ -140,13 +140,16 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
               )}
             </React.Fragment>
           ))}
-
           {termination && (
             <div
-              className="min-w-fit cursor-pointer rounded border border-primary/10 bg-background-1/90 px-2 py-1 text-sm opacity-90"
+              className="min-w-fit cursor-pointer border border-primary/10 bg-background-1/90 px-4 py-1 text-sm opacity-90"
               onClick={() => goToNode(mainLineNodes[mainLineNodes.length - 1])}
             >
               {termination.result}
+              {', '}
+              {termination.winner !== 'none'
+                ? `${termination.winner} is victorious`
+                : 'draw'}
             </div>
           )}
         </div>
