@@ -60,7 +60,7 @@ export const MovesContainer: React.FC<Props> = ({
   )
 
   const container = (
-    <div className="red-scrollbar flex h-64 flex-col overflow-y-auto overflow-x-hidden whitespace-nowrap rounded-sm bg-background-1/60 md:h-full md:w-full">
+    <div className="flex flex-row overflow-x-auto overflow-y-auto whitespace-nowrap rounded-sm bg-background-1/60 md:h-full md:w-full md:flex-col md:overflow-x-hidden">
       <Tooltip id="check" />
       {moves.map(([white, black], index) => {
         const prevMoveIndex = index * 2
@@ -91,7 +91,7 @@ export const MovesContainer: React.FC<Props> = ({
 
         return (
           <div key={index} className="flex w-full flex-row">
-            <span className="flex w-1/6 items-center justify-center bg-background-2 py-1 text-sm text-secondary">
+            <span className="flex items-center justify-center bg-background-2 px-2 py-1 text-sm text-secondary md:w-1/6 md:px-0">
               {index + 1}
             </span>
             <div

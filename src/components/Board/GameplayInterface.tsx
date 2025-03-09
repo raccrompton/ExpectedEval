@@ -271,14 +271,25 @@ export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
             <div className="flex-none">
               <BoardController />
             </div>
+            <div className="w-full overflow-x-auto">
+              <div className="flex flex-row whitespace-nowrap py-2">
+                <MovesContainer
+                  game={game}
+                  termination={game.termination}
+                  mobile={true}
+                />
+              </div>
+            </div>
             <div className="w-screen">{props.children}</div>
             <StatsDisplay stats={stats} hideSession={true} />
-            <ExportGame
-              game={game}
-              whitePlayer={whitePlayer ?? 'Unknown'}
-              blackPlayer={blackPlayer ?? 'Unknown'}
-              event={`Play vs. ${maiaTitle}`}
-            />
+            <div className="px-2">
+              <ExportGame
+                game={game}
+                whitePlayer={whitePlayer ?? 'Unknown'}
+                blackPlayer={blackPlayer ?? 'Unknown'}
+                event={`Play vs. ${maiaTitle}`}
+              />
+            </div>
           </div>
         </div>
       </div>
