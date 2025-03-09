@@ -155,13 +155,30 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     const moves = chess.moves({ verbose: true })
     const stockfish = controller.currentNode.analysis.stockfish
 
+    // Define thresholds for winrate loss
+    const GOOD_THRESHOLD = -INACCURACY_THRESHOLD // -0.05 (less than 5% winrate loss)
+    const OK_THRESHOLD = -BLUNDER_THRESHOLD // -0.1 (between 5% and 10% winrate loss)
+    // Anything worse than -0.1 is a blunder
+
     moves.forEach((m) => {
       const moveKey = `${m.from}${m.to}`
+      // Use winrate_loss_vec if available, otherwise fall back to cp_relative_vec
+      const winrateLoss = stockfish?.winrate_loss_vec?.[moveKey]
       const relativeEval = stockfish?.cp_relative_vec[moveKey]
 
       let color = '#FFF'
 
-      if (relativeEval !== undefined) {
+      if (winrateLoss !== undefined) {
+        // Use winrate loss for coloring
+        if (winrateLoss >= GOOD_THRESHOLD) {
+          color = COLORS.good[0]
+        } else if (winrateLoss >= OK_THRESHOLD) {
+          color = COLORS.ok[0]
+        } else {
+          color = COLORS.blunder[0]
+        }
+      } else if (relativeEval !== undefined) {
+        // Fall back to CP-based coloring if winrate is not available
         if (relativeEval >= -50) {
           color = COLORS.good[0]
         } else if (relativeEval >= -150) {
@@ -178,43 +195,105 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     })
 
     if (stockfish) {
-      const goodMoves = moves
-        .map((m) => `${m.from}${m.to}`)
-        .filter((move) => stockfish.cp_relative_vec[move] >= -50)
-        .sort(
-          (a, b) => stockfish.cp_relative_vec[b] - stockfish.cp_relative_vec[a],
-        )
+      if (
+        stockfish.winrate_loss_vec &&
+        Object.keys(stockfish.winrate_loss_vec).length > 0
+      ) {
+        const goodMoves = moves
+          .map((m) => `${m.from}${m.to}${m.promotion || ''}`)
+          .filter((move) => {
+            const winrateLoss = stockfish.winrate_loss_vec?.[move]
+            return winrateLoss !== undefined && winrateLoss >= GOOD_THRESHOLD
+          })
+          .sort((a, b) => {
+            const aLoss = stockfish.winrate_loss_vec?.[a] || 0
+            const bLoss = stockfish.winrate_loss_vec?.[b] || 0
+            return bLoss - aLoss
+          })
 
-      const okMoves = moves
-        .map((m) => `${m.from}${m.to}`)
-        .filter(
-          (move) =>
-            stockfish.cp_relative_vec[move] >= -150 &&
-            stockfish.cp_relative_vec[move] < -50,
-        )
-        .sort(
-          (a, b) => stockfish.cp_relative_vec[b] - stockfish.cp_relative_vec[a],
-        )
+        const okMoves = moves
+          .map((m) => `${m.from}${m.to}${m.promotion || ''}`)
+          .filter((move) => {
+            const winrateLoss = stockfish.winrate_loss_vec?.[move]
+            return (
+              winrateLoss !== undefined &&
+              winrateLoss >= OK_THRESHOLD &&
+              winrateLoss < GOOD_THRESHOLD
+            )
+          })
+          .sort((a, b) => {
+            const aLoss = stockfish.winrate_loss_vec?.[a] || 0
+            const bLoss = stockfish.winrate_loss_vec?.[b] || 0
+            return bLoss - aLoss
+          })
 
-      const blunderMoves = moves
-        .map((m) => `${m.from}${m.to}`)
-        .filter((move) => stockfish.cp_relative_vec[move] < -150)
-        .sort(
-          (a, b) => stockfish.cp_relative_vec[b] - stockfish.cp_relative_vec[a],
-        )
+        const blunderMoves = moves
+          .map((m) => `${m.from}${m.to}${m.promotion || ''}`)
+          .filter((move) => {
+            const winrateLoss = stockfish.winrate_loss_vec?.[move]
+            return winrateLoss !== undefined && winrateLoss < OK_THRESHOLD
+          })
+          .sort((a, b) => {
+            const aLoss = stockfish.winrate_loss_vec?.[a] || 0
+            const bLoss = stockfish.winrate_loss_vec?.[b] || 0
+            return bLoss - aLoss
+          })
 
-      goodMoves.forEach((move, i) => {
-        mapping[move].color = COLORS.good[Math.min(i, COLORS.good.length - 1)]
-      })
+        goodMoves.forEach((move, i) => {
+          mapping[move].color = COLORS.good[Math.min(i, COLORS.good.length - 1)]
+        })
 
-      okMoves.forEach((move, i) => {
-        mapping[move].color = COLORS.ok[Math.min(i, COLORS.ok.length - 1)]
-      })
+        okMoves.forEach((move, i) => {
+          mapping[move].color = COLORS.ok[Math.min(i, COLORS.ok.length - 1)]
+        })
 
-      blunderMoves.forEach((move, i) => {
-        mapping[move].color =
-          COLORS.blunder[Math.min(i, COLORS.blunder.length - 1)]
-      })
+        blunderMoves.forEach((move, i) => {
+          mapping[move].color =
+            COLORS.blunder[Math.min(i, COLORS.blunder.length - 1)]
+        })
+      } else {
+        // Fall back to CP-based coloring if winrate is not available
+        const goodMoves = moves
+          .map((m) => `${m.from}${m.to}${m.promotion || ''}`)
+          .filter((move) => stockfish.cp_relative_vec[move] >= -50)
+          .sort(
+            (a, b) =>
+              stockfish.cp_relative_vec[b] - stockfish.cp_relative_vec[a],
+          )
+
+        const okMoves = moves
+          .map((m) => `${m.from}${m.to}${m.promotion || ''}`)
+          .filter(
+            (move) =>
+              stockfish.cp_relative_vec[move] >= -150 &&
+              stockfish.cp_relative_vec[move] < -50,
+          )
+          .sort(
+            (a, b) =>
+              stockfish.cp_relative_vec[b] - stockfish.cp_relative_vec[a],
+          )
+
+        const blunderMoves = moves
+          .map((m) => `${m.from}${m.to}${m.promotion || ''}`)
+          .filter((move) => stockfish.cp_relative_vec[move] < -150)
+          .sort(
+            (a, b) =>
+              stockfish.cp_relative_vec[b] - stockfish.cp_relative_vec[a],
+          )
+
+        goodMoves.forEach((move, i) => {
+          mapping[move].color = COLORS.good[Math.min(i, COLORS.good.length - 1)]
+        })
+
+        okMoves.forEach((move, i) => {
+          mapping[move].color = COLORS.ok[Math.min(i, COLORS.ok.length - 1)]
+        })
+
+        blunderMoves.forEach((move, i) => {
+          mapping[move].color =
+            COLORS.blunder[Math.min(i, COLORS.blunder.length - 1)]
+        })
+      }
     }
 
     return mapping
