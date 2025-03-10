@@ -58,7 +58,7 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
           className="mb-10 w-full md:mb-0 md:w-1/2"
           initial={{ opacity: 0, x: -50 }}
           animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
         >
           <div className="mb-4 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3">
             Play Against Maia
@@ -99,7 +99,7 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
           className="relative w-[70%] md:w-[35%]"
           initial={{ opacity: 0, x: 50 }}
           animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
-          transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
+          transition={{ duration: 0.3, ease: 'easeOut', delay: 0.2 }}
         >
           <div className="relative flex aspect-square w-full items-center justify-center">
             {/* Training data visualization */}
