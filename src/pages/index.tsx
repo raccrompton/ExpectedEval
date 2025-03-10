@@ -3,7 +3,14 @@ import type { NextPage } from 'next'
 import React, { useCallback, useContext, useEffect, useRef } from 'react'
 
 import { ModalContext } from 'src/contexts'
-import { HomeHero, AboutMaia } from 'src/components'
+import {
+  HomeHero,
+  AboutMaia,
+  PlaySection,
+  AnalysisSection,
+  TrainSection,
+  AdditionalFeaturesSection,
+} from 'src/components'
 
 const Home: NextPage = () => {
   const { setPlaySetupModalProps } = useContext(ModalContext)
@@ -14,13 +21,13 @@ const Home: NextPage = () => {
     [setPlaySetupModalProps],
   )
 
-  const helpRef = useRef<HTMLDivElement>(null)
+  const featuresRef = useRef<HTMLDivElement>(null)
 
   const scrollHandler = useCallback(() => {
-    if (helpRef.current) {
-      helpRef.current.scrollIntoView({ behavior: 'smooth' })
+    if (featuresRef.current) {
+      featuresRef.current.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [helpRef])
+  }, [featuresRef])
 
   return (
     <>
@@ -32,7 +39,11 @@ const Home: NextPage = () => {
         />
       </Head>
       <HomeHero scrollHandler={scrollHandler} />
-      <div ref={helpRef}>
+      <div ref={featuresRef}>
+        <PlaySection id="play-section" />
+        <AnalysisSection id="analysis-section" />
+        <TrainSection id="train-section" />
+        <AdditionalFeaturesSection id="more-features" />
         <AboutMaia />
       </div>
     </>
