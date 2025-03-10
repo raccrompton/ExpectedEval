@@ -10,6 +10,74 @@ import personJoseph from './people/joseph.jpg'
 import personAshton from './people/ashton.jpeg'
 import personDmitriy from './people/dmitriy.jpg'
 import { EnvelopeSquareIcon, GithubIcon } from 'src/components/Icons/icons'
+import { TeamMember } from './TeamMember'
+
+const teamMembers = [
+  {
+    image: personAshton,
+    name: 'Ashton Anderson',
+    website: 'http://www.cs.toronto.edu/~ashton/',
+    institution: 'University of Toronto',
+    role: 'Principal Investigator',
+    email: 'ashton@cs.toronto.edu',
+    github: 'ashtona',
+  },
+  {
+    image: personJon,
+    name: 'Jon Kleinberg',
+    website: 'https://www.cs.cornell.edu/home/kleinber/',
+    institution: 'Cornell University',
+    role: 'Principal Investigator',
+    email: 'kleinber@cs.cornell.edu',
+  },
+  {
+    image: personReid,
+    name: 'Reid McIlroy-Young',
+    website: 'https://reidmcy.com/',
+    institution: 'University of Toronto',
+    role: 'Graduate Student',
+    email: 'reid@cs.toronto.edu',
+    github: 'reidmcy',
+  },
+  {
+    image: personSid,
+    name: 'Siddhartha Sen',
+    website: 'https://www.microsoft.com/en-us/research/people/sidsen/',
+    institution: 'Microsoft Research',
+    role: 'Principal Investigator',
+    email: 'sidsen@microsoft.com',
+    github: 'sidsen',
+  },
+  {
+    image: personDmitriy,
+    name: 'Dmitriy Ostrovsky',
+    website: 'https://github.com/dostro',
+    institution: 'Independent Researcher',
+    role: 'Research Engineer',
+    github: 'dostro',
+  },
+  {
+    image: personJoseph,
+    name: 'Joseph Benton',
+    website: 'https://github.com/jpbenton',
+    institution: 'University of Toronto',
+    role: 'Data Scientist',
+  },
+  {
+    image: personIsaac,
+    name: 'Isaac Tamblyn',
+    website: 'https://github.com/tamblyne',
+    institution: 'National Research Council Canada',
+    role: 'Principal Investigator',
+  },
+  {
+    image: personKevin,
+    name: 'Kevin Thomas',
+    website: 'https://kevinjosethomas.com/',
+    institution: 'Burnaby South Secondary',
+    role: 'Web Developer',
+  },
+]
 
 export const AboutMaia = () => {
   return (
@@ -86,231 +154,9 @@ export const AboutMaia = () => {
             </p>
           </div>
           <div className="mx-auto grid max-w-[900px] grid-cols-1 gap-10 px-4 text-center md:grid-cols-2 lg:grid-cols-3">
-            <div className="flex flex-col items-center space-y-4">
-              <Image
-                src={personAshton}
-                className="h-48 w-48 rounded-full"
-                alt="Picture of Ashton Anderson"
-              />
-              <div className="flex flex-col">
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="http://www.cs.toronto.edu/~ashton/"
-                  className="text-2xl"
-                >
-                  Ashton Anderson
-                </a>
-                <p>University of Toronto</p>
-              </div>
-              <p className="font-semibold">Principal Investigator</p>
-              <div className="flex items-center justify-center space-x-4">
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="mailto:ashton@cs.toronto.edu"
-                  className="*:h-5 *:w-5 *:fill-human-3"
-                >
-                  {EnvelopeSquareIcon}
-                </a>
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="https://github.com/ashtona"
-                  className="*:h-5 *:w-5 *:fill-human-3"
-                >
-                  {GithubIcon}
-                </a>
-              </div>
-            </div>
-            <div className="flex flex-col items-center space-y-4">
-              <Image
-                src={personJon}
-                className="h-48 w-48 rounded-full"
-                alt="Picture of Jon Kleinberg"
-              />
-              <div className="flex flex-col">
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="https://www.cs.cornell.edu/home/kleinber/"
-                  className="text-2xl"
-                >
-                  Jon Kleinberg
-                </a>
-                <p>Cornell University</p>
-              </div>
-              <p className="font-semibold">Principal Investigator</p>
-              <div className="flex items-center justify-center space-x-4">
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="mailto:kleinber@cs.cornell.edu"
-                  className="*:h-5 *:w-5 *:fill-human-3"
-                >
-                  {EnvelopeSquareIcon}
-                </a>
-              </div>
-            </div>
-            <div className="flex flex-col items-center space-y-4">
-              <Image
-                src={personReid}
-                className="h-48 w-48 rounded-full"
-                alt="Picture of Reid McIlroy-Young"
-              />
-              <div className="flex flex-col">
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="https://reidmcy.com/"
-                  className="text-2xl"
-                >
-                  Reid McIlroy-Young
-                </a>
-                <p>University of Toronto</p>
-              </div>
-              <p className="font-semibold">Graduate Student</p>
-              <div className="flex items-center justify-center space-x-4">
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="mailto:reid@cs.toronto.edu"
-                  className="*:h-5 *:w-5 *:fill-human-3"
-                >
-                  {EnvelopeSquareIcon}
-                </a>
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="https://github.com/reidmcy"
-                  className="*:h-5 *:w-5 *:fill-human-3"
-                >
-                  {GithubIcon}
-                </a>
-              </div>
-            </div>
-            <div className="flex flex-col items-center space-y-4">
-              <Image
-                src={personSid}
-                className="h-48 w-48 rounded-full"
-                alt="Picture of Siddhartha Sen"
-              />
-              <div className="flex flex-col">
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="https://www.microsoft.com/en-us/research/people/sidsen/"
-                  className="text-2xl"
-                >
-                  Siddhartha Sen
-                </a>
-                <p>Microsoft Research</p>
-              </div>
-              <p className="font-semibold">Principal Investigator</p>
-              <div className="flex items-center justify-center space-x-4">
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="mailto:sidsen@microsoft.com"
-                  className="*:h-5 *:w-5 *:fill-human-3"
-                >
-                  {EnvelopeSquareIcon}
-                </a>
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="https://github.com/sidsen"
-                  className="*:h-5 *:w-5 *:fill-human-3"
-                >
-                  {GithubIcon}
-                </a>
-              </div>
-            </div>
-            <div className="flex flex-col items-center space-y-4">
-              <Image
-                src={personDmitriy}
-                className="h-48 w-48 rounded-full"
-                alt="Picture of Dmitriy Ostrovsky"
-              />
-              <div className="flex flex-col">
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="https://github.com/dostro"
-                  className="text-2xl"
-                >
-                  Dmitriy Ostrovsky
-                </a>
-                <p>Independent Researcher</p>
-              </div>
-              <p className="font-semibold">Research Engineer</p>
-              <div className="flex items-center justify-center space-x-4">
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="https://github.com/dostro"
-                  className="*:h-5 *:w-5 *:fill-human-3"
-                >
-                  {GithubIcon}
-                </a>
-              </div>
-            </div>
-            <div className="flex flex-col items-center space-y-4">
-              <Image
-                src={personJoseph}
-                className="h-48 w-48 rounded-full"
-                alt="Picture of Joseph Benton"
-              />
-              <div className="flex flex-col">
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="https://github.com/jpbenton"
-                  className="text-2xl"
-                >
-                  Joseph Benton
-                </a>
-                <p>University of Toronto</p>
-              </div>
-              <p className="font-semibold">Data Scientist</p>
-            </div>
-            <div className="flex flex-col items-center space-y-4">
-              <Image
-                src={personIsaac}
-                className="h-48 w-48 rounded-full"
-                alt="Picture of Isaac Tamblyn"
-              />
-              <div className="flex flex-col">
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="https://github.com/tamblyne"
-                  className="text-2xl"
-                >
-                  Isaac Tamblyn
-                </a>
-                <p>National Research Council Canada</p>
-              </div>
-              <p className="font-semibold">Principal Investigator</p>
-            </div>
-            <div className="flex flex-col items-center space-y-4">
-              <Image
-                src={personKevin}
-                className="h-48 w-48 rounded-full"
-                alt="Picture of Kevin Thomas"
-              />
-              <div className="flex flex-col">
-                <a
-                  target="_blank"
-                  href="https://kevinjosethomas.com/"
-                  className="text-2xl"
-                >
-                  Kevin Thomas
-                </a>
-                <p>Burnaby South Secondary</p>
-              </div>
-              <p className="font-semibold">Web Developer</p>
-            </div>
+            {teamMembers.map((member) => (
+              <TeamMember key={member.name} {...member} />
+            ))}
           </div>
         </div>
       </section>

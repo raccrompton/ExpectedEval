@@ -1,9 +1,34 @@
-import { useContext } from 'react'
-import { motion } from 'framer-motion'
+import { useContext, useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
+import Chessground from '@react-chess/chessground'
+import type { Key } from 'chessground/types'
+import type { DrawShape } from 'chessground/draw'
+import { Chess } from 'chess.ts'
 
 import { ModalContext, AuthContext } from 'src/contexts'
 import { PlayType } from 'src/types'
+
+// A key position with multiple human moves and their probabilities
+const DEMO_POSITION = {
+  fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R b KQkq - 0 1',
+  moves: [
+    { from: 'f8', to: 'c5', probability: 0.45 }, // Most common human move - develop bishop
+    { from: 'f6', to: 'e4', probability: 0.25 }, // Second most common - tactical capture
+    { from: 'd7', to: 'd6', probability: 0.15 }, // Third most common - solid defense
+    { from: 'f6', to: 'd7', probability: 0.1 }, // Fourth most common - reposition knight
+    { from: 'c6', to: 'a5', probability: 0.05 }, // Fifth most common - attack bishop
+  ],
+}
+
+// Training positions that flow into the main board
+const TRAINING_POSITIONS = [
+  'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+  'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
+  'rnbqkbnr/ppp2ppp/8/3pp3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 3',
+  'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3',
+  'r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQK2R w KQkq - 5 5',
+]
 
 interface PlaySectionProps {
   id: string
@@ -25,11 +50,10 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
   return (
     <section
       id={id}
-      className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-background-1 py-16"
+      className="relative flex min-h-[80vh] w-full flex-col items-center justify-center overflow-hidden bg-background-1 py-16"
       ref={ref}
     >
       <div className="container mx-auto flex flex-col items-center px-4 md:flex-row md:gap-12 lg:gap-16">
-        {/* Content */}
         <motion.div
           className="mb-10 w-full md:mb-0 md:w-1/2"
           initial={{ opacity: 0, x: -50 }}
@@ -42,110 +66,141 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
           <h2 className="mb-6 text-3xl font-bold md:text-4xl lg:text-5xl">
             Experience human-like chess AI
           </h2>
-          <p className="mb-8 text-lg text-primary/80">
+          <p className="mb-4 text-lg text-primary/80">
             Challenge Maia, a neural network trained to play like humans of
             different ratings. Unlike traditional engines that play the best
             moves, Maia predicts and plays what a human would do.
           </p>
-          <div className="flex flex-wrap gap-4">
-            {user?.lichessId ? (
-              <button
-                onClick={startGame}
-                className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white transition duration-200 hover:bg-opacity-90"
-              >
-                Play Now
-              </button>
-            ) : (
-              <a
-                href="https://lichess.org/@/maia1"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white transition duration-200 hover:bg-opacity-90"
-              >
-                Play on Lichess
-              </a>
-            )}
-            <a
-              href="#features"
-              className="flex items-center justify-center rounded-md border border-background-2 bg-background-1 px-6 py-3 font-medium transition duration-200 hover:bg-background-2"
+          <p className="mb-8 text-lg text-primary/80">
+            By learning from thousands of human games, Maia understands and
+            replicates human chess patterns and decision-making styles.
+          </p>
+          {user?.lichessId ? (
+            <button
+              onClick={startGame}
+              className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white transition duration-200 hover:bg-opacity-90"
             >
-              Learn More
+              Play Now
+            </button>
+          ) : (
+            <a
+              href="https://lichess.org/@/maia1"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white transition duration-200 hover:bg-opacity-90"
+            >
+              Play on Lichess
             </a>
-          </div>
+          )}
         </motion.div>
 
-        {/* Chessboard Visual */}
+        {/* Visualization */}
         <motion.div
-          className="relative w-full md:w-1/2"
+          className="relative w-[70%] md:w-[35%]"
           initial={{ opacity: 0, x: 50 }}
           animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
           transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
         >
-          <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-background-2 shadow-xl">
-            {/* Chess board visualization */}
-            <div className="absolute inset-0 grid grid-cols-8 grid-rows-8">
-              {[...Array(64)].map((_, i) => {
-                const isWhite = ((i % 8) + Math.floor(i / 8)) % 2 === 0
-                return (
-                  <div
-                    key={i}
-                    className={`${isWhite ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'}`}
-                  />
-                )
-              })}
+          <div className="relative flex aspect-square w-full items-center justify-center">
+            {/* Training data visualization */}
+            <div className="absolute left-0 top-0 grid h-3/4 w-3/4 grid-cols-6 grid-rows-6 gap-0.5 bg-background-2">
+              <AnimatedTrainingBoards inView={inView} />
             </div>
 
-            {/* Overlay effect */}
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-background-1/5 via-transparent to-background-1/50">
-              <motion.div
-                className="h-16 w-16 rounded-full bg-human-3/30"
-                animate={{
-                  scale: [1, 1.2, 1],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                }}
-              />
-            </div>
+            {/* Main prediction board */}
+            <motion.div
+              className="absolute bottom-0 right-0 h-3/4 w-3/4 overflow-hidden border border-background-3/20 bg-background-1 shadow-lg"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <PredictionBoard />
+            </motion.div>
           </div>
-          <motion.div
-            className="absolute -bottom-5 -right-5 rounded-lg bg-human-3/10 p-4 backdrop-blur-md md:p-6"
-            initial={{ y: 20, opacity: 0 }}
-            animate={inView ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-          >
-            <p className="font-medium text-human-3">
-              Models range from 1100-1900 Elo
-            </p>
-          </motion.div>
         </motion.div>
       </div>
-
-      {/* Parallax decorative elements */}
-      <motion.div
-        className="absolute -top-20 left-10 h-40 w-40 rounded-full bg-human-3/5"
-        animate={{
-          y: inView ? [0, 20, 0] : 0,
-        }}
-        transition={{
-          repeat: Infinity,
-          duration: 3,
-          times: [0, 0.5, 1],
-        }}
-      />
-      <motion.div
-        className="absolute bottom-10 right-10 h-60 w-60 rounded-full bg-engine-3/5"
-        animate={{
-          y: inView ? [0, -20, 0] : 0,
-        }}
-        transition={{
-          repeat: Infinity,
-          duration: 4,
-          times: [0, 0.5, 1],
-          delay: 1,
-        }}
-      />
     </section>
+  )
+}
+
+const AnimatedTrainingBoards = ({ inView }: { inView: boolean }) => {
+  const [currentBatch, setCurrentBatch] = useState(0)
+
+  useEffect(() => {
+    if (!inView) return
+
+    const interval = setInterval(() => {
+      setCurrentBatch((prev) => (prev + 1) % 3)
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [inView])
+
+  return (
+    <>
+      {[...Array(36)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="relative"
+          initial={{ opacity: 0.3 }}
+          animate={{
+            opacity: [0.3, 1, 0.3],
+            scale: [0.95, 1, 0.95],
+          }}
+          transition={{
+            duration: 3,
+            delay: (i % 12) * 0.1 + currentBatch,
+            repeat: Infinity,
+          }}
+        >
+          <Chessground
+            contained
+            config={{
+              fen: TRAINING_POSITIONS[i % TRAINING_POSITIONS.length],
+              viewOnly: true,
+              coordinates: false,
+              drawable: { enabled: false },
+            }}
+          />
+        </motion.div>
+      ))}
+    </>
+  )
+}
+
+const PredictionBoard = () => {
+  const [chess] = useState(new Chess(DEMO_POSITION.fen))
+
+  const shapes: DrawShape[] = DEMO_POSITION.moves.map((move) => ({
+    orig: move.from as Key,
+    dest: move.to as Key,
+    brush: 'custom',
+  }))
+
+  return (
+    <Chessground
+      contained
+      config={{
+        fen: chess.fen(),
+        viewOnly: true,
+        orientation: 'black',
+        drawable: {
+          enabled: true,
+          visible: true,
+          autoShapes: shapes,
+          brushes: {
+            custom: {
+              key: 'custom',
+              color: '#BF5F52',
+              opacity: 0.8,
+              lineWidth: 8,
+            },
+          },
+        },
+        animation: {
+          duration: 250,
+        },
+      }}
+    />
   )
 }

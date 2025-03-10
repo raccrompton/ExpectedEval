@@ -490,6 +490,7 @@ export const useAnalysisController = (game: AnalyzedGame) => {
       return
     }
 
+    // Get the 3 best moves from Maia
     const maia = Object.fromEntries(
       Object.entries(moveEvaluation.maia.policy).slice(0, 3),
     )
@@ -500,15 +501,8 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     // Top moves are the first 3 in the sorted order
     const topStockfish = Object.fromEntries(stockfishMoves.slice(0, 3))
 
-    // Worst moves are the last 2 in the sorted order
-    const worstStockfish = Object.fromEntries(stockfishMoves.slice(-2))
-
     const moves = Array.from(
-      new Set([
-        ...Object.keys(maia),
-        ...Object.keys(topStockfish),
-        ...Object.keys(worstStockfish),
-      ]),
+      new Set([...Object.keys(maia), ...Object.keys(topStockfish)]),
     )
 
     const data = []
