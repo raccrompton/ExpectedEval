@@ -18,8 +18,60 @@ interface Props {
   scrollHandler: () => void
 }
 
+interface FeatureCardProps {
+  icon: React.ReactNode
+  title: string
+  description: string
+  onClick?: () => void
+  href?: string
+  external?: boolean
+}
+
+const FeatureCard: React.FC<FeatureCardProps> = ({
+  icon,
+  title,
+  description,
+  onClick,
+  href,
+  external,
+}) => {
+  const CardWrapper = ({ children }: { children: React.ReactNode }) => {
+    if (onClick) {
+      return (
+        <button onClick={onClick} className="w-full">
+          {children}
+        </button>
+      )
+    }
+    if (href) {
+      if (external) {
+        return (
+          <a href={href} target="_blank" rel="noreferrer">
+            {children}
+          </a>
+        )
+      }
+      return <Link href={href}>{children}</Link>
+    }
+    return <>{children}</>
+  }
+
+  return (
+    <CardWrapper>
+      <div className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20">
+        <i className="w-10">{icon}</i>
+        <div className="flex flex-col">
+          <h2 className="text-lg font-bold">{title}</h2>
+          <p className="h-10 text-xs">{description}</p>
+        </div>
+      </div>
+    </CardWrapper>
+  )
+}
+
 export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
   const { setPlaySetupModalProps } = useContext(ModalContext)
+  const { user, connectLichess } = useContext(AuthContext)
 
   const startGame = useCallback(
     (playType: PlayType) => {
@@ -27,8 +79,6 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
     },
     [setPlaySetupModalProps],
   )
-
-  const { user, connectLichess } = useContext(AuthContext)
 
   return (
     <div className="relative flex flex-col items-center justify-center pb-16 pt-24 md:pb-28 md:pt-36">
@@ -64,113 +114,44 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
         </div>
 
         <div className="grid w-full flex-1 grid-cols-1 gap-4 md:grid-cols-3">
-          {/* All boxes in a single grid */}
-          {user?.lichessId ? (
-            <button
-              onClick={() => startGame('againstMaia')}
-              className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
-            >
-              <i className="w-10">
-                <RegularPlayIcon />
-              </i>
-              <div className="flex flex-col">
-                <h2 className="text-lg font-bold">Play Maia</h2>
-                <p className="h-10 text-xs">
-                  Play chess against the human-like Maia engine
-                </p>
-              </div>
-            </button>
-          ) : (
-            <a
-              href="https://lichess.org/@/maia1"
-              target="_blank"
-              rel="noreferrer"
-              className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
-            >
-              <i className="w-10">
-                <RegularPlayIcon />
-              </i>
-              <div className="flex flex-col">
-                <h2 className="text-lg font-bold">Play Maia</h2>
-                <p className="h-10 text-xs">
-                  Play chess against the human-like Maia engine
-                </p>
-              </div>
-            </a>
-          )}
-          <Link
+          <FeatureCard
+            icon={<RegularPlayIcon />}
+            title="Play Maia"
+            description="Play chess against the human-like Maia engine"
+            {...(user?.lichessId
+              ? { onClick: () => startGame('againstMaia') }
+              : { href: 'https://lichess.org/@/maia1', external: true })}
+          />
+          <FeatureCard
+            icon={<ChessboardIcon />}
+            title="Analysis"
+            description="Analyze games with Maia's human-like insights"
             href="/analysis"
-            className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
-          >
-            <i className="w-10">
-              <ChessboardIcon />
-            </i>
-            <div className="flex flex-col">
-              <h2 className="text-lg font-bold">Analysis</h2>
-              <p className="h-10 text-xs">
-                Analyze games with Maia&apos;s human-like insights
-              </p>
-            </div>
-          </Link>
-          <Link
+          />
+          <FeatureCard
+            icon={<TrainIcon />}
+            title="Train"
+            description="Improve your skills with Maia's training puzzles"
             href="/train"
-            className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
-          >
-            <i className="w-10">
-              <TrainIcon />
-            </i>
-            <div className="flex flex-col">
-              <h2 className="text-lg font-bold">Train</h2>
-              <p className="h-10 text-xs">
-                Improve your skills with Maia&apos;s training puzzles
-              </p>
-            </div>
-          </Link>
-
-          <button
+          />
+          <FeatureCard
+            icon={<TuringIcon />}
+            title="Hand & Brain"
+            description="Play a collaborative chess variant with Maia"
             onClick={() => startGame('handAndBrain')}
-            className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
-          >
-            <i className="w-8">
-              <TuringIcon />
-            </i>
-            <div className="flex flex-col">
-              <h2 className="text-base font-bold">Hand &amp; Brain</h2>
-              <p className="h-10 text-xs">
-                Play a collaborative chess variant with Maia
-              </p>
-            </div>
-          </button>
-
-          <Link
+          />
+          <FeatureCard
+            icon={<StarIcon />}
+            title="Openings"
+            description="Learn and practice chess openings with Maia"
             href="/openings"
-            className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
-          >
-            <i className="w-8">
-              <StarIcon />
-            </i>
-            <div className="flex flex-col">
-              <h2 className="text-base font-bold">Openings</h2>
-              <p className="h-10 text-xs">
-                Learn and practice chess openings with Maia
-              </p>
-            </div>
-          </Link>
-
-          <Link
+          />
+          <FeatureCard
+            icon={<TuringIcon />}
+            title="Bot-or-Not"
+            description="Distinguish between human and AI play"
             href="/turing"
-            className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
-          >
-            <i className="w-8">
-              <TuringIcon />
-            </i>
-            <div className="flex flex-col">
-              <h2 className="text-base font-bold">Bot-or-Not</h2>
-              <p className="h-10 text-xs">
-                Test your ability to distinguish human from AI play
-              </p>
-            </div>
-          </Link>
+          />
         </div>
       </div>
     </div>
