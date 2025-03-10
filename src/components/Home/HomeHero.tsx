@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { useCallback, useContext, useEffect, useState } from 'react'
+import { useCallback, useContext } from 'react'
 
 import {
   SunIcon,
@@ -8,9 +8,10 @@ import {
   TuringIcon,
   TrainIcon,
   RegularPlayIcon,
+  ChessboardIcon,
+  StarIcon,
 } from 'src/components/Icons/icons'
 import { PlayType } from 'src/types'
-import { getPlayerStats } from 'src/api/home'
 import { AuthContext, ModalContext } from 'src/contexts'
 
 interface Props {
@@ -29,88 +30,54 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
 
   const { user, connectLichess } = useContext(AuthContext)
 
-  const [stats, setStats] = useState({
-    regularRating: 1500,
-    handRating: 1500,
-    brainRating: 1500,
-    trainRating: 1500,
-    botNotRating: 1500,
-  })
-  useEffect(() => {
-    ;(async () => {
-      setStats(await getPlayerStats())
-    })()
-  }, [])
-
-  const profileContent = (
-    <>
-      <div className="flex flex-row items-center gap-2">
-        <i className="*:h-7 *:w-7 *:fill-primary">{UserIcon}</i>
-        <p>{user?.displayName || 'Guest'}</p>
-      </div>
-      {user?.lichessId ? (
-        <div className="flex flex-row items-center gap-6">
-          {[
-            ['Regular', stats.regularRating || '...'],
-            ['Hand', stats.handRating || '...'],
-            ['Brain', stats.brainRating || '...'],
-            ['Puzzles', stats.trainRating || '...'],
-            ['Bot/Not', stats.botNotRating || '...'],
-          ].map(([title, rating]) => (
-            <div key={title} className="flex flex-col items-center gap-0.5">
-              <div className="text-xs uppercase">{title}</div>
-              <div className="text-xl">{rating}</div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center">
-          <button
-            className="rounded-sm bg-[#629924] px-2 py-1 text-sm text-white transition duration-200 hover:bg-opacity-80"
-            onClick={() => connectLichess()}
-          >
-            Connect with Lichess
-          </button>
-          <p className="text-sm">to save your stats and more!</p>
-        </div>
-      )}
-    </>
-  )
-
   return (
-    <div className="relative flex flex-col items-center justify-center">
-      <BetaBlurb />
-      <div className="flex w-full max-w-[1200px] flex-col items-center justify-center gap-16 p-4 text-left md:flex-row">
-        <div className="flex w-full flex-col items-start justify-center gap-2 md:w-[40%]">
-          <div className="flex flex-col">
-            <h1 className="text-4xl font-bold leading-relaxed">
+    <div className="relative flex flex-col items-center justify-center pb-16 pt-24 md:pb-28 md:pt-36">
+      {/* <BetaBlurb /> */}
+      <div className="flex w-full max-w-[1200px] flex-col items-center justify-center gap-16 p-4 text-left md:flex-row md:gap-20">
+        <div className="flex w-full flex-col items-start justify-center gap-8 md:w-[40%]">
+          <div className="flex flex-col gap-4">
+            <h1 className="text-4xl font-bold leading-tight md:text-5xl">
               A human-like chess engine
             </h1>
-            <p className="text-2xl">
+            <p className="text-xl text-primary/80 md:text-2xl">
               Maia is a neural network chess engine with a more human-like
               style, trained from online human games.
             </p>
           </div>
-          <button
-            className="flex items-center gap-4 rounded-sm bg-background-2 px-4 py-3 hover:bg-human-4/30"
-            onClick={scrollHandler}
-          >
-            <p>More about Maia</p>
-            <i className="h-4">{ArrowIcon}</i>
-          </button>
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <button
+              className="flex items-center justify-center gap-2 rounded-md bg-human-3 px-6 py-3 text-white transition duration-200 hover:bg-opacity-90"
+              onClick={scrollHandler}
+            >
+              <p>Learn More</p>
+              <i className="h-4">{ArrowIcon}</i>
+            </button>
+            {!user?.lichessId && (
+              <button
+                className="flex items-center justify-center gap-2 rounded-md border border-background-2 bg-background-1 px-6 py-3 transition duration-200 hover:bg-background-2"
+                onClick={() => connectLichess()}
+              >
+                Connect with Lichess
+              </button>
+            )}
+          </div>
         </div>
-        <div className="grid w-full flex-1 grid-cols-1 gap-5 pb-4 md:w-auto md:grid-cols-2">
+
+        <div className="grid w-full flex-1 grid-cols-1 gap-4 md:grid-cols-3">
+          {/* All boxes in a single grid */}
           {user?.lichessId ? (
             <button
               onClick={() => startGame('againstMaia')}
-              className="flex cursor-pointer select-none flex-col items-center justify-center gap-2 rounded-sm border-none bg-[#7095c7] py-6 text-center text-white transition duration-200 hover:bg-opacity-80"
+              className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
             >
-              <i className="w-12">
+              <i className="w-10">
                 <RegularPlayIcon />
               </i>
               <div className="flex flex-col">
-                <h2 className="text-xl font-bold">Play Maia</h2>
-                <p className="text-xs">Classic chess versus human-like Maia</p>
+                <h2 className="text-lg font-bold">Play Maia</h2>
+                <p className="h-10 text-xs">
+                  Play chess against the human-like Maia engine
+                </p>
               </div>
             </button>
           ) : (
@@ -118,65 +85,92 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
               href="https://lichess.org/@/maia1"
               target="_blank"
               rel="noreferrer"
-              className="flex cursor-pointer select-none flex-col items-center justify-center gap-2 rounded-sm border-none bg-[#7095c7] py-6 text-center text-white transition duration-200 hover:bg-opacity-80"
+              className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
             >
-              <i className="w-12">
+              <i className="w-10">
                 <RegularPlayIcon />
               </i>
               <div className="flex flex-col">
-                <h2 className="text-xl font-bold">Play Maia</h2>
-                <p className="text-xs">Classic chess versus human-like Maia</p>
+                <h2 className="text-lg font-bold">Play Maia</h2>
+                <p className="h-10 text-xs">
+                  Play chess against the human-like Maia engine
+                </p>
               </div>
             </a>
           )}
-          <button
-            onClick={() => startGame('handAndBrain')}
-            className="flex cursor-pointer select-none flex-col items-center justify-center gap-2 rounded-sm border-none bg-[#6e879c] py-6 text-center text-white transition duration-200 hover:bg-opacity-80"
+          <Link
+            href="/analysis"
+            className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
           >
-            <i className="w-12">
-              <TuringIcon />
+            <i className="w-10">
+              <ChessboardIcon />
             </i>
             <div className="flex flex-col">
-              <h2 className="text-xl font-bold">Play Hand and Brain</h2>
-              <p className="text-xs">A chess variant with Maia on your team</p>
+              <h2 className="text-lg font-bold">Analysis</h2>
+              <p className="h-10 text-xs">
+                Analyze games with Maia&apos;s human-like insights
+              </p>
             </div>
-          </button>
+          </Link>
           <Link
             href="/train"
-            className="flex cursor-pointer select-none flex-col items-center justify-center gap-2 rounded-sm border-none bg-[#958a6d] py-6 text-center text-white transition duration-200 hover:bg-opacity-80"
+            className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
           >
-            <i className="w-12">
+            <i className="w-10">
               <TrainIcon />
             </i>
             <div className="flex flex-col">
-              <h2 className="text-xl font-bold">Train</h2>
-              <p className="text-xs">Solve puzzles with Maia</p>
+              <h2 className="text-lg font-bold">Train</h2>
+              <p className="h-10 text-xs">
+                Improve your skills with Maia&apos;s training puzzles
+              </p>
             </div>
           </Link>
-          <Link
-            href="/turing"
-            className="flex cursor-pointer select-none flex-col items-center justify-center gap-2 rounded-sm border-none bg-[#a3a6a1] py-6 text-center text-white transition duration-200 hover:bg-opacity-80"
+
+          <button
+            onClick={() => startGame('handAndBrain')}
+            className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
           >
-            <i className="w-12">
+            <i className="w-8">
               <TuringIcon />
             </i>
             <div className="flex flex-col">
-              <h2 className="text-xl font-bold">Bot-or-Not</h2>
-              <p className="text-xs">Distinguish human from machine play</p>
+              <h2 className="text-base font-bold">Hand &amp; Brain</h2>
+              <p className="h-10 text-xs">
+                Play a collaborative chess variant with Maia
+              </p>
+            </div>
+          </button>
+
+          <Link
+            href="/openings"
+            className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
+          >
+            <i className="w-8">
+              <StarIcon />
+            </i>
+            <div className="flex flex-col">
+              <h2 className="text-base font-bold">Openings</h2>
+              <p className="h-10 text-xs">
+                Learn and practice chess openings with Maia
+              </p>
             </div>
           </Link>
-          {user?.lichessId ? (
-            <Link
-              href="/profile"
-              className="flex w-full flex-col items-start justify-between gap-4 rounded-sm bg-background-2 px-6 py-4 transition duration-200 hover:bg-human-4/20 md:col-span-2 md:h-20 md:flex-row md:items-center md:gap-0 md:py-0"
-            >
-              {profileContent}
-            </Link>
-          ) : (
-            <div className="flex w-full flex-row items-center justify-between rounded-sm bg-background-2 px-6 py-4 md:col-span-2 md:h-20 md:py-0">
-              {profileContent}
+
+          <Link
+            href="/turing"
+            className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center transition duration-200 hover:bg-human-4/20"
+          >
+            <i className="w-8">
+              <TuringIcon />
+            </i>
+            <div className="flex flex-col">
+              <h2 className="text-base font-bold">Bot-or-Not</h2>
+              <p className="h-10 text-xs">
+                Test your ability to distinguish human from AI play
+              </p>
             </div>
-          )}
+          </Link>
         </div>
       </div>
     </div>
