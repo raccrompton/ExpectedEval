@@ -1,5 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { useInView } from 'react-intersection-observer'
 
 import personJon from './people/jon.jpg'
 import personSid from './people/sid.jpeg'
@@ -80,93 +82,295 @@ const teamMembers = [
 ]
 
 export const AboutMaia = () => {
+  const [projectRef, projectInView] = useInView({
+    triggerOnce: false,
+    threshold: 0.2,
+  })
+
+  const [teamRef, teamInView] = useInView({
+    triggerOnce: false,
+    threshold: 0.2,
+  })
+
+  const [acknowledgementsRef, acknowledgementsInView] = useInView({
+    triggerOnce: false,
+    threshold: 0.2,
+  })
+
   return (
     <div className="font-helvetica [&_a]:text-human-3">
-      <div className="flex flex-row items-center justify-center gap-10 bg-background-2 py-5 text-sm uppercase tracking-wider">
-        <a href="#main_info" className="!text-primary">
+      <motion.div
+        className="sticky top-0 z-20 flex flex-row items-center justify-center gap-10 bg-background-2 py-5 text-sm uppercase tracking-wider backdrop-blur-md"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <motion.a
+          href="#main_info"
+          className="relative !text-primary"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
           Project
-        </a>
-        <a href="#team_info" className="!text-primary">
+          <motion.div
+            className="absolute -bottom-1 left-0 h-0.5 w-0 bg-human-3"
+            whileHover={{ width: '100%' }}
+            transition={{ duration: 0.2 }}
+          />
+        </motion.a>
+        <motion.a
+          href="#team_info"
+          className="relative !text-primary"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
           Team
-        </a>
-      </div>
+          <motion.div
+            className="absolute -bottom-1 left-0 h-0.5 w-0 bg-human-3"
+            whileHover={{ width: '100%' }}
+            transition={{ duration: 0.2 }}
+          />
+        </motion.a>
+      </motion.div>
+
       <section
         id="main_info"
-        className="flex items-center justify-center bg-background-1 py-20 text-center"
+        className="relative flex items-center justify-center overflow-hidden bg-background-1 py-20 text-center"
+        ref={projectRef}
       >
-        <div className="mx-auto my-0 max-w-[1170px]">
+        {/* Background decorative elements */}
+        <motion.div
+          className="absolute -top-40 right-0 h-80 w-80 rounded-full bg-human-4/5"
+          animate={{
+            y: projectInView ? [0, 30, 0] : 0,
+            scale: projectInView ? [1, 1.05, 1] : 1,
+          }}
+          transition={{
+            repeat: Infinity,
+            duration: 6,
+            times: [0, 0.5, 1],
+          }}
+        />
+        <motion.div
+          className="absolute -left-20 bottom-0 h-60 w-60 rounded-full bg-engine-4/5"
+          animate={{
+            y: projectInView ? [0, -20, 0] : 0,
+            scale: projectInView ? [1, 1.03, 1] : 1,
+          }}
+          transition={{
+            repeat: Infinity,
+            duration: 5,
+            times: [0, 0.5, 1],
+            delay: 0.5,
+          }}
+        />
+
+        <div className="z-10 mx-auto my-0 max-w-[1170px]">
           <div className="m-auto box-border w-auto px-4 md:w-2/3">
-            <h3 className="text-xl font-bold uppercase">
+            <motion.h3
+              className="text-xl font-bold uppercase"
+              initial={{ opacity: 0, y: 20 }}
+              animate={
+                projectInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
+              }
+              transition={{ duration: 0.3 }}
+            >
               Human-AI Collaboration for Chess
-            </h3>
-            <h2 className="mx-auto my-8 text-center text-4xl font-bold">
+            </motion.h3>
+            <motion.h2
+              className="mx-auto my-8 text-center text-4xl font-bold"
+              initial={{ opacity: 0, y: 20 }}
+              animate={
+                projectInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
+              }
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
               What is Maia Chess?
-            </h2>
-            <p className="text-primary/90">
+            </motion.h2>
+            <motion.p
+              className="text-primary/90"
+              initial={{ opacity: 0, y: 20 }}
+              animate={
+                projectInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
+              }
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
               Maia is a human-like chess engine, designed to play like a human
               instead of playing the strongest moves. Maia uses the same deep
               learning techniques that power superhuman chess engines, but with
               a novel approach: Maia is trained to play like a human rather than
               to win.
-            </p>
+            </motion.p>
             <br />
             <br />
-            <p className="text-primary/90">
+            <motion.p
+              className="text-primary/90"
+              initial={{ opacity: 0, y: 20 }}
+              animate={
+                projectInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
+              }
+              transition={{ duration: 0.3, delay: 0.3 }}
+            >
               Maia is trained to predict human moves rather than to find the
               optimal move in a position. As a result, Maia exhibits common
               human biases and makes many of the same mistakes that humans make.
               We have trained a set of nine neural network engines, each
               targeting a specific rating level on the Lichess.org rating scale,
               from 1100 to 1900.
-            </p>
+            </motion.p>
             <br />
             <br />
-            <p className="text-primary/90">
+            <motion.p
+              className="text-primary/90"
+              initial={{ opacity: 0, y: 20 }}
+              animate={
+                projectInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
+              }
+              transition={{ duration: 0.3, delay: 0.4 }}
+            >
               We introduced Maia in our paper that appeared at NeurIPS 2020.
-            </p>
+            </motion.p>
             <br />
-            <div className="mx-auto flex items-center justify-center gap-4">
-              <Link
-                href="/"
-                className="rounded bg-human-3 p-4 !text-white transition-opacity hover:opacity-90"
+            <motion.div
+              className="mx-auto flex items-center justify-center gap-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={
+                projectInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
+              }
+              transition={{ duration: 0.3, delay: 0.5 }}
+            >
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                Play Maia Chess
-              </Link>
-              <a
-                target="_blank"
-                rel="noreferrer"
-                href="https://maiachess.com/maia-paper.pdf"
-                className="rounded bg-engine-3 p-4 !text-white transition-opacity hover:opacity-90"
+                <Link
+                  href="/"
+                  className="rounded bg-human-3 p-4 !text-white transition-opacity hover:opacity-90"
+                >
+                  Play Maia Chess
+                </Link>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                Read Paper
-              </a>
-            </div>
+                <a
+                  target="_blank"
+                  rel="noreferrer"
+                  href="https://maiachess.com/maia-paper.pdf"
+                  className="rounded bg-engine-3 p-4 !text-white transition-opacity hover:opacity-90"
+                >
+                  Read Paper
+                </a>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
       </section>
-      <section id="team_info" className="bg-background-2 py-20">
-        <div className="mx-auto my-0 max-w-[1170px]">
+
+      <section
+        id="team_info"
+        className="relative overflow-hidden bg-background-2 py-20"
+        ref={teamRef}
+      >
+        {/* Background decorative elements */}
+        <motion.div
+          className="absolute right-20 top-20 h-40 w-40 rounded-full bg-human-4/5"
+          animate={{
+            y: teamInView ? [0, 20, 0] : 0,
+          }}
+          transition={{
+            repeat: Infinity,
+            duration: 4,
+            times: [0, 0.5, 1],
+          }}
+        />
+        <motion.div
+          className="absolute bottom-20 left-20 h-60 w-60 rounded-full bg-engine-4/5"
+          animate={{
+            y: teamInView ? [0, -20, 0] : 0,
+          }}
+          transition={{
+            repeat: Infinity,
+            duration: 5,
+            times: [0, 0.5, 1],
+            delay: 0.5,
+          }}
+        />
+
+        <div className="relative z-10 mx-auto my-0 max-w-[1170px]">
           <div className="m-auto box-border w-auto px-4 md:w-2/3">
-            <h3 className="text-center text-xl font-bold uppercase">Team</h3>
-            <p className="mb-10 mt-2 text-center text-primary/90">
+            <motion.h3
+              className="text-center text-xl font-bold uppercase"
+              initial={{ opacity: 0, y: 20 }}
+              animate={
+                teamInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
+              }
+              transition={{ duration: 0.3 }}
+            >
+              Team
+            </motion.h3>
+            <motion.p
+              className="mb-10 mt-2 text-center text-primary/90"
+              initial={{ opacity: 0, y: 20 }}
+              animate={
+                teamInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
+              }
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
               The Maia team consists of students, postdocs, and faculty spanning
               Cornell University and the University of Toronto.
-            </p>
+            </motion.p>
           </div>
           <div className="mx-auto grid max-w-[900px] grid-cols-1 gap-10 px-4 text-center md:grid-cols-2 lg:grid-cols-3">
-            {teamMembers.map((member) => (
-              <TeamMember key={member.name} {...member} />
+            {teamMembers.map((member, index) => (
+              <TeamMember key={member.name} {...member} index={index} />
             ))}
           </div>
         </div>
       </section>
-      <section className="flex flex-col justify-evenly bg-background-1 py-20">
-        <div className="mx-auto my-0 max-w-[1170px]">
+
+      <section
+        className="relative flex flex-col justify-evenly overflow-hidden bg-background-1 py-20"
+        ref={acknowledgementsRef}
+      >
+        {/* Background decorative elements */}
+        <motion.div
+          className="absolute -top-10 right-10 h-40 w-40 rounded-full bg-human-4/5"
+          animate={{
+            scale: acknowledgementsInView ? [1, 1.1, 1] : 1,
+          }}
+          transition={{
+            repeat: Infinity,
+            duration: 6,
+            times: [0, 0.5, 1],
+          }}
+        />
+
+        <div className="z-10 mx-auto my-0 max-w-[1170px]">
           <div className="m-auto box-border w-auto px-4 md:w-2/3">
-            <h3 className="text-center text-xl font-bold uppercase">
+            <motion.h3
+              className="text-center text-xl font-bold uppercase"
+              initial={{ opacity: 0, y: 20 }}
+              animate={
+                acknowledgementsInView
+                  ? { opacity: 1, y: 0 }
+                  : { opacity: 0, y: 20 }
+              }
+              transition={{ duration: 0.3 }}
+            >
               Acknowledgments
-            </h3>
-            <p className="text-center text-primary/90">
+            </motion.h3>
+            <motion.p
+              className="text-center text-primary/90"
+              initial={{ opacity: 0, y: 20 }}
+              animate={
+                acknowledgementsInView
+                  ? { opacity: 1, y: 0 }
+                  : { opacity: 0, y: 20 }
+              }
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
               Many thanks to Lichess.org for providing the human games that we
               trained on and hosting our Maia models that you can play against.
               Ashton Anderson was supported in part by an NSERC grant, a
@@ -174,7 +378,7 @@ export const AboutMaia = () => {
               supported in part by a Simons Investigator Award, a Vannevar Bush
               Faculty Fellowship, a MURI grant, and a MacArthur Foundation
               grant.
-            </p>
+            </motion.p>
           </div>
         </div>
       </section>
