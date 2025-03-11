@@ -53,7 +53,7 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
       className="relative flex min-h-[80vh] w-full flex-col items-center justify-center overflow-hidden bg-background-1 py-16"
       ref={ref}
     >
-      <div className="container mx-auto flex flex-col items-center px-4 md:flex-row md:gap-12 lg:gap-16">
+      <div className="mx-auto flex w-full max-w-[90%] flex-col items-center px-4 md:flex-row md:gap-12 lg:gap-16">
         <motion.div
           className="mb-10 w-full md:mb-0 md:w-1/2"
           initial={{ opacity: 0, x: -50 }}
@@ -63,51 +63,52 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
           <div className="mb-4 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3">
             Play Against Maia
           </div>
-          <h2 className="mb-6 text-3xl font-bold md:text-4xl lg:text-5xl">
+          <h2 className="mb-6 max-w-2xl text-3xl font-bold md:text-4xl lg:text-5xl">
             Experience human-like chess AI
           </h2>
-          <p className="mb-4 text-lg text-primary/80">
+          <p className="mb-4 max-w-2xl text-lg text-primary/80">
             Challenge Maia, a neural network trained to play like humans of
             different ratings. Unlike traditional engines that play the best
             moves, Maia predicts and plays what a human would do.
           </p>
-          <p className="mb-8 text-lg text-primary/80">
+          <p className="mb-4 max-w-2xl text-lg text-primary/80">
             By learning from thousands of human games, Maia understands and
             replicates human chess patterns and decision-making styles.
           </p>
           {user?.lichessId ? (
-            <button
+            <motion.button
               onClick={startGame}
-              className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white transition duration-200 hover:bg-opacity-90"
+              className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
             >
               Play Now
-            </button>
+            </motion.button>
           ) : (
-            <a
+            <motion.a
               href="https://lichess.org/@/maia1"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white transition duration-200 hover:bg-opacity-90"
+              className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
             >
               Play on Lichess
-            </a>
+            </motion.a>
           )}
         </motion.div>
-
-        {/* Visualization */}
         <motion.div
-          className="relative w-[70%] md:w-[35%]"
+          className="relative w-full md:w-1/2"
           initial={{ opacity: 0, x: 50 }}
           animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
           transition={{ duration: 0.3, ease: 'easeOut', delay: 0.2 }}
         >
           <div className="relative flex aspect-square w-full items-center justify-center">
-            {/* Training data visualization */}
             <div className="absolute left-0 top-0 grid h-3/4 w-3/4 grid-cols-6 grid-rows-6 gap-0.5 bg-background-2">
               <AnimatedTrainingBoards inView={inView} />
             </div>
-
-            {/* Main prediction board */}
             <motion.div
               className="absolute bottom-0 right-0 h-3/4 w-3/4 overflow-hidden border border-background-3/20 bg-background-1 shadow-lg"
               initial={{ scale: 0.95, opacity: 0 }}
