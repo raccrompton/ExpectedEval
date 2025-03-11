@@ -25,7 +25,7 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
       className="relative flex w-full flex-col items-center justify-center overflow-hidden bg-background-1 py-8"
       ref={ref}
     >
-      <div className="container mx-auto flex flex-col-reverse items-center px-4 md:flex-row md:gap-8 lg:gap-12">
+      <div className="mx-auto flex w-full max-w-[90%] flex-col-reverse items-center px-4 md:flex-row md:gap-8 lg:gap-12">
         {/* Analysis Interface Visual */}
         <motion.div
           className="relative mt-6 w-full md:mt-0 md:w-1/2"
@@ -91,8 +91,6 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
                   </motion.div>
                 </div>
               </div>
-
-              {/* Bottom row: Rating Chart and Move Map */}
               <div className="flex gap-3">
                 <motion.div
                   className="h-48 w-1/2"
@@ -118,8 +116,6 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
             </div>
           </div>
         </motion.div>
-
-        {/* Content */}
         <motion.div
           className="w-full md:w-1/2"
           initial={{ opacity: 0, x: 50 }}
@@ -130,7 +126,7 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
             Game Analysis
           </div>
           <motion.h2
-            className="mt-1 text-2xl font-bold leading-tight tracking-tight text-primary md:text-3xl lg:text-4xl"
+            className="mb-6 max-w-2xl text-3xl font-bold md:text-4xl lg:text-5xl"
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
@@ -138,7 +134,7 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
             Analyze Your Games with Powerful AI Tools
           </motion.h2>
           <motion.p
-            className="mt-4 max-w-xl text-lg leading-relaxed text-primary/80"
+            className="mb-4 max-w-xl text-lg leading-relaxed text-primary/80"
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.3, ease: 'easeOut', delay: 0.1 }}
@@ -149,7 +145,7 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
             compared to players at different skill levels.
           </motion.p>
           <motion.p
-            className="mt-4 max-w-xl text-lg leading-relaxed text-primary/80"
+            className="mb-4 max-w-xl text-lg leading-relaxed text-primary/80"
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.3, ease: 'easeOut', delay: 0.2 }}
@@ -159,12 +155,18 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
             likelihood of mistakes in each position. Get personalized insights
             based on your playing style and rating level.
           </motion.p>
-          <Link
-            href="/analysis"
-            className="flex w-fit items-center justify-center rounded-md bg-engine-3 px-6 py-3 font-medium text-white transition duration-200 hover:bg-opacity-90"
+          <motion.div
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.2 }}
           >
-            Try Analysis
-          </Link>
+            <Link
+              href="/analysis"
+              className="flex w-fit items-center justify-center rounded-md bg-engine-3 px-6 py-3 font-medium text-white"
+            >
+              Try Analysis
+            </Link>
+          </motion.div>
         </motion.div>
       </div>
     </section>

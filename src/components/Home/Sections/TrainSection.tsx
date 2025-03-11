@@ -199,8 +199,7 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
       className="relative w-full flex-col items-center overflow-hidden py-16"
       ref={ref}
     >
-      <div className="container z-10 mx-auto flex flex-col items-center px-4 md:flex-row md:gap-12 lg:gap-16">
-        {/* Content */}
+      <div className="z-10 mx-auto flex w-full max-w-[90%] flex-col items-center px-4 md:flex-row md:gap-12 lg:gap-16">
         <motion.div
           className="mb-10 w-full md:mb-0 md:w-2/5"
           initial={{ opacity: 0, x: -50 }}
@@ -237,7 +236,7 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
             different rating levels.
           </motion.p>
           <motion.p
-            className="mb-8 text-lg text-primary/80"
+            className="mb-4 text-lg text-primary/80"
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.3, delay: 0.3 }}
@@ -262,8 +261,6 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
             </motion.div>
           </motion.div>
         </motion.div>
-
-        {/* Interactive Puzzle Display */}
         <motion.div
           className="relative w-full md:w-3/5"
           initial={{ opacity: 0, x: 50 }}
@@ -271,7 +268,6 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
           transition={{ duration: 0.3, ease: 'easeOut', delay: 0.2 }}
         >
           <div className="flex flex-col overflow-hidden rounded-lg bg-background-2 shadow-xl">
-            {/* Puzzle header with tags */}
             <motion.div
               className="border-b border-background-3/20 p-4"
               initial={{ opacity: 0, y: -10 }}
@@ -306,9 +302,7 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                 {puzzle.description}
               </p>
             </motion.div>
-
             <div className="flex flex-col gap-4 p-4 md:flex-row">
-              {/* Chessboard - smaller size */}
               <motion.div
                 className="relative aspect-square w-full md:w-1/2"
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -368,8 +362,6 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                   }}
                 />
               </motion.div>
-
-              {/* Use the real SimplifiedMovesByRating component */}
               <motion.div
                 className="flex w-full flex-col md:w-1/2"
                 initial={{ opacity: 0, x: 20 }}
@@ -408,8 +400,6 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                 </div>
               </motion.div>
             </div>
-
-            {/* Interactive Controls - removed buttons, only keeping navigation */}
             <motion.div
               className="flex items-center justify-center border-t border-background-3/20 p-4"
               initial={{ opacity: 0, y: 10 }}

@@ -19,9 +19,23 @@ export const PageNavigation = () => {
 }
 
 const NavLink = ({ href, label }: { href: string; label: string }) => {
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    const targetId = href.substring(1)
+    const targetElement = document.getElementById(targetId)
+
+    if (targetElement) {
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }
+  }
+
   return (
     <motion.a
       href={href}
+      onClick={handleClick}
       className="relative px-2 !text-primary"
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
