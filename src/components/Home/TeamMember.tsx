@@ -1,4 +1,5 @@
 import Image, { StaticImageData } from 'next/image'
+import { motion } from 'framer-motion'
 import { EnvelopeSquareIcon, GithubIcon } from 'src/components/Icons/icons'
 
 interface TeamMemberProps {
@@ -9,6 +10,7 @@ interface TeamMemberProps {
   role: string
   email?: string
   github?: string
+  index?: number
 }
 
 export const TeamMember = ({
@@ -19,54 +21,102 @@ export const TeamMember = ({
   role,
   email,
   github,
+  index = 0,
 }: TeamMemberProps) => {
   return (
-    <div className="flex flex-col items-center space-y-4">
-      <Image
-        src={image}
-        className="h-48 w-48 rounded-full"
-        alt={`Picture of ${name}`}
-      />
-      <div className="flex flex-col">
+    <motion.div
+      className="flex flex-col items-center space-y-4"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-50px' }}
+      transition={{
+        duration: 0.3,
+        delay: 0.1 + ((index * 0.05) % 0.5), // Stagger effect but cap at 0.5s
+        ease: 'easeOut',
+      }}
+    >
+      <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
+        <Image
+          src={image}
+          className="h-48 w-48 rounded-full"
+          alt={`Picture of ${name}`}
+        />
+      </motion.div>
+      <motion.div
+        className="flex flex-col"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.3, delay: 0.2 + ((index * 0.05) % 0.5) }}
+      >
         {website ? (
-          <a
+          <motion.a
             target="_blank"
             rel="noreferrer"
             href={website}
             className="text-2xl"
+            whileHover={{ scale: 1.03 }}
+            transition={{ duration: 0.2 }}
           >
             {name}
-          </a>
+          </motion.a>
         ) : (
           <span className="text-2xl">{name}</span>
         )}
-        <p>{institution}</p>
-      </div>
-      <p className="font-semibold">{role}</p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.3, delay: 0.3 + ((index * 0.05) % 0.5) }}
+        >
+          {institution}
+        </motion.p>
+      </motion.div>
+      <motion.p
+        className="font-semibold"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.3, delay: 0.3 + ((index * 0.05) % 0.5) }}
+      >
+        {role}
+      </motion.p>
       {(email || github) && (
-        <div className="flex items-center justify-center space-x-4">
+        <motion.div
+          className="flex items-center justify-center space-x-4"
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.3, delay: 0.4 + ((index * 0.05) % 0.5) }}
+        >
           {email && (
-            <a
+            <motion.a
               target="_blank"
               rel="noreferrer"
               href={`mailto:${email}`}
               className="*:h-5 *:w-5 *:fill-human-3"
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
             >
               {EnvelopeSquareIcon}
-            </a>
+            </motion.a>
           )}
           {github && (
-            <a
+            <motion.a
               target="_blank"
               rel="noreferrer"
               href={`https://github.com/${github}`}
               className="*:h-5 *:w-5 *:fill-human-3"
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
             >
               {GithubIcon}
-            </a>
+            </motion.a>
           )}
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   )
 }

@@ -1,10 +1,167 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
+import { useState, useEffect } from 'react'
+import Chessground from '@react-chess/chessground'
+import type { DrawShape } from 'chessground/draw'
+import type { Key } from 'chessground/types'
+import { SimplifiedMovesByRating } from './SimplifiedAnalysisComponents'
 
 interface TrainSectionProps {
   id: string
 }
+
+// Mock move data by rating for visualization
+interface MovesByRatingData {
+  rating: number
+  bestMove: number
+  commonMistake: number
+  otherMistake: number
+}
+
+// Define the structure of a puzzle
+interface ChessPuzzle {
+  id: string
+  fen: string
+  bestMove: { orig: Key; dest: Key; brush: string }
+  description: string
+  solution: string
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
+  skill: string
+  theme: string
+  // Moves data for visualization
+  ratingData: MovesByRatingData[]
+  movesMapping: {
+    bestMove: string
+    commonMistake: string
+    otherMistake: string
+  }
+  explanation: string
+}
+
+// Sample puzzle positions with detailed data
+const PUZZLES: ChessPuzzle[] = [
+  {
+    id: 'puzzle1',
+    fen: '3r1k2/5pp1/4p2p/1R6/8/5P2/r4PPP/4R1K1 w - - 0 1',
+    bestMove: { orig: 'b5' as Key, dest: 'b7' as Key, brush: 'green' },
+    description: 'Find the winning tactic for White',
+    solution: 'Rb7 threatening the 7th rank',
+    difficulty: 'Intermediate',
+    skill: 'Tactical Vision',
+    theme: 'Seventh Rank Attack',
+    movesMapping: {
+      bestMove: 'Rb7',
+      commonMistake: 'Rb6',
+      otherMistake: 'Re5',
+    },
+    ratingData: [
+      { rating: 1200, bestMove: 24, commonMistake: 42, otherMistake: 34 },
+      { rating: 1400, bestMove: 35, commonMistake: 38, otherMistake: 27 },
+      { rating: 1600, bestMove: 48, commonMistake: 32, otherMistake: 20 },
+      { rating: 1800, bestMove: 61, commonMistake: 24, otherMistake: 15 },
+      { rating: 2000, bestMove: 76, commonMistake: 18, otherMistake: 6 },
+    ],
+    explanation:
+      'The Rb7 move threatens to invade the 7th rank, creating immediate threats against the king. Lower-rated players often miss this tactical opportunity, opting instead for less decisive moves like Rb6.',
+  },
+  {
+    id: 'puzzle2',
+    fen: 'r1bqk2r/pp1n1ppp/2pbpn2/3p4/2PP4/2N1PN2/PP3PPP/R1BQKB1R w KQkq - 0 7',
+    bestMove: { orig: 'd1' as Key, dest: 'd2' as Key, brush: 'green' },
+    description: 'Find the best development move',
+    solution: 'Qd2 connecting the rooks',
+    difficulty: 'Beginner',
+    skill: 'Development',
+    theme: 'Piece Coordination',
+    movesMapping: {
+      bestMove: 'Qd2',
+      commonMistake: 'Bd2',
+      otherMistake: 'a3',
+    },
+    ratingData: [
+      { rating: 1200, bestMove: 31, commonMistake: 39, otherMistake: 30 },
+      { rating: 1400, bestMove: 42, commonMistake: 35, otherMistake: 23 },
+      { rating: 1600, bestMove: 53, commonMistake: 31, otherMistake: 16 },
+      { rating: 1800, bestMove: 64, commonMistake: 26, otherMistake: 10 },
+      { rating: 2000, bestMove: 72, commonMistake: 23, otherMistake: 5 },
+    ],
+    explanation:
+      'Queen to d2 connects the rooks and prepares for castling. Many beginners fail to recognize the importance of connecting rooks early in the game, often choosing less harmonious development moves.',
+  },
+  {
+    id: 'puzzle3',
+    fen: '2r2rk1/pp1bppbp/3p1np1/q7/3PPPP1/1NN1B3/PPP5/R2QK2R b KQ - 0 13',
+    bestMove: { orig: 'a5' as Key, dest: 'a2' as Key, brush: 'green' },
+    description: 'Find the tactical shot for Black',
+    solution: 'Qa2 winning material',
+    difficulty: 'Advanced',
+    skill: 'Tactics',
+    theme: 'Material Gain',
+    movesMapping: {
+      bestMove: 'Qa2',
+      commonMistake: 'Qb5',
+      otherMistake: 'Qc5',
+    },
+    ratingData: [
+      { rating: 1200, bestMove: 12, commonMistake: 53, otherMistake: 35 },
+      { rating: 1400, bestMove: 23, commonMistake: 48, otherMistake: 29 },
+      { rating: 1600, bestMove: 35, commonMistake: 43, otherMistake: 22 },
+      { rating: 1800, bestMove: 52, commonMistake: 34, otherMistake: 14 },
+      { rating: 2000, bestMove: 71, commonMistake: 21, otherMistake: 8 },
+    ],
+    explanation:
+      'The queen sacrifice Qa2 leads to a material advantage. The difficulty in this position lies in calculating the consequences several moves ahead, which is why lower-rated players often miss this opportunity.',
+  },
+  {
+    id: 'puzzle4',
+    fen: 'r1bq1rk1/ppp2ppp/2np1n2/2b1p3/2B1P3/2PP1N2/PP3PPP/RNBQ1RK1 w - - 0 1',
+    bestMove: { orig: 'c4' as Key, dest: 'f7' as Key, brush: 'green' },
+    description: 'Find the tactical opportunity',
+    solution: 'Bxf7+ winning material',
+    difficulty: 'Intermediate',
+    skill: 'Tactics',
+    theme: 'Bishop Sacrifice',
+    movesMapping: {
+      bestMove: 'Bxf7+',
+      commonMistake: 'Bd5',
+      otherMistake: 'b4',
+    },
+    ratingData: [
+      { rating: 1200, bestMove: 19, commonMistake: 43, otherMistake: 38 },
+      { rating: 1400, bestMove: 32, commonMistake: 41, otherMistake: 27 },
+      { rating: 1600, bestMove: 45, commonMistake: 38, otherMistake: 17 },
+      { rating: 1800, bestMove: 59, commonMistake: 32, otherMistake: 9 },
+      { rating: 2000, bestMove: 75, commonMistake: 19, otherMistake: 6 },
+    ],
+    explanation:
+      'The bishop sacrifice on f7 is a classic tactical motif. Lower-rated players often overlook sacrifices, preferring safer moves that do not immediately win material but also do not create tactical opportunities.',
+  },
+  {
+    id: 'puzzle5',
+    fen: 'r4rk1/1pp1qppp/p1np1n2/2b1p3/2B1P3/2PP1N2/PP3PPP/RNBQR1K1 w - - 0 1',
+    bestMove: { orig: 'c4' as Key, dest: 'f7' as Key, brush: 'green' },
+    description: 'Find the winning combination',
+    solution: 'Bxf7+ followed by Ng5+',
+    difficulty: 'Advanced',
+    skill: 'Combinations',
+    theme: 'Double Attack',
+    movesMapping: {
+      bestMove: 'Bxf7+',
+      commonMistake: 'Bb5',
+      otherMistake: 'Qd2',
+    },
+    ratingData: [
+      { rating: 1200, bestMove: 15, commonMistake: 47, otherMistake: 38 },
+      { rating: 1400, bestMove: 26, commonMistake: 43, otherMistake: 31 },
+      { rating: 1600, bestMove: 41, commonMistake: 37, otherMistake: 22 },
+      { rating: 1800, bestMove: 58, commonMistake: 31, otherMistake: 11 },
+      { rating: 2000, bestMove: 74, commonMistake: 21, otherMistake: 5 },
+    ],
+    explanation:
+      'This position features a multi-move combination starting with Bxf7+. The key insight is seeing beyond the initial sacrifice to the knight fork that follows, a calculation that improves dramatically with rating.',
+  },
+]
 
 export const TrainSection = ({ id }: TrainSectionProps) => {
   const [ref, inView] = useInView({
@@ -12,107 +169,54 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
     threshold: 0.2,
   })
 
+  const [currentPuzzle, setCurrentPuzzle] = useState(0)
+  const [shapes, setShapes] = useState<DrawShape[]>([])
+
+  // Reset states when puzzle changes
+  useEffect(() => {
+    // Show the best move for each puzzle automatically
+    setShapes([PUZZLES[currentPuzzle].bestMove])
+  }, [currentPuzzle])
+
+  // Auto-rotate puzzles more frequently (every 8 seconds)
+  useEffect(() => {
+    if (!inView) return
+
+    const positionInterval = setInterval(() => {
+      setCurrentPuzzle((prev) => (prev + 1) % PUZZLES.length)
+    }, 8000)
+
+    return () => {
+      clearInterval(positionInterval)
+    }
+  }, [inView])
+
+  const puzzle = PUZZLES[currentPuzzle]
+
   return (
     <section
       id={id}
       className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-background-1 py-16"
       ref={ref}
     >
-      <div className="container mx-auto flex flex-col items-center px-4 md:flex-row md:gap-12 lg:gap-16">
-        {/* Content */}
-        <motion.div
-          className="mb-10 w-full md:mb-0 md:w-1/2"
-          initial={{ opacity: 0, x: -50 }}
-          animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-        >
-          <div className="mb-4 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3">
-            Training Puzzles
-          </div>
-          <h2 className="mb-6 text-3xl font-bold md:text-4xl lg:text-5xl">
-            Improve with human-centered puzzles
-          </h2>
-          <p className="mb-8 text-lg text-primary/80">
-            Enhance your chess skills with puzzles designed to reflect real
-            human play. Practice spotting the kinds of tactics and patterns that
-            occur in actual games, rather than engine-perfect positions.
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <Link
-              href="/train"
-              className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white transition duration-200 hover:bg-opacity-90"
-            >
-              Start Training
-            </Link>
-            <a
-              href="#features"
-              className="flex items-center justify-center rounded-md border border-background-2 bg-background-1 px-6 py-3 font-medium transition duration-200 hover:bg-background-2"
-            >
-              Learn More
-            </a>
-          </div>
-        </motion.div>
-
-        {/* Visual Puzzle Display */}
-        <motion.div
-          className="relative w-full md:w-1/2"
-          initial={{ opacity: 0, x: 50 }}
-          animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
-          transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
-        >
-          <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-background-2 shadow-xl">
-            {/* Chess puzzle visualization - simple grid representation */}
-            <div className="absolute inset-0 grid grid-cols-8 grid-rows-8">
-              {[...Array(64)].map((_, i) => {
-                const isWhite = ((i % 8) + Math.floor(i / 8)) % 2 === 0
-                return (
-                  <div
-                    key={i}
-                    className={`${isWhite ? 'bg-background-3' : 'bg-background-4'} flex items-center justify-center`}
-                  >
-                    {/* Add pieces illustration here if needed */}
-                  </div>
-                )
-              })}
-
-              {/* Highlighted move */}
-              <motion.div
-                className="absolute left-[37.5%] top-[37.5%] h-1/4 w-1/4 rounded-full border-2 border-human-3"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-              />
-            </div>
-          </div>
-
-          <motion.div
-            className="absolute -bottom-5 -right-5 rounded-lg bg-human-4/20 p-4 backdrop-blur-md md:p-6"
-            initial={{ y: 20, opacity: 0 }}
-            animate={inView ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-          >
-            <p className="font-medium text-human-4">
-              Adapted to your skill level
-            </p>
-          </motion.div>
-        </motion.div>
-      </div>
-
-      {/* Parallax decorative elements */}
+      {/* Background decorative elements */}
       <motion.div
-        className="absolute -top-20 right-10 h-40 w-40 rounded-full bg-human-4/5"
+        className="absolute -top-40 right-0 h-80 w-80 rounded-full bg-human-4/5"
         animate={{
-          y: inView ? [0, 20, 0] : 0,
+          y: inView ? [0, 30, 0] : 0,
+          scale: inView ? [1, 1.05, 1] : 1,
         }}
         transition={{
           repeat: Infinity,
-          duration: 4,
+          duration: 6,
           times: [0, 0.5, 1],
         }}
       />
       <motion.div
-        className="absolute bottom-10 left-10 h-60 w-60 rounded-full bg-engine-4/5"
+        className="absolute -left-20 top-1/3 h-60 w-60 rounded-full bg-engine-4/5"
         animate={{
           y: inView ? [0, -20, 0] : 0,
+          scale: inView ? [1, 1.03, 1] : 1,
         }}
         transition={{
           repeat: Infinity,
@@ -121,6 +225,256 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
           delay: 0.5,
         }}
       />
+
+      <div className="container z-10 mx-auto flex flex-col items-center px-4 md:flex-row md:gap-12 lg:gap-16">
+        {/* Content */}
+        <motion.div
+          className="mb-10 w-full md:mb-0 md:w-2/5"
+          initial={{ opacity: 0, x: -50 }}
+          animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+        >
+          <motion.div
+            className="mb-4 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={
+              inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }
+            }
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            Human-Centered Puzzles
+          </motion.div>
+          <motion.h2
+            className="mb-6 text-3xl font-bold md:text-4xl lg:text-5xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            Learn from real player tendencies
+          </motion.h2>
+          <motion.p
+            className="mb-4 text-lg text-primary/80"
+            initial={{ opacity: 0, y: 20 }}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
+            Unlike traditional puzzles based on computer analysis, our puzzles
+            highlight positions where human players typically struggle. We
+            identify tactical opportunities that are commonly missed at
+            different rating levels.
+          </motion.p>
+          <motion.p
+            className="mb-8 text-lg text-primary/80"
+            initial={{ opacity: 0, y: 20 }}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
+            Each puzzle includes data showing how players of different ratings
+            approach the position, making your training more targeted and
+            effective.
+          </motion.p>
+          <motion.div
+            className="flex flex-wrap gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            transition={{ duration: 0.3, delay: 0.4 }}
+          >
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+              <Link
+                href="/train"
+                className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white transition duration-200 hover:bg-opacity-90"
+              >
+                Start Training
+              </Link>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+
+        {/* Interactive Puzzle Display */}
+        <motion.div
+          className="relative w-full md:w-3/5"
+          initial={{ opacity: 0, x: 50 }}
+          animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
+          transition={{ duration: 0.3, ease: 'easeOut', delay: 0.2 }}
+        >
+          <div className="flex flex-col overflow-hidden rounded-lg bg-background-2 shadow-xl">
+            {/* Puzzle header with tags */}
+            <motion.div
+              className="border-b border-background-3/20 p-4"
+              initial={{ opacity: 0, y: -10 }}
+              animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center">
+                  <div
+                    className={`h-2 w-2 rounded-full ${
+                      puzzle.difficulty === 'Beginner'
+                        ? 'bg-human-1'
+                        : puzzle.difficulty === 'Intermediate'
+                          ? 'bg-human-3'
+                          : 'bg-engine-3'
+                    } mr-2`}
+                  ></div>
+                  <p className="font-medium text-primary">
+                    {puzzle.difficulty} Puzzle
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <span className="rounded bg-background-3/20 px-2 py-1 text-xs text-primary/60">
+                    {puzzle.theme}
+                  </span>
+                  <span className="rounded bg-background-3/20 px-2 py-1 text-xs text-primary/60">
+                    {puzzle.skill}
+                  </span>
+                </div>
+              </div>
+              <p className="text-lg font-medium text-primary/80">
+                {puzzle.description}
+              </p>
+            </motion.div>
+
+            <div className="flex flex-col gap-4 p-4 md:flex-row">
+              {/* Chessboard - smaller size */}
+              <motion.div
+                className="relative aspect-square w-full md:w-1/2"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={
+                  inView
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 0, scale: 0.95 }
+                }
+                transition={{ duration: 0.3, delay: 0.4 }}
+              >
+                <Chessground
+                  contained
+                  config={{
+                    fen: puzzle.fen,
+                    viewOnly: true,
+                    coordinates: true,
+                    drawable: {
+                      enabled: true,
+                      visible: true,
+                      defaultSnapToValidMove: true,
+                      shapes,
+                      brushes: {
+                        green: {
+                          key: 'g',
+                          color: '#15781B',
+                          opacity: 1,
+                          lineWidth: 10,
+                        },
+                        red: {
+                          key: 'r',
+                          color: '#882020',
+                          opacity: 1,
+                          lineWidth: 10,
+                        },
+                        blue: {
+                          key: 'b',
+                          color: '#003088',
+                          opacity: 1,
+                          lineWidth: 10,
+                        },
+                        yellow: {
+                          key: 'y',
+                          color: '#e68f00',
+                          opacity: 1,
+                          lineWidth: 10,
+                        },
+                      },
+                    },
+                    highlight: {
+                      lastMove: true,
+                      check: true,
+                    },
+                    animation: {
+                      enabled: true,
+                      duration: 300,
+                    },
+                  }}
+                />
+              </motion.div>
+
+              {/* Use the real SimplifiedMovesByRating component */}
+              <motion.div
+                className="flex w-full flex-col md:w-1/2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
+                transition={{ duration: 0.3, delay: 0.5 }}
+              >
+                <div className="h-full">
+                  <SimplifiedMovesByRating />
+                </div>
+                <div className="mt-3 text-sm text-primary/80">
+                  <h4 className="mb-1 font-medium">Move Analysis</h4>
+                  <p className="mb-3 text-xs">{puzzle.explanation}</p>
+                  <ul className="space-y-1 text-xs">
+                    <li className="flex items-center">
+                      <span className="mr-2 h-3 w-3 rounded-full bg-[#238b45]"></span>
+                      <span className="font-mono font-medium">
+                        {puzzle.movesMapping.bestMove}
+                      </span>
+                      <span className="ml-2">- Best move</span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="mr-2 h-3 w-3 rounded-full bg-[#feb24c]"></span>
+                      <span className="font-mono font-medium">
+                        {puzzle.movesMapping.commonMistake}
+                      </span>
+                      <span className="ml-2">- Common mistake</span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="mr-2 h-3 w-3 rounded-full bg-[#cb181d]"></span>
+                      <span className="font-mono font-medium">
+                        {puzzle.movesMapping.otherMistake}
+                      </span>
+                      <span className="ml-2">- Other mistake</span>
+                    </li>
+                  </ul>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Interactive Controls - removed buttons, only keeping navigation */}
+            <motion.div
+              className="flex items-center justify-center border-t border-background-3/20 p-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+            >
+              <div className="flex items-center gap-2">
+                {PUZZLES.map((_, idx) => {
+                  const isActive = currentPuzzle === idx
+                  return (
+                    <motion.button
+                      key={idx}
+                      className="h-2 w-8 rounded-full"
+                      onClick={() => setCurrentPuzzle(idx)}
+                      initial={{
+                        backgroundColor: isActive
+                          ? '#5292e1'
+                          : 'rgba(82, 82, 82, 0.2)',
+                      }}
+                      animate={{
+                        backgroundColor: isActive
+                          ? '#5292e1'
+                          : 'rgba(82, 82, 82, 0.2)',
+                      }}
+                      whileHover={{
+                        scale: 1.05,
+                        backgroundColor: isActive
+                          ? '#5292e1'
+                          : 'rgba(255, 255, 255, 0.3)',
+                      }}
+                    />
+                  )
+                })}
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+      </div>
     </section>
   )
 }
