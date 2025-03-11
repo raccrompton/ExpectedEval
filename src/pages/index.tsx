@@ -10,6 +10,7 @@ import {
   AnalysisSection,
   TrainSection,
   AdditionalFeaturesSection,
+  PageNavigation,
 } from 'src/components'
 
 const Home: NextPage = () => {
@@ -39,11 +40,20 @@ const Home: NextPage = () => {
         />
       </Head>
       <HomeHero scrollHandler={scrollHandler} />
+      <PageNavigation />
       <div ref={featuresRef}>
-        <PlaySection id="play-section" />
-        <AnalysisSection id="analysis-section" />
-        <TrainSection id="train-section" />
-        <AdditionalFeaturesSection id="more-features" />
+        <div className="bg-background-1">
+          <PlaySection id="play-section" />
+        </div>
+        <div className="bg-background-2">
+          <AnalysisSection id="analysis-section" />
+        </div>
+        <div className="bg-background-1">
+          <TrainSection id="train-section" />
+        </div>
+        <div className="bg-background-2">
+          <AdditionalFeaturesSection id="more-features" />
+        </div>
         <AboutMaia />
       </div>
     </>

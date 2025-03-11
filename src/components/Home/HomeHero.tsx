@@ -129,32 +129,6 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
 
   return (
     <div className="relative flex flex-col items-center justify-center overflow-hidden pb-16 pt-24 md:pb-28 md:pt-36">
-      {/* Decorative elements */}
-      <motion.div
-        className="absolute -top-20 right-10 h-40 w-40 rounded-full bg-human-4/5"
-        animate={{
-          y: [0, 20, 0],
-        }}
-        transition={{
-          repeat: Infinity,
-          duration: 4,
-          times: [0, 0.5, 1],
-        }}
-      />
-      <motion.div
-        className="absolute bottom-10 left-10 h-60 w-60 rounded-full bg-engine-4/5"
-        animate={{
-          y: [0, -20, 0],
-        }}
-        transition={{
-          repeat: Infinity,
-          duration: 5,
-          times: [0, 0.5, 1],
-          delay: 0.5,
-        }}
-      />
-
-      {/* <BetaBlurb /> */}
       <div className="z-10 flex w-full max-w-[1200px] flex-col items-center justify-center gap-16 p-4 text-left md:flex-row md:gap-20">
         <div className="flex w-full flex-col items-start justify-center gap-8 md:w-[40%]">
           <div className="flex flex-col gap-4">
