@@ -196,36 +196,9 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
   return (
     <section
       id={id}
-      className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-background-1 py-16"
+      className="relative w-full flex-col items-center overflow-hidden py-16"
       ref={ref}
     >
-      {/* Background decorative elements */}
-      <motion.div
-        className="absolute -top-40 right-0 h-80 w-80 rounded-full bg-human-4/5"
-        animate={{
-          y: inView ? [0, 30, 0] : 0,
-          scale: inView ? [1, 1.05, 1] : 1,
-        }}
-        transition={{
-          repeat: Infinity,
-          duration: 6,
-          times: [0, 0.5, 1],
-        }}
-      />
-      <motion.div
-        className="absolute -left-20 top-1/3 h-60 w-60 rounded-full bg-engine-4/5"
-        animate={{
-          y: inView ? [0, -20, 0] : 0,
-          scale: inView ? [1, 1.03, 1] : 1,
-        }}
-        transition={{
-          repeat: Infinity,
-          duration: 5,
-          times: [0, 0.5, 1],
-          delay: 0.5,
-        }}
-      />
-
       <div className="container z-10 mx-auto flex flex-col items-center px-4 md:flex-row md:gap-12 lg:gap-16">
         {/* Content */}
         <motion.div

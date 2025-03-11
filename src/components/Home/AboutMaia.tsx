@@ -99,72 +99,11 @@ export const AboutMaia = () => {
 
   return (
     <div className="font-helvetica [&_a]:text-human-3">
-      <motion.div
-        className="sticky top-0 z-20 flex flex-row items-center justify-center gap-10 bg-background-2 py-5 text-sm uppercase tracking-wider backdrop-blur-md"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <motion.a
-          href="#main_info"
-          className="relative !text-primary"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Project
-          <motion.div
-            className="absolute -bottom-1 left-0 h-0.5 w-0 bg-human-3"
-            whileHover={{ width: '100%' }}
-            transition={{ duration: 0.2 }}
-          />
-        </motion.a>
-        <motion.a
-          href="#team_info"
-          className="relative !text-primary"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Team
-          <motion.div
-            className="absolute -bottom-1 left-0 h-0.5 w-0 bg-human-3"
-            whileHover={{ width: '100%' }}
-            transition={{ duration: 0.2 }}
-          />
-        </motion.a>
-      </motion.div>
-
       <section
         id="main_info"
-        className="relative flex items-center justify-center overflow-hidden bg-background-1 py-20 text-center"
+        className="relative flex items-center justify-center bg-background-1 py-20 text-center"
         ref={projectRef}
       >
-        {/* Background decorative elements */}
-        <motion.div
-          className="absolute -top-40 right-0 h-80 w-80 rounded-full bg-human-4/5"
-          animate={{
-            y: projectInView ? [0, 30, 0] : 0,
-            scale: projectInView ? [1, 1.05, 1] : 1,
-          }}
-          transition={{
-            repeat: Infinity,
-            duration: 6,
-            times: [0, 0.5, 1],
-          }}
-        />
-        <motion.div
-          className="absolute -left-20 bottom-0 h-60 w-60 rounded-full bg-engine-4/5"
-          animate={{
-            y: projectInView ? [0, -20, 0] : 0,
-            scale: projectInView ? [1, 1.03, 1] : 1,
-          }}
-          transition={{
-            repeat: Infinity,
-            duration: 5,
-            times: [0, 0.5, 1],
-            delay: 0.5,
-          }}
-        />
-
         <div className="z-10 mx-auto my-0 max-w-[1170px]">
           <div className="m-auto box-border w-auto px-4 md:w-2/3">
             <motion.h3
@@ -273,31 +212,6 @@ export const AboutMaia = () => {
         className="relative overflow-hidden bg-background-2 py-20"
         ref={teamRef}
       >
-        {/* Background decorative elements */}
-        <motion.div
-          className="absolute right-20 top-20 h-40 w-40 rounded-full bg-human-4/5"
-          animate={{
-            y: teamInView ? [0, 20, 0] : 0,
-          }}
-          transition={{
-            repeat: Infinity,
-            duration: 4,
-            times: [0, 0.5, 1],
-          }}
-        />
-        <motion.div
-          className="absolute bottom-20 left-20 h-60 w-60 rounded-full bg-engine-4/5"
-          animate={{
-            y: teamInView ? [0, -20, 0] : 0,
-          }}
-          transition={{
-            repeat: Infinity,
-            duration: 5,
-            times: [0, 0.5, 1],
-            delay: 0.5,
-          }}
-        />
-
         <div className="relative z-10 mx-auto my-0 max-w-[1170px]">
           <div className="m-auto box-border w-auto px-4 md:w-2/3">
             <motion.h3
@@ -334,19 +248,6 @@ export const AboutMaia = () => {
         className="relative flex flex-col justify-evenly overflow-hidden bg-background-1 py-20"
         ref={acknowledgementsRef}
       >
-        {/* Background decorative elements */}
-        <motion.div
-          className="absolute -top-10 right-10 h-40 w-40 rounded-full bg-human-4/5"
-          animate={{
-            scale: acknowledgementsInView ? [1, 1.1, 1] : 1,
-          }}
-          transition={{
-            repeat: Infinity,
-            duration: 6,
-            times: [0, 0.5, 1],
-          }}
-        />
-
         <div className="z-10 mx-auto my-0 max-w-[1170px]">
           <div className="m-auto box-border w-auto px-4 md:w-2/3">
             <motion.h3
