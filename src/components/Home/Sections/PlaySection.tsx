@@ -54,12 +54,7 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
       ref={ref}
     >
       <div className="mx-auto flex w-full max-w-[90%] flex-col items-center px-4 md:flex-row md:gap-12 lg:gap-16">
-        <motion.div
-          className="mb-10 w-full md:mb-0 md:w-1/2"
-          initial={{ opacity: 0, x: -50 }}
-          animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-        >
+        <div className="mb-10 w-full md:mb-0 md:w-1/2">
           <div className="mb-4 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3">
             Play Against Maia
           </div>
@@ -98,12 +93,12 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
               Play on Lichess
             </motion.a>
           )}
-        </motion.div>
+        </div>
         <motion.div
           className="relative w-full md:w-1/2"
-          initial={{ opacity: 0, x: 50 }}
-          animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
-          transition={{ duration: 0.3, ease: 'easeOut', delay: 0.2 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
         >
           <div className="relative flex aspect-square w-full items-center justify-center">
             <div className="absolute left-0 top-0 grid h-3/4 w-3/4 grid-cols-6 grid-rows-6 gap-0.5 bg-background-2">
@@ -115,7 +110,9 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5 }}
             >
-              <PredictionBoard />
+              <div className="h-full w-full">
+                <PredictionBoard />
+              </div>
             </motion.div>
           </div>
         </motion.div>
@@ -126,6 +123,8 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
 
 const AnimatedTrainingBoards = ({ inView }: { inView: boolean }) => {
   const [currentBatch, setCurrentBatch] = useState(0)
+  // This will force a re-render when needed
+  const [renderKey, setRenderKey] = useState(0)
 
   useEffect(() => {
     if (!inView) return
@@ -134,7 +133,15 @@ const AnimatedTrainingBoards = ({ inView }: { inView: boolean }) => {
       setCurrentBatch((prev) => (prev + 1) % 3)
     }, 3000)
 
-    return () => clearInterval(interval)
+    // Force a redraw to ensure proper piece positioning
+    const timeoutId = setTimeout(() => {
+      setRenderKey((prev) => prev + 1)
+    }, 100)
+
+    return () => {
+      clearInterval(interval)
+      clearTimeout(timeoutId)
+    }
   }, [inView])
 
   return (
@@ -146,7 +153,6 @@ const AnimatedTrainingBoards = ({ inView }: { inView: boolean }) => {
           initial={{ opacity: 0.3 }}
           animate={{
             opacity: [0.3, 1, 0.3],
-            scale: [0.95, 1, 0.95],
           }}
           transition={{
             duration: 3,
@@ -154,15 +160,21 @@ const AnimatedTrainingBoards = ({ inView }: { inView: boolean }) => {
             repeat: Infinity,
           }}
         >
-          <Chessground
-            contained
-            config={{
-              fen: TRAINING_POSITIONS[i % TRAINING_POSITIONS.length],
-              viewOnly: true,
-              coordinates: false,
-              drawable: { enabled: false },
-            }}
-          />
+          <div className="h-full w-full">
+            <Chessground
+              key={`board-${i}-${renderKey}`}
+              contained
+              config={{
+                fen: TRAINING_POSITIONS[i % TRAINING_POSITIONS.length],
+                viewOnly: true,
+                coordinates: false,
+                drawable: { enabled: false },
+                animation: {
+                  duration: 0, // Disable animations to prevent positioning issues
+                },
+              }}
+            />
+          </div>
         </motion.div>
       ))}
     </>
@@ -171,6 +183,17 @@ const AnimatedTrainingBoards = ({ inView }: { inView: boolean }) => {
 
 const PredictionBoard = () => {
   const [chess] = useState(new Chess(DEMO_POSITION.fen))
+  // This will force a re-render when needed
+  const [renderKey, setRenderKey] = useState(0)
+
+  useEffect(() => {
+    // Force a redraw to ensure proper piece positioning
+    const timeoutId = setTimeout(() => {
+      setRenderKey((prev) => prev + 1)
+    }, 100)
+
+    return () => clearTimeout(timeoutId)
+  }, [])
 
   const shapes: DrawShape[] = DEMO_POSITION.moves.map((move) => ({
     orig: move.from as Key,
@@ -180,6 +203,7 @@ const PredictionBoard = () => {
 
   return (
     <Chessground
+      key={renderKey}
       contained
       config={{
         fen: chess.fen(),
@@ -199,7 +223,7 @@ const PredictionBoard = () => {
           },
         },
         animation: {
-          duration: 250,
+          duration: 0, // Disable animations to prevent positioning issues
         },
       }}
     />

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
+import { useState, useEffect } from 'react'
 import {
   SimplifiedChessboard,
   SimplifiedBlunderMeter,
@@ -16,8 +17,54 @@ interface AnalysisSectionProps {
 export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
   const [ref, inView] = useInView({
     triggerOnce: false,
-    threshold: 0.2,
+    threshold: 0.1,
   })
+
+  // Force re-render for chessboard components
+  const [renderKey, setRenderKey] = useState(0)
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      })
+      // Force a redraw when window size changes
+      setRenderKey((prev) => prev + 1)
+    }
+
+    // Set initial size
+    handleResize()
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
+    if (inView) {
+      // Force a redraw after component becomes visible
+      const timeoutId = setTimeout(() => {
+        setRenderKey((prev) => prev + 1)
+      }, 100)
+
+      // Force additional redraws with timing variations
+      const secondTimeoutId = setTimeout(() => {
+        setRenderKey((prev) => prev + 1)
+      }, 300)
+
+      const thirdTimeoutId = setTimeout(() => {
+        setRenderKey((prev) => prev + 1)
+      }, 500)
+
+      return () => {
+        clearTimeout(timeoutId)
+        clearTimeout(secondTimeoutId)
+        clearTimeout(thirdTimeoutId)
+      }
+    }
+  }, [inView])
 
   return (
     <section
@@ -29,23 +76,18 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
         {/* Analysis Interface Visual */}
         <motion.div
           className="relative mt-6 w-full md:mt-0 md:w-1/2"
-          initial={{ opacity: 0, x: -50 }}
-          animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
-          transition={{ duration: 0.3, ease: 'easeOut', delay: 0.1 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
         >
           <div className="relative w-full overflow-hidden rounded-lg border border-background-3/20 bg-background-2 shadow-xl">
             <div className="flex flex-col gap-3 p-3">
               <div className="flex gap-3">
                 <div className="flex w-1/2 flex-col">
                   <div className="flex flex-col">
-                    <motion.div
-                      className="w-full rounded-t-sm bg-background-1/60 p-2 text-left text-sm font-medium text-primary/80"
-                      initial={{ opacity: 0 }}
-                      animate={inView ? { opacity: 1 } : { opacity: 0 }}
-                      transition={{ duration: 0.3, delay: 0.3 }}
-                    >
+                    <div className="w-full rounded-t-sm bg-background-1/60 p-2 text-left text-sm font-medium text-primary/80">
                       Magnus Carlsen (2850)
-                    </motion.div>
+                    </div>
                     <motion.div
                       className="aspect-square w-full"
                       initial={{ opacity: 0, scale: 0.95 }}
@@ -56,16 +98,16 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
                       }
                       transition={{ duration: 0.3, delay: 0.3 }}
                     >
-                      <SimplifiedChessboard />
+                      <div
+                        className="h-full w-full"
+                        style={{ transform: 'translateZ(0)' }}
+                      >
+                        <SimplifiedChessboard forceKey={renderKey} />
+                      </div>
                     </motion.div>
-                    <motion.div
-                      className="rounded-b-sm bg-background-1/60 p-2 text-left text-sm font-medium text-primary/80"
-                      initial={{ opacity: 0 }}
-                      animate={inView ? { opacity: 1 } : { opacity: 0 }}
-                      transition={{ duration: 0.3, delay: 0.3 }}
-                    >
+                    <div className="rounded-b-sm bg-background-1/60 p-2 text-left text-sm font-medium text-primary/80">
                       Hikaru Nakamura (2836)
-                    </motion.div>
+                    </div>
                   </div>
                 </div>
                 <div className="flex w-1/2 flex-col justify-between">
@@ -116,58 +158,40 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
             </div>
           </div>
         </motion.div>
-        <motion.div
-          className="w-full md:w-1/2"
-          initial={{ opacity: 0, x: 50 }}
-          animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
-          transition={{ duration: 0.3, ease: 'easeOut', delay: 0.1 }}
-        >
+        <div className="w-full md:w-1/2">
           <div className="mb-4 inline-block rounded-full bg-engine-3/10 px-4 py-1 text-sm font-medium text-engine-3">
             Game Analysis
           </div>
-          <motion.h2
-            className="mb-6 max-w-2xl text-3xl font-bold md:text-4xl lg:text-5xl"
-            initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-          >
+          <h2 className="mb-6 max-w-2xl text-3xl font-bold md:text-4xl lg:text-5xl">
             Analyze Your Games with Powerful AI Tools
-          </motion.h2>
-          <motion.p
-            className="mb-4 max-w-xl text-lg leading-relaxed text-primary/80"
-            initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ duration: 0.3, ease: 'easeOut', delay: 0.1 }}
-          >
+          </h2>
+          <p className="mb-4 max-w-xl text-lg leading-relaxed text-primary/80">
             Maia combines traditional Stockfish precision with human-like
             pattern recognition, showing you both the perfect moves and what
             humans typically play. Discover your strengths and weaknesses
             compared to players at different skill levels.
-          </motion.p>
-          <motion.p
-            className="mb-4 max-w-xl text-lg leading-relaxed text-primary/80"
-            initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ duration: 0.3, ease: 'easeOut', delay: 0.2 }}
-          >
+          </p>
+          <p className="mb-4 max-w-xl text-lg leading-relaxed text-primary/80">
             Visualize move probabilities across different rating levels, compare
             human tendencies with engine evaluations, and understand the
             likelihood of mistakes in each position. Get personalized insights
             based on your playing style and rating level.
-          </motion.p>
+          </p>
           <motion.div
+            className="inline-block"
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.95 }}
             transition={{ duration: 0.2 }}
+            style={{ transformOrigin: 'center' }}
           >
             <Link
               href="/analysis"
-              className="flex w-fit items-center justify-center rounded-md bg-engine-3 px-6 py-3 font-medium text-white"
+              className="flex items-center justify-center rounded-md bg-engine-3 px-6 py-3 font-medium text-white"
             >
               Try Analysis
             </Link>
           </motion.div>
-        </motion.div>
+        </div>
       </div>
     </section>
   )

@@ -16,10 +16,9 @@ import {
 } from 'recharts'
 import { motion } from 'framer-motion'
 import { ContentType } from 'recharts/types/component/Label'
+import { useEffect, useRef, useState } from 'react'
 
-// Types
 type ChessMove = 'e4' | 'd4' | 'Nf3' | 'c4' | 'g3' | 'a4' | 'h4'
-
 type ColorSanMapping = Record<ChessMove, { san: string; color: string }>
 
 const COLORS = {
@@ -28,7 +27,6 @@ const COLORS = {
   blunder: ['#cb181d', '#ef3b2c', '#fb6a4a', '#fc9272', '#fcbba1'].reverse(),
 }
 
-// Mock data
 const MOCK_COLOR_SAN_MAPPING: Partial<ColorSanMapping> = {
   e4: { san: 'e4', color: COLORS.good[0] },
   d4: { san: 'd4', color: COLORS.good[1] },
@@ -448,17 +446,84 @@ export const SimplifiedBlunderMeter = () => {
   )
 }
 
-export const SimplifiedChessboard = () => {
+export const SimplifiedChessboard = ({ forceKey }: { forceKey?: number }) => {
+  // This will force a re-render when needed
+  const [renderKey, setRenderKey] = useState(0)
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      })
+      // Force a redraw when window size changes
+      setRenderKey((prev) => prev + 1)
+    }
+
+    // Set initial size
+    handleResize()
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Force redraw after component mounts
+  useEffect(() => {
+    // Force a redraw after component is visible
+    const timeoutId = setTimeout(() => {
+      setRenderKey((prev) => prev + 1)
+    }, 100)
+
+    // Force another redraw after a longer delay to catch any missed redraws
+    const secondTimeoutId = setTimeout(() => {
+      setRenderKey((prev) => prev + 1)
+    }, 500)
+
+    return () => {
+      clearTimeout(timeoutId)
+      clearTimeout(secondTimeoutId)
+    }
+  }, [])
+
+  // Force redraw when forceKey changes
+  useEffect(() => {
+    if (forceKey !== undefined) {
+      // Trigger a re-render after a very brief delay
+      const timeoutId = setTimeout(() => {
+        setRenderKey((prev) => prev + 1)
+      }, 50)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [forceKey])
+
+  // Use external key if provided or internal key otherwise
+  const keyToUse =
+    forceKey !== undefined
+      ? `external-${forceKey}`
+      : `internal-${renderKey}-${windowSize.width}-${windowSize.height}`
+
   return (
-    <div className="relative aspect-square w-full">
-      <Chessground
-        contained
-        config={{
-          fen: DEMO_FEN,
-          viewOnly: true,
-          coordinates: false,
-        }}
-      />
+    <div
+      className="relative aspect-square w-full"
+      style={{ transform: 'translateZ(0)' }}
+    >
+      <div className="h-full w-full" style={{ transform: 'translateZ(0)' }}>
+        <Chessground
+          key={keyToUse}
+          contained
+          config={{
+            fen: DEMO_FEN,
+            viewOnly: true,
+            coordinates: false,
+            animation: {
+              duration: 0, // Disable animations to prevent positioning issues
+            },
+            disableContextMenu: true,
+          }}
+        />
+      </div>
     </div>
   )
 }

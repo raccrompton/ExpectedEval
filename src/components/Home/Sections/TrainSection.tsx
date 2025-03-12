@@ -166,17 +166,65 @@ const PUZZLES: ChessPuzzle[] = [
 export const TrainSection = ({ id }: TrainSectionProps) => {
   const [ref, inView] = useInView({
     triggerOnce: false,
-    threshold: 0.2,
+    threshold: 0.1,
   })
 
   const [currentPuzzle, setCurrentPuzzle] = useState(0)
   const [shapes, setShapes] = useState<DrawShape[]>([])
+
+  // Force re-render for chessboard
+  const [renderKey, setRenderKey] = useState(0)
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      })
+      // Force a redraw when window size changes
+      setRenderKey((prev) => prev + 1)
+    }
+
+    // Set initial size
+    handleResize()
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Reset states when puzzle changes
   useEffect(() => {
     // Show the best move for each puzzle automatically
     setShapes([PUZZLES[currentPuzzle].bestMove])
   }, [currentPuzzle])
+
+  useEffect(() => {
+    if (inView) {
+      // Initial redraw
+      setRenderKey((prev) => prev + 1)
+
+      // Force additional redraws with different timing to ensure proper rendering
+      const timeoutId1 = setTimeout(() => {
+        setRenderKey((prev) => prev + 1)
+      }, 100)
+
+      const timeoutId2 = setTimeout(() => {
+        setRenderKey((prev) => prev + 1)
+      }, 300)
+
+      const timeoutId3 = setTimeout(() => {
+        setRenderKey((prev) => prev + 1)
+      }, 500)
+
+      return () => {
+        clearTimeout(timeoutId1)
+        clearTimeout(timeoutId2)
+        clearTimeout(timeoutId3)
+      }
+    }
+  }, [inView, currentPuzzle]) // Also re-render when puzzle changes
 
   // Auto-rotate puzzles more frequently (every 8 seconds)
   useEffect(() => {
@@ -200,57 +248,25 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
       ref={ref}
     >
       <div className="z-10 mx-auto flex w-full max-w-[90%] flex-col items-center px-4 md:flex-row md:gap-12 lg:gap-16">
-        <motion.div
-          className="mb-10 w-full md:mb-0 md:w-2/5"
-          initial={{ opacity: 0, x: -50 }}
-          animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-        >
-          <motion.div
-            className="mb-4 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={
-              inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }
-            }
-            transition={{ duration: 0.3, delay: 0.1 }}
-          >
+        <div className="mb-10 w-full md:mb-0 md:w-2/5">
+          <div className="mb-4 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3">
             Human-Centered Puzzles
-          </motion.div>
-          <motion.h2
-            className="mb-6 text-3xl font-bold md:text-4xl lg:text-5xl"
-            initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
+          </div>
+          <h2 className="mb-6 text-3xl font-bold md:text-4xl lg:text-5xl">
             Learn from real player tendencies
-          </motion.h2>
-          <motion.p
-            className="mb-4 text-lg text-primary/80"
-            initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
-          >
+          </h2>
+          <p className="mb-4 text-lg text-primary/80">
             Unlike traditional puzzles based on computer analysis, our puzzles
             highlight positions where human players typically struggle. We
             identify tactical opportunities that are commonly missed at
             different rating levels.
-          </motion.p>
-          <motion.p
-            className="mb-4 text-lg text-primary/80"
-            initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
-          >
+          </p>
+          <p className="mb-4 text-lg text-primary/80">
             Each puzzle includes data showing how players of different ratings
             approach the position, making your training more targeted and
             effective.
-          </motion.p>
-          <motion.div
-            className="flex flex-wrap gap-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ duration: 0.3, delay: 0.4 }}
-          >
+          </p>
+          <div className="flex flex-wrap gap-4">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
               <Link
                 href="/train"
@@ -259,21 +275,16 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                 Start Training
               </Link>
             </motion.div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
         <motion.div
           className="relative w-full md:w-3/5"
-          initial={{ opacity: 0, x: 50 }}
-          animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
-          transition={{ duration: 0.3, ease: 'easeOut', delay: 0.2 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
         >
           <div className="flex flex-col overflow-hidden rounded-lg bg-background-2 shadow-xl">
-            <motion.div
-              className="border-b border-background-3/20 p-4"
-              initial={{ opacity: 0, y: -10 }}
-              animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
-              transition={{ duration: 0.3, delay: 0.3 }}
-            >
+            <div className="border-b border-background-3/20 p-4">
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center">
                   <div
@@ -301,7 +312,7 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
               <p className="text-lg font-medium text-primary/80">
                 {puzzle.description}
               </p>
-            </motion.div>
+            </div>
             <div className="flex flex-col gap-4 p-4 md:flex-row">
               <motion.div
                 className="relative aspect-square w-full md:w-1/2"
@@ -313,64 +324,71 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                 }
                 transition={{ duration: 0.3, delay: 0.4 }}
               >
-                <Chessground
-                  contained
-                  config={{
-                    fen: puzzle.fen,
-                    viewOnly: true,
-                    coordinates: true,
-                    drawable: {
-                      enabled: true,
-                      visible: true,
-                      defaultSnapToValidMove: true,
-                      shapes,
-                      brushes: {
-                        green: {
-                          key: 'g',
-                          color: '#15781B',
-                          opacity: 1,
-                          lineWidth: 10,
-                        },
-                        red: {
-                          key: 'r',
-                          color: '#882020',
-                          opacity: 1,
-                          lineWidth: 10,
-                        },
-                        blue: {
-                          key: 'b',
-                          color: '#003088',
-                          opacity: 1,
-                          lineWidth: 10,
-                        },
-                        yellow: {
-                          key: 'y',
-                          color: '#e68f00',
-                          opacity: 1,
-                          lineWidth: 10,
+                <div
+                  className="h-full w-full"
+                  style={{ transform: 'translateZ(0)' }}
+                >
+                  <Chessground
+                    key={`board-${currentPuzzle}-${renderKey}-${windowSize.width}-${windowSize.height}`}
+                    contained
+                    config={{
+                      fen: puzzle.fen,
+                      viewOnly: true,
+                      coordinates: true,
+                      drawable: {
+                        enabled: true,
+                        visible: true,
+                        defaultSnapToValidMove: true,
+                        shapes,
+                        brushes: {
+                          green: {
+                            key: 'g',
+                            color: '#15781B',
+                            opacity: 1,
+                            lineWidth: 10,
+                          },
+                          red: {
+                            key: 'r',
+                            color: '#882020',
+                            opacity: 1,
+                            lineWidth: 10,
+                          },
+                          blue: {
+                            key: 'b',
+                            color: '#003088',
+                            opacity: 1,
+                            lineWidth: 10,
+                          },
+                          yellow: {
+                            key: 'y',
+                            color: '#e68f00',
+                            opacity: 1,
+                            lineWidth: 10,
+                          },
                         },
                       },
-                    },
-                    highlight: {
-                      lastMove: true,
-                      check: true,
-                    },
-                    animation: {
-                      enabled: true,
-                      duration: 300,
-                    },
-                  }}
-                />
-              </motion.div>
-              <motion.div
-                className="flex w-full flex-col md:w-1/2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
-                transition={{ duration: 0.3, delay: 0.5 }}
-              >
-                <div className="h-full">
-                  <SimplifiedMovesByRating />
+                      highlight: {
+                        lastMove: true,
+                        check: true,
+                      },
+                      animation: {
+                        duration: 0, // Disable animations to prevent positioning issues
+                      },
+                    }}
+                  />
                 </div>
+              </motion.div>
+              <div className="flex w-full flex-col md:w-1/2">
+                <motion.div
+                  className="h-full"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={
+                    inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
+                  }
+                  transition={{ duration: 0.3, delay: 0.5 }}
+                >
+                  <SimplifiedMovesByRating />
+                </motion.div>
                 <div className="mt-3 text-sm text-primary/80">
                   <h4 className="mb-1 font-medium">Move Analysis</h4>
                   <p className="mb-3 text-xs">{puzzle.explanation}</p>
@@ -398,7 +416,7 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                     </li>
                   </ul>
                 </div>
-              </motion.div>
+              </div>
             </div>
             <motion.div
               className="flex items-center justify-center border-t border-background-3/20 p-4"

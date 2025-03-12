@@ -22,14 +22,14 @@ const animationVariants = {
     visible: {
       y: 0,
       opacity: 1,
-      transition: { duration: 0.3, ease: 'easeOut' },
+      transition: { duration: 0.3 },
     },
   },
   fadeIn: (delay = 0) => ({
     initial: { opacity: 0, y: -10 },
     animate: (inView: boolean) =>
       inView ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 },
-    transition: { duration: 0.3, delay, ease: 'easeOut' },
+    transition: { duration: 0.3, delay },
   }),
 }
 
@@ -50,7 +50,6 @@ interface Feature {
   iconTextColor: string
 }
 
-// Feature Card Component
 const FeatureCard = ({
   feature,
   variants,
@@ -63,26 +62,23 @@ const FeatureCard = ({
 
   return (
     <motion.div
-      className="hover:scale-102 flex flex-col rounded-lg bg-background-2 p-5 shadow-lg transition-transform duration-200"
+      className="flex flex-col overflow-hidden rounded-lg bg-background-2 shadow-lg transition-transform duration-200"
       variants={variants}
     >
-      <div
-        className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${iconBgColor} p-2`}
-      >
-        <div className={`h-7 w-7 ${iconTextColor}`}>{icon}</div>
-      </div>
-      <h3 className="mb-3 text-xl font-bold">{title}</h3>
-      <p className="mb-5 flex-grow text-primary/80">{description}</p>
-
-      {action.type === 'link' ? (
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ duration: 0.2 }}
+      <div className="flex flex-col p-5">
+        <div
+          className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${iconBgColor} p-2`}
         >
+          <div className={`h-7 w-7 ${iconTextColor}`}>{icon}</div>
+        </div>
+        <h3 className="mb-3 text-xl font-bold">{title}</h3>
+        <p className="mb-5 flex-grow text-primary/80">{description}</p>
+      </div>
+      {action.type === 'link' ? (
+        <motion.div>
           <Link
             href={action.href}
-            className="mt-auto inline-flex items-center justify-center rounded-md bg-background-3 px-5 py-3 font-medium"
+            className="mt-auto inline-flex w-full items-center justify-center bg-human-4/80 px-5 py-3 font-medium transition duration-200 hover:bg-human-4"
           >
             {action.label}
           </Link>
@@ -90,10 +86,7 @@ const FeatureCard = ({
       ) : (
         <motion.button
           onClick={action.onClick}
-          className="mt-auto inline-flex items-center justify-center rounded-md bg-background-3 px-5 py-3 font-medium"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ duration: 0.2 }}
+          className="mt-auto inline-flex w-full items-center justify-center bg-human-4/80 px-5 py-3 font-medium transition duration-200 hover:bg-human-4"
         >
           {action.label}
         </motion.button>
@@ -102,33 +95,19 @@ const FeatureCard = ({
   )
 }
 
-const SectionHeader = ({ inView }: { inView: boolean }) => {
-  const fadeInVariants = animationVariants.fadeIn
-
+const SectionHeader = () => {
   return (
-    <div className="max-w-3xl text-left">
-      <motion.div
-        {...fadeInVariants(0)}
-        animate={fadeInVariants(0).animate(inView)}
-        className="mb-2 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3"
-      >
+    <div className="mb-14 max-w-3xl text-left">
+      <div className="mb-2 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3">
         More Features
-      </motion.div>
-      <motion.h2
-        className="mb-4 text-3xl font-bold md:text-4xl lg:text-5xl"
-        {...fadeInVariants(0.1)}
-        animate={fadeInVariants(0.1).animate(inView)}
-      >
+      </div>
+      <h2 className="mb-4 text-3xl font-bold md:text-4xl lg:text-5xl">
         Explore other ways to use Maia
-      </motion.h2>
-      <motion.p
-        className="max-w-2xl text-lg text-primary/80"
-        {...fadeInVariants(0.2)}
-        animate={fadeInVariants(0.2).animate(inView)}
-      >
+      </h2>
+      <p className="max-w-2xl text-lg text-primary/80">
         Maia offers a range of innovative tools to help you understand human
         chess and improve your skills
-      </motion.p>
+      </p>
     </div>
   )
 }
@@ -187,7 +166,7 @@ export const AdditionalFeaturesSection = ({
       ref={ref}
     >
       <div className="mx-auto flex w-full max-w-[90%] flex-col px-4">
-        <SectionHeader inView={inView} />
+        <SectionHeader />
         <motion.div
           className="grid gap-6 md:grid-cols-3"
           variants={animationVariants.container}
