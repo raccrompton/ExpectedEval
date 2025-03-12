@@ -1,27 +1,24 @@
-import { useContext, useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useInView } from 'react-intersection-observer'
-import Chessground from '@react-chess/chessground'
+import { Chess } from 'chess.ts'
+import { PlayType } from 'src/types'
+import { motion } from 'framer-motion'
 import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
-import { Chess } from 'chess.ts'
-
+import Chessground from '@react-chess/chessground'
+import { useInView } from 'react-intersection-observer'
+import { useContext, useState, useEffect } from 'react'
 import { ModalContext, AuthContext } from 'src/contexts'
-import { PlayType } from 'src/types'
 
-// A key position with multiple human moves and their probabilities
 const DEMO_POSITION = {
   fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R b KQkq - 0 1',
   moves: [
-    { from: 'f8', to: 'c5', probability: 0.45 }, // Most common human move - develop bishop
-    { from: 'f6', to: 'e4', probability: 0.25 }, // Second most common - tactical capture
-    { from: 'd7', to: 'd6', probability: 0.15 }, // Third most common - solid defense
-    { from: 'f6', to: 'd7', probability: 0.1 }, // Fourth most common - reposition knight
-    { from: 'c6', to: 'a5', probability: 0.05 }, // Fifth most common - attack bishop
+    { from: 'f8', to: 'c5', probability: 0.45 },
+    { from: 'f6', to: 'e4', probability: 0.25 },
+    { from: 'd7', to: 'd6', probability: 0.15 },
+    { from: 'f6', to: 'd7', probability: 0.1 },
+    { from: 'c6', to: 'a5', probability: 0.05 },
   ],
 }
 
-// Training positions that flow into the main board
 const TRAINING_POSITIONS = [
   'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
   'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
@@ -133,7 +130,6 @@ const AnimatedTrainingBoards = ({ inView }: { inView: boolean }) => {
       setCurrentBatch((prev) => (prev + 1) % 3)
     }, 3000)
 
-    // Force a redraw to ensure proper piece positioning
     const timeoutId = setTimeout(() => {
       setRenderKey((prev) => prev + 1)
     }, 100)
@@ -170,7 +166,7 @@ const AnimatedTrainingBoards = ({ inView }: { inView: boolean }) => {
                 coordinates: false,
                 drawable: { enabled: false },
                 animation: {
-                  duration: 0, // Disable animations to prevent positioning issues
+                  duration: 0,
                 },
               }}
             />
@@ -183,11 +179,9 @@ const AnimatedTrainingBoards = ({ inView }: { inView: boolean }) => {
 
 const PredictionBoard = () => {
   const [chess] = useState(new Chess(DEMO_POSITION.fen))
-  // This will force a re-render when needed
   const [renderKey, setRenderKey] = useState(0)
 
   useEffect(() => {
-    // Force a redraw to ensure proper piece positioning
     const timeoutId = setTimeout(() => {
       setRenderKey((prev) => prev + 1)
     }, 100)
@@ -223,7 +217,7 @@ const PredictionBoard = () => {
           },
         },
         animation: {
-          duration: 0, // Disable animations to prevent positioning issues
+          duration: 0,
         },
       }}
     />
