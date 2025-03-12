@@ -89,7 +89,7 @@ export const Footer: React.FC = () => {
   ]
 
   return (
-    <div className="mt-20 flex flex-col items-start justify-center gap-8 bg-background-1/60 px-6 py-8 md:items-center md:px-4">
+    <div className="flex flex-col items-start justify-center gap-8 bg-background-1/60 px-6 py-8 md:items-center md:px-4">
       <div className="flex w-full max-w-4xl flex-col items-start justify-start gap-4 md:flex-row md:items-center md:justify-center md:gap-8">
         <div className="mb-2 flex flex-col items-start gap-1 md:mb-0 md:items-center md:gap-0.5">
           <div className="flex items-center gap-2">

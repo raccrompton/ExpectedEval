@@ -20,22 +20,18 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
     threshold: 0.1,
   })
 
-  // Force re-render for chessboard components
   const [renderKey, setRenderKey] = useState(0)
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
-  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({
         width: window.innerWidth,
         height: window.innerHeight,
       })
-      // Force a redraw when window size changes
       setRenderKey((prev) => prev + 1)
     }
 
-    // Set initial size
     handleResize()
 
     window.addEventListener('resize', handleResize)
@@ -44,12 +40,10 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
 
   useEffect(() => {
     if (inView) {
-      // Force a redraw after component becomes visible
       const timeoutId = setTimeout(() => {
         setRenderKey((prev) => prev + 1)
       }, 100)
 
-      // Force additional redraws with timing variations
       const secondTimeoutId = setTimeout(() => {
         setRenderKey((prev) => prev + 1)
       }, 300)
@@ -73,7 +67,6 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
       ref={ref}
     >
       <div className="mx-auto flex w-full max-w-[90%] flex-col-reverse items-center px-4 md:flex-row md:gap-8 lg:gap-12">
-        {/* Analysis Interface Visual */}
         <motion.div
           className="relative mt-6 w-full md:mt-0 md:w-1/2"
           initial={{ opacity: 0, y: 20 }}
@@ -88,23 +81,23 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
                     <div className="w-full rounded-t-sm bg-background-1/60 p-2 text-left text-sm font-medium text-primary/80">
                       Magnus Carlsen (2850)
                     </div>
-                    <motion.div
-                      className="aspect-square w-full"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={
-                        inView
-                          ? { opacity: 1, scale: 1 }
-                          : { opacity: 0, scale: 0.95 }
-                      }
-                      transition={{ duration: 0.3, delay: 0.3 }}
+                    <div
+                      className="relative w-full"
+                      style={{
+                        aspectRatio: '1/1',
+                        transform: 'translateZ(0)',
+                      }}
                     >
                       <div
                         className="h-full w-full"
-                        style={{ transform: 'translateZ(0)' }}
+                        style={{
+                          position: 'relative',
+                          transform: 'translateZ(0)',
+                        }}
                       >
                         <SimplifiedChessboard forceKey={renderKey} />
                       </div>
-                    </motion.div>
+                    </div>
                     <div className="rounded-b-sm bg-background-1/60 p-2 text-left text-sm font-medium text-primary/80">
                       Hikaru Nakamura (2836)
                     </div>

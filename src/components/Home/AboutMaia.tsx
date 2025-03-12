@@ -97,17 +97,17 @@ export const AboutMaia = () => {
     <div className="font-helvetica [&_a]:text-human-3">
       <section
         id="main_info"
-        className="relative flex items-center justify-center bg-background-1 py-20 text-center"
+        className="relative flex flex-col items-center justify-center bg-background-1 py-20 text-center"
         ref={projectRef}
       >
-        <div className="z-10 mx-auto my-0 max-w-[1170px]">
-          <div className="m-auto box-border w-auto px-4 md:w-2/3">
-            <h3 className="text-xl font-bold uppercase">
-              Human-AI Collaboration for Chess
-            </h3>
-            <h2 className="mx-auto my-8 text-center text-4xl font-bold">
-              What is Maia Chess?
-            </h2>
+        <div className="flex max-w-3xl flex-col items-center justify-center">
+          <h3 className="text-xs font-bold uppercase tracking-wide">
+            Human-AI Collaboration for Chess
+          </h3>
+          <h2 className="mb-6 mt-2 text-center text-4xl font-bold">
+            What is Maia Chess?
+          </h2>
+          <div className="flex flex-col gap-4">
             <p className="text-primary/90">
               Maia is a human-like chess engine, designed to play like a human
               instead of playing the strongest moves. Maia uses the same deep
@@ -115,8 +115,7 @@ export const AboutMaia = () => {
               a novel approach: Maia is trained to play like a human rather than
               to win.
             </p>
-            <br />
-            <br />
+
             <p className="text-primary/90">
               Maia is trained to predict human moves rather than to find the
               optimal move in a position. As a result, Maia exhibits common
@@ -125,38 +124,30 @@ export const AboutMaia = () => {
               targeting a specific rating level on the Lichess.org rating scale,
               from 1100 to 1900.
             </p>
-            <br />
-            <br />
+
             <p className="text-primary/90">
-              We introduced Maia in our paper that appeared at NeurIPS 2020.
+              We introduced Maia in our paper that appeared at KDD 2020, and
+              Maia 2 in our paper that appeared at NeurIPS 2024.
             </p>
-            <br />
-            <div className="mx-auto flex items-center justify-center gap-4">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Link
-                  href="/"
-                  className="rounded bg-human-3 p-4 !text-white transition-opacity hover:opacity-90"
-                >
-                  Play Maia Chess
-                </Link>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href="https://maiachess.com/maia-paper.pdf"
-                  className="rounded bg-engine-3 p-4 !text-white transition-opacity hover:opacity-90"
-                >
-                  Read Paper
-                </a>
-              </motion.div>
-            </div>
+          </div>
+          <br />
+          <div className="flex items-center justify-center gap-2">
+            <a
+              target="_blank"
+              rel="noreferrer"
+              href="https://arxiv.org/pdf/2006.01855"
+              className="rounded bg-human-3 px-6 py-2 !text-primary transition duration-200 hover:bg-human-4"
+            >
+              Read Maia-1 Paper
+            </a>
+            <a
+              target="_blank"
+              rel="noreferrer"
+              href="https://www.cs.toronto.edu/~ashton/pubs/maia2-neurips2024.pdf"
+              className="rounded bg-human-3 px-6 py-2 !text-primary transition duration-200 hover:bg-human-4"
+            >
+              Read Maia-2 Paper
+            </a>
           </div>
         </div>
       </section>
@@ -179,25 +170,20 @@ export const AboutMaia = () => {
       </section>
 
       <section
-        className="relative flex flex-col justify-evenly overflow-hidden bg-background-1 py-20"
+        className="relative flex flex-col items-center justify-center gap-2 overflow-hidden bg-background-1 py-20"
         ref={acknowledgementsRef}
       >
-        <div className="z-10 mx-auto my-0 max-w-[1170px]">
-          <div className="m-auto box-border w-auto px-4 md:w-2/3">
-            <h3 className="text-center text-xl font-bold uppercase">
-              Acknowledgments
-            </h3>
-            <p className="text-center text-primary/90">
-              Many thanks to Lichess.org for providing the human games that we
-              trained on and hosting our Maia models that you can play against.
-              Ashton Anderson was supported in part by an NSERC grant, a
-              Microsoft Research gift, and a CFI grant. Jon Kleinberg was
-              supported in part by a Simons Investigator Award, a Vannevar Bush
-              Faculty Fellowship, a MURI grant, and a MacArthur Foundation
-              grant.
-            </p>
-          </div>
-        </div>
+        <h3 className="text-center text-xl font-bold uppercase">
+          Acknowledgments
+        </h3>
+        <p className="max-w-4xl text-center text-primary/90">
+          Many thanks to Lichess.org for providing the human games that we
+          trained on and hosting our Maia models that you can play against.
+          Ashton Anderson was supported in part by an NSERC grant, a Microsoft
+          Research gift, and a CFI grant. Jon Kleinberg was supported in part by
+          a Simons Investigator Award, a Vannevar Bush Faculty Fellowship, a
+          MURI grant, and a MacArthur Foundation grant.
+        </p>
       </section>
     </div>
   )

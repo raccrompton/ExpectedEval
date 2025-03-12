@@ -172,8 +172,7 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
   const [currentPuzzle, setCurrentPuzzle] = useState(0)
   const [shapes, setShapes] = useState<DrawShape[]>([])
 
-  // Force re-render for chessboard
-  const [renderKey, setRenderKey] = useState(0)
+  // State for tracking resizing
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
   // Handle window resize
@@ -183,8 +182,6 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
         width: window.innerWidth,
         height: window.innerHeight,
       })
-      // Force a redraw when window size changes
-      setRenderKey((prev) => prev + 1)
     }
 
     // Set initial size
@@ -200,33 +197,7 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
     setShapes([PUZZLES[currentPuzzle].bestMove])
   }, [currentPuzzle])
 
-  useEffect(() => {
-    if (inView) {
-      // Initial redraw
-      setRenderKey((prev) => prev + 1)
-
-      // Force additional redraws with different timing to ensure proper rendering
-      const timeoutId1 = setTimeout(() => {
-        setRenderKey((prev) => prev + 1)
-      }, 100)
-
-      const timeoutId2 = setTimeout(() => {
-        setRenderKey((prev) => prev + 1)
-      }, 300)
-
-      const timeoutId3 = setTimeout(() => {
-        setRenderKey((prev) => prev + 1)
-      }, 500)
-
-      return () => {
-        clearTimeout(timeoutId1)
-        clearTimeout(timeoutId2)
-        clearTimeout(timeoutId3)
-      }
-    }
-  }, [inView, currentPuzzle]) // Also re-render when puzzle changes
-
-  // Auto-rotate puzzles more frequently (every 8 seconds)
+  // Auto-rotate puzzles every 8 seconds
   useEffect(() => {
     if (!inView) return
 
@@ -239,7 +210,25 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
     }
   }, [inView])
 
+  // Add an animated indicator when changing puzzles
+  useEffect(() => {
+    // Force updates to the chessboard when puzzle changes
+    const timeouts = [100, 200, 300, 500, 700, 1000] // staggered timeouts for multiple redraws
+    const timeoutIds = timeouts.map((timeout) =>
+      setTimeout(() => {
+        setShapes([PUZZLES[currentPuzzle].bestMove])
+      }, timeout),
+    )
+
+    return () => {
+      timeoutIds.forEach((id) => clearTimeout(id))
+    }
+  }, [currentPuzzle])
+
   const puzzle = PUZZLES[currentPuzzle]
+
+  // Create a stable key that changes only when necessary
+  const stableKey = `board-${currentPuzzle}-${windowSize.width}-${windowSize.height}`
 
   return (
     <section
@@ -284,8 +273,8 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
           transition={{ duration: 0.4, ease: 'easeOut' }}
         >
           <div className="flex flex-col overflow-hidden rounded-lg bg-background-2 shadow-xl">
-            <div className="border-b border-background-3/20 p-4">
-              <div className="mb-2 flex items-center justify-between">
+            <div className="border-b border-background-3/20 px-4 pt-4">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div
                     className={`h-2 w-2 rounded-full ${
@@ -295,41 +284,43 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                           ? 'bg-human-3'
                           : 'bg-engine-3'
                     } mr-2`}
-                  ></div>
+                  />
                   <p className="font-medium text-primary">
                     {puzzle.difficulty} Puzzle
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <span className="rounded bg-background-3/20 px-2 py-1 text-xs text-primary/60">
+                  <span className="rounded bg-background-3/80 px-2 py-1 text-xs text-primary/60">
                     {puzzle.theme}
                   </span>
-                  <span className="rounded bg-background-3/20 px-2 py-1 text-xs text-primary/60">
+                  <span className="rounded bg-background-3/80 px-2 py-1 text-xs text-primary/60">
                     {puzzle.skill}
                   </span>
                 </div>
               </div>
-              <p className="text-lg font-medium text-primary/80">
-                {puzzle.description}
-              </p>
+              <p className="text-sm text-secondary">{puzzle.description}</p>
             </div>
             <div className="flex flex-col gap-4 p-4 md:flex-row">
-              <motion.div
-                className="relative aspect-square w-full md:w-1/2"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={
-                  inView
-                    ? { opacity: 1, scale: 1 }
-                    : { opacity: 0, scale: 0.95 }
-                }
-                transition={{ duration: 0.3, delay: 0.4 }}
+              <div
+                className="relative w-full md:w-1/2"
+                style={{
+                  aspectRatio: '1/1',
+                  transform: 'translateZ(0)',
+                }}
               >
-                <div
+                <motion.div
                   className="h-full w-full"
-                  style={{ transform: 'translateZ(0)' }}
+                  key={`puzzle-container-${currentPuzzle}`}
+                  initial={{ opacity: 0.8, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                  style={{
+                    position: 'relative',
+                    transform: 'translateZ(0)',
+                  }}
                 >
                   <Chessground
-                    key={`board-${currentPuzzle}-${renderKey}-${windowSize.width}-${windowSize.height}`}
+                    key={stableKey}
                     contained
                     config={{
                       fen: puzzle.fen,
@@ -372,12 +363,98 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                         check: true,
                       },
                       animation: {
-                        duration: 0, // Disable animations to prevent positioning issues
+                        duration: 0, // Disable piece animations to prevent positioning issues
                       },
                     }}
                   />
-                </div>
-              </motion.div>
+
+                  {/* Add CSS to fix positioning */}
+                  <style jsx global>{`
+                    /* Make container full size */
+                    .cg-wrap {
+                      width: 100% !important;
+                      height: 100% !important;
+                      position: absolute !important;
+                      top: 0 !important;
+                      left: 0 !important;
+                    }
+
+                    /* Force board to fill */
+                    .cg-board {
+                      background-size: cover !important;
+                      position: absolute !important;
+                      top: 0 !important;
+                      left: 0 !important;
+                      width: 100% !important;
+                      height: 100% !important;
+                    }
+
+                    /* Ensure pieces are properly sized and centered */
+                    piece {
+                      position: absolute !important;
+                      width: 12.5% !important;
+                      height: 12.5% !important;
+                      transform-origin: center !important;
+                      background-size: contain !important;
+                    }
+
+                    /* Fix coordinate ranks (numbers) */
+                    coords.ranks {
+                      right: 0 !important;
+                      top: 0 !important;
+                      width: 18px !important;
+                      display: flex !important;
+                      flex-direction: column !important;
+                      justify-content: space-around !important;
+                      align-items: center !important;
+                      height: 100% !important;
+                      pointer-events: none !important;
+                    }
+
+                    /* Fix coordinate files (letters) */
+                    coords.files {
+                      bottom: 0 !important;
+                      left: 0 !important;
+                      width: 100% !important;
+                      display: flex !important;
+                      flex-direction: row !important;
+                      justify-content: space-around !important;
+                      align-items: center !important;
+                      height: 18px !important;
+                      pointer-events: none !important;
+                    }
+
+                    /* Center each coordinate item */
+                    coords coord {
+                      text-align: center !important;
+                      display: block !important;
+                    }
+
+                    /* Fix specific coordinate positions */
+                    coords.files coord:nth-child(1) {
+                      margin-left: 10px !important;
+                    }
+                    coords.files coord:nth-child(8) {
+                      margin-right: 10px !important;
+                    }
+                    coords.ranks coord:nth-child(1) {
+                      margin-top: 5px !important;
+                    }
+                    coords.ranks coord:nth-child(8) {
+                      margin-bottom: 5px !important;
+                    }
+
+                    /* Ensure svg elements display properly */
+                    .cg-custom-svgs {
+                      display: block !important;
+                      height: 100% !important;
+                      width: 100% !important;
+                      position: absolute !important;
+                      pointer-events: none !important;
+                    }
+                  `}</style>
+                </motion.div>
+              </div>
               <div className="flex w-full flex-col md:w-1/2">
                 <motion.div
                   className="h-full"
@@ -390,9 +467,34 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                   <SimplifiedMovesByRating />
                 </motion.div>
                 <div className="mt-3 text-sm text-primary/80">
-                  <h4 className="mb-1 font-medium">Move Analysis</h4>
-                  <p className="mb-3 text-xs">{puzzle.explanation}</p>
-                  <ul className="space-y-1 text-xs">
+                  <motion.h4
+                    className="mb-1 font-medium"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={
+                      inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }
+                    }
+                    transition={{ duration: 0.3, delay: 0.7 }}
+                  >
+                    Move Analysis
+                  </motion.h4>
+                  <motion.p
+                    className="mb-3 text-xs"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={
+                      inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }
+                    }
+                    transition={{ duration: 0.3, delay: 0.8 }}
+                  >
+                    {puzzle.explanation}
+                  </motion.p>
+                  <motion.ul
+                    className="space-y-1 text-xs"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={
+                      inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }
+                    }
+                    transition={{ duration: 0.3, delay: 0.9 }}
+                  >
                     <li className="flex items-center">
                       <span className="mr-2 h-3 w-3 rounded-full bg-[#238b45]"></span>
                       <span className="font-mono font-medium">
@@ -414,7 +516,7 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                       </span>
                       <span className="ml-2">- Other mistake</span>
                     </li>
-                  </ul>
+                  </motion.ul>
                 </div>
               </div>
             </div>
@@ -430,7 +532,7 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                   return (
                     <motion.button
                       key={idx}
-                      className="h-2 w-8 rounded-full"
+                      className={`h-2 w-8 rounded-full ${isActive ? 'scale-110' : ''}`}
                       onClick={() => setCurrentPuzzle(idx)}
                       initial={{
                         backgroundColor: isActive
@@ -441,13 +543,23 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                         backgroundColor: isActive
                           ? '#5292e1'
                           : 'rgba(82, 82, 82, 0.2)',
+                        scale: isActive ? 1.1 : 1,
+                        transition: {
+                          backgroundColor: { duration: 0.3 },
+                          scale: {
+                            duration: 0.2,
+                            type: 'spring',
+                            stiffness: 500,
+                          },
+                        },
                       }}
                       whileHover={{
-                        scale: 1.05,
+                        scale: 1.15,
                         backgroundColor: isActive
                           ? '#5292e1'
                           : 'rgba(255, 255, 255, 0.3)',
                       }}
+                      whileTap={{ scale: 0.95 }}
                     />
                   )
                 })}

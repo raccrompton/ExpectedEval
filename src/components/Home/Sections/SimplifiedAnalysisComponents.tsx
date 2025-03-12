@@ -129,7 +129,14 @@ const getSanForMove = (move: string | number | undefined) => {
 export const SimplifiedMovesByRating = () => {
   return (
     <div className="flex h-64 w-full flex-col rounded bg-background-1/60 md:h-full">
-      <p className="p-3 text-primary md:text-lg">Moves by Rating</p>
+      <motion.p
+        className="p-3 text-primary md:text-lg"
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        Moves by Rating
+      </motion.p>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={MOCK_MOVES_BY_RATING}
@@ -167,20 +174,28 @@ export const SimplifiedMovesByRating = () => {
           <Tooltip
             content={({ payload }) => {
               return (
-                <div className="flex w-32 flex-col rounded border border-white/10 bg-background-1 pb-2">
+                <motion.div
+                  className="flex w-32 flex-col rounded border border-white/10 bg-background-1 pb-2"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
                   <div className="flex px-3 py-2">
                     {payload ? (
                       <p className="text-sm">{payload[0]?.payload.rating}</p>
                     ) : null}
                   </div>
-                  {payload?.map((point) => {
+                  {payload?.map((point, index) => {
                     const san = point.name
                     const prob = Math.round((point.value as number) * 10) / 10
 
                     return (
-                      <div
+                      <motion.div
                         key={san}
                         className="flex items-center justify-between px-3"
+                        initial={{ opacity: 0, x: -5 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.05 }}
                       >
                         <p
                           style={{
@@ -198,10 +213,10 @@ export const SimplifiedMovesByRating = () => {
                         >
                           {prob}%
                         </p>
-                      </div>
+                      </motion.div>
                     )
                   })}
-                </div>
+                </motion.div>
               )
             }}
           />
@@ -215,31 +230,43 @@ export const SimplifiedMovesByRating = () => {
             }}
             iconSize={0}
           />
-          {Object.keys(MOCK_COLOR_SAN_MAPPING).map((move) => (
-            <Area
+          {Object.keys(MOCK_COLOR_SAN_MAPPING).map((move, index) => (
+            <motion.g
               key={move}
-              yAxisId="left"
-              dataKey={move}
-              stroke={getColorForMove(move)}
-              fill={`url(#color${move})`}
-              strokeWidth={3}
-              name={getSanForMove(move)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
             >
-              <defs>
-                <linearGradient id={`color${move}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="5%"
-                    stopColor={getColorForMove(move)}
-                    stopOpacity={0.5}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor={getColorForMove(move)}
-                    stopOpacity={0}
-                  />
-                </linearGradient>
-              </defs>
-            </Area>
+              <Area
+                yAxisId="left"
+                dataKey={move}
+                stroke={getColorForMove(move)}
+                fill={`url(#color${move})`}
+                strokeWidth={3}
+                name={getSanForMove(move)}
+              >
+                <defs>
+                  <linearGradient
+                    id={`color${move}`}
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor={getColorForMove(move)}
+                      stopOpacity={0.5}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={getColorForMove(move)}
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                </defs>
+              </Area>
+            </motion.g>
           ))}
         </AreaChart>
       </ResponsiveContainer>
@@ -447,80 +474,60 @@ export const SimplifiedBlunderMeter = () => {
 }
 
 export const SimplifiedChessboard = ({ forceKey }: { forceKey?: number }) => {
-  // This will force a re-render when needed
-  const [renderKey, setRenderKey] = useState(0)
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  // Handle window resize
+  const stableKey = `chess-${forceKey || 0}-${windowSize.width}-${windowSize.height}`
+
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({
         width: window.innerWidth,
         height: window.innerHeight,
       })
-      // Force a redraw when window size changes
-      setRenderKey((prev) => prev + 1)
     }
 
-    // Set initial size
     handleResize()
 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Force redraw after component mounts
-  useEffect(() => {
-    // Force a redraw after component is visible
-    const timeoutId = setTimeout(() => {
-      setRenderKey((prev) => prev + 1)
-    }, 100)
-
-    // Force another redraw after a longer delay to catch any missed redraws
-    const secondTimeoutId = setTimeout(() => {
-      setRenderKey((prev) => prev + 1)
-    }, 500)
-
-    return () => {
-      clearTimeout(timeoutId)
-      clearTimeout(secondTimeoutId)
-    }
-  }, [])
-
-  // Force redraw when forceKey changes
-  useEffect(() => {
-    if (forceKey !== undefined) {
-      // Trigger a re-render after a very brief delay
-      const timeoutId = setTimeout(() => {
-        setRenderKey((prev) => prev + 1)
-      }, 50)
-      return () => clearTimeout(timeoutId)
-    }
-  }, [forceKey])
-
-  // Use external key if provided or internal key otherwise
-  const keyToUse =
-    forceKey !== undefined
-      ? `external-${forceKey}`
-      : `internal-${renderKey}-${windowSize.width}-${windowSize.height}`
-
   return (
     <div
-      className="relative aspect-square w-full"
-      style={{ transform: 'translateZ(0)' }}
+      ref={containerRef}
+      className="relative w-full"
+      style={{
+        transform: 'translateZ(0)',
+        aspectRatio: '1/1',
+      }}
     >
-      <div className="h-full w-full" style={{ transform: 'translateZ(0)' }}>
+      <div
+        className="h-full w-full"
+        style={{
+          position: 'relative',
+          transform: 'translateZ(0)',
+        }}
+      >
         <Chessground
-          key={keyToUse}
+          key={stableKey}
           contained
           config={{
             fen: DEMO_FEN,
             viewOnly: true,
-            coordinates: false,
+            coordinates: true,
             animation: {
-              duration: 0, // Disable animations to prevent positioning issues
+              duration: 0,
             },
             disableContextMenu: true,
+            highlight: {
+              lastMove: false,
+              check: false,
+            },
+            drawable: {
+              enabled: false,
+              visible: false,
+            },
           }}
         />
       </div>
