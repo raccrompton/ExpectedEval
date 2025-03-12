@@ -63,12 +63,12 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
   return (
     <section
       id={id}
-      className="relative flex w-full flex-col items-center justify-center overflow-hidden bg-background-1 py-8"
+      className="relative flex w-full flex-col items-center justify-center overflow-hidden bg-background-1 py-6 md:py-8"
       ref={ref}
     >
-      <div className="mx-auto flex w-full max-w-[90%] flex-col-reverse items-center px-4 md:flex-row md:gap-8 lg:gap-12">
+      <div className="mx-auto flex w-full max-w-[95%] flex-col-reverse items-center px-2 md:max-w-[90%] md:flex-row md:gap-8 md:px-4 lg:gap-12">
         <motion.div
-          className="relative mt-6 w-full md:mt-0 md:w-1/2"
+          className="relative mt-4 w-full md:mt-0 md:mt-6 md:w-1/2"
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}

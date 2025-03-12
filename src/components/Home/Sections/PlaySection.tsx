@@ -47,23 +47,23 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
   return (
     <section
       id={id}
-      className="relative flex min-h-[80vh] w-full flex-col items-center justify-center overflow-hidden bg-background-1 py-16"
+      className="relative flex min-h-[80vh] w-full flex-col items-center justify-center overflow-hidden bg-background-1 py-10 md:py-16"
       ref={ref}
     >
-      <div className="mx-auto flex w-full max-w-[90%] flex-col items-center px-4 md:flex-row md:gap-12 lg:gap-16">
-        <div className="mb-10 w-full md:mb-0 md:w-1/2">
-          <div className="mb-4 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3">
+      <div className="mx-auto flex w-full max-w-[95%] flex-col items-center px-2 md:max-w-[90%] md:flex-row md:gap-12 md:px-4 lg:gap-16">
+        <div className="mb-6 w-full md:mb-0 md:mb-10 md:w-1/2">
+          <div className="mb-3 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3 md:mb-4">
             Play Against Maia
           </div>
-          <h2 className="mb-6 max-w-2xl text-3xl font-bold md:text-4xl lg:text-5xl">
+          <h2 className="mb-4 max-w-2xl text-2xl font-bold md:mb-6 md:text-3xl md:text-4xl lg:text-5xl">
             Experience human-like chess AI
           </h2>
-          <p className="mb-4 max-w-2xl text-lg text-primary/80">
+          <p className="mb-3 max-w-2xl text-base text-primary/80 md:mb-4 md:text-lg">
             Challenge Maia, a neural network trained to play like humans of
             different ratings. Unlike traditional engines that play the best
             moves, Maia predicts and plays what a human would do.
           </p>
-          <p className="mb-4 max-w-2xl text-lg text-primary/80">
+          <p className="mb-3 max-w-2xl text-base text-primary/80 md:mb-4 md:text-lg">
             By learning from thousands of human games, Maia understands and
             replicates human chess patterns and decision-making styles.
           </p>

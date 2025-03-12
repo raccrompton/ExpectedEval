@@ -42,7 +42,7 @@ export const TeamMember = ({
     >
       <Image
         src={image}
-        className="h-40 w-40 rounded-full"
+        className="h-32 w-32 rounded-full md:h-40 md:w-40"
         alt={`Picture of ${name}`}
       />
       <div className="flex flex-col">
@@ -51,16 +51,18 @@ export const TeamMember = ({
             target="_blank"
             rel="noreferrer"
             href={website}
-            className="text-xl text-human-3 transition duration-200 hover:text-human-4"
+            className="text-lg text-human-3 transition duration-200 hover:text-human-4 md:text-xl"
           >
             {name}
           </a>
         ) : (
-          <span className="text-xl text-primary">{name}</span>
+          <span className="text-base text-primary md:text-xl">{name}</span>
         )}
-        <p className="text-base text-primary">{institution}</p>
+        <p className="text-sm text-primary md:text-base">{institution}</p>
         <div className="mt-1 flex flex-col gap-2">
-          <p className="text-sm font-semibold text-primary">{role}</p>
+          <p className="text-xs font-semibold text-primary md:text-sm">
+            {role}
+          </p>
           <div className="flex items-center justify-center space-x-2">
             {website && (
               <a

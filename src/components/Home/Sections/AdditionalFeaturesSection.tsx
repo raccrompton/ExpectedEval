@@ -97,14 +97,14 @@ const FeatureCard = ({
 
 const SectionHeader = () => {
   return (
-    <div className="mb-14 max-w-3xl text-left">
+    <div className="mb-8 max-w-3xl text-left md:mb-14">
       <div className="mb-2 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3">
         More Features
       </div>
-      <h2 className="mb-4 text-3xl font-bold md:text-4xl lg:text-5xl">
+      <h2 className="mb-3 text-2xl font-bold md:mb-4 md:text-3xl md:text-4xl lg:text-5xl">
         Explore other ways to use Maia
       </h2>
-      <p className="max-w-2xl text-lg text-primary/80">
+      <p className="max-w-2xl text-base text-primary/80 md:text-lg">
         Maia offers a range of innovative tools to help you understand human
         chess and improve your skills
       </p>
@@ -162,13 +162,13 @@ export const AdditionalFeaturesSection = ({
   return (
     <section
       id={id}
-      className="relative w-full flex-col items-center overflow-hidden bg-background-1 py-16"
+      className="relative w-full flex-col items-center overflow-hidden bg-background-1 py-10 md:py-16"
       ref={ref}
     >
-      <div className="mx-auto flex w-full max-w-[90%] flex-col px-4">
+      <div className="mx-auto flex w-full max-w-[95%] flex-col px-2 md:max-w-[90%] md:px-4">
         <SectionHeader />
         <motion.div
-          className="grid gap-6 md:grid-cols-3"
+          className="grid gap-4 md:grid-cols-3 md:gap-6"
           variants={animationVariants.container}
           initial="hidden"
           animate={inView ? 'visible' : 'hidden'}

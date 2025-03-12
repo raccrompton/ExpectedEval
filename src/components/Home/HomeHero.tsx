@@ -100,7 +100,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
             {title}
           </motion.h2>
           <motion.p
-            className="h-10 text-xs"
+            className="text-xs"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{
@@ -128,10 +128,10 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
   )
 
   return (
-    <div className="relative flex flex-col items-center justify-center overflow-hidden pb-16 pt-24 md:pb-28 md:pt-36">
-      <div className="z-10 flex w-full max-w-[1200px] flex-col items-center justify-center gap-16 p-4 text-left md:flex-row md:gap-20">
-        <div className="flex w-full flex-col items-start justify-center gap-8 md:w-[40%]">
-          <div className="flex flex-col gap-4">
+    <div className="relative flex flex-col items-center justify-center overflow-hidden pb-12 pt-16 md:pb-28 md:pt-36">
+      <div className="z-10 flex w-full max-w-[1200px] flex-col items-center justify-center gap-10 p-4 text-left md:flex-row md:gap-20">
+        <div className="flex w-full flex-col items-start justify-center gap-6 md:w-[40%] md:gap-8">
+          <div className="flex flex-col gap-3 md:gap-4">
             <motion.h1
               className="text-4xl font-bold leading-tight md:text-5xl"
               initial={{ opacity: 0, y: -20 }}
