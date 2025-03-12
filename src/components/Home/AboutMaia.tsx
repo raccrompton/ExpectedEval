@@ -100,7 +100,7 @@ export const AboutMaia = () => {
         className="relative flex flex-col items-center justify-center bg-background-1 py-20 text-center"
         ref={projectRef}
       >
-        <div className="flex max-w-3xl flex-col items-center justify-center">
+        <div className="flex max-w-3xl flex-col items-center justify-center px-4 md:px-0">
           <h3 className="text-xs font-bold uppercase tracking-wide">
             Human-AI Collaboration for Chess
           </h3>
@@ -161,7 +161,7 @@ export const AboutMaia = () => {
           <div className="m-auto box-border w-auto px-4 md:w-2/3">
             <h3 className="text-center text-xl font-bold uppercase">Team</h3>
           </div>
-          <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-x-2 gap-y-12 px-4 text-center sm:grid-cols-2 md:grid-cols-4">
+          <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-x-2 gap-y-8 px-4 text-center sm:grid-cols-2 md:grid-cols-4 md:gap-y-12">
             {teamMembers.map((member, index) => (
               <TeamMember key={member.name} {...member} index={index} />
             ))}
@@ -176,7 +176,7 @@ export const AboutMaia = () => {
         <h3 className="text-center text-xl font-bold uppercase">
           Acknowledgments
         </h3>
-        <p className="max-w-4xl text-center text-primary/90">
+        <p className="max-w-4xl px-4 text-center text-primary/90">
           Many thanks to Lichess.org for providing the human games that we
           trained on and hosting our Maia models that you can play against.
           Ashton Anderson was supported in part by an NSERC grant, a Microsoft

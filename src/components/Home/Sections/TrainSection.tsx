@@ -11,7 +11,6 @@ interface TrainSectionProps {
   id: string
 }
 
-// Mock move data by rating for visualization
 interface MovesByRatingData {
   rating: number
   bestMove: number
@@ -19,7 +18,6 @@ interface MovesByRatingData {
   otherMistake: number
 }
 
-// Define the structure of a puzzle
 interface ChessPuzzle {
   id: string
   fen: string
@@ -29,7 +27,6 @@ interface ChessPuzzle {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
   skill: string
   theme: string
-  // Moves data for visualization
   ratingData: MovesByRatingData[]
   movesMapping: {
     bestMove: string
@@ -39,7 +36,6 @@ interface ChessPuzzle {
   explanation: string
 }
 
-// Sample puzzle positions with detailed data
 const PUZZLES: ChessPuzzle[] = [
   {
     id: 'puzzle1',
@@ -172,10 +168,8 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
   const [currentPuzzle, setCurrentPuzzle] = useState(0)
   const [shapes, setShapes] = useState<DrawShape[]>([])
 
-  // State for tracking resizing
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
-  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({
@@ -184,20 +178,16 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
       })
     }
 
-    // Set initial size
     handleResize()
 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Reset states when puzzle changes
   useEffect(() => {
-    // Show the best move for each puzzle automatically
     setShapes([PUZZLES[currentPuzzle].bestMove])
   }, [currentPuzzle])
 
-  // Auto-rotate puzzles every 8 seconds
   useEffect(() => {
     if (!inView) return
 
@@ -210,10 +200,8 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
     }
   }, [inView])
 
-  // Add an animated indicator when changing puzzles
   useEffect(() => {
-    // Force updates to the chessboard when puzzle changes
-    const timeouts = [100, 200, 300, 500, 700, 1000] // staggered timeouts for multiple redraws
+    const timeouts = [100, 200, 300, 500, 700, 1000]
     const timeoutIds = timeouts.map((timeout) =>
       setTimeout(() => {
         setShapes([PUZZLES[currentPuzzle].bestMove])
@@ -227,30 +215,29 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
 
   const puzzle = PUZZLES[currentPuzzle]
 
-  // Create a stable key that changes only when necessary
   const stableKey = `board-${currentPuzzle}-${windowSize.width}-${windowSize.height}`
 
   return (
     <section
       id={id}
-      className="relative w-full flex-col items-center overflow-hidden py-16"
+      className="relative w-full flex-col items-center overflow-hidden py-10 md:py-16"
       ref={ref}
     >
-      <div className="z-10 mx-auto flex w-full max-w-[90%] flex-col items-center px-4 md:flex-row md:gap-12 lg:gap-16">
-        <div className="mb-10 w-full md:mb-0 md:w-2/5">
-          <div className="mb-4 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3">
+      <div className="z-10 mx-auto flex w-full max-w-[95%] flex-col items-center px-2 md:max-w-[90%] md:flex-row md:gap-12 md:px-4 lg:gap-16">
+        <div className="mb-6 w-full md:mb-0 md:mb-10 md:w-2/5">
+          <div className="mb-3 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3 md:mb-4">
             Human-Centered Puzzles
           </div>
-          <h2 className="mb-6 text-3xl font-bold md:text-4xl lg:text-5xl">
+          <h2 className="mb-4 text-2xl font-bold md:mb-6 md:text-3xl md:text-4xl lg:text-5xl">
             Learn from real player tendencies
           </h2>
-          <p className="mb-4 text-lg text-primary/80">
+          <p className="mb-3 text-base text-primary/80 md:mb-4 md:text-lg">
             Unlike traditional puzzles based on computer analysis, our puzzles
             highlight positions where human players typically struggle. We
             identify tactical opportunities that are commonly missed at
             different rating levels.
           </p>
-          <p className="mb-4 text-lg text-primary/80">
+          <p className="mb-3 text-base text-primary/80 md:mb-4 md:text-lg">
             Each puzzle includes data showing how players of different ratings
             approach the position, making your training more targeted and
             effective.
@@ -363,14 +350,12 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                         check: true,
                       },
                       animation: {
-                        duration: 0, // Disable piece animations to prevent positioning issues
+                        duration: 0,
                       },
                     }}
                   />
 
-                  {/* Add CSS to fix positioning */}
                   <style jsx global>{`
-                    /* Make container full size */
                     .cg-wrap {
                       width: 100% !important;
                       height: 100% !important;
