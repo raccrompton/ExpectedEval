@@ -106,7 +106,7 @@ const Turing: React.FC<Props> = (props: Props) => {
 
   const desktopLayout = (
     <>
-      <div className="flex h-full flex-1 flex-col justify-center gap-1">
+      <div className="flex h-full flex-1 flex-col justify-center gap-1 py-10">
         <div className="mt-2 flex w-full flex-row items-center justify-center gap-1">
           <div
             style={{
