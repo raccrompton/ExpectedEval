@@ -165,6 +165,27 @@ const PlayMaia: React.FC<Props> = ({
 }: Props) => {
   const controller = useVsMaiaPlayController(id, playGameConfig)
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!controller.playerActive || controller.game.termination) return
+
+      switch (event.key) {
+        case 'ArrowRight':
+          event.preventDefault()
+          break
+        case 'ArrowLeft':
+          event.preventDefault()
+
+          break
+        default:
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [controller.playerActive, controller.game.termination])
+
   return (
     <PlayControllerContext.Provider value={controller}>
       <GameplayInterface>

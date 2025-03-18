@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useContext, useMemo, Fragment } from 'react'
+import React, { useContext, useMemo, Fragment, useEffect } from 'react'
 import { AnalysisGameControllerContext, WindowSizeContext } from 'src/contexts'
 import { GameNode, AnalyzedGame, Termination, ClientBaseGame } from 'src/types'
 
@@ -63,6 +63,32 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
     if (!game.tree) return []
     return game.tree.getMainLine()
   }, [game.tree])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!currentNode) return
+
+      switch (event.key) {
+        case 'ArrowRight':
+          event.preventDefault()
+          if (currentNode.mainChild) {
+            goToNode(currentNode.mainChild)
+          }
+          break
+        case 'ArrowLeft':
+          event.preventDefault()
+          if (currentNode.parent) {
+            goToNode(currentNode.parent)
+          }
+          break
+        default:
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentNode, goToNode])
 
   const moves = useMemo(() => {
     const nodes = mainLineNodes.slice(1)
