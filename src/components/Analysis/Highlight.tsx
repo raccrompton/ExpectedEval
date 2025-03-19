@@ -1,5 +1,7 @@
 import { Tooltip } from 'react-tooltip'
+import { useState, useEffect, useRef } from 'react'
 import { MovesByRating } from './MovesByRating'
+import { motion, AnimatePresence } from 'framer-motion'
 import { MaiaEvaluation, StockfishEvaluation, ColorSanMapping } from 'src/types'
 
 interface Props {
@@ -22,6 +24,7 @@ interface Props {
   hover: (move?: string) => void
   makeMove: (move: string) => void
   movesByRating: { [key: string]: number }[] | undefined
+  boardDescription: string
 }
 
 export const Highlight: React.FC<Props> = ({
@@ -32,6 +35,7 @@ export const Highlight: React.FC<Props> = ({
   colorSanMapping,
   recommendations,
   currentMaiaModel,
+  boardDescription,
 }: Props) => {
   const findMatchingMove = (move: string, source: 'maia' | 'stockfish') => {
     if (source === 'maia') {
@@ -97,9 +101,22 @@ export const Highlight: React.FC<Props> = ({
     )
   }
 
+  // Track whether description exists (not its content)
+  const hasDescriptionRef = useRef(!!boardDescription)
+  const [animationKey, setAnimationKey] = useState(0)
+
+  useEffect(() => {
+    const descriptionNowExists = !!boardDescription
+    // Only trigger animation when presence changes (exists vs doesn't exist)
+    if (hasDescriptionRef.current !== descriptionNowExists) {
+      hasDescriptionRef.current = descriptionNowExists
+      setAnimationKey((prev) => prev + 1)
+    }
+  }, [boardDescription])
+
   return (
     <div className="flex h-full w-full flex-col items-start gap-1 overflow-hidden md:flex-row md:gap-0 md:rounded md:border-[0.5px] md:border-white/40">
-      <div className="flex h-full w-full flex-col border-white/40 bg-background-1 md:w-auto md:min-w-[40%] md:border-r-[0.5px]">
+      <div className="flex h-full w-full flex-col border-white/40 bg-background-1 md:w-auto md:min-w-[40%] md:max-w-[40%] md:border-r-[0.5px]">
         <div className="grid grid-cols-2">
           <div className="flex flex-col items-center justify-center gap-1 bg-human-3/5 py-2 md:py-3">
             <p className="text-center text-xs text-human-2 md:text-sm">
@@ -202,6 +219,24 @@ export const Highlight: React.FC<Props> = ({
                 )
               })}
           </div>
+        </div>
+        <div className="flex flex-col items-start justify-start gap-1 bg-background-1/80 px-3 py-1.5 text-sm">
+          <AnimatePresence mode="wait">
+            {boardDescription ? (
+              <motion.div
+                key={animationKey}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.1 }}
+                className="w-full"
+              >
+                <p className="w-full whitespace-normal break-words text-xs text-secondary">
+                  {boardDescription}
+                </p>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
       </div>
       <div className="flex h-full w-full flex-col bg-background-1">
