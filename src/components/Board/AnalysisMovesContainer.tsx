@@ -3,6 +3,7 @@
 import React, { useContext, useMemo, Fragment, useEffect } from 'react'
 import { AnalysisGameControllerContext, WindowSizeContext } from 'src/contexts'
 import { GameNode, AnalyzedGame, Termination, ClientBaseGame } from 'src/types'
+import { Tooltip } from 'react-tooltip'
 
 interface Props {
   game: ClientBaseGame | AnalyzedGame
@@ -12,9 +13,21 @@ interface Props {
 
 function BlunderIcon() {
   return (
-    <div className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#d73027] text-[10px] font-bold text-white">
-      !
-    </div>
+    <>
+      <div
+        className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#d73027] text-[10px] font-bold text-white"
+        data-tooltip-id="blunder-tooltip"
+      >
+        !
+      </div>
+      <Tooltip
+        id="blunder-tooltip"
+        content="Critical Mistake"
+        place="top"
+        delayShow={300}
+        className="z-50 !bg-background-2 !px-2 !py-1 !text-xs"
+      />
+    </>
   )
 }
 
@@ -47,6 +60,26 @@ function BestMoveIcon() {
     <div className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#1a9850] text-[10px] font-bold text-white">
       ★
     </div>
+  )
+}
+
+function UnlikelyGoodMoveIcon() {
+  return (
+    <>
+      <div
+        className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#2ca25f] text-[10px] font-bold text-white"
+        data-tooltip-id="unlikely-good-tooltip"
+      >
+        !
+      </div>
+      <Tooltip
+        id="unlikely-good-tooltip"
+        content="Surprising Strong Move"
+        place="top"
+        delayShow={300}
+        className="z-50 !bg-background-2 !px-2 !py-1 !text-xs"
+      />
+    </>
   )
 }
 
@@ -181,6 +214,7 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
                 >
                   <span>{pair.whiteMove.san ?? pair.whiteMove.move}</span>
                   {pair.whiteMove.blunder && <BlunderIcon />}
+                  {pair.whiteMove.unlikelyGoodMove && <UnlikelyGoodMoveIcon />}
                 </div>
               )}
               {pair.blackMove && (
@@ -194,6 +228,7 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
                 >
                   <span>{pair.blackMove.san ?? pair.blackMove.move}</span>
                   {pair.blackMove.blunder && <BlunderIcon />}
+                  {pair.blackMove.unlikelyGoodMove && <UnlikelyGoodMoveIcon />}
                 </div>
               )}
             </React.Fragment>
@@ -232,6 +267,7 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
             >
               {whiteNode?.san ?? whiteNode?.move}
               {whiteNode?.blunder && <BlunderIcon />}
+              {whiteNode?.unlikelyGoodMove && <UnlikelyGoodMoveIcon />}
             </div>
             {whiteNode?.getVariations().length ? (
               <FirstVariation
@@ -250,6 +286,7 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
             >
               {blackNode?.san ?? blackNode?.move}
               {blackNode?.blunder && <BlunderIcon />}
+              {blackNode?.unlikelyGoodMove && <UnlikelyGoodMoveIcon />}
             </div>
             {blackNode?.getVariations().length ? (
               <FirstVariation
@@ -336,7 +373,20 @@ function VariationTree({
         {node.san}
         <span className="inline-flex items-center">
           {node.blunder && (
-            <span className="ml-0.5 text-[8px] text-[#d73027]">!</span>
+            <span
+              className="ml-0.5 text-[8px] text-[#d73027]"
+              data-tooltip-id="variation-blunder-tooltip"
+            >
+              !
+            </span>
+          )}
+          {node.unlikelyGoodMove && (
+            <span
+              className="ml-0.5 text-[8px] text-[#2ca25f]"
+              data-tooltip-id="variation-unlikely-tooltip"
+            >
+              !?
+            </span>
           )}
         </span>
       </span>
@@ -362,6 +412,20 @@ function VariationTree({
           ))}
         </ul>
       ) : null}
+      <Tooltip
+        id="variation-blunder-tooltip"
+        content="Critical Mistake"
+        place="top"
+        delayShow={300}
+        className="z-50 !bg-background-2 !px-2 !py-1 !text-xs"
+      />
+      <Tooltip
+        id="variation-unlikely-tooltip"
+        content="Surprising Strong Move"
+        place="top"
+        delayShow={300}
+        className="z-50 !bg-background-2 !px-2 !py-1 !text-xs"
+      />
     </li>
   )
 }
@@ -403,13 +467,40 @@ function InlineChain({
               {child.san}
               <span className="inline-flex items-center">
                 {child.blunder && (
-                  <span className="ml-0.5 text-[8px] text-[#d73027]">!</span>
+                  <span
+                    className="ml-0.5 text-[8px] text-[#d73027]"
+                    data-tooltip-id="inline-blunder-tooltip"
+                  >
+                    !
+                  </span>
+                )}
+                {child.unlikelyGoodMove && (
+                  <span
+                    className="ml-0.5 text-[8px] text-[#2ca25f]"
+                    data-tooltip-id="inline-unlikely-tooltip"
+                  >
+                    !?
+                  </span>
                 )}
               </span>
             </span>
           </Fragment>
         ))}
       </span>
+      <Tooltip
+        id="inline-blunder-tooltip"
+        content="Critical Mistake"
+        place="top"
+        delayShow={300}
+        className="z-50 !bg-background-2 !px-2 !py-1 !text-xs"
+      />
+      <Tooltip
+        id="inline-unlikely-tooltip"
+        content="Surprising Strong Move"
+        place="top"
+        delayShow={300}
+        className="z-50 !bg-background-2 !px-2 !py-1 !text-xs"
+      />
       {current.getVariations().length > 1 && (
         <ul className="tree-ul list-none">
           {current.getVariations().map((child) => (

@@ -89,10 +89,10 @@ export const useAnalysisController = (game: AnalyzedGame) => {
         maiaEval[model] = result[index]
       })
 
-      controller.currentNode.addMaiaAnalysis(maiaEval)
+      controller.currentNode.addMaiaAnalysis(maiaEval, currentMaiaModel)
       setAnalysisState((state) => state + 1)
     })()
-  }, [maiaStatus, controller.currentNode, analysisState])
+  }, [maiaStatus, controller.currentNode, analysisState, currentMaiaModel])
 
   useEffect(() => {
     if (!controller.currentNode) return
@@ -115,7 +115,10 @@ export const useAnalysisController = (game: AnalyzedGame) => {
             stopEvaluation()
             break
           }
-          controller.currentNode.addStockfishAnalysis(evaluation)
+          controller.currentNode.addStockfishAnalysis(
+            evaluation,
+            currentMaiaModel,
+          )
           setAnalysisState((state) => state + 1)
         }
       })()
@@ -124,7 +127,13 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     return () => {
       stopEvaluation()
     }
-  }, [controller.currentNode, game.type, streamEvaluations, stopEvaluation])
+  }, [
+    controller.currentNode,
+    game.type,
+    streamEvaluations,
+    stopEvaluation,
+    currentMaiaModel,
+  ])
 
   const moves = useMemo(() => {
     if (!controller.currentNode) return new Map<string, string[]>()
@@ -551,6 +560,13 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     const cpAdvantage = cp > 0 ? 'White' : cp < 0 ? 'Black' : 'Neither player'
     const topStockfishMove = topStockfishMoves[0]
 
+    // Calculate winrate for more nuanced description (using centipawn to approximate winrate)
+    // Formula approximates winrate from CP value: 1/(1+10^(-cp/400))
+    const rawWinrate = 1 / (1 + Math.pow(10, -cp / 400))
+    const winrate = Math.max(0.01, Math.min(0.99, rawWinrate)) // Clamp between 1% and 99%
+    const toMoveWinrate = isBlackTurn ? 1 - winrate : winrate
+    const toMoveAdvantage = toMoveWinrate > 0.5
+
     // Check if top Maia move matches top Stockfish move
     const maiaMatchesStockfish = topMaiaMove[0] === topStockfishMove[0]
 
@@ -638,25 +654,49 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     let evaluation = ''
     let suggestion = ''
 
-    // Evaluation description
+    // Evaluation description that considers whose turn it is
     if (isOverwhelming) {
-      evaluation = `${cpAdvantage} is completely winning and should convert without difficulty.`
+      if (cpAdvantage === playerColor) {
+        evaluation = `${playerColor} has a completely winning position with a ${Math.round(toMoveWinrate * 100)}% win probability.`
+      } else {
+        evaluation = `${playerColor} faces a nearly lost position with only a ${Math.round(toMoveWinrate * 100)}% win probability.`
+      }
     } else if (cp === 0) {
       evaluation = isBalancedButComplex
         ? 'The position is balanced but filled with complications.'
         : 'The position is completely equal.'
     } else if (absCP < 30) {
-      evaluation = `The evaluation is almost perfectly balanced with only the slightest edge for ${cpAdvantage}.`
+      evaluation = `The evaluation is almost perfectly balanced with only the slightest edge ${cpAdvantage === playerColor ? 'for' : 'against'} ${playerColor}.`
     } else if (absCP < 80) {
-      evaluation = `${cpAdvantage} has a slight but tangible advantage in this position.`
+      if (cpAdvantage === playerColor) {
+        evaluation = `${playerColor} has a slight but tangible advantage with a win probability of ${Math.round(toMoveWinrate * 100)}%.`
+      } else {
+        evaluation = `${playerColor} faces a slight disadvantage with a win probability of ${Math.round(toMoveWinrate * 100)}%.`
+      }
     } else if (absCP < 150) {
-      evaluation = `${cpAdvantage} has a clear positional advantage that could be decisive with careful play.`
+      if (cpAdvantage === playerColor) {
+        evaluation = `${playerColor} has a clear positional advantage that could be decisive with careful play.`
+      } else {
+        evaluation = `${playerColor} must play accurately as ${opponent} holds a clear positional advantage.`
+      }
     } else if (absCP < 300) {
-      evaluation = `${cpAdvantage} has a significant advantage that should be convertible with proper technique.`
+      if (cpAdvantage === playerColor) {
+        evaluation = `${playerColor} has a significant advantage (${Math.round(toMoveWinrate * 100)}% win rate) that should be convertible with proper technique.`
+      } else {
+        evaluation = `${playerColor} faces a difficult position as ${opponent} has a significant advantage (${Math.round((1 - toMoveWinrate) * 100)}% win rate).`
+      }
     } else if (absCP < 500) {
-      evaluation = `${cpAdvantage} has a winning position that only requires avoiding major blunders.`
+      if (cpAdvantage === playerColor) {
+        evaluation = `${playerColor} is winning and only needs to avoid major blunders to convert.`
+      } else {
+        evaluation = `${playerColor} is in serious trouble and needs to find resilient defensive moves.`
+      }
     } else {
-      evaluation = `${cpAdvantage} has a completely winning position that should be straightforward to convert.`
+      if (cpAdvantage === playerColor) {
+        evaluation = `${playerColor} has a completely winning position with a ${Math.round(toMoveWinrate * 100)}% win probability.`
+      } else {
+        evaluation = `${playerColor} faces a nearly lost position with only a ${Math.round(toMoveWinrate * 100)}% win probability.`
+      }
     }
 
     // Suggestion/description of move quality

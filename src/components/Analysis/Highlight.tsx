@@ -220,7 +220,7 @@ export const Highlight: React.FC<Props> = ({
               })}
           </div>
         </div>
-        <div className="flex flex-col items-start justify-start gap-1 bg-background-1/80 px-3 py-1.5 text-sm">
+        <div className="flex flex-col items-start justify-start gap-1 bg-background-1/80 px-3 pb-3 text-sm md:py-1.5">
           <AnimatePresence mode="wait">
             {boardDescription ? (
               <motion.div

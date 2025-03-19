@@ -391,6 +391,7 @@ const Analysis: React.FC<Props> = ({
           newFen,
           moveString,
           san,
+          currentMaiaModel,
         )
         controller.goToNode(newVariation)
       }
