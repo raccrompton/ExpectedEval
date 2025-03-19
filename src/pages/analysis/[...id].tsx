@@ -282,6 +282,7 @@ const Analysis: React.FC<Props> = ({
     moveRecommendations,
     moveMap,
     blunderMeter,
+    boardDescription,
   } = useAnalysisController(analyzedGame)
 
   useEffect(() => {
@@ -600,6 +601,7 @@ const Analysis: React.FC<Props> = ({
               }
               movesByRating={movesByRating}
               colorSanMapping={colorSanMapping}
+              boardDescription={boardDescription}
             />
           </div>
           <div className="flex h-[calc((55vh+4.5rem)/2)] flex-row gap-2">
@@ -728,6 +730,7 @@ const Analysis: React.FC<Props> = ({
                 }
                 movesByRating={movesByRating}
                 colorSanMapping={colorSanMapping}
+                boardDescription={boardDescription}
               />
               <MoveMap
                 moveMap={moveMap}
