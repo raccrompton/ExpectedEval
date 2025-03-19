@@ -163,7 +163,7 @@ export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
 
   const desktopLayout = (
     <>
-      <div className="flex h-full flex-1 flex-col justify-center gap-1">
+      <div className="flex h-full flex-1 flex-col justify-center gap-1 py-5 md:py-10">
         <div className="flex w-full flex-row items-center justify-center gap-1">
           <div
             style={{
