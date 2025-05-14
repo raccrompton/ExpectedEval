@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import { useCallback, useContext } from 'react'
 import { motion } from 'framer-motion'
+import { useCallback, useContext, useEffect, useState } from 'react'
 
 import {
   SunIcon,
@@ -13,7 +13,9 @@ import {
   StarIcon,
 } from 'src/components/Icons/icons'
 import { PlayType } from 'src/types'
+import { getGlobalStats } from 'src/api'
 import { AuthContext, ModalContext } from 'src/contexts'
+import { AnimatedNumber } from 'src/components/Misc/AnimatedNumber'
 
 interface Props {
   scrollHandler: () => void
@@ -117,6 +119,11 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
 }
 
 export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
+  const [globalStats, setGlobalStats] = useState<{
+    play_moves_total: number
+    puzzle_games_total: number
+    turing_games_total: number
+  }>()
   const { setPlaySetupModalProps } = useContext(ModalContext)
   const { user, connectLichess } = useContext(AuthContext)
 
@@ -127,8 +134,15 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
     [setPlaySetupModalProps],
   )
 
+  useEffect(() => {
+    ;(async () => {
+      const data = await getGlobalStats()
+      setGlobalStats(data)
+    })()
+  }, [])
+
   return (
-    <div className="relative flex flex-col items-center justify-center overflow-hidden pb-12 pt-16 md:pb-28 md:pt-36">
+    <div className="relative flex flex-col items-center justify-center gap-14 overflow-hidden pb-12 pt-16 md:pb-16 md:pt-36">
       <div className="z-10 flex w-full max-w-[1200px] flex-col items-center justify-center gap-10 p-4 text-left md:flex-row md:gap-20">
         <div className="flex w-full flex-col items-start justify-center gap-6 md:w-[40%] md:gap-8">
           <div className="flex flex-col gap-3 md:gap-4">
@@ -189,7 +203,6 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
             )}
           </motion.div>
         </div>
-
         <div className="grid w-full flex-1 grid-cols-1 gap-4 md:grid-cols-3">
           <FeatureCard
             icon={<RegularPlayIcon />}
@@ -237,6 +250,34 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
           />
         </div>
       </div>
+      <motion.div
+        className="flex gap-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.3 }}
+      >
+        <p className="text-base text-primary/80">
+          <AnimatedNumber
+            value={globalStats?.play_moves_total || 0}
+            className="font-bold"
+          />{' '}
+          moves played
+        </p>
+        <p className="text-base text-primary/80">
+          <AnimatedNumber
+            value={globalStats?.puzzle_games_total || 0}
+            className="font-bold"
+          />{' '}
+          puzzle games solved
+        </p>
+        <p className="text-base text-primary/80">
+          <AnimatedNumber
+            value={globalStats?.turing_games_total || 0}
+            className="font-bold"
+          />{' '}
+          turing games played
+        </p>
+      </motion.div>
     </div>
   )
 }
