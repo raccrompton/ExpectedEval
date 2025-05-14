@@ -1,6 +1,7 @@
 import { Chess } from 'chess.ts'
-import React, { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
+import { getBookMoves } from 'src/api'
 import {
   GameTree,
   AnalyzedGame,
@@ -44,6 +45,7 @@ export const useAnalysisController = (game: AnalyzedGame) => {
   )
 
   const [analysisState, setAnalysisState] = useState(0)
+  const inProgressAnalyses = useMemo(() => new Set<string>(), [])
 
   const {
     maia,
@@ -70,29 +72,95 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     if (!controller.currentNode) return
 
     const board = new Chess(controller.currentNode.fen)
+    const nodeFen = controller.currentNode.fen
+
     ;(async () => {
       if (
         maiaStatus !== 'ready' ||
         !controller.currentNode ||
-        controller.currentNode.analysis.maia
+        controller.currentNode.analysis.maia ||
+        inProgressAnalyses.has(nodeFen)
       )
         return
 
-      const { result } = await maia.batchEvaluate(
-        Array(9).fill(board.fen()),
-        [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900],
-        [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900],
-      )
+      inProgressAnalyses.add(nodeFen)
 
-      const maiaEval: { [key: string]: MaiaEvaluation } = {}
-      MAIA_MODELS.forEach((model, index) => {
-        maiaEval[model] = result[index]
-      })
+      try {
+        // When the ply is within the first 10 ply, analyze via the server API rather than the client-side ONNX Maia2 model
+        if (controller.currentNode.moveNumber <= 5) {
+          const bookMoves = await getBookMoves(board.fen())
 
-      controller.currentNode.addMaiaAnalysis(maiaEval, currentMaiaModel)
-      setAnalysisState((state) => state + 1)
+          const targetFormat: { [key: string]: MaiaEvaluation } = {}
+          const missingModels: string[] = []
+
+          MAIA_MODELS.forEach((model, index) => {
+            const sortedMoves = Object.entries(bookMoves[model] || {})
+              .sort(
+                ([, valueA], [, valueB]) =>
+                  (valueB as number) - (valueA as number),
+              )
+              .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {})
+
+            if (Object.keys(sortedMoves).length === 0) {
+              missingModels.push(model)
+            }
+
+            targetFormat[model] = {
+              value: 0,
+              policy: sortedMoves,
+            }
+          })
+
+          // If we have some missing ratings, use the client-side ONNX model to analyze them
+          if (missingModels.length > 0) {
+            console.log(
+              'Falling back to client-side ONNX model for:',
+              missingModels,
+            )
+            const ratingLevels = missingModels.map((name) =>
+              parseInt(name.slice(-4)),
+            )
+
+            const { result } = await maia.batchEvaluate(
+              Array(missingModels.length).fill(board.fen()),
+              ratingLevels,
+              ratingLevels,
+            )
+
+            missingModels.forEach((model, index) => {
+              targetFormat[model] = result[index]
+            })
+          }
+
+          controller.currentNode.addMaiaAnalysis(targetFormat, currentMaiaModel)
+          setAnalysisState((state) => state + 1)
+          return
+        }
+
+        const { result } = await maia.batchEvaluate(
+          Array(9).fill(board.fen()),
+          [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900],
+          [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900],
+        )
+
+        const maiaEval: { [key: string]: MaiaEvaluation } = {}
+        MAIA_MODELS.forEach((model, index) => {
+          maiaEval[model] = result[index]
+        })
+
+        controller.currentNode.addMaiaAnalysis(maiaEval, currentMaiaModel)
+        setAnalysisState((state) => state + 1)
+      } finally {
+        inProgressAnalyses.delete(nodeFen)
+      }
     })()
-  }, [maiaStatus, controller.currentNode, analysisState, currentMaiaModel])
+  }, [
+    maiaStatus,
+    controller.currentNode,
+    analysisState,
+    currentMaiaModel,
+    inProgressAnalyses,
+  ])
 
   useEffect(() => {
     if (!controller.currentNode) return
@@ -405,7 +473,6 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     if (!controller.currentNode) return
     const maia = controller.currentNode.analysis.maia
     const stockfish = moveEvaluation?.stockfish
-
     const candidates: string[][] = []
 
     if (!maia) return
@@ -551,6 +618,7 @@ export const useAnalysisController = (game: AnalyzedGame) => {
     const topMaiaMove = Object.entries(maia.policy).sort(
       (a, b) => b[1] - a[1],
     )[0]
+
     const topStockfishMoves = Object.entries(stockfish.cp_vec)
       .sort((a, b) => (isBlackTurn ? a[1] - b[1] : b[1] - a[1]))
       .slice(0, 3)
