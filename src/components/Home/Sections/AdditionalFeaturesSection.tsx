@@ -55,7 +55,14 @@ const FeatureCard = ({
   variants,
 }: {
   feature: Feature
-  variants: any
+  variants: {
+    hidden?: { y?: number; opacity?: number }
+    visible?: {
+      y?: number
+      opacity?: number
+      transition?: { duration: number }
+    }
+  }
 }) => {
   const { icon, title, description, action, iconBgColor, iconTextColor } =
     feature

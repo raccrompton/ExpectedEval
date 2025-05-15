@@ -1,8 +1,13 @@
 import { Chess } from 'chess.ts'
 import { useEffect, useState } from 'react'
 import { getBookMoves } from 'src/api'
-import { GameNode, MaiaEvaluation } from 'src/types'
+import { GameNode, MaiaEvaluation, StockfishEvaluation } from 'src/types'
 import { MAIA_MODELS } from './constants'
+
+type BatchEvaluateResult = {
+  result: MaiaEvaluation[]
+  time: number
+}
 
 type EngineHooks = {
   maia: {
@@ -10,12 +15,12 @@ type EngineHooks = {
       fens: string[],
       ratingLevels: number[],
       thresholds: number[],
-    ) => Promise<any>
+    ) => Promise<BatchEvaluateResult>
   }
   streamEvaluations: (
     fen: string,
     moveCount: number,
-  ) => AsyncIterable<any> | null
+  ) => AsyncIterable<StockfishEvaluation> | null
   stopEvaluation: () => void
 }
 

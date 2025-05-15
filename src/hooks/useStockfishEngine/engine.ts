@@ -171,8 +171,9 @@ class Engine {
         this.store[depth].winrate_loss_vec = {}
       }
 
-      if (this.store[depth].winrate_vec) {
-        this.store[depth].winrate_vec[move] = winrate
+      const winrateVec = this.store[depth].winrate_vec
+      if (winrateVec) {
+        winrateVec[move] = winrate
       }
     } else {
       const winrate = cpToWinrate(cp * (isBlackTurn ? -1 : 1), false)
@@ -192,25 +193,26 @@ class Engine {
     if (!this.store[depth].sent && multipv === this.legalMoveCount) {
       let bestWinrate = -Infinity
 
-      if (this.store[depth].winrate_vec) {
-        for (const m in this.store[depth].winrate_vec) {
-          const wr = this.store[depth].winrate_vec[m]
+      const winrateVec = this.store[depth].winrate_vec
+      if (winrateVec) {
+        for (const m in winrateVec) {
+          const wr = winrateVec[m]
           if (wr > bestWinrate) {
             bestWinrate = wr
           }
         }
-      }
 
-      if (this.store[depth].winrate_vec && this.store[depth].winrate_loss_vec) {
-        for (const m in this.store[depth].winrate_vec) {
-          this.store[depth].winrate_loss_vec[m] =
-            this.store[depth].winrate_vec[m] - bestWinrate
+        const winrateLossVec = this.store[depth].winrate_loss_vec
+        if (winrateLossVec) {
+          for (const m in winrateVec) {
+            winrateLossVec[m] = winrateVec[m] - bestWinrate
+          }
         }
       }
 
       if (this.store[depth].winrate_vec) {
         this.store[depth].winrate_vec = Object.fromEntries(
-          Object.entries(this.store[depth].winrate_vec).sort(
+          Object.entries(this.store[depth].winrate_vec || {}).sort(
             ([, a], [, b]) => b - a,
           ),
         )
@@ -218,7 +220,7 @@ class Engine {
 
       if (this.store[depth].winrate_loss_vec) {
         this.store[depth].winrate_loss_vec = Object.fromEntries(
-          Object.entries(this.store[depth].winrate_loss_vec).sort(
+          Object.entries(this.store[depth].winrate_loss_vec || {}).sort(
             ([, a], [, b]) => b - a,
           ),
         )
