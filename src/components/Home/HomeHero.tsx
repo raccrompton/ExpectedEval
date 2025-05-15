@@ -171,24 +171,14 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
             transition={{ duration: 0.4, delay: 0.2, ease: 'easeOut' }}
           >
             <motion.button
-              className="flex items-center justify-center gap-2 rounded-md bg-human-3 px-6 py-3 text-white hover:bg-opacity-90"
+              className="flex items-center justify-center gap-2 rounded-md bg-human-4 px-6 py-3 text-white hover:bg-opacity-90"
               onClick={scrollHandler}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
               transition={{ duration: 0.2 }}
             >
               <p>Learn More</p>
-              <motion.i
-                className="h-4"
-                animate={{ x: [0, 3, 0] }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 1.5,
-                  ease: 'easeInOut',
-                }}
-              >
-                {ArrowIcon}
-              </motion.i>
+              <i className="h-4">{ArrowIcon}</i>
             </motion.button>
             {!user?.lichessId && (
               <motion.button
@@ -251,26 +241,26 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
         </div>
       </div>
       <motion.div
-        className="flex gap-6"
+        className="grid grid-cols-3 gap-6 px-2 md:flex"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.3 }}
       >
-        <p className="text-base text-primary/80">
+        <p className="text-center text-base text-primary/80">
           <AnimatedNumber
             value={globalStats?.play_moves_total || 0}
             className="font-bold"
           />{' '}
           moves played
         </p>
-        <p className="text-base text-primary/80">
+        <p className="text-center text-base text-primary/80">
           <AnimatedNumber
             value={globalStats?.puzzle_games_total || 0}
             className="font-bold"
           />{' '}
           puzzle games solved
         </p>
-        <p className="text-base text-primary/80">
+        <p className="text-center text-base text-primary/80">
           <AnimatedNumber
             value={globalStats?.turing_games_total || 0}
             className="font-bold"
