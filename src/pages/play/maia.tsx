@@ -11,6 +11,7 @@ import {
 } from 'src/api'
 import { ModalContext } from 'src/contexts'
 import { useStats } from 'src/hooks/useStats'
+import { useChessSound } from 'src/hooks/useChessSound'
 import { Color, TimeControl, PlayGameConfig } from 'src/types'
 import { usePlayController } from 'src/hooks/usePlayController'
 import { Loading, PlayControls, GameplayInterface } from 'src/components'
@@ -29,6 +30,7 @@ const useVsMaiaPlayController = (
   id: string,
   playGameConfig: PlayGameConfig,
 ) => {
+  const { playSound } = useChessSound()
   const controller = usePlayController(id, playGameConfig)
 
   const [stats, incrementStats, updateRating] = useStats(playStatsLoader)
@@ -84,11 +86,13 @@ const useVsMaiaPlayController = (
             const moveTime = controller.updateClock()
             controller.setMoves([...controller.moves, nextMove])
             controller.setMoveTimes([...controller.moveTimes, moveTime])
+            playSound(false)
           }, moveDelay * 1000)
         } else {
           const moveTime = controller.updateClock()
           controller.setMoves([...controller.moves, nextMove])
           controller.setMoveTimes([...controller.moveTimes, moveTime])
+          playSound(false)
         }
       }
     }
