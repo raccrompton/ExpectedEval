@@ -150,7 +150,7 @@ export const Footer: React.FC = () => {
         </div>
       </div>
       <p className="text-left text-sm text-secondary md:text-center md:text-xs">
-        © 2024 Maia Chess. All rights reserved.
+        © 2025 Maia Chess. All rights reserved.
       </p>
     </div>
   )
