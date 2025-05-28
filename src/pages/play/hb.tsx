@@ -19,6 +19,7 @@ import {
 } from 'src/components'
 import { ModalContext } from 'src/contexts'
 import { useStats } from 'src/hooks/useStats'
+import { useChessSound } from 'src/hooks/useChessSound'
 import { Color, PlayGameConfig, TimeControl } from 'src/types'
 import { usePlayController } from 'src/hooks/usePlayController'
 import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
@@ -46,6 +47,7 @@ const useHandBrainPlayController = (
   playGameConfig: PlayGameConfig,
 ) => {
   const controller = usePlayController(id, playGameConfig)
+  const { playSound } = useChessSound()
   const isBrain = playGameConfig.isBrain
 
   const [selectedPiece, setSelectedPiece] = useState<PieceSymbol | undefined>(
@@ -170,6 +172,7 @@ const useHandBrainPlayController = (
           const moveTime = controller.updateClock()
           controller.setMoves([...controller.moves, nextMove])
           controller.setMoveTimes([...controller.moveTimes, moveTime])
+          playSound(false)
         },
         playGameConfig.simulateMaiaTime ? moveDelay * 1000 : 0,
       )
@@ -213,6 +216,7 @@ const useHandBrainPlayController = (
         )
         const nextMove = maiaMoves['top_move']
         makeMove(nextMove)
+        playSound(false)
       }
     },
     [
@@ -247,7 +251,6 @@ const useHandBrainPlayController = (
     controller.reset()
   }
 
-  // Logging
   useEffect(() => {
     const gameOverState = controller.game.termination?.type || 'not_over'
 
