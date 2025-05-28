@@ -194,6 +194,7 @@ const PlayMaia: React.FC<Props> = ({
     <PlayControllerContext.Provider value={controller}>
       <GameplayInterface>
         <PlayControls
+          game={controller.game}
           playerActive={controller.playerActive}
           gameOver={!!controller.game.termination}
           resign={
