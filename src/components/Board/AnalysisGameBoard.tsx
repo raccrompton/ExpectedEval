@@ -54,14 +54,12 @@ export const AnalysisGameBoard: React.FC<Props> = ({
 
       const chess = new Chess(currentNode.fen)
 
-      // Check if there's a piece at the destination before making the move
       const pieceAtDestination = chess.get(to)
       const isCapture = !!pieceAtDestination
 
       const moveAttempt = chess.move({ from: from, to: to })
 
       if (moveAttempt) {
-        // Play the appropriate sound
         playSound(isCapture)
 
         const newFen = chess.fen()
