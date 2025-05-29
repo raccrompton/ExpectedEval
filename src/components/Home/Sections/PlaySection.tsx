@@ -102,7 +102,7 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
               <AnimatedTrainingBoards inView={inView} />
             </div>
             <motion.div
-              className="absolute bottom-0 right-0 h-3/4 w-3/4 overflow-hidden border border-background-3/20 bg-background-1 shadow-lg"
+              className="absolute bottom-0 right-0 z-10 h-3/4 w-3/4 overflow-hidden border border-background-3/20 bg-background-1 shadow-lg"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5 }}

@@ -297,10 +297,6 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
               >
                 <motion.div
                   className="h-full w-full"
-                  key={`puzzle-container-${currentPuzzle}`}
-                  initial={{ opacity: 0.8, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, ease: 'easeOut' }}
                   style={{
                     position: 'relative',
                     transform: 'translateZ(0)',
@@ -353,91 +349,7 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                         duration: 0,
                       },
                     }}
-                  />
-
-                  <style jsx global>{`
-                    .cg-wrap {
-                      width: 100% !important;
-                      height: 100% !important;
-                      position: absolute !important;
-                      top: 0 !important;
-                      left: 0 !important;
-                    }
-
-                    /* Force board to fill */
-                    .cg-board {
-                      background-size: cover !important;
-                      position: absolute !important;
-                      top: 0 !important;
-                      left: 0 !important;
-                      width: 100% !important;
-                      height: 100% !important;
-                    }
-
-                    /* Ensure pieces are properly sized and centered */
-                    piece {
-                      position: absolute !important;
-                      width: 12.5% !important;
-                      height: 12.5% !important;
-                      transform-origin: center !important;
-                      background-size: contain !important;
-                    }
-
-                    /* Fix coordinate ranks (numbers) */
-                    coords.ranks {
-                      right: 0 !important;
-                      top: 0 !important;
-                      width: 18px !important;
-                      display: flex !important;
-                      flex-direction: column !important;
-                      justify-content: space-around !important;
-                      align-items: center !important;
-                      height: 100% !important;
-                      pointer-events: none !important;
-                    }
-
-                    /* Fix coordinate files (letters) */
-                    coords.files {
-                      bottom: 0 !important;
-                      left: 0 !important;
-                      width: 100% !important;
-                      display: flex !important;
-                      flex-direction: row !important;
-                      justify-content: space-around !important;
-                      align-items: center !important;
-                      height: 18px !important;
-                      pointer-events: none !important;
-                    }
-
-                    /* Center each coordinate item */
-                    coords coord {
-                      text-align: center !important;
-                      display: block !important;
-                    }
-
-                    /* Fix specific coordinate positions */
-                    coords.files coord:nth-child(1) {
-                      margin-left: 10px !important;
-                    }
-                    coords.files coord:nth-child(8) {
-                      margin-right: 10px !important;
-                    }
-                    coords.ranks coord:nth-child(1) {
-                      margin-top: 5px !important;
-                    }
-                    coords.ranks coord:nth-child(8) {
-                      margin-bottom: 5px !important;
-                    }
-
-                    /* Ensure svg elements display properly */
-                    .cg-custom-svgs {
-                      display: block !important;
-                      height: 100% !important;
-                      width: 100% !important;
-                      position: absolute !important;
-                      pointer-events: none !important;
-                    }
-                  `}</style>
+                  />{' '}
                 </motion.div>
               </div>
               <div className="flex w-full flex-col md:w-1/2">
@@ -553,6 +465,31 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
           </div>
         </motion.div>
       </div>
+      <style jsx global>{`
+        coords.ranks {
+          right: 0 !important;
+          top: 0 !important;
+          width: 18px !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: space-around !important;
+          align-items: center !important;
+          height: 100% !important;
+          pointer-events: none !important;
+        }
+
+        coords.files {
+          bottom: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          display: flex !important;
+          flex-direction: row !important;
+          justify-content: space-around !important;
+          align-items: center !important;
+          height: 18px !important;
+          pointer-events: none !important;
+        }
+      `}</style>
     </section>
   )
 }
