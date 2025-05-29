@@ -125,7 +125,6 @@ const getSanForMove = (move: string | number | undefined) => {
   return move?.toString() ?? ''
 }
 
-// Simplified MovesByRating component
 export const SimplifiedMovesByRating = () => {
   return (
     <div className="flex h-64 w-full flex-col rounded bg-background-1/60 md:h-full">
@@ -415,8 +414,8 @@ export const SimplifiedMoveMap = () => {
 
 export const SimplifiedBlunderMeter = () => {
   return (
-    <div className="flex w-full flex-col gap-2 overflow-hidden rounded bg-background-1/60 p-3">
-      <div className="flex h-8 w-full flex-col overflow-hidden">
+    <div className="flex w-full flex-col gap-1 overflow-hidden rounded bg-background-1/60 p-3">
+      <div className="flex h-6 w-full flex-col overflow-hidden">
         <div className="flex h-full w-full select-none flex-row overflow-hidden rounded">
           <motion.div
             className="flex h-full flex-col items-start justify-start overflow-hidden"
@@ -432,7 +431,6 @@ export const SimplifiedBlunderMeter = () => {
               </motion.p>
             </motion.div>
           </motion.div>
-
           <motion.div
             className="flex h-full flex-col items-start justify-start overflow-hidden"
             animate={{
@@ -536,6 +534,15 @@ export const SimplifiedChessboard = ({ forceKey }: { forceKey?: number }) => {
 }
 
 export const SimplifiedHighlight = () => {
+  const moveData = [
+    { move: 'Rb7+', maiaPct: '67.3%', sfEval: '+2.1', color: '#238b45' },
+    { move: 'Rb6+', maiaPct: '24.8%', sfEval: '+1.8', color: '#41ab5d' },
+    { move: 'Re7', maiaPct: '5.2%', sfEval: '+1.4', color: '#74c476' },
+    { move: 'Rc5', maiaPct: '2.1%', sfEval: '+0.9', color: '#a1d99b' },
+    { move: 'Ra5', maiaPct: '0.4%', sfEval: '+0.3', color: '#c7e9c0' },
+    { move: 'Rd5', maiaPct: '0.2%', sfEval: '-0.1', color: '#feb24c' },
+  ]
+
   return (
     <div className="flex w-full flex-col gap-2 overflow-hidden rounded bg-background-1/60 p-3">
       <p className="text-lg text-primary">Position Analysis</p>
@@ -563,32 +570,62 @@ export const SimplifiedHighlight = () => {
         </div>
         <div className="col-span-2 grid grid-cols-2 gap-2 border-t border-white/10 pt-2">
           <div className="grid grid-rows-2 items-center justify-center">
-            <div className="grid cursor-pointer grid-cols-2 gap-3">
-              <p className="text-right font-mono text-xs text-[#238b45]">
-                67.3%
-              </p>
-              <p className="text-left font-mono text-xs text-[#238b45]">Rb7+</p>
-            </div>
-            <div className="grid cursor-pointer grid-cols-2 gap-3">
-              <p className="text-right font-mono text-xs text-[#41ab5d]">
-                24.8%
-              </p>
-              <p className="text-left font-mono text-xs text-[#41ab5d]">Rb6+</p>
-            </div>
+            {moveData.map((data, index) => {
+              let visibilityClass = ''
+              if (index === 2) visibilityClass = 'hidden xl:grid'
+              else if (index === 3) visibilityClass = 'hidden 2xl:grid'
+              else if (index === 4) visibilityClass = 'hidden 3xl:grid'
+              else if (index === 5) visibilityClass = 'hidden 4xl:grid'
+
+              return (
+                <div
+                  key={`maia-${index}`}
+                  className={`grid cursor-pointer grid-cols-2 gap-3 ${visibilityClass}`}
+                >
+                  <p
+                    className="text-right font-mono text-xs"
+                    style={{ color: data.color }}
+                  >
+                    {data.maiaPct}
+                  </p>
+                  <p
+                    className="text-left font-mono text-xs"
+                    style={{ color: data.color }}
+                  >
+                    {data.move}
+                  </p>
+                </div>
+              )
+            })}
           </div>
           <div className="grid grid-rows-2 items-center justify-center">
-            <div className="grid cursor-pointer grid-cols-2 gap-3">
-              <p className="text-right font-mono text-xs text-[#238b45]">
-                +2.1
-              </p>
-              <p className="text-left font-mono text-xs text-[#238b45]">Rb7+</p>
-            </div>
-            <div className="grid cursor-pointer grid-cols-2 gap-3">
-              <p className="text-right font-mono text-xs text-[#41ab5d]">
-                +1.8
-              </p>
-              <p className="text-left font-mono text-xs text-[#41ab5d]">Rb6+</p>
-            </div>
+            {moveData.map((data, index) => {
+              let visibilityClass = ''
+              if (index === 2) visibilityClass = 'hidden xl:grid'
+              else if (index === 3) visibilityClass = 'hidden 2xl:grid'
+              else if (index === 4) visibilityClass = 'hidden 3xl:grid'
+              else if (index === 5) visibilityClass = 'hidden 4xl:grid'
+
+              return (
+                <div
+                  key={`sf-${index}`}
+                  className={`grid cursor-pointer grid-cols-2 gap-3 ${visibilityClass}`}
+                >
+                  <p
+                    className="text-right font-mono text-xs"
+                    style={{ color: data.color }}
+                  >
+                    {data.sfEval}
+                  </p>
+                  <p
+                    className="text-left font-mono text-xs"
+                    style={{ color: data.color }}
+                  >
+                    {data.move}
+                  </p>
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
