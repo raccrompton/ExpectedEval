@@ -25,8 +25,35 @@ export const GameList = () => {
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
 
+  const [fetchedCache, setFetchedCache] = useState<{
+    [key: string]: { [page: number]: boolean }
+  }>({
+    play: {},
+    hand: {},
+    brain: {},
+    pgn: {},
+  })
+
+  const [totalPagesCache, setTotalPagesCache] = useState<{
+    [key: string]: number
+  }>({})
+
+  const [currentPagePerTab, setCurrentPagePerTab] = useState<{
+    [key: string]: number
+  }>({
+    play: 1,
+    hand: 1,
+    brain: 1,
+    pgn: 1,
+  })
+
   useEffect(() => {
-    if (user?.lichessId) {
+    if (user?.lichessId && !fetchedCache.pgn[1]) {
+      setFetchedCache((prev) => ({
+        ...prev,
+        pgn: { ...prev.pgn, 1: true },
+      }))
+
       getLichessGames(user?.lichessId, (data) => {
         const result = data.pgn.match(/\[Result\s+"(.+?)"\]/)[1] || '?'
 
@@ -40,54 +67,105 @@ export const GameList = () => {
         setGames((x) => [...x, game])
       })
     }
-  }, [user?.lichessId])
+  }, [user?.lichessId, fetchedCache.pgn])
 
   useEffect(() => {
     if (user?.lichessId && selected !== 'pgn') {
-      setLoading(true)
-      getAnalysisGameList(selected, currentPage).then((data) => {
-        const parse = (
-          game: {
-            game_id: string
-            maia_name: string
-            result: string
-            player_color: 'white' | 'black'
-          },
-          type: string,
-        ) => {
-          const raw = game.maia_name.replace('_kdd_', ' ')
-          const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
+      const isAlreadyFetched = fetchedCache[selected]?.[currentPage]
 
-          return {
-            id: game.game_id,
-            label:
-              game.player_color === 'white'
-                ? `You vs. ${maia}`
-                : `${maia} vs. You`,
-            result: game.result,
-            type,
-          }
-        }
+      if (!isAlreadyFetched) {
+        setLoading(true)
 
-        if (selected === 'play') {
-          setPlayGames(data.games.map((game: GameData) => parse(game, 'play')))
-        } else if (selected === 'hand') {
-          setHandGames(data.games.map((game: GameData) => parse(game, 'hand')))
-        } else if (selected === 'brain') {
-          setBrainGames(
-            data.games.map((game: GameData) => parse(game, 'brain')),
-          )
-        }
-        setTotalPages(Math.ceil(data.total / 100))
-        setLoading(false)
-      })
+        setFetchedCache((prev) => ({
+          ...prev,
+          [selected]: { ...prev[selected], [currentPage]: true },
+        }))
+
+        getAnalysisGameList(selected, currentPage)
+          .then((data) => {
+            const parse = (
+              game: {
+                game_id: string
+                maia_name: string
+                result: string
+                player_color: 'white' | 'black'
+              },
+              type: string,
+            ) => {
+              const raw = game.maia_name.replace('_kdd_', ' ')
+              const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
+
+              return {
+                id: game.game_id,
+                label:
+                  game.player_color === 'white'
+                    ? `You vs. ${maia}`
+                    : `${maia} vs. You`,
+                result: game.result,
+                type,
+              }
+            }
+
+            const parsedGames = data.games.map((game: GameData) =>
+              parse(game, selected),
+            )
+            const calculatedTotalPages = Math.ceil(data.total / 100)
+
+            setTotalPagesCache((prev) => ({
+              ...prev,
+              [selected]: calculatedTotalPages,
+            }))
+
+            if (selected === 'play') {
+              setPlayGames((prev) =>
+                currentPage === 1 ? parsedGames : [...prev, ...parsedGames],
+              )
+            } else if (selected === 'hand') {
+              setHandGames((prev) =>
+                currentPage === 1 ? parsedGames : [...prev, ...parsedGames],
+              )
+            } else if (selected === 'brain') {
+              setBrainGames((prev) =>
+                currentPage === 1 ? parsedGames : [...prev, ...parsedGames],
+              )
+            }
+
+            setLoading(false)
+          })
+          .catch(() => {
+            setFetchedCache((prev) => {
+              const newCache = { ...prev }
+              delete newCache[selected][currentPage]
+              return newCache
+            })
+            setLoading(false)
+          })
+      }
     }
-  }, [user?.lichessId, selected, currentPage])
+  }, [user?.lichessId, selected, currentPage, fetchedCache])
+
+  useEffect(() => {
+    if (totalPagesCache[selected]) {
+      setTotalPages(totalPagesCache[selected])
+    } else if (selected === 'pgn') {
+      setTotalPages(1)
+    }
+
+    setCurrentPage(currentPagePerTab[selected])
+  }, [selected, totalPagesCache, currentPagePerTab])
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage)
+      setCurrentPagePerTab((prev) => ({
+        ...prev,
+        [selected]: newPage,
+      }))
     }
+  }
+
+  const handleTabChange = (newTab: 'play' | 'hand' | 'brain' | 'pgn') => {
+    setSelected(newTab)
   }
 
   return (
@@ -100,25 +178,25 @@ export const GameList = () => {
           label="Play"
           name="play"
           selected={selected}
-          setSelected={setSelected}
+          setSelected={handleTabChange}
         />
         <Header
           label="Hand"
           name="hand"
           selected={selected}
-          setSelected={setSelected}
+          setSelected={handleTabChange}
         />
         <Header
           label="Brain"
           name="brain"
           selected={selected}
-          setSelected={setSelected}
+          setSelected={handleTabChange}
         />
         <Header
           label="Lichess"
           name="pgn"
           selected={selected}
-          setSelected={setSelected}
+          setSelected={handleTabChange}
         />
       </div>
       <div className="red-scrollbar flex max-h-64 flex-col overflow-y-scroll md:max-h-[60vh]">
