@@ -51,11 +51,11 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
       ref={ref}
     >
       <div className="mx-auto flex w-full max-w-[95%] flex-col items-center px-2 md:max-w-[90%] md:flex-row md:gap-12 md:px-4 lg:gap-16">
-        <div className="mb-6 w-full md:mb-0 md:mb-10 md:w-1/2">
+        <div className="mb-6 w-full md:mb-10 md:w-1/2">
           <div className="mb-3 inline-block rounded-full bg-human-3/10 px-4 py-1 text-sm font-medium text-human-3 md:mb-4">
             Play Against Maia
           </div>
-          <h2 className="mb-4 max-w-2xl text-2xl font-bold md:mb-6 md:text-3xl md:text-4xl lg:text-5xl">
+          <h2 className="mb-4 max-w-2xl text-2xl font-bold md:mb-6 md:text-4xl lg:text-5xl">
             Experience human-like chess AI
           </h2>
           <p className="mb-3 max-w-2xl text-base text-primary/80 md:mb-4 md:text-lg">
@@ -143,19 +143,7 @@ const AnimatedTrainingBoards = ({ inView }: { inView: boolean }) => {
   return (
     <>
       {[...Array(36)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="relative"
-          initial={{ opacity: 0.3 }}
-          animate={{
-            opacity: [0.3, 1, 0.3],
-          }}
-          transition={{
-            duration: 3,
-            delay: (i % 12) * 0.1 + currentBatch,
-            repeat: Infinity,
-          }}
-        >
+        <motion.div key={i} className="relative">
           <div className="h-full w-full">
             <Chessground
               key={`board-${i}-${renderKey}`}

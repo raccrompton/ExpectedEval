@@ -68,7 +68,7 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
     >
       <div className="mx-auto flex w-full max-w-[95%] flex-col-reverse items-center px-2 md:max-w-[90%] md:flex-row md:gap-8 md:px-4 lg:gap-12">
         <motion.div
-          className="relative mt-4 w-full md:mt-0 md:mt-6 md:w-1/2"
+          className="relative mt-4 w-full md:mt-6 md:w-1/2"
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -103,7 +103,7 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
                     </div>
                   </div>
                 </div>
-                <div className="flex w-1/2 flex-col justify-between">
+                <div className="flex w-1/2 flex-col justify-between gap-3">
                   <motion.div
                     className="flex-1"
                     initial={{ opacity: 0, y: 20 }}
@@ -115,7 +115,6 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
                     <SimplifiedHighlight />
                   </motion.div>
                   <motion.div
-                    className="mt-4"
                     initial={{ opacity: 0, y: 20 }}
                     animate={
                       inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
