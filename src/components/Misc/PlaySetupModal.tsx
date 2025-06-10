@@ -1,4 +1,6 @@
 import Image from 'next/image'
+import { Chess } from 'chess.ts'
+import toast from 'react-hot-toast'
 import { useRouter } from 'next/router'
 import { AnimatePresence } from 'framer-motion'
 import { useCallback, useContext, useState } from 'react'
@@ -97,9 +99,14 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
 
   const start = useCallback(
     (color: Color | undefined) => {
-      setPlaySetupModalProps(undefined)
-
       const player = color ?? ['white', 'black'][Math.floor(Math.random() * 2)]
+
+      if (fen && !new Chess().validateFen(fen).valid) {
+        toast.error('Invalid Starting FEN provided')
+        return
+      }
+
+      setPlaySetupModalProps(undefined)
 
       if (props.playType == 'againstMaia') {
         push({
