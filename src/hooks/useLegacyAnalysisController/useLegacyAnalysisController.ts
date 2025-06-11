@@ -369,6 +369,9 @@ export const useLegacyAnalysisController = (
     } else {
       const sf = stockfishEvaluations[controller.currentIndex]?.cp_relative_vec
 
+      console.log(game.maiaEvaluations)
+      console.log(currentMaiaModel)
+
       const maia =
         game.maiaEvaluations[currentMaiaModel][controller.currentIndex]
 

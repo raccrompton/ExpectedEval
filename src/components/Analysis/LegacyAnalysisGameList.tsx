@@ -19,13 +19,13 @@ interface LegacyAnalysisGameListProps {
     newId: string[],
     setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
-  loadNewLichessGames: (
+  loadNewLichessGame: (
     id: string,
     pgn: string,
     currentMaiaModel: string,
     setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
-  loadNewUserGames: (
+  loadNewUserGame: (
     id: string,
     type: 'play' | 'hand' | 'brain',
     currentMaiaModel: string,
@@ -37,8 +37,8 @@ export const LegacyAnalysisGameList: React.FC<LegacyAnalysisGameListProps> = ({
   currentId,
   currentMaiaModel,
   loadNewTournamentGame,
-  loadNewLichessGames,
-  loadNewUserGames,
+  loadNewLichessGame,
+  loadNewUserGame,
 }) => {
   const [selected, setSelected] = useState<
     'tournament' | 'pgn' | 'play' | 'hand' | 'brain'
@@ -174,8 +174,8 @@ export const LegacyAnalysisGameList: React.FC<LegacyAnalysisGameListProps> = ({
           lichessGames={analysisLichessList}
           setCurrentIndex={controller.setCurrentIndex}
           currentMaiaModel={currentMaiaModel}
-          loadNewUserGames={loadNewUserGames}
-          loadNewLichessGames={loadNewLichessGames}
+          loadNewUserGame={loadNewUserGame}
+          loadNewLichessGame={loadNewLichessGame}
           setLoadingIndex={setLoadingIndex}
         />
       )}

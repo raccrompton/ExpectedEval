@@ -65,6 +65,10 @@ const AnalysisPage: NextPage = () => {
 
   const router = useRouter()
   const { id, index, orientation } = router.query
+  const [currentMaiaModel, setCurrentMaiaModel] = useLocalStorage(
+    'currentMaiaModel',
+    'maia_kdd_1500',
+  )
 
   const [analyzedGame, setAnalyzedGame] = useState<
     LegacyAnalyzedGame | undefined
@@ -99,13 +103,14 @@ const AnalysisPage: NextPage = () => {
     [router],
   )
 
-  const getAndSetLichessGames = useCallback(
+  const getAndSetLichessGame = useCallback(
     async (
       id: string,
       pgn: string,
       currentMaiaModel = 'maia_kdd_1500',
       setCurrentMove?: Dispatch<SetStateAction<number>>,
     ) => {
+      console.log(currentMaiaModel)
       let game
       try {
         game = await getLegacyAnalyzedLichessGame(id, pgn, currentMaiaModel)
@@ -164,9 +169,13 @@ const AnalysisPage: NextPage = () => {
         const queryId = id as string[]
         if (queryId[1] === 'pgn') {
           const pgn = await getLichessGamePGN(queryId[0])
-          getAndSetLichessGames(queryId[0], pgn, undefined)
+          getAndSetLichessGame(queryId[0], pgn, currentMaiaModel)
         } else if (['play', 'hand', 'brain'].includes(queryId[1])) {
-          getAndSetUserGame(queryId[0], queryId[1] as 'play' | 'hand' | 'brain')
+          getAndSetUserGame(
+            queryId[0],
+            queryId[1] as 'play' | 'hand' | 'brain',
+            currentMaiaModel,
+          )
         } else {
           getAndSetTournamentGame(queryId)
         }
@@ -176,7 +185,7 @@ const AnalysisPage: NextPage = () => {
     id,
     analyzedGame,
     getAndSetTournamentGame,
-    getAndSetLichessGames,
+    getAndSetLichessGame,
     getAndSetUserGame,
   ])
 
@@ -190,8 +199,8 @@ const AnalysisPage: NextPage = () => {
           initialIndex={index ? Number(index) : 0}
           initialOrientation={orientation == 'black' ? 'black' : 'white'}
           getAndSetTournamentGame={getAndSetTournamentGame}
-          getAndSetLichessGames={getAndSetLichessGames}
-          getAndSetUserGames={getAndSetUserGame}
+          getAndSetLichessGame={getAndSetLichessGame}
+          getAndSetUserGame={getAndSetUserGame}
         />
       ) : (
         <Loading />
@@ -206,13 +215,13 @@ interface Props {
     newId: string[],
     setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
-  getAndSetLichessGames: (
+  getAndSetLichessGame: (
     id: string,
     pgn: string,
     currentMaiaModel: string,
     setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
-  getAndSetUserGames: (
+  getAndSetUserGame: (
     id: string,
     type: 'play' | 'hand' | 'brain',
     currentMaiaModel: string,
@@ -230,8 +239,8 @@ const Analysis: React.FC<Props> = ({
   initialIndex,
   initialOrientation,
   getAndSetTournamentGame,
-  getAndSetLichessGames,
-  getAndSetUserGames,
+  getAndSetLichessGame,
+  getAndSetUserGame,
   setAnalyzedGame,
 }: Props) => {
   const router = useRouter()
@@ -452,7 +461,7 @@ const Analysis: React.FC<Props> = ({
       <div className="flex w-full items-center justify-center">
         <Link
           href={window.location.href.replace('/analysis/legacy', '/analysis')}
-          className="flex cursor-pointer select-none items-center justify-center gap-2 rounded-full bg-white/90 px-4 py-1.5 transition duration-200 hover:bg-white/100"
+          className="mb-4 flex cursor-pointer select-none items-center justify-center gap-2 rounded-full bg-white/90 px-4 py-1.5 transition duration-200 hover:bg-white/100"
           onClick={() => {
             localStorage.setItem('preferLegacyAnalysis', 'false')
           }}
@@ -496,8 +505,8 @@ const Analysis: React.FC<Props> = ({
               currentId={currentId}
               currentMaiaModel={currentMaiaModel}
               loadNewTournamentGame={getAndSetTournamentGame}
-              loadNewLichessGames={getAndSetLichessGames}
-              loadNewUserGames={getAndSetUserGames}
+              loadNewLichessGame={getAndSetLichessGame}
+              loadNewUserGame={getAndSetUserGame}
             />
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
@@ -733,8 +742,8 @@ const Analysis: React.FC<Props> = ({
               currentId={currentId}
               currentMaiaModel={currentMaiaModel}
               loadNewTournamentGame={getAndSetTournamentGame}
-              loadNewLichessGames={getAndSetLichessGames}
-              loadNewUserGames={getAndSetUserGames}
+              loadNewLichessGame={getAndSetLichessGame}
+              loadNewUserGame={getAndSetUserGame}
             />
           </div>
         </div>

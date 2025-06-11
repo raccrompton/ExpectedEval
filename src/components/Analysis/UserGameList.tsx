@@ -13,13 +13,13 @@ interface Props {
   setSelected: (name: 'tournament' | 'play' | 'hand' | 'brain' | 'pgn') => void
   setCurrentIndex: Dispatch<SetStateAction<number>>
   setLoadingIndex: (index: number | null) => void
-  loadNewLichessGames: (
+  loadNewLichessGame: (
     id: string,
     pgn: string,
     currentMaiaModel: string,
     setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => void
-  loadNewUserGames: (
+  loadNewUserGame: (
     id: string,
     type: 'play' | 'hand' | 'brain',
     currentMaiaModel: string,
@@ -38,8 +38,8 @@ export const UserGameList = ({
   lichessGames,
   setLoadingIndex,
   setCurrentIndex,
-  loadNewLichessGames,
-  loadNewUserGames,
+  loadNewLichessGame,
+  loadNewUserGame,
   currentMaiaModel,
 }: Props) => {
   return (
@@ -86,14 +86,14 @@ export const UserGameList = ({
               onClick={async () => {
                 setLoadingIndex(index)
                 if (game.type === 'pgn') {
-                  await loadNewLichessGames(
+                  await loadNewLichessGame(
                     game.id,
                     game.pgn as string,
                     currentMaiaModel,
                     setCurrentIndex,
                   )
                 } else {
-                  await loadNewUserGames(
+                  await loadNewUserGame(
                     game.id,
                     game.type as 'play' | 'hand' | 'brain',
                     currentMaiaModel,
