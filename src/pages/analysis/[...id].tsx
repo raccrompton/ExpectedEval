@@ -34,7 +34,6 @@ import {
   AnalysisGameList,
   AnalysisGameBoard,
   DownloadModelModal,
-  ContinueAgainstMaia,
   AuthenticatedWrapper,
   AnalysisMovesContainer,
   AnalysisBoardController,
@@ -45,11 +44,9 @@ import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
 import { Chess, PieceSymbol } from 'chess.ts'
-import { useAnalysisController, useLocalStorage } from 'src/hooks'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
-import { ConfigureAnalysis } from 'src/components/Analysis/ConfigureAnalysis'
-import { AnalysisExportGame } from 'src/components/Misc/AnalysisExportGame'
+import { useAnalysisController, useLocalStorage } from 'src/hooks'
 import { ConfigurableScreens } from 'src/components/Analysis/ConfigurableScreens'
 
 const MAIA_MODELS = [
@@ -120,7 +117,7 @@ const AnalysisPage: NextPage = () => {
     [router],
   )
 
-  const getAndSetLichessGames = useCallback(
+  const getAndSetLichessGame = useCallback(
     async (
       id: string,
       pgn: string,
@@ -187,7 +184,7 @@ const AnalysisPage: NextPage = () => {
         const queryId = id as string[]
         if (queryId[1] === 'pgn') {
           const pgn = await getLichessGamePGN(queryId[0])
-          getAndSetLichessGames(queryId[0], pgn, undefined)
+          getAndSetLichessGame(queryId[0], pgn, undefined)
         } else if (['play', 'hand', 'brain'].includes(queryId[1])) {
           getAndSetUserGame(queryId[0], queryId[1] as 'play' | 'hand' | 'brain')
         } else {
@@ -199,7 +196,7 @@ const AnalysisPage: NextPage = () => {
     id,
     analyzedGame,
     getAndSetTournamentGame,
-    getAndSetLichessGames,
+    getAndSetLichessGame,
     getAndSetUserGame,
   ])
 
@@ -210,8 +207,8 @@ const AnalysisPage: NextPage = () => {
           currentId={currentId}
           analyzedGame={analyzedGame}
           getAndSetTournamentGame={getAndSetTournamentGame}
-          getAndSetLichessGames={getAndSetLichessGames}
-          getAndSetUserGames={getAndSetUserGame}
+          getAndSetLichessGame={getAndSetLichessGame}
+          getAndSetUserGame={getAndSetUserGame}
         />
       ) : (
         <Loading />
@@ -228,12 +225,12 @@ interface Props {
     newId: string[],
     setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
-  getAndSetLichessGames: (
+  getAndSetLichessGame: (
     id: string,
     pgn: string,
     setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
-  getAndSetUserGames: (
+  getAndSetUserGame: (
     id: string,
     type: 'play' | 'hand' | 'brain',
     setCurrentMove?: Dispatch<SetStateAction<number>>,
@@ -244,8 +241,8 @@ const Analysis: React.FC<Props> = ({
   currentId,
   analyzedGame,
   getAndSetTournamentGame,
-  getAndSetLichessGames,
-  getAndSetUserGames,
+  getAndSetLichessGame,
+  getAndSetUserGame,
 }: Props) => {
   const screens = [
     {
@@ -516,10 +513,10 @@ const Analysis: React.FC<Props> = ({
                 getAndSetTournamentGame(newId, setCurrentMove)
               }
               loadNewLichessGames={(id, pgn, setCurrentMove) =>
-                getAndSetLichessGames(id, pgn, setCurrentMove)
+                getAndSetLichessGame(id, pgn, setCurrentMove)
               }
               loadNewUserGames={(id, type, setCurrentMove) =>
-                getAndSetUserGames(id, type, setCurrentMove)
+                getAndSetUserGame(id, type, setCurrentMove)
               }
             />
           </div>
@@ -664,12 +661,12 @@ const Analysis: React.FC<Props> = ({
                 }
                 loadNewLichessGames={(id, pgn, setCurrentMove) =>
                   loadGameAndCloseList(
-                    getAndSetLichessGames(id, pgn, setCurrentMove),
+                    getAndSetLichessGame(id, pgn, setCurrentMove),
                   )
                 }
                 loadNewUserGames={(id, type, setCurrentMove) =>
                   loadGameAndCloseList(
-                    getAndSetUserGames(id, type, setCurrentMove),
+                    getAndSetUserGame(id, type, setCurrentMove),
                   )
                 }
               />
