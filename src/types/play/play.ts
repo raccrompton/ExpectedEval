@@ -1,5 +1,5 @@
 import { Termination } from '../analysis'
-import { BaseGame, Color } from '../base'
+import { BaseGame, Color, GameTree } from '../base'
 
 export const TimeControlOptions = ['3+0', '5+2', '10+0', '15+10', 'unlimited']
 export const TimeControlOptionNames = [
@@ -31,6 +31,7 @@ export interface PlayGameConfig {
 export interface PlayedGame extends BaseGame {
   termination?: Termination
   turn: Color
+  tree?: GameTree
 }
 
 export interface AvailableMove {

@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { Color, Move, Termination } from 'src/types'
+import { Color, Move, Termination, GameTree } from 'src/types'
 import { Chess, Piece, SQUARES } from 'chess.ts'
 import { PlayedGame, PlayGameConfig } from 'src/types/play'
 import { AllStats } from '../useStats'
@@ -38,6 +38,8 @@ const movesUciToGame = (
   clock: number,
 ): PlayedGame => {
   const chess = new Chess(startFen || nullFen)
+  const tree = new GameTree(startFen || nullFen)
+  let currentNode = tree.getRoot()
 
   const newMoves: Move[] = [
     {
@@ -54,6 +56,13 @@ const movesUciToGame = (
     if (result == null) {
       throw new Error('invalid moves (' + movesUci + ')')
     }
+
+    currentNode = tree.addMainMove(
+      currentNode,
+      chess.fen(),
+      moveUci,
+      result.san,
+    )
 
     const checkTurn = chess.turn() == 'w' ? 'white' : 'black'
 
@@ -77,6 +86,7 @@ const movesUciToGame = (
   const newGame: PlayedGame = {
     id: id,
     moves: newMoves,
+    tree: tree,
     termination: termination,
     turn: chess.turn() == 'b' ? 'black' : 'white',
   }

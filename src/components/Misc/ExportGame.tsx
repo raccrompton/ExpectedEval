@@ -2,11 +2,12 @@
 import { Chess } from 'chess.ts'
 import { useContext, useEffect, useState } from 'react'
 
-import { PlayedGame } from 'src/types'
-import { GameControllerContext } from 'src/contexts'
+import { PlayedGame, GameTree, GameNode } from 'src/types'
+import { AnalysisGameControllerContext } from 'src/contexts'
 
 interface Props {
   game: PlayedGame
+  gameTree?: GameTree
   whitePlayer: string
   blackPlayer: string
   event: string
@@ -14,6 +15,7 @@ interface Props {
 
 export const ExportGame: React.FC<Props> = ({
   game,
+  gameTree,
   whitePlayer,
   blackPlayer,
   event,
@@ -21,42 +23,97 @@ export const ExportGame: React.FC<Props> = ({
   const [fen, setFen] = useState('')
   const [pgn, setPgn] = useState('')
   const [fullPgn, setFullPgn] = useState(true)
-  const { currentIndex } = useContext(GameControllerContext)
+  const { currentNode } = useContext(AnalysisGameControllerContext)
 
   useEffect(() => {
-    const chess = new Chess()
-    game.moves.forEach((move) => {
-      if (move.san) {
-        chess.move(move.san)
-      }
-    })
-    setPgn(chess.pgn())
-  }, [game.moves])
-
-  useEffect(() => {
-    const initial = new Chess(game.moves[0].board)
-    initial.addHeader('ID', game.id)
-    initial.addHeader('Event', event)
-    initial.addHeader('Site', `https://maiachess.com/`)
-    initial.addHeader('White', whitePlayer)
-    initial.addHeader('Black', blackPlayer)
-    if (game.termination) {
-      initial.addHeader('Result', game.termination.result)
-      if (game.termination.condition) {
-        initial.addHeader('Termination', game.termination.condition)
-      }
+    if (gameTree) {
+      setPgn(gameTree.toPGN())
+    } else {
+      const chess = new Chess()
+      game.moves.forEach((move) => {
+        if (move.san) {
+          chess.move(move.san)
+        }
+      })
+      setPgn(chess.pgn())
     }
-    game.moves.forEach((move, index) => {
-      if (!move.san || (!fullPgn && index > currentIndex)) {
-        return
+  }, [game.moves, gameTree])
+
+  useEffect(() => {
+    if (gameTree && currentNode) {
+      // Use tree structure
+      const tree = new GameTree(gameTree.getRoot().fen)
+      tree.setHeader('ID', game.id)
+      tree.setHeader('Event', event)
+      tree.setHeader('Site', 'https://maiachess.com/')
+      tree.setHeader('White', whitePlayer)
+      tree.setHeader('Black', blackPlayer)
+      if (game.termination) {
+        tree.setHeader('Result', game.termination.result)
+        if (game.termination.condition) {
+          tree.setHeader('Termination', game.termination.condition)
+        }
       }
 
-      initial.move(move.san)
-    })
+      if (fullPgn) {
+        // Export full game
+        setPgn(tree.toPGN())
+      } else {
+        // Export up to current node
+        const pathToNode = currentNode.getPath()
+        let node = tree.getRoot()
+        for (let i = 1; i < pathToNode.length; i++) {
+          const targetNode = pathToNode[i]
+          if (targetNode.move && targetNode.san) {
+            node = tree.addMainMove(
+              node,
+              targetNode.fen,
+              targetNode.move,
+              targetNode.san,
+            )
+          }
+        }
+        setPgn(tree.toPGN())
+      }
 
-    setFen(game.moves[currentIndex].board)
-    setPgn(initial.pgn())
-  }, [currentIndex, game.moves, fullPgn])
+      setFen(currentNode.fen)
+    } else {
+      // Fallback to legacy array-based approach
+      const initial = new Chess(game.moves[0].board)
+      initial.addHeader('ID', game.id)
+      initial.addHeader('Event', event)
+      initial.addHeader('Site', `https://maiachess.com/`)
+      initial.addHeader('White', whitePlayer)
+      initial.addHeader('Black', blackPlayer)
+      if (game.termination) {
+        initial.addHeader('Result', game.termination.result)
+        if (game.termination.condition) {
+          initial.addHeader('Termination', game.termination.condition)
+        }
+      }
+
+      const currentIndex = game.moves.length - 1 // fallback
+      game.moves.forEach((move, index) => {
+        if (!move.san || (!fullPgn && index > currentIndex)) {
+          return
+        }
+        initial.move(move.san)
+      })
+
+      setFen(game.moves[currentIndex].board)
+      setPgn(initial.pgn())
+    }
+  }, [
+    currentNode,
+    game.moves,
+    game.id,
+    game.termination,
+    whitePlayer,
+    blackPlayer,
+    event,
+    fullPgn,
+    gameTree,
+  ])
 
   const copy = (content: string) => {
     navigator.clipboard.writeText(content)

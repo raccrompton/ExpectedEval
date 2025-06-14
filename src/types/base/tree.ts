@@ -96,6 +96,16 @@ export class GameTree {
     }
     return node.addChild(fen, move, san, false, activeModel)
   }
+
+  toMoveArray(): string[] {
+    const moves: string[] = []
+    let node = this.root
+    while (node.mainChild) {
+      node = node.mainChild
+      if (node.move) moves.push(node.move)
+    }
+    return moves
+  }
 }
 
 export class GameNode {

@@ -1,9 +1,15 @@
 import { useWindowSize } from 'src/hooks'
 import { FlipIcon } from 'src/components/Icons/icons'
-import { AnalysisGameControllerContext } from 'src/contexts/'
+import { PlayTreeControllerContext } from 'src/contexts/PlayTreeControllerContext/PlayTreeControllerContext'
 import { useCallback, useContext, useEffect, useMemo } from 'react'
 
-export const AnalysisBoardController: React.FC = () => {
+interface Props {
+  setCurrentMove?: (move: [string, string] | null) => void
+}
+
+export const PlayBoardController: React.FC<Props> = ({
+  setCurrentMove,
+}: Props) => {
   const { width } = useWindowSize()
   const {
     orientation,
@@ -14,27 +20,29 @@ export const AnalysisBoardController: React.FC = () => {
     goToPreviousNode,
     goToRootNode,
     plyCount,
-  } = useContext(AnalysisGameControllerContext)
+  } = useContext(PlayTreeControllerContext)
 
   const toggleBoardOrientation = useCallback(() => {
     setOrientation(orientation === 'white' ? 'black' : 'white')
   }, [orientation, setOrientation])
 
   const hasPrevious = useMemo(() => !!currentNode?.parent, [currentNode])
-
   const hasNext = useMemo(() => !!currentNode?.mainChild, [currentNode])
 
   const getFirst = useCallback(() => {
     goToRootNode()
-  }, [goToRootNode])
+    setCurrentMove?.(null)
+  }, [goToRootNode, setCurrentMove])
 
   const getPrevious = useCallback(() => {
     goToPreviousNode()
-  }, [goToPreviousNode])
+    setCurrentMove?.(null)
+  }, [goToPreviousNode, setCurrentMove])
 
   const getNext = useCallback(() => {
     goToNextNode()
-  }, [goToNextNode])
+    setCurrentMove?.(null)
+  }, [goToNextNode, setCurrentMove])
 
   const getLast = useCallback(() => {
     let lastNode = currentNode
@@ -43,11 +51,13 @@ export const AnalysisBoardController: React.FC = () => {
     }
     if (lastNode) {
       goToNode(lastNode)
+      setCurrentMove?.(null)
     }
-  }, [goToNode, currentNode])
+  }, [currentNode, goToNode, setCurrentMove])
 
   useEffect(() => {
     if (width <= 670) return
+
     const onKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
         case 'Left':
@@ -76,16 +86,17 @@ export const AnalysisBoardController: React.FC = () => {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [
+    width,
+    hasPrevious,
+    hasNext,
+    getPrevious,
+    getNext,
     getFirst,
     getLast,
-    getNext,
-    getPrevious,
-    hasNext,
-    hasPrevious,
     toggleBoardOrientation,
-    width,
   ])
 
+  // Render
   return (
     <div className="flex w-full flex-row items-center gap-[1px] md:rounded">
       <button
