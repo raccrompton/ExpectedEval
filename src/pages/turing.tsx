@@ -6,8 +6,7 @@ import {
   ThemeContext,
   ModalContext,
   WindowSizeContext,
-  GameControllerContext,
-  TuringControllerContext,
+  TuringTreeControllerContext,
 } from 'src/contexts'
 import {
   Loading,
@@ -15,14 +14,14 @@ import {
   GameBoard,
   TuringGames,
   StatsDisplay,
-  MovesContainer,
-  BoardController,
+  TuringMovesContainer,
+  TuringBoardController,
   TuringSubmission,
   ContinueAgainstMaia,
 } from 'src/components'
 import { AllStats } from 'src/hooks/useStats'
 import { TuringGame } from 'src/types/turing'
-import { useGameController, useTuringController } from 'src/hooks'
+import { useTuringTreeController } from 'src/hooks'
 
 const TuringPage: NextPage = () => {
   const { openedModals, setInstructionsModalProps: setInstructionsModalProps } =
@@ -35,16 +34,16 @@ const TuringPage: NextPage = () => {
     return () => setInstructionsModalProps(undefined)
   }, [setInstructionsModalProps, openedModals.turing])
 
-  const controller = useTuringController()
+  const controller = useTuringTreeController()
 
   return (
-    <TuringControllerContext.Provider value={controller}>
+    <TuringTreeControllerContext.Provider value={controller}>
       {controller.game ? (
         <Turing game={controller.game} stats={controller.stats} />
       ) : (
         <Loading />
       )}
-    </TuringControllerContext.Provider>
+    </TuringTreeControllerContext.Provider>
   )
 }
 
@@ -58,10 +57,11 @@ const Turing: React.FC<Props> = (props: Props) => {
   const { theme } = useContext(ThemeContext)
   const { isMobile } = useContext(WindowSizeContext)
 
-  const controller = useGameController(game)
+  const controller = useContext(TuringTreeControllerContext)
 
   const launchContinue = useCallback(() => {
-    const fen = game.moves[controller.currentIndex].board
+    const fen =
+      controller.currentNode?.fen || game.moves[controller.currentIndex].board
 
     const url = '/play' + '?fen=' + encodeURIComponent(fen)
 
@@ -126,7 +126,7 @@ const Turing: React.FC<Props> = (props: Props) => {
             <StatsDisplay stats={stats} />
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
-            <GameBoard game={game} />
+            <GameBoard game={game} currentNode={controller.currentNode} />
           </div>
           <div
             style={{
@@ -135,13 +135,16 @@ const Turing: React.FC<Props> = (props: Props) => {
             className="flex h-[75vh] w-[40vh] flex-col gap-1"
           >
             <div className="relative bottom-0 h-full min-h-[38px] flex-1">
-              <MovesContainer game={game} termination={game.termination} />
+              <TuringMovesContainer
+                game={game}
+                termination={game.termination}
+              />
             </div>
             <div>
               <TuringSubmission rating={stats.rating ?? 0} />
             </div>
             <div className="flex-none">
-              <BoardController />
+              <TuringBoardController />
             </div>
           </div>
         </div>
@@ -161,14 +164,17 @@ const Turing: React.FC<Props> = (props: Props) => {
             </div>
           </div>
           <div className="relative flex aspect-square h-[100vw] w-screen">
-            <GameBoard game={game} />
+            <GameBoard game={game} currentNode={controller.currentNode} />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="relative bottom-0 h-full flex-1 overflow-auto">
-              <MovesContainer game={game} termination={game.termination} />
+              <TuringMovesContainer
+                game={game}
+                termination={game.termination}
+              />
             </div>
             <div className="flex-none">
-              <BoardController />
+              <TuringBoardController />
             </div>
             <div className="w-screen">
               <TuringSubmission rating={stats.rating ?? 0} />
@@ -192,9 +198,9 @@ const Turing: React.FC<Props> = (props: Props) => {
         <title>Maia Chess - Bot or Not</title>
         <meta name="description" content="Turing survey" />
       </Head>
-      <GameControllerContext.Provider value={{ ...controller }}>
+      <TuringTreeControllerContext.Provider value={controller}>
         {isMobile ? mobileLayout : desktopLayout}
-      </GameControllerContext.Provider>
+      </TuringTreeControllerContext.Provider>
     </>
   )
 }
