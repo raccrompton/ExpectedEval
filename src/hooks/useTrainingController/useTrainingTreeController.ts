@@ -41,8 +41,19 @@ export const useTrainingTreeController = (game: TrainingGame) => {
   // Build the game tree from the training game moves
   const gameTree = useMemo(() => buildTrainingGameTree(game), [game])
 
+  // Initialize currentNode immediately with the target position
+  const initialNode = useMemo(() => {
+    const mainLine = gameTree.getMainLine()
+    if (mainLine.length > game.targetIndex) {
+      const targetNode = mainLine[game.targetIndex]
+      return targetNode
+    } else {
+      return gameTree.getRoot()
+    }
+  }, [gameTree, game.targetIndex])
+
   // Navigation state
-  const [currentNode, setCurrentNode] = useState<GameNode | undefined>()
+  const [currentNode, setCurrentNode] = useState<GameNode>(initialNode)
   const [orientation, setOrientation] = useState<'white' | 'black'>(
     game.targetIndex % 2 === 0 ? 'white' : 'black',
   )
@@ -51,11 +62,11 @@ export const useTrainingTreeController = (game: TrainingGame) => {
   const [currentSquare, setCurrentSquare] = useState<null | string>(null)
   const [currentMove, setCurrentMove] = useState<null | [string, string]>(null)
 
-  // Initialize to target position
+  // Update currentNode when game changes
   useEffect(() => {
-    const mainLine = gameTree.getMainLine()
-    if (mainLine.length > game.targetIndex) {
-      setCurrentNode(mainLine[game.targetIndex])
+    if (gameTree.getMainLine().length > game.targetIndex) {
+      const newNode = gameTree.getMainLine()[game.targetIndex]
+      setCurrentNode(newNode)
     } else {
       setCurrentNode(gameTree.getRoot())
     }
@@ -78,7 +89,6 @@ export const useTrainingTreeController = (game: TrainingGame) => {
 
   // Get current index in the main line
   const currentIndex = useMemo(() => {
-    if (!currentNode) return 0
     const mainLine = gameTree.getMainLine()
     return mainLine.findIndex((node) => node === currentNode)
   }, [currentNode, gameTree])
@@ -140,13 +150,25 @@ export const useTrainingTreeController = (game: TrainingGame) => {
   // Available moves for the current position
   const moves = useMemo(() => {
     const moveMap = new Map<string, string[]>()
-    const keys = Object.keys(game.availableMoves)
-    keys.forEach((key) => {
-      const [from, to] = [key.slice(0, 2), key.slice(2)]
-      moveMap.set(from, (moveMap.get(from) ?? []).concat([to]))
-    })
+
+    // Get the current position FEN
+    const currentFen = currentNode.fen
+
+    if (currentFen && currentIndex === game.targetIndex) {
+      // Use Chess.js to get all legal moves for the current position
+      const chess = new Chess(currentFen)
+      const legalMoves = chess.moves({ verbose: true })
+
+      // Convert to the format expected by Chessground
+      legalMoves.forEach((move) => {
+        const from = move.from
+        const to = move.to
+        moveMap.set(from, (moveMap.get(from) ?? []).concat([to]))
+      })
+    }
+
     return moveMap
-  }, [game.availableMoves])
+  }, [currentNode, currentIndex, game.targetIndex])
 
   // Move evaluation for the current selected move
   const moveEvaluation = useMemo(() => {
@@ -171,6 +193,7 @@ export const useTrainingTreeController = (game: TrainingGame) => {
       } = game.availableMoves[currentMove.join('')]
       return { move: currentMove, fen, check, ...rest }
     }
+    return undefined
   }, [currentMove, game.availableMoves])
 
   const parseMove = useCallback(
@@ -188,19 +211,33 @@ export const useTrainingTreeController = (game: TrainingGame) => {
   )
 
   // Legacy controller interface for backward compatibility
+  const legacySetCurrentIndex = useCallback(
+    (indexOrUpdater: number | ((prev: number) => number)) => {
+      const mainLine = gameTree.getMainLine()
+      const newIndex =
+        typeof indexOrUpdater === 'function'
+          ? indexOrUpdater(currentIndex)
+          : indexOrUpdater
+      if (newIndex >= 0 && newIndex < mainLine.length) {
+        setCurrentNode(mainLine[newIndex])
+      }
+    },
+    [gameTree, currentIndex],
+  )
+
   const controller = {
     plyCount,
     currentIndex,
-    setCurrentIndex: setCurrentIndex as Dispatch<SetStateAction<number>>,
+    setCurrentIndex: legacySetCurrentIndex,
     orientation,
     setOrientation,
   }
 
   // Return both new tree interface and legacy compatibility
-  return {
+  const result = {
     // Legacy interface for existing components
     move,
-    moves: currentIndex === game.targetIndex ? moves : undefined,
+    moves: moves,
     controller,
     plyCount,
     currentMove,
@@ -223,4 +260,6 @@ export const useTrainingTreeController = (game: TrainingGame) => {
     orientation,
     setOrientation,
   }
+
+  return result
 }

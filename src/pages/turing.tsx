@@ -11,13 +11,14 @@ import {
 import {
   Loading,
   GameInfo,
-  GameBoard,
+  TreeGameBoard,
   TuringGames,
   StatsDisplay,
   TuringMovesContainer,
-  TuringBoardController,
+  TreeBoardController,
   TuringSubmission,
   ContinueAgainstMaia,
+  TuringBoardController,
 } from 'src/components'
 import { AllStats } from 'src/hooks/useStats'
 import { TuringGame } from 'src/types/turing'
@@ -126,7 +127,7 @@ const Turing: React.FC<Props> = (props: Props) => {
             <StatsDisplay stats={stats} />
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
-            <GameBoard game={game} currentNode={controller.currentNode} />
+            <TreeGameBoard game={game} currentNode={controller.currentNode} />
           </div>
           <div
             style={{
@@ -144,7 +145,7 @@ const Turing: React.FC<Props> = (props: Props) => {
               <TuringSubmission rating={stats.rating ?? 0} />
             </div>
             <div className="flex-none">
-              <TuringBoardController />
+              <TreeBoardController />
             </div>
           </div>
         </div>
@@ -164,7 +165,7 @@ const Turing: React.FC<Props> = (props: Props) => {
             </div>
           </div>
           <div className="relative flex aspect-square h-[100vw] w-screen">
-            <GameBoard game={game} currentNode={controller.currentNode} />
+            <TreeGameBoard game={game} currentNode={controller.currentNode} />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="relative bottom-0 h-full flex-1 overflow-auto">
@@ -174,7 +175,7 @@ const Turing: React.FC<Props> = (props: Props) => {
               />
             </div>
             <div className="flex-none">
-              <TuringBoardController />
+              <TreeBoardController />
             </div>
             <div className="w-screen">
               <TuringSubmission rating={stats.rating ?? 0} />

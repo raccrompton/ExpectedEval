@@ -21,6 +21,7 @@ import {
   AnalysisMovesContainer,
   PlayBoardController,
   PromotionOverlay,
+  TreeGameBoard,
 } from 'src/components'
 import { useUnload } from 'src/hooks/useUnload'
 import { PlayTreeControllerContext } from 'src/contexts/PlayTreeControllerContext/PlayTreeControllerContext'
@@ -199,7 +200,7 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
             </div>
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
-            <GameBoard
+            <TreeGameBoard
               game={game}
               moves={moveMap}
               setCurrentMove={setCurrentMove}
@@ -259,7 +260,7 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
             ) : null}
           </div>
           <div className="relative flex aspect-square h-[100vw] w-screen">
-            <GameBoard
+            <TreeGameBoard
               game={game}
               moves={moveMap}
               setCurrentMove={setCurrentMove}
