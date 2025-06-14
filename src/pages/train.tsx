@@ -36,11 +36,11 @@ import {
   HorizontalEvaluationBar,
   PositionEvaluationContainer,
 } from 'src/components'
-import { useTrainingController } from 'src/hooks'
+import { useTrainingTreeController } from 'src/hooks/useTrainingController'
 import { AllStats, useStats } from 'src/hooks/useStats'
 import { TrainingGame, Status } from 'src/types/training'
 import { ModalContext, WindowSizeContext } from 'src/contexts'
-import { GameControllerContext } from 'src/contexts/GameControllerContext/GameControllerContext'
+import { TrainingTreeControllerContext } from 'src/contexts/TrainingTreeControllerContext'
 
 const statsLoader = async () => {
   const stats = await getTrainingPlayerStats()
@@ -233,7 +233,7 @@ const Train: React.FC<Props> = ({
   const [latestGuess, setLatestGuess] = useState<string | null>(null)
   const [movePlotHover, setMovePlotHover] = useState<DrawShape | null>(null)
 
-  const trainingController = useTrainingController(trainingGame)
+  const trainingController = useTrainingTreeController(trainingGame)
 
   const {
     moves,
@@ -515,14 +515,9 @@ const Train: React.FC<Props> = ({
           content="Collection of chess training and analysis tools centered around Maia."
         />
       </Head>
-      <GameControllerContext.Provider
-        value={{
-          ...controller,
-          orientation: turn,
-        }}
-      >
+      <TrainingTreeControllerContext.Provider value={trainingController}>
         {trainingGame && (isMobile ? mobileLayout : desktopLayout)}
-      </GameControllerContext.Provider>
+      </TrainingTreeControllerContext.Provider>
     </>
   )
 }
