@@ -11,11 +11,12 @@ import {
 } from 'src/api'
 import { ModalContext } from 'src/contexts'
 import { useStats } from 'src/hooks/useStats'
+import { Loading, PlayControls } from 'src/components'
 import { useChessSound } from 'src/hooks/useChessSound'
 import { Color, TimeControl, PlayGameConfig } from 'src/types'
-import { usePlayController } from 'src/hooks/usePlayController'
-import { Loading, PlayControls, GameplayInterface } from 'src/components'
-import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
+import { usePlayTreeController } from 'src/hooks/usePlayTreeController'
+import { GameplayTreeInterface } from 'src/components/Board/GameplayTreeInterface'
+import { PlayTreeControllerContext } from 'src/contexts/PlayTreeControllerContext/PlayTreeControllerContext'
 
 const playStatsLoader = async () => {
   const stats = await getPlayPlayerStats()
@@ -26,21 +27,17 @@ const playStatsLoader = async () => {
   }
 }
 
-const useVsMaiaPlayController = (
+const useVsMaiaPlayTreeController = (
   id: string,
   playGameConfig: PlayGameConfig,
 ) => {
   const { playSound } = useChessSound()
-  const controller = usePlayController(id, playGameConfig)
-
+  const controller = usePlayTreeController(id, playGameConfig)
   const [stats, incrementStats, updateRating] = useStats(playStatsLoader)
 
   const makeMove = async (moveUci: string) => {
-    const newMoves = [...controller.moves, moveUci]
-
     const moveTime = controller.updateClock()
-    controller.setMoves(newMoves)
-    controller.setMoveTimes([...controller.moveTimes, moveTime])
+    controller.addMoveWithTime(moveUci, moveTime)
   }
 
   useEffect(() => {
@@ -63,7 +60,7 @@ const useVsMaiaPlayController = (
         const maiaMoves = await backOff(
           () =>
             getGameMove(
-              controller.moves,
+              controller.moveList,
               playGameConfig.maiaVersion,
               playGameConfig.startFen,
               null,
@@ -84,14 +81,12 @@ const useVsMaiaPlayController = (
         if (playGameConfig.simulateMaiaTime) {
           setTimeout(() => {
             const moveTime = controller.updateClock()
-            controller.setMoves([...controller.moves, nextMove])
-            controller.setMoveTimes([...controller.moveTimes, moveTime])
+            controller.addMoveWithTime(nextMove, moveTime)
             playSound(false)
           }, moveDelay * 1000)
         } else {
           const moveTime = controller.updateClock()
-          controller.setMoves([...controller.moves, nextMove])
-          controller.setMoveTimes([...controller.moveTimes, moveTime])
+          controller.addMoveWithTime(nextMove, moveTime)
           playSound(false)
         }
       }
@@ -104,11 +99,10 @@ const useVsMaiaPlayController = (
     }
   }, [controller, playGameConfig])
 
-  // Logging
   useEffect(() => {
     const gameOverState = controller.game.termination?.type || 'not_over'
 
-    if (controller.moves.length == 0 && gameOverState == 'not_over') {
+    if (controller.moveList.length == 0 && gameOverState == 'not_over') {
       return
     }
 
@@ -119,7 +113,7 @@ const useVsMaiaPlayController = (
         () =>
           submitGameMove(
             controller.game.id,
-            controller.moves,
+            controller.moveList,
             controller.moveTimes,
             gameOverState,
             'play',
@@ -141,7 +135,7 @@ const useVsMaiaPlayController = (
     submitFn()
   }, [
     controller.game.id,
-    controller.moves,
+    controller.moveList,
     controller.game.termination,
     controller.moveTimes,
     playGameConfig.startFen,
@@ -156,6 +150,7 @@ const useVsMaiaPlayController = (
     stats,
   }
 }
+
 interface Props {
   id: string
   playGameConfig: PlayGameConfig
@@ -167,7 +162,7 @@ const PlayMaia: React.FC<Props> = ({
   playGameConfig,
   playAgain,
 }: Props) => {
-  const controller = useVsMaiaPlayController(id, playGameConfig)
+  const controller = useVsMaiaPlayTreeController(id, playGameConfig)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -179,7 +174,6 @@ const PlayMaia: React.FC<Props> = ({
           break
         case 'ArrowLeft':
           event.preventDefault()
-
           break
         default:
           break
@@ -191,8 +185,8 @@ const PlayMaia: React.FC<Props> = ({
   }, [controller.playerActive, controller.game.termination])
 
   return (
-    <PlayControllerContext.Provider value={controller}>
-      <GameplayInterface>
+    <PlayTreeControllerContext.Provider value={controller}>
+      <GameplayTreeInterface>
         <PlayControls
           game={controller.game}
           playerActive={controller.playerActive}
@@ -207,8 +201,8 @@ const PlayMaia: React.FC<Props> = ({
           }
           playAgain={playAgain}
         />
-      </GameplayInterface>
-    </PlayControllerContext.Provider>
+      </GameplayTreeInterface>
+    </PlayTreeControllerContext.Provider>
   )
 }
 
