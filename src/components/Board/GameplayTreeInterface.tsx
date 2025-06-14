@@ -19,7 +19,7 @@ import {
   ExportGame,
   StatsDisplay,
   AnalysisMovesContainer,
-  PlayBoardController,
+  TreeBoardController,
   PromotionOverlay,
   TreeGameBoard,
 } from 'src/components'
@@ -236,7 +236,17 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
             </div>
             <div>{props.children}</div>
             <div className="flex-none">
-              <PlayBoardController />
+              <TreeBoardController
+                orientation={orientation}
+                setOrientation={setOrientation}
+                currentNode={currentNode}
+                plyCount={plyCount}
+                goToNode={goToNode}
+                goToNextNode={goToNextNode}
+                goToPreviousNode={goToPreviousNode}
+                goToRootNode={goToRootNode}
+                gameTree={gameTree}
+              />
             </div>
             {timeControl != 'unlimited' ? (
               <GameClock player={orientation} reversed={true} />
@@ -281,7 +291,17 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
               <GameClock player={orientation} reversed={true} />
             ) : null}
             <div className="flex-none">
-              <PlayBoardController />
+              <TreeBoardController
+                orientation={orientation}
+                setOrientation={setOrientation}
+                currentNode={currentNode}
+                plyCount={plyCount}
+                goToNode={goToNode}
+                goToNextNode={goToNextNode}
+                goToPreviousNode={goToPreviousNode}
+                goToRootNode={goToRootNode}
+                gameTree={gameTree}
+              />
             </div>
             <div className="w-full overflow-x-auto">
               <div className="flex flex-row whitespace-nowrap py-2">

@@ -1,18 +1,9 @@
 import { useWindowSize } from 'src/hooks'
 import { FlipIcon } from 'src/components/Icons/icons'
-import { useCallback, useContext, useEffect, useMemo } from 'react'
-import {
-  AnalysisGameControllerContext,
-  TuringTreeControllerContext,
-} from 'src/contexts/'
-import { PlayTreeControllerContext } from 'src/contexts/PlayTreeControllerContext/PlayTreeControllerContext'
-import { TrainingTreeControllerContext } from 'src/contexts/TrainingTreeControllerContext/TrainingTreeControllerContext'
+import { useCallback, useEffect, useMemo } from 'react'
 
 interface Props {
-  setCurrentMove?: (move: [string, string] | null) => void
-}
-
-interface TreeController {
+  // Controller data
   orientation: 'white' | 'black'
   setOrientation: (orientation: 'white' | 'black') => void
   currentNode?: any
@@ -24,54 +15,26 @@ interface TreeController {
   goToRootNode: () => void
   setCurrentIndex?: (index: number) => void
   gameTree?: any
+
+  // Optional event handler
+  setCurrentMove?: (move: [string, string] | null) => void
 }
 
 export const TreeBoardController: React.FC<Props> = ({
+  orientation,
+  setOrientation,
+  currentNode,
+  currentIndex,
+  plyCount,
+  goToNode,
+  goToNextNode,
+  goToPreviousNode,
+  goToRootNode,
+  setCurrentIndex,
+  gameTree,
   setCurrentMove,
 }: Props) => {
   const { width } = useWindowSize()
-
-  // Try to get context from any available tree controller
-  const analysisCtx = useContext(AnalysisGameControllerContext)
-  const playCtx = useContext(PlayTreeControllerContext)
-  const turingCtx = useContext(TuringTreeControllerContext)
-  const trainingCtx = useContext(TrainingTreeControllerContext)
-
-  // Determine which context to use (first available one)
-  const controller: TreeController = useMemo(() => {
-    // Check if we have a valid training context (highest priority for training pages)
-    if (trainingCtx && trainingCtx.currentNode) {
-      return trainingCtx
-    }
-    // Check if we have a valid analysis context
-    if (analysisCtx && analysisCtx.currentNode !== undefined) {
-      return analysisCtx
-    }
-    // Check if we have a valid play context
-    if (playCtx && playCtx.currentNode !== undefined) {
-      return playCtx
-    }
-    // Check if we have a valid turing context
-    if (turingCtx && turingCtx.currentNode !== undefined) {
-      return turingCtx
-    }
-    // Fallback to analysis context (should not happen in practice)
-    return analysisCtx
-  }, [analysisCtx, playCtx, turingCtx, trainingCtx])
-
-  const {
-    orientation,
-    setOrientation,
-    currentNode,
-    currentIndex,
-    goToNode,
-    goToNextNode,
-    goToPreviousNode,
-    goToRootNode,
-    plyCount,
-    setCurrentIndex,
-    gameTree,
-  } = controller
 
   const toggleBoardOrientation = useCallback(() => {
     setOrientation(orientation === 'white' ? 'black' : 'white')
@@ -115,7 +78,7 @@ export const TreeBoardController: React.FC<Props> = ({
 
   const getLast = useCallback(() => {
     if (currentNode && goToNode) {
-      // Node-based navigation
+      // Node-based navigation (Analysis, Play, Training)
       let lastNode = currentNode
       while (lastNode?.mainChild) {
         lastNode = lastNode.mainChild
