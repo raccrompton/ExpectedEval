@@ -5,7 +5,7 @@ import { GameTree, GameNode } from 'src/types'
 export interface TrainingTreeControllerContextType {
   // Game tree navigation
   gameTree: GameTree
-  currentNode?: GameNode
+  currentNode: GameNode
   goToNode: (node: GameNode) => void
   goToNextNode: () => void
   goToPreviousNode: () => void
@@ -13,7 +13,7 @@ export interface TrainingTreeControllerContextType {
 
   // Position and orientation
   currentIndex: number
-  setCurrentIndex: (index: number) => void
+  setCurrentIndex: (indexOrUpdater: number | ((prev: number) => number)) => void
   plyCount: number
   orientation: 'white' | 'black'
   setOrientation: (orientation: 'white' | 'black') => void
@@ -32,7 +32,7 @@ export interface TrainingTreeControllerContextType {
 
 const defaultContext: TrainingTreeControllerContextType = {
   gameTree: new GameTree(new Chess().fen()),
-  currentNode: undefined,
+  currentNode: new GameTree(new Chess().fen()).getRoot(),
   goToNode: () => {
     /* no-op */
   },

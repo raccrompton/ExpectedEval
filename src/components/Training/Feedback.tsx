@@ -2,12 +2,12 @@ import { Chess } from 'chess.ts'
 import { useMemo, Dispatch, SetStateAction, useCallback } from 'react'
 
 import { Markdown } from 'src/components'
-import { useTrainingController } from 'src/hooks'
+import { useTrainingTreeController } from 'src/hooks'
 import { TrainingGame, Status } from 'src/types/training'
 
 interface Props {
   latestGuess: string | null
-  trainingController: ReturnType<typeof useTrainingController>
+  trainingController: ReturnType<typeof useTrainingTreeController>
   game: TrainingGame
   setAndGiveUp: () => void
   status: string

@@ -29,12 +29,13 @@ import {
   PuzzleLog,
   GameBoard,
   StatsDisplay,
-  BoardController,
+  TreeBoardController,
   ContinueAgainstMaia,
   AuthenticatedWrapper,
   VerticalEvaluationBar,
   HorizontalEvaluationBar,
   PositionEvaluationContainer,
+  TreeGameBoard,
 } from 'src/components'
 import { useTrainingTreeController } from 'src/hooks/useTrainingController'
 import { AllStats, useStats } from 'src/hooks/useStats'
@@ -257,12 +258,6 @@ const Train: React.FC<Props> = ({
     setMovePlotHover(null)
   }, [trainingGame.id])
 
-  useEffect(() => {
-    if (status === 'incorrect' && !currentMove) {
-      setStatus('default')
-    }
-  }, [currentMove, status])
-
   const setAndSaveCurrentMove = useCallback(
     (playedMove: null | [string, string]) => {
       setCurrentMove(playedMove)
@@ -336,10 +331,12 @@ const Train: React.FC<Props> = ({
             <StatsDisplay stats={stats} />
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
-            <GameBoard
-              move={move}
+            <TreeGameBoard
               game={trainingGame}
+              currentNode={trainingController.currentNode}
+              orientation={trainingController.orientation}
               moves={moves}
+              move={move}
               setCurrentMove={setAndSaveCurrentMove}
               setCurrentSquare={setCurrentSquare}
               shapes={movePlotHover ? [movePlotHover] : undefined}
@@ -405,7 +402,7 @@ const Train: React.FC<Props> = ({
               />
             </div>
             <div className="flex-none">
-              <BoardController setCurrentMove={setCurrentMove} />
+              <TreeBoardController setCurrentMove={setCurrentMove} />
             </div>
           </div>
         </div>
@@ -444,18 +441,20 @@ const Train: React.FC<Props> = ({
             </GameInfo>
           </div>
           <div className="relative flex aspect-square h-[100vw] w-screen">
-            <GameBoard
+            <TreeGameBoard
               game={trainingGame}
+              currentNode={trainingController.currentNode}
+              orientation={trainingController.orientation}
               moves={moves}
+              move={move}
               setCurrentMove={setAndSaveCurrentMove}
               setCurrentSquare={setCurrentSquare}
-              move={move}
               shapes={movePlotHover ? [movePlotHover] : undefined}
             />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="flex-none">
-              <BoardController setCurrentMove={setCurrentMove} />
+              <TreeBoardController setCurrentMove={setCurrentMove} />
             </div>
             <div className="flex flex-1 flex-col items-stretch">
               <Feedback
