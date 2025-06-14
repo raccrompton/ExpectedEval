@@ -1,9 +1,11 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import { useContext } from 'react'
-import { TuringControllerContext } from 'src/contexts'
+import { TuringTreeControllerContext } from 'src/contexts'
 
 export const TuringGames: React.FC = () => {
-  const { gameIds, setCurrentId, games } = useContext(TuringControllerContext)
+  const { gameIds, setCurrentId, games } = useContext(
+    TuringTreeControllerContext,
+  )
   return (
     <div className="flex flex-row flex-wrap items-start justify-start gap-1 overflow-y-auto">
       {gameIds.map((id) => {
