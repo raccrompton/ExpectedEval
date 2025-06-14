@@ -36,7 +36,7 @@ import {
   DownloadModelModal,
   AuthenticatedWrapper,
   AnalysisMovesContainer,
-  AnalysisBoardController,
+  TreeBoardController,
 } from 'src/components'
 import Head from 'next/head'
 import toast from 'react-hot-toast'
@@ -526,7 +526,16 @@ const Analysis: React.FC<Props> = ({
                 game={analyzedGame}
                 termination={analyzedGame.termination}
               />
-              <AnalysisBoardController />
+              <TreeBoardController
+                orientation={controller.orientation}
+                setOrientation={controller.setOrientation}
+                currentNode={controller.currentNode}
+                plyCount={controller.plyCount}
+                goToNode={controller.goToNode}
+                goToNextNode={controller.goToNextNode}
+                goToPreviousNode={controller.goToPreviousNode}
+                goToRootNode={controller.goToRootNode}
+              />
             </div>
           </div>
         </div>
@@ -699,7 +708,16 @@ const Analysis: React.FC<Props> = ({
             </div>
             <div className="flex w-full flex-col gap-0">
               <div className="w-full !flex-grow-0">
-                <AnalysisBoardController />
+                <TreeBoardController
+                  orientation={controller.orientation}
+                  setOrientation={controller.setOrientation}
+                  currentNode={controller.currentNode}
+                  plyCount={controller.plyCount}
+                  goToNode={controller.goToNode}
+                  goToNextNode={controller.goToNextNode}
+                  goToPreviousNode={controller.goToPreviousNode}
+                  goToRootNode={controller.goToRootNode}
+                />
               </div>
               <div className="relative bottom-0 h-48 max-h-48 flex-1 overflow-auto overflow-y-hidden">
                 <AnalysisMovesContainer

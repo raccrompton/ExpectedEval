@@ -18,7 +18,6 @@ import {
   TreeBoardController,
   TuringSubmission,
   ContinueAgainstMaia,
-  TuringBoardController,
 } from 'src/components'
 import { AllStats } from 'src/hooks/useStats'
 import { TuringGame } from 'src/types/turing'
@@ -145,7 +144,19 @@ const Turing: React.FC<Props> = (props: Props) => {
               <TuringSubmission rating={stats.rating ?? 0} />
             </div>
             <div className="flex-none">
-              <TreeBoardController />
+              <TreeBoardController
+                orientation={controller.orientation}
+                setOrientation={controller.setOrientation}
+                currentNode={controller.currentNode}
+                currentIndex={controller.currentIndex}
+                plyCount={controller.plyCount}
+                goToNode={controller.goToNode}
+                goToNextNode={controller.goToNextNode}
+                goToPreviousNode={controller.goToPreviousNode}
+                goToRootNode={controller.goToRootNode}
+                setCurrentIndex={controller.setCurrentIndex}
+                gameTree={controller.gameTree}
+              />
             </div>
           </div>
         </div>
@@ -175,7 +186,19 @@ const Turing: React.FC<Props> = (props: Props) => {
               />
             </div>
             <div className="flex-none">
-              <TreeBoardController />
+              <TreeBoardController
+                orientation={controller.orientation}
+                setOrientation={controller.setOrientation}
+                currentNode={controller.currentNode}
+                currentIndex={controller.currentIndex}
+                plyCount={controller.plyCount}
+                goToNode={controller.goToNode}
+                goToNextNode={controller.goToNextNode}
+                goToPreviousNode={controller.goToPreviousNode}
+                goToRootNode={controller.goToRootNode}
+                setCurrentIndex={controller.setCurrentIndex}
+                gameTree={controller.gameTree}
+              />
             </div>
             <div className="w-screen">
               <TuringSubmission rating={stats.rating ?? 0} />

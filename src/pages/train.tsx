@@ -402,7 +402,20 @@ const Train: React.FC<Props> = ({
               />
             </div>
             <div className="flex-none">
-              <TreeBoardController setCurrentMove={setCurrentMove} />
+              <TreeBoardController
+                orientation={trainingController.orientation}
+                setOrientation={trainingController.setOrientation}
+                currentNode={trainingController.currentNode}
+                currentIndex={trainingController.currentIndex}
+                plyCount={trainingController.plyCount}
+                goToNode={trainingController.goToNode}
+                goToNextNode={trainingController.goToNextNode}
+                goToPreviousNode={trainingController.goToPreviousNode}
+                goToRootNode={trainingController.goToRootNode}
+                setCurrentIndex={trainingController.setCurrentIndex}
+                gameTree={trainingController.gameTree}
+                setCurrentMove={setCurrentMove}
+              />
             </div>
           </div>
         </div>
@@ -454,7 +467,20 @@ const Train: React.FC<Props> = ({
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="flex-none">
-              <TreeBoardController setCurrentMove={setCurrentMove} />
+              <TreeBoardController
+                orientation={trainingController.orientation}
+                setOrientation={trainingController.setOrientation}
+                currentNode={trainingController.currentNode}
+                currentIndex={trainingController.currentIndex}
+                plyCount={trainingController.plyCount}
+                goToNode={trainingController.goToNode}
+                goToNextNode={trainingController.goToNextNode}
+                goToPreviousNode={trainingController.goToPreviousNode}
+                goToRootNode={trainingController.goToRootNode}
+                setCurrentIndex={trainingController.setCurrentIndex}
+                gameTree={trainingController.gameTree}
+                setCurrentMove={setCurrentMove}
+              />
             </div>
             <div className="flex flex-1 flex-col items-stretch">
               <Feedback
