@@ -28,19 +28,19 @@ import {
   Feedback,
   PuzzleLog,
   StatsDisplay,
-  TreeBoardController,
+  BoardController,
   ContinueAgainstMaia,
   AuthenticatedWrapper,
   VerticalEvaluationBar,
   HorizontalEvaluationBar,
   PositionEvaluationContainer,
-  TreeGameBoard,
+  GameBoard,
 } from 'src/components'
 import { useTrainingTreeController } from 'src/hooks/useTrainingController'
 import { AllStats, useStats } from 'src/hooks/useStats'
 import { TrainingGame, Status } from 'src/types/training'
 import { ModalContext, WindowSizeContext } from 'src/contexts'
-import { TrainingTreeControllerContext } from 'src/contexts/TrainingTreeControllerContext'
+import { TrainingControllerContext } from 'src/contexts/TrainingControllerContext'
 
 const statsLoader = async () => {
   const stats = await getTrainingPlayerStats()
@@ -330,7 +330,7 @@ const Train: React.FC<Props> = ({
             <StatsDisplay stats={stats} />
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
-            <TreeGameBoard
+            <GameBoard
               game={trainingGame}
               currentNode={trainingController.currentNode}
               orientation={trainingController.orientation}
@@ -401,7 +401,7 @@ const Train: React.FC<Props> = ({
               />
             </div>
             <div className="flex-none">
-              <TreeBoardController
+              <BoardController
                 orientation={trainingController.orientation}
                 setOrientation={trainingController.setOrientation}
                 currentNode={trainingController.currentNode}
@@ -453,7 +453,7 @@ const Train: React.FC<Props> = ({
             </GameInfo>
           </div>
           <div className="relative flex aspect-square h-[100vw] w-screen">
-            <TreeGameBoard
+            <GameBoard
               game={trainingGame}
               currentNode={trainingController.currentNode}
               orientation={trainingController.orientation}
@@ -466,7 +466,7 @@ const Train: React.FC<Props> = ({
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="flex-none">
-              <TreeBoardController
+              <BoardController
                 orientation={trainingController.orientation}
                 setOrientation={trainingController.setOrientation}
                 currentNode={trainingController.currentNode}
@@ -539,9 +539,9 @@ const Train: React.FC<Props> = ({
           content="Collection of chess training and analysis tools centered around Maia."
         />
       </Head>
-      <TrainingTreeControllerContext.Provider value={trainingController}>
+      <TrainingControllerContext.Provider value={trainingController}>
         {trainingGame && (isMobile ? mobileLayout : desktopLayout)}
-      </TrainingTreeControllerContext.Provider>
+      </TrainingControllerContext.Provider>
     </>
   )
 }

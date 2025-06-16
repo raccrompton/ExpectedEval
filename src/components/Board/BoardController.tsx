@@ -20,7 +20,7 @@ interface Props {
   setCurrentMove?: (move: [string, string] | null) => void
 }
 
-export const TreeBoardController: React.FC<Props> = ({
+export const BoardController: React.FC<Props> = ({
   orientation,
   setOrientation,
   currentNode,

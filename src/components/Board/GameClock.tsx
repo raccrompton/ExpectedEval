@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react'
 
 import { Color } from 'src/types'
 import { AuthContext, ThemeContext } from 'src/contexts'
-import { PlayTreeControllerContext } from 'src/contexts/PlayTreeControllerContext/PlayTreeControllerContext'
+import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
 
 interface Props {
   player: Color
@@ -15,7 +15,7 @@ export const GameClock: React.FC<Props> = (
   const { theme } = useContext(ThemeContext)
   const { user } = useContext(AuthContext)
   const { player, toPlay, whiteClock, blackClock, lastMoveTime } = useContext(
-    PlayTreeControllerContext,
+    PlayControllerContext,
   )
 
   const [referenceTime, setReferenceTime] = useState<number>(Date.now())

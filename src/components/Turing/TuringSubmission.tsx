@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion'
 import { useCallback, useContext, useEffect, useState } from 'react'
 
-import { TuringTreeControllerContext } from 'src/contexts'
+import { TuringControllerContext } from 'src/contexts'
 
 export const TuringSubmission = ({ rating }: { rating: number }) => {
   const { game, submitGuess, getNewGame, commentController } = useContext(
-    TuringTreeControllerContext,
+    TuringControllerContext,
   )
   const [comment, setComment] = commentController
   const [selected, setSelected] = useState<'white' | 'black' | null>(null)

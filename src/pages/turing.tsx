@@ -6,16 +6,16 @@ import {
   ThemeContext,
   ModalContext,
   WindowSizeContext,
-  TuringTreeControllerContext,
+  TuringControllerContext,
 } from 'src/contexts'
 import {
   Loading,
   GameInfo,
-  TreeGameBoard,
+  GameBoard,
   TuringGames,
   StatsDisplay,
   MovesContainer,
-  TreeBoardController,
+  BoardController,
   TuringSubmission,
   ContinueAgainstMaia,
 } from 'src/components'
@@ -37,13 +37,13 @@ const TuringPage: NextPage = () => {
   const controller = useTuringTreeController()
 
   return (
-    <TuringTreeControllerContext.Provider value={controller}>
+    <TuringControllerContext.Provider value={controller}>
       {controller.game ? (
         <Turing game={controller.game} stats={controller.stats} />
       ) : (
         <Loading />
       )}
-    </TuringTreeControllerContext.Provider>
+    </TuringControllerContext.Provider>
   )
 }
 
@@ -57,7 +57,7 @@ const Turing: React.FC<Props> = (props: Props) => {
   const { theme } = useContext(ThemeContext)
   const { isMobile } = useContext(WindowSizeContext)
 
-  const controller = useContext(TuringTreeControllerContext)
+  const controller = useContext(TuringControllerContext)
 
   const launchContinue = useCallback(() => {
     const fen =
@@ -126,7 +126,7 @@ const Turing: React.FC<Props> = (props: Props) => {
             <StatsDisplay stats={stats} />
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
-            <TreeGameBoard game={game} currentNode={controller.currentNode!} />
+            <GameBoard game={game} currentNode={controller.currentNode!} />
           </div>
           <div
             style={{
@@ -145,7 +145,7 @@ const Turing: React.FC<Props> = (props: Props) => {
               <TuringSubmission rating={stats.rating ?? 0} />
             </div>
             <div className="flex-none">
-              <TreeBoardController
+              <BoardController
                 orientation={controller.orientation}
                 setOrientation={controller.setOrientation}
                 currentNode={controller.currentNode}
@@ -177,7 +177,7 @@ const Turing: React.FC<Props> = (props: Props) => {
             </div>
           </div>
           <div className="relative flex aspect-square h-[100vw] w-screen">
-            <TreeGameBoard game={game} currentNode={controller.currentNode!} />
+            <GameBoard game={game} currentNode={controller.currentNode!} />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="relative bottom-0 h-full flex-1 overflow-auto">
@@ -188,7 +188,7 @@ const Turing: React.FC<Props> = (props: Props) => {
               />
             </div>
             <div className="flex-none">
-              <TreeBoardController
+              <BoardController
                 orientation={controller.orientation}
                 setOrientation={controller.setOrientation}
                 currentNode={controller.currentNode}
@@ -224,9 +224,9 @@ const Turing: React.FC<Props> = (props: Props) => {
         <title>Maia Chess - Bot or Not</title>
         <meta name="description" content="Turing survey" />
       </Head>
-      <TuringTreeControllerContext.Provider value={controller}>
+      <TuringControllerContext.Provider value={controller}>
         {isMobile ? mobileLayout : desktopLayout}
-      </TuringTreeControllerContext.Provider>
+      </TuringControllerContext.Provider>
     </>
   )
 }

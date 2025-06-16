@@ -32,11 +32,11 @@ import {
   Highlight,
   BlunderMeter,
   AnalysisGameList,
-  TreeGameBoard,
+  GameBoard,
   DownloadModelModal,
   AuthenticatedWrapper,
   MovesContainer,
-  TreeBoardController,
+  BoardController,
 } from 'src/components'
 import Head from 'next/head'
 import toast from 'react-hot-toast'
@@ -527,7 +527,7 @@ const Analysis: React.FC<Props> = ({
                 termination={analyzedGame.termination}
                 type="analysis"
               />
-              <TreeBoardController
+              <BoardController
                 orientation={controller.orientation}
                 setOrientation={controller.setOrientation}
                 currentNode={controller.currentNode}
@@ -557,7 +557,7 @@ const Analysis: React.FC<Props> = ({
               termination={analyzedGame.termination.winner}
             />
             <div className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]">
-              <TreeGameBoard
+              <GameBoard
                 game={analyzedGame}
                 moves={moves}
                 setCurrentSquare={setCurrentSquare}
@@ -698,7 +698,7 @@ const Analysis: React.FC<Props> = ({
               <NestedGameInfo />
             </GameInfo>
             <div className="relative flex h-[100vw] w-screen">
-              <TreeGameBoard
+              <GameBoard
                 game={analyzedGame}
                 moves={moves}
                 setCurrentSquare={setCurrentSquare}
@@ -711,7 +711,7 @@ const Analysis: React.FC<Props> = ({
             </div>
             <div className="flex w-full flex-col gap-0">
               <div className="w-full !flex-grow-0">
-                <TreeBoardController
+                <BoardController
                   orientation={controller.orientation}
                   setOrientation={controller.setOrientation}
                   currentNode={controller.currentNode}

@@ -5,13 +5,13 @@ import { useCallback, useContext, useEffect, useMemo } from 'react'
 import { startGame } from 'src/api'
 import {
   Loading,
-  GameplayTreeInterface,
+  GameplayInterface,
   HandBrainPlayControls,
 } from 'src/components'
 import { ModalContext } from 'src/contexts'
 import { Color, PlayGameConfig, TimeControl } from 'src/types'
-import { useHandBrainTreeController } from 'src/hooks/usePlayTreeController/useHandBrainTreeController'
-import { PlayTreeControllerContext } from 'src/contexts/PlayTreeControllerContext/PlayTreeControllerContext'
+import { useHandBrainController } from 'src/hooks/usePlayController/useHandBrainController'
+import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
 
 interface Props {
   id: string
@@ -24,11 +24,11 @@ const PlayHandBrain: React.FC<Props> = ({
   playGameConfig,
   playAgain,
 }: Props) => {
-  const controller = useHandBrainTreeController(id, playGameConfig)
+  const controller = useHandBrainController(id, playGameConfig)
 
   return (
-    <PlayTreeControllerContext.Provider value={controller}>
-      <GameplayTreeInterface boardShapes={controller.boardShapes}>
+    <PlayControllerContext.Provider value={controller}>
+      <GameplayInterface boardShapes={controller.boardShapes}>
         <HandBrainPlayControls
           playerActive={controller.playerActive}
           gameOver={!!controller.game.termination}
@@ -40,8 +40,8 @@ const PlayHandBrain: React.FC<Props> = ({
           resign={() => controller.setResigned(true)}
           playAgain={playAgain}
         />
-      </GameplayTreeInterface>
-    </PlayTreeControllerContext.Provider>
+      </GameplayInterface>
+    </PlayControllerContext.Provider>
   )
 }
 
