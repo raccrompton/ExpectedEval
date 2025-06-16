@@ -35,7 +35,7 @@ import {
   TreeGameBoard,
   DownloadModelModal,
   AuthenticatedWrapper,
-  AnalysisMovesContainer,
+  MovesContainer,
   TreeBoardController,
 } from 'src/components'
 import Head from 'next/head'
@@ -522,9 +522,10 @@ const Analysis: React.FC<Props> = ({
           </div>
           <div className="flex h-1/2 w-full flex-1 flex-col gap-2">
             <div className="flex h-full flex-col overflow-y-scroll">
-              <AnalysisMovesContainer
+              <MovesContainer
                 game={analyzedGame}
                 termination={analyzedGame.termination}
+                type="analysis"
               />
               <TreeBoardController
                 orientation={controller.orientation}
@@ -722,9 +723,10 @@ const Analysis: React.FC<Props> = ({
                 />
               </div>
               <div className="relative bottom-0 h-48 max-h-48 flex-1 overflow-auto overflow-y-hidden">
-                <AnalysisMovesContainer
+                <MovesContainer
                   game={analyzedGame}
                   termination={analyzedGame.termination}
+                  type="analysis"
                 />
               </div>
             </div>

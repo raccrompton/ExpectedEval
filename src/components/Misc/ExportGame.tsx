@@ -1,47 +1,66 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import { Chess } from 'chess.ts'
+import toast from 'react-hot-toast'
 import { useContext, useEffect, useState } from 'react'
 
-import { PlayedGame, GameTree, GameNode } from 'src/types'
-import { TreeControllerContext } from 'src/contexts'
+import { PlayedGame, AnalyzedGame, GameTree, GameNode } from 'src/types'
+import { useBaseTreeController } from 'src/hooks/useBaseTreeController'
 
-interface Props {
+interface AnalysisProps {
+  game: AnalyzedGame
+  whitePlayer: string
+  blackPlayer: string
+  event: string
+  type: 'analysis'
+  currentNode?: GameNode
+}
+
+interface PlayProps {
   game: PlayedGame
   gameTree?: GameTree
   whitePlayer: string
   blackPlayer: string
   event: string
+  type: 'play'
+  currentNode?: never
 }
 
-export const ExportGame: React.FC<Props> = ({
-  game,
-  gameTree,
-  whitePlayer,
-  blackPlayer,
-  event,
-}) => {
+interface TuringProps {
+  game: PlayedGame
+  whitePlayer: string
+  blackPlayer: string
+  event: string
+  type: 'turing'
+  currentNode?: never
+}
+
+type Props = AnalysisProps | PlayProps | TuringProps
+
+export const ExportGame: React.FC<Props> = (props) => {
+  const { game, whitePlayer, blackPlayer, event, type } = props
   const [fen, setFen] = useState('')
   const [pgn, setPgn] = useState('')
-  const [fullPgn, setFullPgn] = useState(true)
-  const { currentNode } = useContext(TreeControllerContext)
 
-  useEffect(() => {
-    if (gameTree) {
-      setPgn(gameTree.toPGN())
-    } else {
-      const chess = new Chess()
-      game.moves.forEach((move) => {
-        if (move.san) {
-          chess.move(move.san)
+  const controller = useBaseTreeController(type)
+
+  const { currentNode, gameTree } =
+    type === 'analysis'
+      ? {
+          currentNode: props.currentNode || controller.currentNode,
+          gameTree: (props.game as AnalyzedGame).tree,
         }
-      })
-      setPgn(chess.pgn())
-    }
-  }, [game.moves, gameTree])
+      : type === 'play'
+        ? {
+            currentNode: controller.currentNode,
+            gameTree: (props as PlayProps).gameTree || controller.gameTree,
+          }
+        : {
+            currentNode: controller.currentNode,
+            gameTree: controller.gameTree,
+          }
 
   useEffect(() => {
     if (gameTree && currentNode) {
-      // Use tree structure
       const tree = new GameTree(gameTree.getRoot().fen)
       tree.setHeader('ID', game.id)
       tree.setHeader('Event', event)
@@ -55,31 +74,11 @@ export const ExportGame: React.FC<Props> = ({
         }
       }
 
-      if (fullPgn) {
-        // Export full game
-        setPgn(tree.toPGN())
-      } else {
-        // Export up to current node
-        const pathToNode = currentNode.getPath()
-        let node = tree.getRoot()
-        for (let i = 1; i < pathToNode.length; i++) {
-          const targetNode = pathToNode[i]
-          if (targetNode.move && targetNode.san) {
-            node = tree.addMainMove(
-              node,
-              targetNode.fen,
-              targetNode.move,
-              targetNode.san,
-            )
-          }
-        }
-        setPgn(tree.toPGN())
-      }
-
+      setPgn(gameTree.toPGN())
       setFen(currentNode.fen)
     } else {
       // Fallback to legacy array-based approach
-      const initial = new Chess(game.moves[0].board)
+      const initial = new Chess(game.moves[0]?.board || new Chess().fen())
       initial.addHeader('ID', game.id)
       initial.addHeader('Event', event)
       initial.addHeader('Site', `https://maiachess.com/`)
@@ -91,17 +90,6 @@ export const ExportGame: React.FC<Props> = ({
           initial.addHeader('Termination', game.termination.condition)
         }
       }
-
-      const currentIndex = game.moves.length - 1 // fallback
-      game.moves.forEach((move, index) => {
-        if (!move.san || (!fullPgn && index > currentIndex)) {
-          return
-        }
-        initial.move(move.san)
-      })
-
-      setFen(game.moves[currentIndex].board)
-      setPgn(initial.pgn())
     }
   }, [
     currentNode,
@@ -111,12 +99,15 @@ export const ExportGame: React.FC<Props> = ({
     whitePlayer,
     blackPlayer,
     event,
-    fullPgn,
     gameTree,
+    type,
   ])
 
   const copy = (content: string) => {
     navigator.clipboard.writeText(content)
+    if (type === 'analysis') {
+      toast.success('Copied to clipboard')
+    }
   }
 
   return (
@@ -152,16 +143,6 @@ export const ExportGame: React.FC<Props> = ({
             <p className="select-none text-sm font-semibold tracking-wider text-secondary">
               PGN
             </p>
-            <div className="ml-4 flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={fullPgn}
-                onChange={(e) => setFullPgn(e.target.checked)}
-              />
-              <p className="text-xs text-secondary">
-                Export PGN of entire game
-              </p>
-            </div>
           </div>
           <i
             tabIndex={0}

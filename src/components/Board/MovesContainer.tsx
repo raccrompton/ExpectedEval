@@ -1,15 +1,34 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useContext, useMemo, Fragment, useEffect } from 'react'
-import { TreeControllerContext, WindowSizeContext } from 'src/contexts'
-import { GameNode, AnalyzedGame, Termination, ClientBaseGame } from 'src/types'
 import { Tooltip } from 'react-tooltip'
+import React, { useContext, useMemo, Fragment, useEffect } from 'react'
+import { WindowSizeContext } from 'src/contexts'
+import { GameNode, AnalyzedGame, Termination, ClientBaseGame } from 'src/types'
+import { TuringGame } from 'src/types/turing'
+import { useBaseTreeController } from 'src/hooks/useBaseTreeController'
 
-interface Props {
+interface AnalysisProps {
   game: ClientBaseGame | AnalyzedGame
   highlightIndices?: number[]
   termination?: Termination
+  type: 'analysis'
 }
+
+interface TuringProps {
+  game: TuringGame
+  highlightIndices?: number[]
+  termination?: Termination
+  type: 'turing'
+}
+
+interface PlayProps {
+  game: ClientBaseGame
+  highlightIndices?: number[]
+  termination?: Termination
+  type: 'play'
+}
+
+type Props = AnalysisProps | TuringProps | PlayProps
 
 function BlunderIcon() {
   return (
@@ -83,19 +102,21 @@ function UnlikelyGoodMoveIcon() {
   )
 }
 
-export const AnalysisMovesContainer: React.FC<Props> = ({
-  game,
-  highlightIndices,
-  termination,
-}: Props) => {
-  const { currentNode, goToNode } = useContext(TreeControllerContext)
-
+export const MovesContainer: React.FC<Props> = (props) => {
+  const { game, highlightIndices, termination, type } = props
   const { isMobile } = useContext(WindowSizeContext)
 
+  const controller = useBaseTreeController(type)
+  const { currentNode, goToNode, gameTree } = controller
+
   const mainLineNodes = useMemo(() => {
-    if (!game.tree) return []
-    return game.tree.getMainLine()
-  }, [game.tree])
+    if (type === 'analysis') {
+      if (!game.tree) return []
+      return game.tree.getMainLine()
+    } else {
+      return gameTree.getMainLine()
+    }
+  }, [game, type, gameTree])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -194,6 +215,8 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
     return pairs
   }, [mainLineNodes, isMobile])
 
+  const showAnnotations = type === 'analysis'
+
   if (isMobile) {
     return (
       <div className="w-full overflow-x-auto px-2">
@@ -213,8 +236,10 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
                   } ${highlightSet.has(pairIndex * 2 + 1) ? 'bg-human-3/80' : ''}`}
                 >
                   <span>{pair.whiteMove.san ?? pair.whiteMove.move}</span>
-                  {pair.whiteMove.blunder && <BlunderIcon />}
-                  {pair.whiteMove.unlikelyGoodMove && <UnlikelyGoodMoveIcon />}
+                  {showAnnotations && pair.whiteMove.blunder && <BlunderIcon />}
+                  {showAnnotations && pair.whiteMove.unlikelyGoodMove && (
+                    <UnlikelyGoodMoveIcon />
+                  )}
                 </div>
               )}
               {pair.blackMove && (
@@ -227,8 +252,10 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
                   } ${highlightSet.has(pairIndex * 2 + 2) ? 'bg-human-3/80' : ''}`}
                 >
                   <span>{pair.blackMove.san ?? pair.blackMove.move}</span>
-                  {pair.blackMove.blunder && <BlunderIcon />}
-                  {pair.blackMove.unlikelyGoodMove && <UnlikelyGoodMoveIcon />}
+                  {showAnnotations && pair.blackMove.blunder && <BlunderIcon />}
+                  {showAnnotations && pair.blackMove.unlikelyGoodMove && (
+                    <UnlikelyGoodMoveIcon />
+                  )}
                 </div>
               )}
             </React.Fragment>
@@ -266,10 +293,12 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
               className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${currentNode === whiteNode && 'bg-human-4/20'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
             >
               {whiteNode?.san ?? whiteNode?.move}
-              {whiteNode?.blunder && <BlunderIcon />}
-              {whiteNode?.unlikelyGoodMove && <UnlikelyGoodMoveIcon />}
+              {showAnnotations && whiteNode?.blunder && <BlunderIcon />}
+              {showAnnotations && whiteNode?.unlikelyGoodMove && (
+                <UnlikelyGoodMoveIcon />
+              )}
             </div>
-            {whiteNode?.getVariations().length ? (
+            {showAnnotations && whiteNode?.getVariations().length ? (
               <FirstVariation
                 color="white"
                 node={whiteNode}
@@ -285,10 +314,12 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
               className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${currentNode === blackNode && 'bg-human-4/20'} ${highlightSet.has(index * 2 + 2) && 'bg-human-3/80'}`}
             >
               {blackNode?.san ?? blackNode?.move}
-              {blackNode?.blunder && <BlunderIcon />}
-              {blackNode?.unlikelyGoodMove && <UnlikelyGoodMoveIcon />}
+              {showAnnotations && blackNode?.blunder && <BlunderIcon />}
+              {showAnnotations && blackNode?.unlikelyGoodMove && (
+                <UnlikelyGoodMoveIcon />
+              )}
             </div>
-            {blackNode?.getVariations().length ? (
+            {showAnnotations && blackNode?.getVariations().length ? (
               <FirstVariation
                 color="black"
                 node={blackNode}

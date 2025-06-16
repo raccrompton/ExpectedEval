@@ -14,7 +14,7 @@ import {
   TreeGameBoard,
   TuringGames,
   StatsDisplay,
-  TuringMovesContainer,
+  MovesContainer,
   TreeBoardController,
   TuringSubmission,
   ContinueAgainstMaia,
@@ -135,9 +135,10 @@ const Turing: React.FC<Props> = (props: Props) => {
             className="flex h-[75vh] w-[40vh] flex-col gap-1"
           >
             <div className="relative bottom-0 h-full min-h-[38px] flex-1">
-              <TuringMovesContainer
+              <MovesContainer
                 game={game}
                 termination={game.termination}
+                type="turing"
               />
             </div>
             <div>
@@ -180,9 +181,10 @@ const Turing: React.FC<Props> = (props: Props) => {
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="relative bottom-0 h-full flex-1 overflow-auto">
-              <TuringMovesContainer
+              <MovesContainer
                 game={game}
                 termination={game.termination}
+                type="turing"
               />
             </div>
             <div className="flex-none">
