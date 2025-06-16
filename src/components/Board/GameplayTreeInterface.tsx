@@ -8,7 +8,7 @@ import {
   GameClock,
   ExportGame,
   StatsDisplay,
-  AnalysisMovesContainer,
+  MovesContainer,
   TreeBoardController,
   PromotionOverlay,
   TreeGameBoard,
@@ -184,6 +184,7 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
                 whitePlayer={whitePlayer ?? 'Unknown'}
                 blackPlayer={blackPlayer ?? 'Unknown'}
                 event={`Play vs. ${maiaTitle}`}
+                type="play"
               />
               <StatsDisplay stats={stats} hideSession={true} />
             </div>
@@ -218,9 +219,10 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
               />
             ) : null}
             <div className="relative bottom-0 h-full min-h-[38px] flex-1">
-              <AnalysisMovesContainer
+              <MovesContainer
                 game={game}
                 termination={game.termination}
+                type="play"
               />
             </div>
             <div>{props.children}</div>
@@ -294,9 +296,10 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
             </div>
             <div className="w-full overflow-x-auto">
               <div className="flex flex-row whitespace-nowrap py-2">
-                <AnalysisMovesContainer
+                <MovesContainer
                   game={game}
                   termination={game.termination}
+                  type="play"
                 />
               </div>
             </div>
@@ -309,6 +312,7 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
                 whitePlayer={whitePlayer ?? 'Unknown'}
                 blackPlayer={blackPlayer ?? 'Unknown'}
                 event={`Play vs. ${maiaTitle}`}
+                type="play"
               />
             </div>
           </div>

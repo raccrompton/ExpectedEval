@@ -3,29 +3,16 @@ import { Chess } from 'chess.ts'
 import { GameTree, GameNode, Color } from 'src/types'
 import { TuringGame } from 'src/types/turing'
 import { AllStats } from 'src/hooks/useStats'
+import { BaseTreeControllerContext } from '../BaseTreeControllerContext'
 
-export interface TuringTreeControllerContextType {
+export interface TuringTreeControllerContextType
+  extends BaseTreeControllerContext {
   // Game data
   game?: TuringGame
   games: { [id: string]: TuringGame }
   loading: boolean
   gameIds: string[]
   stats: AllStats
-
-  // Game tree navigation
-  gameTree: GameTree
-  currentNode?: GameNode
-  goToNode: (node: GameNode) => void
-  goToNextNode: () => void
-  goToPreviousNode: () => void
-  goToRootNode: () => void
-
-  // Position and orientation
-  currentIndex: number
-  setCurrentIndex: (index: number) => void
-  plyCount: number
-  orientation: 'white' | 'black'
-  setOrientation: (orientation: 'white' | 'black') => void
 
   // Actions
   getNewGame: () => Promise<void>

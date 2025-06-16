@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import React, { useState } from 'react'
 import { ConfigureAnalysis } from 'src/components/Analysis/ConfigureAnalysis'
-import { AnalysisExportGame } from 'src/components/Misc/AnalysisExportGame'
+import { ExportGame } from 'src/components/Misc/ExportGame'
 import { AnalyzedGame, GameNode } from 'src/types'
 
 interface Props {
@@ -75,12 +75,13 @@ export const ConfigurableScreens: React.FC<Props> = ({
           />
         ) : screen.id === 'export' ? (
           <div className="flex w-full flex-col p-4">
-            <AnalysisExportGame
+            <ExportGame
               game={game}
               currentNode={currentNode}
               whitePlayer={game.whitePlayer.name}
               blackPlayer={game.blackPlayer.name}
               event="Analysis"
+              type="analysis"
             />
           </div>
         ) : null}
