@@ -23,7 +23,7 @@ import {
 import {
   ModalContext,
   WindowSizeContext,
-  AnalysisGameControllerContext,
+  TreeControllerContext,
 } from 'src/contexts'
 import {
   Loading,
@@ -32,7 +32,7 @@ import {
   Highlight,
   BlunderMeter,
   AnalysisGameList,
-  AnalysisGameBoard,
+  TreeGameBoard,
   DownloadModelModal,
   AuthenticatedWrapper,
   AnalysisMovesContainer,
@@ -556,7 +556,7 @@ const Analysis: React.FC<Props> = ({
               termination={analyzedGame.termination.winner}
             />
             <div className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]">
-              <AnalysisGameBoard
+              <TreeGameBoard
                 game={analyzedGame}
                 moves={moves}
                 setCurrentSquare={setCurrentSquare}
@@ -564,6 +564,7 @@ const Analysis: React.FC<Props> = ({
                 currentNode={controller.currentNode as GameNode}
                 orientation={controller.orientation}
                 goToNode={controller.goToNode}
+                gameTree={analyzedGame.tree}
               />
             </div>
             <Player
@@ -696,7 +697,7 @@ const Analysis: React.FC<Props> = ({
               <NestedGameInfo />
             </GameInfo>
             <div className="relative flex h-[100vw] w-screen">
-              <AnalysisGameBoard
+              <TreeGameBoard
                 game={analyzedGame}
                 moves={moves}
                 setCurrentSquare={setCurrentSquare}
@@ -704,6 +705,7 @@ const Analysis: React.FC<Props> = ({
                 currentNode={controller.currentNode as GameNode}
                 orientation={controller.orientation}
                 goToNode={controller.goToNode}
+                gameTree={analyzedGame.tree}
               />
             </div>
             <div className="flex w-full flex-col gap-0">
@@ -788,9 +790,9 @@ const Analysis: React.FC<Props> = ({
           <DownloadModelModal progress={maiaProgress} download={downloadMaia} />
         ) : null}
       </AnimatePresence>
-      <AnalysisGameControllerContext.Provider value={{ ...controller }}>
+      <TreeControllerContext.Provider value={{ ...controller }}>
         {analyzedGame && (isMobile ? mobileLayout : desktopLayout)}
-      </AnalysisGameControllerContext.Provider>
+      </TreeControllerContext.Provider>
     </>
   )
 }

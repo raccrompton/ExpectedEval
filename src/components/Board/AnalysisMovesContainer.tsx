@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useContext, useMemo, Fragment, useEffect } from 'react'
-import { AnalysisGameControllerContext, WindowSizeContext } from 'src/contexts'
+import { TreeControllerContext, WindowSizeContext } from 'src/contexts'
 import { GameNode, AnalyzedGame, Termination, ClientBaseGame } from 'src/types'
 import { Tooltip } from 'react-tooltip'
 
@@ -88,7 +88,7 @@ export const AnalysisMovesContainer: React.FC<Props> = ({
   highlightIndices,
   termination,
 }: Props) => {
-  const { currentNode, goToNode } = useContext(AnalysisGameControllerContext)
+  const { currentNode, goToNode } = useContext(TreeControllerContext)
 
   const { isMobile } = useContext(WindowSizeContext)
 

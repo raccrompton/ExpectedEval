@@ -1,21 +1,11 @@
-// NOTE: This file is a direct copy of GameplayInterface.tsx but wired up to the
-// new PlayTreeControllerContext so that we can migrate the play pages to the
-// GameTree data structure while still retaining the legacy implementation.
-
 import Head from 'next/head'
 import type { DrawShape } from 'chessground/draw'
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 
-import {
-  AuthContext,
-  ThemeContext,
-  WindowSizeContext,
-  AnalysisGameControllerContext,
-} from 'src/contexts'
+import { AuthContext, ThemeContext, WindowSizeContext } from 'src/contexts'
 import {
   GameInfo,
   GameClock,
-  GameBoard,
   ExportGame,
   StatsDisplay,
   AnalysisMovesContainer,
@@ -43,7 +33,6 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
     availableMoves,
     makeMove,
     player,
-    setCurrentSquare,
     timeControl,
     stats,
     gameTree,
@@ -204,9 +193,9 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
               game={game}
               moves={moveMap}
               setCurrentMove={setCurrentMove}
-              setCurrentSquare={setCurrentSquare}
               shapes={props.boardShapes}
-              currentNode={currentNode}
+              currentNode={currentNode!}
+              orientation={orientation}
             />
             {promotionFromTo ? (
               <PromotionOverlay
@@ -274,9 +263,9 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
               game={game}
               moves={moveMap}
               setCurrentMove={setCurrentMove}
-              setCurrentSquare={setCurrentSquare}
               shapes={props.boardShapes}
-              currentNode={currentNode}
+              currentNode={currentNode!}
+              orientation={orientation}
             />
             {promotionFromTo ? (
               <PromotionOverlay
@@ -336,21 +325,7 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
         <title>Maia Chess - Play</title>
         <meta name="description" content="Turing survey" />
       </Head>
-      <AnalysisGameControllerContext.Provider
-        value={{
-          currentNode,
-          setCurrentNode,
-          orientation,
-          setOrientation,
-          goToNode,
-          goToNextNode,
-          goToPreviousNode,
-          goToRootNode,
-          plyCount,
-        }}
-      >
-        {layouts}
-      </AnalysisGameControllerContext.Provider>
+      {layouts}
     </>
   )
 }

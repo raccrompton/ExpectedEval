@@ -3,7 +3,7 @@ import { Chess } from 'chess.ts'
 import { useContext, useEffect, useState } from 'react'
 
 import { PlayedGame, GameTree, GameNode } from 'src/types'
-import { AnalysisGameControllerContext } from 'src/contexts'
+import { TreeControllerContext } from 'src/contexts'
 
 interface Props {
   game: PlayedGame
@@ -23,7 +23,7 @@ export const ExportGame: React.FC<Props> = ({
   const [fen, setFen] = useState('')
   const [pgn, setPgn] = useState('')
   const [fullPgn, setFullPgn] = useState(true)
-  const { currentNode } = useContext(AnalysisGameControllerContext)
+  const { currentNode } = useContext(TreeControllerContext)
 
   useEffect(() => {
     if (gameTree) {

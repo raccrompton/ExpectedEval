@@ -27,7 +27,6 @@ import {
   GameInfo,
   Feedback,
   PuzzleLog,
-  GameBoard,
   StatsDisplay,
   TreeBoardController,
   ContinueAgainstMaia,

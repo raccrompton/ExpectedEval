@@ -44,7 +44,6 @@ export const PlayTreeControllerContext =
     setResigned: fn,
     reset: fn,
     makeMove: fn,
-    setCurrentSquare: fn,
     updateClock: fn,
     gameTree: defaultGameTree,
     currentNode: defaultGameTree.getRoot(),

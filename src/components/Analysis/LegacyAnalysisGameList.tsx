@@ -10,7 +10,7 @@ import {
 import { motion } from 'framer-motion'
 
 import { Tournament, UserGameList } from 'src/components'
-import { AnalysisListContext, GameControllerContext } from 'src/contexts'
+import { AnalysisListContext, TreeControllerContext } from 'src/contexts'
 
 interface LegacyAnalysisGameListProps {
   currentId: string[] | null
@@ -44,7 +44,7 @@ export const LegacyAnalysisGameList: React.FC<LegacyAnalysisGameListProps> = ({
     'tournament' | 'pgn' | 'play' | 'hand' | 'brain'
   >('pgn')
 
-  const controller = useContext(GameControllerContext)
+  const controller = useContext(TreeControllerContext)
   const {
     analysisPlayList,
     analysisHandList,
