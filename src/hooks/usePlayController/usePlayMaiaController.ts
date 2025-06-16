@@ -37,7 +37,7 @@ const computeTermination = (chess: Chess): Termination | undefined => {
   }
 }
 
-export const usePlayTreeController = (id: string, config: PlayGameConfig) => {
+export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
   // Core game state
   const [gameTree, setGameTree] = useState<GameTree>(
     () => new GameTree(config.startFen || nullFen),

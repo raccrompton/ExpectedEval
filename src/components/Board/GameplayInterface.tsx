@@ -9,12 +9,12 @@ import {
   ExportGame,
   StatsDisplay,
   MovesContainer,
-  TreeBoardController,
+  BoardController,
   PromotionOverlay,
-  TreeGameBoard,
+  GameBoard,
 } from 'src/components'
 import { useUnload } from 'src/hooks/useUnload'
-import { PlayTreeControllerContext } from 'src/contexts/PlayTreeControllerContext/PlayTreeControllerContext'
+import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
 
 interface Props {
   boardShapes?: DrawShape[]
@@ -23,7 +23,7 @@ interface Props {
   playAgain?: () => void
 }
 
-export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
+export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
   props: React.PropsWithChildren<Props>,
 ) => {
   const {
@@ -45,7 +45,7 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
     goToPreviousNode,
     goToRootNode,
     plyCount,
-  } = useContext(PlayTreeControllerContext)
+  } = useContext(PlayControllerContext)
   const { theme } = useContext(ThemeContext)
   const { isMobile } = useContext(WindowSizeContext)
 
@@ -190,7 +190,7 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
             </div>
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
-            <TreeGameBoard
+            <GameBoard
               game={game}
               moves={moveMap}
               setCurrentMove={setCurrentMove}
@@ -227,7 +227,7 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
             </div>
             <div>{props.children}</div>
             <div className="flex-none">
-              <TreeBoardController
+              <BoardController
                 orientation={orientation}
                 setOrientation={setOrientation}
                 currentNode={currentNode}
@@ -261,7 +261,7 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
             ) : null}
           </div>
           <div className="relative flex aspect-square h-[100vw] w-screen">
-            <TreeGameBoard
+            <GameBoard
               game={game}
               moves={moveMap}
               setCurrentMove={setCurrentMove}
@@ -282,7 +282,7 @@ export const GameplayTreeInterface: React.FC<React.PropsWithChildren<Props>> = (
               <GameClock player={orientation} reversed={true} />
             ) : null}
             <div className="flex-none">
-              <TreeBoardController
+              <BoardController
                 orientation={orientation}
                 setOrientation={setOrientation}
                 currentNode={currentNode}

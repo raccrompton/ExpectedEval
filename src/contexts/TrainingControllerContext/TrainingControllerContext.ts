@@ -2,24 +2,12 @@ import { createContext } from 'react'
 import { Chess } from 'chess.ts'
 import type { Key } from 'chessground/types'
 import { GameTree, GameNode } from 'src/types'
+import { BaseTreeControllerContext } from '../BaseTreeControllerContext'
 
-export interface TrainingTreeControllerContextType {
-  // Game tree navigation
-  gameTree: GameTree
+export interface ITrainingControllerContext extends BaseTreeControllerContext {
   currentNode: GameNode
-  goToNode: (node: GameNode) => void
-  goToNextNode: () => void
-  goToPreviousNode: () => void
-  goToRootNode: () => void
-
-  // Position and orientation
-  currentIndex: number
   setCurrentIndex: (indexOrUpdater: number | ((prev: number) => number)) => void
-  plyCount: number
-  orientation: 'white' | 'black'
-  setOrientation: (orientation: 'white' | 'black') => void
 
-  // Training-specific
   moves?: Map<string, string[]>
   currentMove: [string, string] | null
   setCurrentMove: (move: [string, string] | null) => void
@@ -31,7 +19,7 @@ export interface TrainingTreeControllerContextType {
   parseMove: (move: string[]) => any
 }
 
-const defaultContext: TrainingTreeControllerContextType = {
+const defaultContext: ITrainingControllerContext = {
   gameTree: new GameTree(new Chess().fen()),
   currentNode: new GameTree(new Chess().fen()).getRoot(),
   goToNode: () => {
@@ -70,5 +58,5 @@ const defaultContext: TrainingTreeControllerContextType = {
   parseMove: () => undefined,
 }
 
-export const TrainingTreeControllerContext =
-  createContext<TrainingTreeControllerContextType>(defaultContext)
+export const TrainingControllerContext =
+  createContext<ITrainingControllerContext>(defaultContext)

@@ -14,9 +14,9 @@ import { useStats } from 'src/hooks/useStats'
 import { Loading, PlayControls } from 'src/components'
 import { useChessSound } from 'src/hooks/useChessSound'
 import { Color, TimeControl, PlayGameConfig } from 'src/types'
-import { usePlayTreeController } from 'src/hooks/usePlayTreeController'
-import { GameplayTreeInterface } from 'src/components/Board/GameplayTreeInterface'
-import { PlayTreeControllerContext } from 'src/contexts/PlayTreeControllerContext/PlayTreeControllerContext'
+import { usePlayMaiaController } from 'src/hooks/usePlayController'
+import { GameplayInterface } from 'src/components/Board/GameplayInterface'
+import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
 
 const playStatsLoader = async () => {
   const stats = await getPlayPlayerStats()
@@ -32,7 +32,7 @@ const useVsMaiaPlayTreeController = (
   playGameConfig: PlayGameConfig,
 ) => {
   const { playSound } = useChessSound()
-  const controller = usePlayTreeController(id, playGameConfig)
+  const controller = usePlayMaiaController(id, playGameConfig)
   const [stats, incrementStats, updateRating] = useStats(playStatsLoader)
 
   const makeMove = async (moveUci: string) => {
@@ -185,8 +185,8 @@ const PlayMaia: React.FC<Props> = ({
   }, [controller.playerActive, controller.game.termination])
 
   return (
-    <PlayTreeControllerContext.Provider value={controller}>
-      <GameplayTreeInterface>
+    <PlayControllerContext.Provider value={controller}>
+      <GameplayInterface>
         <PlayControls
           game={controller.game}
           playerActive={controller.playerActive}
@@ -201,8 +201,8 @@ const PlayMaia: React.FC<Props> = ({
           }
           playAgain={playAgain}
         />
-      </GameplayTreeInterface>
-    </PlayTreeControllerContext.Provider>
+      </GameplayInterface>
+    </PlayControllerContext.Provider>
   )
 }
 

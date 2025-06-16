@@ -1,20 +1,17 @@
-import { createContext } from 'react'
 import { Chess } from 'chess.ts'
-import { GameTree, GameNode, Color } from 'src/types'
+import { createContext } from 'react'
+import { GameTree, Color } from 'src/types'
 import { TuringGame } from 'src/types/turing'
 import { AllStats } from 'src/hooks/useStats'
 import { BaseTreeControllerContext } from '../BaseTreeControllerContext'
 
-export interface TuringTreeControllerContextType
-  extends BaseTreeControllerContext {
-  // Game data
+export interface ITuringControllerContext extends BaseTreeControllerContext {
   game?: TuringGame
   games: { [id: string]: TuringGame }
   loading: boolean
   gameIds: string[]
   stats: AllStats
 
-  // Actions
   getNewGame: () => Promise<void>
   setCurrentId: (id: string | null) => void
   submitGuess: (
@@ -24,7 +21,6 @@ export interface TuringTreeControllerContextType
   ) => Promise<void>
   commentController: [string, (comment: string) => void]
 
-  // Legacy compatibility
   controller: {
     plyCount: number
     currentIndex: number
@@ -34,7 +30,7 @@ export interface TuringTreeControllerContextType
   }
 }
 
-const defaultContext: TuringTreeControllerContextType = {
+const defaultContext: ITuringControllerContext = {
   game: undefined,
   games: {},
   loading: false,
@@ -96,5 +92,5 @@ const defaultContext: TuringTreeControllerContextType = {
   },
 }
 
-export const TuringTreeControllerContext =
-  createContext<TuringTreeControllerContextType>(defaultContext)
+export const TuringControllerContext =
+  createContext<ITuringControllerContext>(defaultContext)

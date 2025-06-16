@@ -27,7 +27,7 @@ interface Props {
   gameTree?: any
 }
 
-export const TreeGameBoard: React.FC<Props> = ({
+export const GameBoard: React.FC<Props> = ({
   game,
   currentNode,
   orientation = 'white',

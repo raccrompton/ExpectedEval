@@ -8,7 +8,7 @@ import { getGameMove, submitGameMove, getPlayPlayerStats } from 'src/api'
 import { PlayGameConfig } from 'src/types'
 import { useStats } from 'src/hooks/useStats'
 import { useChessSound } from 'src/hooks/useChessSound'
-import { usePlayTreeController } from './usePlayTreeController'
+import { usePlayMaiaController } from './usePlayMaiaController'
 
 const brainStatsLoader = async () => {
   const stats = await getPlayPlayerStats()
@@ -28,11 +28,11 @@ const handStatsLoader = async () => {
   }
 }
 
-export const useHandBrainTreeController = (
+export const useHandBrainController = (
   id: string,
   playGameConfig: PlayGameConfig,
 ) => {
-  const controller = usePlayTreeController(id, playGameConfig)
+  const controller = usePlayMaiaController(id, playGameConfig)
   const { playSound } = useChessSound()
   const isBrain = playGameConfig.isBrain
 
