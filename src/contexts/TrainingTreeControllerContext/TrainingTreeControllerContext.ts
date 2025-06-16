@@ -1,5 +1,6 @@
 import { createContext } from 'react'
 import { Chess } from 'chess.ts'
+import type { Key } from 'chessground/types'
 import { GameTree, GameNode } from 'src/types'
 
 export interface TrainingTreeControllerContextType {
@@ -22,8 +23,8 @@ export interface TrainingTreeControllerContextType {
   moves?: Map<string, string[]>
   currentMove: [string, string] | null
   setCurrentMove: (move: [string, string] | null) => void
-  currentSquare: string | null
-  setCurrentSquare: (square: string | null) => void
+  currentSquare: Key | null
+  setCurrentSquare: (square: Key | null) => void
   moveEvaluation: { maia: number; stockfish: number } | null
   data: any[]
   move?: any

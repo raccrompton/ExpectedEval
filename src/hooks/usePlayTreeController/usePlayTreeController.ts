@@ -303,8 +303,6 @@ export const usePlayTreeController = (id: string, config: PlayGameConfig) => {
     throw new Error('makeMove should be overridden by the consuming component')
   }
 
-  const setCurrentSquare = async (key: string | null) => undefined
-
   const stats: AllStats = {
     lifetime: undefined,
     session: { gamesWon: 0, gamesPlayed: 0 },
@@ -323,7 +321,7 @@ export const usePlayTreeController = (id: string, config: PlayGameConfig) => {
     toPlay,
     playerActive,
     moveList,
-    moves: moveList, // Legacy compatibility
+    moves: moveList,
     moveTimes,
     availableMoves,
     pieces,
@@ -333,7 +331,6 @@ export const usePlayTreeController = (id: string, config: PlayGameConfig) => {
     lastMoveTime,
     stats,
 
-    // Navigation
     setCurrentNode,
     goToNode,
     goToNextNode,
@@ -343,7 +340,6 @@ export const usePlayTreeController = (id: string, config: PlayGameConfig) => {
     orientation,
     setOrientation,
 
-    // Move handling
     addMove,
     addMoveWithTime,
     setMoves,
@@ -352,6 +348,5 @@ export const usePlayTreeController = (id: string, config: PlayGameConfig) => {
     reset,
     makeMove,
     updateClock,
-    setCurrentSquare,
   }
 }

@@ -1,7 +1,7 @@
 import { Color, GameTree, GameNode } from 'src/types'
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, Dispatch, SetStateAction } from 'react'
 
-export const useAnalysisGameController = (
+export const useTreeController = (
   gameTree: GameTree,
   initialNode?: GameNode,
   initialOrientation: Color = 'white',
@@ -15,6 +15,28 @@ export const useAnalysisGameController = (
     if (!gameTree) return 0
     return gameTree.getMainLine().length
   }, [gameTree])
+
+  // Get current index in the main line for legacy compatibility
+  const currentIndex = useMemo(() => {
+    if (!currentNode || !gameTree) return 0
+    const mainLine = gameTree.getMainLine()
+    return mainLine.findIndex((node) => node === currentNode)
+  }, [currentNode, gameTree])
+
+  const setCurrentIndex = useCallback(
+    (indexOrUpdater: SetStateAction<number>) => {
+      if (!gameTree) return
+      const mainLine = gameTree.getMainLine()
+      const newIndex =
+        typeof indexOrUpdater === 'function'
+          ? indexOrUpdater(currentIndex)
+          : indexOrUpdater
+      if (newIndex >= 0 && newIndex < mainLine.length) {
+        setCurrentNode(mainLine[newIndex])
+      }
+    },
+    [gameTree, currentIndex],
+  )
 
   const goToNode = useCallback(
     (node: GameNode) => {
@@ -42,6 +64,7 @@ export const useAnalysisGameController = (
   }, [gameTree, setCurrentNode])
 
   return {
+    // Tree navigation
     currentNode,
     setCurrentNode,
     orientation,
@@ -51,5 +74,9 @@ export const useAnalysisGameController = (
     goToPreviousNode,
     goToRootNode,
     plyCount,
+
+    // Legacy array-style interface for backward compatibility
+    currentIndex,
+    setCurrentIndex,
   }
 }

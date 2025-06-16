@@ -2,7 +2,7 @@
 import { useContext } from 'react'
 
 import { Color } from 'src/types'
-import { GameControllerContext } from 'src/contexts'
+import { TreeControllerContext } from 'src/contexts'
 
 interface Props {
   player: Color
@@ -14,7 +14,7 @@ export const PromotionOverlay: React.FC<Props> = ({
   file,
   selectPromotion,
 }: Props) => {
-  const { orientation } = useContext(GameControllerContext)
+  const { orientation } = useContext(TreeControllerContext)
 
   const pieces = ['q', 'n', 'r', 'b']
   const flipped = orientation == 'black'

@@ -7,6 +7,7 @@ import {
   SetStateAction,
 } from 'react'
 import { Chess } from 'chess.ts'
+import type { Key } from 'chessground/types'
 import { TrainingGame } from 'src/types/training'
 import { GameTree, GameNode } from 'src/types'
 import { pseudoNL, normalizeEvaluation, normalize } from 'src/utils'
@@ -59,7 +60,7 @@ export const useTrainingTreeController = (game: TrainingGame) => {
   )
 
   // Training-specific state
-  const [currentSquare, setCurrentSquare] = useState<null | string>(null)
+  const [currentSquare, setCurrentSquare] = useState<Key | null>(null)
   const [currentMove, setCurrentMove] = useState<null | [string, string]>(null)
 
   // Update currentNode when game changes

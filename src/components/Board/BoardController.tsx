@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo } from 'react'
 
 import { useWindowSize } from 'src/hooks'
-import { GameControllerContext } from 'src/contexts/'
+import { TreeControllerContext } from 'src/contexts/'
 import { FlipIcon } from 'src/components/Icons/icons'
 
 interface Props {
@@ -16,7 +16,7 @@ export const BoardController: React.FC<Props> = ({ setCurrentMove }: Props) => {
     setCurrentIndex,
     currentIndex,
     plyCount,
-  } = useContext(GameControllerContext)
+  } = useContext(TreeControllerContext)
   const toggleBoardOrientation = useCallback(() => {
     setOrientation(orientation === 'white' ? 'black' : 'white')
   }, [orientation, setOrientation])

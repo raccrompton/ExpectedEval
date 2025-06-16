@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   useStockfishEngine,
   useMaiaEngine,
-  useAnalysisGameController,
+  useTreeController,
   useLocalStorage,
 } from '..'
 import { AnalyzedGame, GameTree } from 'src/types'
@@ -15,7 +15,7 @@ import { useMoveRecommendations } from './useMoveRecommendations'
 import { useBoardDescription } from './useBoardDescription'
 
 export const useAnalysisController = (game: AnalyzedGame) => {
-  const controller = useAnalysisGameController(
+  const controller = useTreeController(
     game.tree as GameTree,
     game.tree?.getRoot(),
   )

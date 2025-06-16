@@ -1,57 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Chess } from 'chess.ts'
 import { defaults } from 'chessground/state'
-import {
-  useCallback,
-  useContext,
-  useMemo,
-  Dispatch,
-  SetStateAction,
-} from 'react'
+import { useCallback, useMemo, Dispatch, SetStateAction } from 'react'
+import type { Key } from 'chessground/types'
 import Chessground from '@react-chess/chessground'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
-import type { Key } from 'chessground/types'
 
 import { useChessSound } from 'src/hooks'
 import { BaseGame, Check, GameNode, ClientBaseGame, Color } from 'src/types'
-import {
-  GameControllerContext,
-  AnalysisGameControllerContext,
-  TuringTreeControllerContext,
-} from 'src/contexts'
-import { PlayTreeControllerContext } from 'src/contexts/PlayTreeControllerContext/PlayTreeControllerContext'
-import { TrainingTreeControllerContext } from 'src/contexts/TrainingTreeControllerContext/TrainingTreeControllerContext'
 
 interface Props {
-  // Game data
   game?: BaseGame | ClientBaseGame
-
-  // Board state
-  currentNode?: GameNode
+  currentNode: GameNode
   orientation?: Color
   moves?: Map<string, string[]>
-
-  // Current move state (for training/analysis)
   move?: {
     fen: string
     move: [string, string]
     check?: Check
   }
-
-  // Fallback data for legacy compatibility
-  currentIndex?: number
-
-  // Event handlers
   setCurrentMove?: (move: [string, string] | null) => void
-  setCurrentSquare?:
-    | ((key: string | null) => void)
-    | Dispatch<SetStateAction<Key | null>>
-
-  // Visual elements
+  setCurrentSquare?: Dispatch<SetStateAction<Key | null>>
   shapes?: DrawShape[]
   brushes?: DrawBrushes
-
-  // Analysis-specific functionality
   goToNode?: (node: GameNode) => void
   gameTree?: any
 }
@@ -62,7 +33,6 @@ export const TreeGameBoard: React.FC<Props> = ({
   orientation = 'white',
   moves,
   move,
-  currentIndex,
   setCurrentMove,
   setCurrentSquare,
   shapes,
@@ -78,11 +48,7 @@ export const TreeGameBoard: React.FC<Props> = ({
       if (setCurrentSquare) setCurrentSquare(null)
 
       // Determine current FEN for sound calculation
-      const currentFen = currentNode
-        ? currentNode.fen
-        : move
-          ? move.fen
-          : game?.moves?.[currentIndex || 0]?.board
+      const currentFen = currentNode.fen
 
       if (currentFen) {
         const chess = new Chess(currentFen)
@@ -131,7 +97,6 @@ export const TreeGameBoard: React.FC<Props> = ({
       currentNode,
       move,
       game,
-      currentIndex,
       playSound,
       gameTree,
       goToNode,
@@ -141,28 +106,18 @@ export const TreeGameBoard: React.FC<Props> = ({
   // Determine board configuration
   const boardConfig = useMemo(() => {
     // For training: prioritize move result over currentNode when a move is made
-    const fen = move
-      ? move.fen
-      : currentNode
-        ? currentNode.fen
-        : game?.moves?.[currentIndex || 0]?.board
+    const fen = move ? move.fen : currentNode.fen
 
     const lastMove = move
       ? move.move
-      : currentNode
-        ? currentNode.move
-          ? ([currentNode.move.slice(0, 2), currentNode.move.slice(2, 4)] as [
-              Key,
-              Key,
-            ])
-          : []
-        : [...((game?.moves?.[currentIndex || 0]?.lastMove ?? []) as any)]
+      : currentNode.move
+        ? ([currentNode.move.slice(0, 2), currentNode.move.slice(2, 4)] as [
+            Key,
+            Key,
+          ])
+        : []
 
-    const check = move
-      ? move.check
-      : currentNode
-        ? currentNode.check
-        : game?.moves?.[currentIndex || 0]?.check
+    const check = move ? move.check : currentNode.check
 
     return {
       fen,
@@ -170,7 +125,7 @@ export const TreeGameBoard: React.FC<Props> = ({
       check,
       orientation: orientation as 'white' | 'black',
     }
-  }, [move, currentNode, game, currentIndex, orientation])
+  }, [move, currentNode, game, orientation])
 
   return (
     <Chessground
