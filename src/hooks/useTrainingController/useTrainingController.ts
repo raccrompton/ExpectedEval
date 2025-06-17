@@ -1,3 +1,246 @@
-// This file is deprecated - use useTrainingTreeController instead
-// Re-exporting the tree-based controller for backward compatibility
-export { useTrainingTreeController as useTrainingController } from './useTrainingTreeController'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  Dispatch,
+  SetStateAction,
+} from 'react'
+import { Chess } from 'chess.ts'
+import type { Key } from 'chessground/types'
+import { TrainingGame } from 'src/types/training'
+import { GameTree, GameNode } from 'src/types'
+import { pseudoNL, normalizeEvaluation, normalize } from 'src/utils'
+
+const buildTrainingGameTree = (game: TrainingGame): GameTree => {
+  if (!game.moves || game.moves.length === 0) {
+    return new GameTree(new Chess().fen())
+  }
+
+  // Start with the first position
+  const initialFen = game.moves[0].board
+  const tree = new GameTree(initialFen)
+  let currentNode = tree.getRoot()
+
+  // Build the tree from the moves array
+  for (let i = 1; i < game.moves.length; i++) {
+    const move = game.moves[i]
+    if (move.uci && move.san) {
+      currentNode = tree.addMainMove(
+        currentNode,
+        move.board,
+        move.uci,
+        move.san,
+      )
+    }
+  }
+
+  return tree
+}
+
+export const useTrainingTreeController = (game: TrainingGame) => {
+  // Build the game tree from the training game moves
+  const gameTree = useMemo(() => buildTrainingGameTree(game), [game])
+
+  // Initialize currentNode immediately with the target position
+  const initialNode = useMemo(() => {
+    const mainLine = gameTree.getMainLine()
+    if (mainLine.length > game.targetIndex) {
+      const targetNode = mainLine[game.targetIndex]
+      return targetNode
+    } else {
+      return gameTree.getRoot()
+    }
+  }, [gameTree, game.targetIndex])
+
+  // Navigation state
+  const [currentNode, setCurrentNode] = useState<GameNode>(initialNode)
+  const [orientation, setOrientation] = useState<'white' | 'black'>(
+    game.targetIndex % 2 === 0 ? 'white' : 'black',
+  )
+
+  // Training-specific state
+  const [currentSquare, setCurrentSquare] = useState<Key | null>(null)
+  const [currentMove, setCurrentMove] = useState<null | [string, string]>(null)
+
+  // Update currentNode when game changes
+  useEffect(() => {
+    if (gameTree.getMainLine().length > game.targetIndex) {
+      const newNode = gameTree.getMainLine()[game.targetIndex]
+      setCurrentNode(newNode)
+    } else {
+      setCurrentNode(gameTree.getRoot())
+    }
+    setCurrentMove(null)
+    setCurrentSquare(null)
+  }, [game, gameTree])
+
+  // Navigation helpers
+  const goToNode = useCallback((node: GameNode) => setCurrentNode(node), [])
+  const goToNextNode = useCallback(() => {
+    if (currentNode?.mainChild) setCurrentNode(currentNode.mainChild)
+  }, [currentNode])
+  const goToPreviousNode = useCallback(() => {
+    if (currentNode?.parent) setCurrentNode(currentNode.parent)
+  }, [currentNode])
+  const goToRootNode = useCallback(
+    () => setCurrentNode(gameTree.getRoot()),
+    [gameTree],
+  )
+
+  // Get current index in the main line
+  const currentIndex = useMemo(() => {
+    const mainLine = gameTree.getMainLine()
+    return mainLine.findIndex((node) => node === currentNode)
+  }, [currentNode, gameTree])
+
+  const setCurrentIndex = useCallback(
+    (indexOrUpdater: number | ((prev: number) => number)) => {
+      const mainLine = gameTree.getMainLine()
+      const newIndex =
+        typeof indexOrUpdater === 'function'
+          ? indexOrUpdater(currentIndex)
+          : indexOrUpdater
+      if (newIndex >= 0 && newIndex < mainLine.length) {
+        setCurrentNode(mainLine[newIndex])
+      }
+    },
+    [gameTree, currentIndex],
+  )
+
+  const plyCount = useMemo(() => gameTree.getMainLine().length, [gameTree])
+
+  // Training-specific data processing
+  const data = useMemo(() => {
+    const { maiaEvaluation, stockfishEvaluation, availableMoves } = game
+
+    const stockfishValues = Object.values(stockfishEvaluation)
+    const max = Math.max(...stockfishValues)
+    const min = Math.min(...stockfishValues)
+    Object.keys(stockfishEvaluation).forEach((move) => {
+      stockfishEvaluation[move] = normalize(stockfishEvaluation[move], min, max)
+    })
+
+    const maiaValues = Object.values(maiaEvaluation)
+    const maiaMax = Math.max(...maiaValues)
+    const maiaMin = Math.min(...maiaValues)
+
+    return Object.entries(stockfishEvaluation).map(([move, evaluation]) => {
+      const ny = normalize(maiaEvaluation[move], maiaMin, maiaMax)
+      const nx = normalize(
+        pseudoNL(normalizeEvaluation(evaluation, 0, 1)) + 8,
+        0,
+        7.5,
+      )
+      return {
+        id: `${nx}:${ny}`,
+        data: [
+          {
+            ny,
+            nx,
+            x: pseudoNL(normalizeEvaluation(evaluation, 0, 1)),
+            y: maiaEvaluation[move],
+            san: availableMoves[move].san,
+            move,
+          },
+        ],
+      }
+    })
+  }, [game])
+
+  // Available moves for the current position
+  const moves = useMemo(() => {
+    const moveMap = new Map<string, string[]>()
+
+    // Get the current position FEN
+    const currentFen = currentNode.fen
+
+    if (currentFen && currentIndex === game.targetIndex) {
+      // Use Chess.js to get all legal moves for the current position
+      const chess = new Chess(currentFen)
+      const legalMoves = chess.moves({ verbose: true })
+
+      // Convert to the format expected by Chessground
+      legalMoves.forEach((move) => {
+        const from = move.from
+        const to = move.to
+        moveMap.set(from, (moveMap.get(from) ?? []).concat([to]))
+      })
+    }
+
+    return moveMap
+  }, [currentNode, currentIndex, game.targetIndex])
+
+  // Move evaluation for the current selected move
+  const moveEvaluation = useMemo(() => {
+    if (!currentMove || currentIndex !== game.targetIndex) return null
+    const { maiaEvaluation, stockfishEvaluation } = game
+    const moveEval = {
+      maia: maiaEvaluation[currentMove.join('')],
+      stockfish: stockfishEvaluation[currentMove.join('')],
+    }
+    if (moveEval.maia === undefined || moveEval.stockfish === undefined)
+      return null
+    return moveEval
+  }, [currentIndex, currentMove, game])
+
+  // Current move details
+  const move = useMemo(() => {
+    if (currentMove && game.availableMoves[currentMove.join('')]) {
+      const {
+        board: fen,
+        check,
+        ...rest
+      } = game.availableMoves[currentMove.join('')]
+      return { move: currentMove, fen, check, ...rest }
+    }
+    return undefined
+  }, [currentMove, game.availableMoves])
+
+  const parseMove = useCallback(
+    (moveToParse: string[]) => {
+      if (moveToParse && game.availableMoves[moveToParse.join('')]) {
+        const {
+          board: fen,
+          check,
+          ...rest
+        } = game.availableMoves[moveToParse.join('')]
+        return { move: moveToParse as [string, string], fen, check, ...rest }
+      }
+    },
+    [game.availableMoves],
+  )
+
+  const controller = {
+    plyCount,
+    currentIndex,
+    orientation,
+    setOrientation,
+  }
+
+  const result = {
+    move,
+    controller,
+    plyCount,
+    currentMove,
+    parseMove,
+    setCurrentMove,
+    moveEvaluation,
+    setCurrentSquare,
+    currentSquare,
+    data,
+
+    gameTree,
+    currentNode,
+    goToNode,
+    goToNextNode,
+    goToPreviousNode,
+    goToRootNode,
+    currentIndex,
+    setCurrentIndex,
+    orientation,
+    setOrientation,
+  }
+
+  return result
+}

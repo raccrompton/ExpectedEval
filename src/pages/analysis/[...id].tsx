@@ -66,13 +66,6 @@ const AnalysisPage: NextPage = () => {
     useContext(ModalContext)
 
   const router = useRouter()
-  const [preferLegacyAnalysis] = useLocalStorage('preferLegacyAnalysis', false)
-
-  useEffect(() => {
-    if (preferLegacyAnalysis) {
-      router.push(window.location.href.replace('/analysis', '/analysis/legacy'))
-    }
-  }, [preferLegacyAnalysis, router])
 
   useEffect(() => {
     if (!openedModals.analysis) {
@@ -104,15 +97,10 @@ const AnalysisPage: NextPage = () => {
 
       setAnalyzedGame({ ...game, type: 'tournament' })
       setCurrentId(newId)
-      if (preferLegacyAnalysis) {
-        router.push(`/analysis/legacy/${newId.join('/')}`, undefined, {
-          shallow: true,
-        })
-      } else {
-        router.push(`/analysis/${newId.join('/')}`, undefined, {
-          shallow: true,
-        })
-      }
+
+      router.push(`/analysis/${newId.join('/')}`, undefined, {
+        shallow: true,
+      })
     },
     [router],
   )
@@ -137,13 +125,8 @@ const AnalysisPage: NextPage = () => {
         type: 'pgn',
       })
       setCurrentId([id, 'pgn'])
-      if (preferLegacyAnalysis) {
-        router.push(`/analysis/legacy/${id}/pgn`, undefined, {
-          shallow: true,
-        })
-      } else {
-        router.push(`/analysis/${id}/pgn`, undefined, { shallow: true })
-      }
+
+      router.push(`/analysis/${id}/pgn`, undefined, { shallow: true })
     },
     [router],
   )
@@ -165,15 +148,10 @@ const AnalysisPage: NextPage = () => {
 
       setAnalyzedGame({ ...game, type })
       setCurrentId([id, type])
-      if (preferLegacyAnalysis) {
-        router.push(`/analysis/legacy/${id}/${type}`, undefined, {
-          shallow: true,
-        })
-      } else {
-        router.push(`/analysis/${id}/${type}`, undefined, {
-          shallow: true,
-        })
-      }
+
+      router.push(`/analysis/${id}/${type}`, undefined, {
+        shallow: true,
+      })
     },
     [],
   )

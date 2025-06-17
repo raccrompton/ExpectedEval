@@ -26,15 +26,6 @@ export interface AnalysisWebGame {
   pgn?: string
 }
 
-export interface LegacyAnalyzedGame extends Game {
-  maiaEvaluations: { [model: string]: MoveMap[] }
-  stockfishEvaluations: StockfishEvaluations<EvaluationType>
-  positionEvaluations: { [model: string]: PositionEvaluation[] }
-  availableMoves: AvailableMoves[]
-  type: EvaluationType
-  pgn?: string
-}
-
 export interface AnalyzedGame extends ClientGame {
   maiaEvaluations: { [rating: string]: MaiaEvaluation }[]
   stockfishEvaluations: StockfishEvaluations<EvaluationType>

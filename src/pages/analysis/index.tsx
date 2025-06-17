@@ -9,7 +9,6 @@ import { getAnalysisGameList } from 'src/api'
 
 const AnalysisPage: NextPage = () => {
   const { push } = useRouter()
-  const [preferLegacyAnalysis] = useLocalStorage('preferLegacyAnalysis', false)
   const { analysisTournamentList, analysisPlayList } =
     useContext(AnalysisListContext)
   const [loading, setLoading] = useState(true)
@@ -19,11 +18,7 @@ const AnalysisPage: NextPage = () => {
       // First try to get play games
       if (analysisPlayList.length > 0) {
         const game = analysisPlayList[0]
-        if (preferLegacyAnalysis) {
-          push(`/analysis/legacy/${game.id}/play`)
-        } else {
-          push(`/analysis/${game.id}/play`)
-        }
+        push(`/analysis/${game.id}/play`)
         return
       }
 
@@ -32,11 +27,7 @@ const AnalysisPage: NextPage = () => {
         const playGames = await getAnalysisGameList('play', 1)
         if (playGames.games && playGames.games.length > 0) {
           const gameId = playGames.games[0].game_id
-          if (preferLegacyAnalysis) {
-            push(`/analysis/legacy/${gameId}/play`)
-          } else {
-            push(`/analysis/${gameId}/play`)
-          }
+          push(`/analysis/${gameId}/play`)
           return
         }
       } catch (error) {
@@ -51,11 +42,7 @@ const AnalysisPage: NextPage = () => {
         if (entries.length > 0) {
           const [firstPart, games] = entries[0]
           const gameId = firstPart.split('---')[0] + '/' + games[0].game_index
-          if (preferLegacyAnalysis) {
-            push(`/analysis/legacy/${gameId}`)
-          } else {
-            push(`/analysis/${gameId}`)
-          }
+          push(`/analysis/${gameId}`)
         }
       }
 
@@ -63,7 +50,7 @@ const AnalysisPage: NextPage = () => {
     }
 
     redirectToGame()
-  }, [analysisTournamentList, analysisPlayList, preferLegacyAnalysis, push])
+  }, [analysisTournamentList, analysisPlayList, push])
 
   return <Loading />
 }
