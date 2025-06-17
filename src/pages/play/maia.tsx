@@ -27,7 +27,7 @@ const playStatsLoader = async () => {
   }
 }
 
-const useVsMaiaPlayTreeController = (
+const useVsMaiaPlayController = (
   id: string,
   playGameConfig: PlayGameConfig,
 ) => {
@@ -162,7 +162,7 @@ const PlayMaia: React.FC<Props> = ({
   playGameConfig,
   playAgain,
 }: Props) => {
-  const controller = useVsMaiaPlayTreeController(id, playGameConfig)
+  const controller = useVsMaiaPlayController(id, playGameConfig)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
