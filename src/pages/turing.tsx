@@ -21,7 +21,7 @@ import {
 } from 'src/components'
 import { AllStats } from 'src/hooks/useStats'
 import { TuringGame } from 'src/types/turing'
-import { useTuringTreeController } from 'src/hooks'
+import { useTuringController } from 'src/hooks/useTuringController/useTuringController'
 
 const TuringPage: NextPage = () => {
   const { openedModals, setInstructionsModalProps: setInstructionsModalProps } =
@@ -34,7 +34,7 @@ const TuringPage: NextPage = () => {
     return () => setInstructionsModalProps(undefined)
   }, [setInstructionsModalProps, openedModals.turing])
 
-  const controller = useTuringTreeController()
+  const controller = useTuringController()
 
   return (
     <TuringControllerContext.Provider value={controller}>
@@ -60,13 +60,13 @@ const Turing: React.FC<Props> = (props: Props) => {
   const controller = useContext(TuringControllerContext)
 
   const launchContinue = useCallback(() => {
-    const fen =
-      controller.currentNode?.fen || game.moves[controller.currentIndex].board
+    const fen = controller.currentNode?.fen
 
-    const url = '/play' + '?fen=' + encodeURIComponent(fen)
-
-    window.open(url)
-  }, [game, controller])
+    if (fen) {
+      const url = '/play' + '?fen=' + encodeURIComponent(fen)
+      window.open(url)
+    }
+  }, [controller])
 
   const Info = (
     <>
@@ -149,13 +149,11 @@ const Turing: React.FC<Props> = (props: Props) => {
                 orientation={controller.orientation}
                 setOrientation={controller.setOrientation}
                 currentNode={controller.currentNode}
-                currentIndex={controller.currentIndex}
                 plyCount={controller.plyCount}
                 goToNode={controller.goToNode}
                 goToNextNode={controller.goToNextNode}
                 goToPreviousNode={controller.goToPreviousNode}
                 goToRootNode={controller.goToRootNode}
-                setCurrentIndex={controller.setCurrentIndex}
                 gameTree={controller.gameTree}
               />
             </div>
@@ -177,7 +175,7 @@ const Turing: React.FC<Props> = (props: Props) => {
             </div>
           </div>
           <div className="relative flex aspect-square h-[100vw] w-screen">
-            <GameBoard game={game} currentNode={controller.currentNode!} />
+            <GameBoard game={game} currentNode={controller.currentNode} />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="relative bottom-0 h-full flex-1 overflow-auto">
@@ -192,13 +190,11 @@ const Turing: React.FC<Props> = (props: Props) => {
                 orientation={controller.orientation}
                 setOrientation={controller.setOrientation}
                 currentNode={controller.currentNode}
-                currentIndex={controller.currentIndex}
                 plyCount={controller.plyCount}
                 goToNode={controller.goToNode}
                 goToNextNode={controller.goToNextNode}
                 goToPreviousNode={controller.goToPreviousNode}
                 goToRootNode={controller.goToRootNode}
-                setCurrentIndex={controller.setCurrentIndex}
                 gameTree={controller.gameTree}
               />
             </div>

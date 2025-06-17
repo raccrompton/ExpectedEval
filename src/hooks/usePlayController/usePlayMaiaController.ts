@@ -54,9 +54,7 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
   const [blackClock, setBlackClock] = useState<number>(initialClockValue)
   const [lastMoveTime, setLastMoveTime] = useState<number>(0)
 
-  const [currentNode, setCurrentNode] = useState<GameNode | undefined>(() =>
-    gameTree.getRoot(),
-  )
+  const [currentNode, setCurrentNode] = useState<GameNode>(gameTree.getRoot())
   const [orientation, setOrientation] = useState<'white' | 'black'>(
     config.player,
   )

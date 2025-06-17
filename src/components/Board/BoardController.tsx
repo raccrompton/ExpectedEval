@@ -1,3 +1,4 @@
+import { GameNode } from 'src/types'
 import { useWindowSize } from 'src/hooks'
 import { FlipIcon } from 'src/components/Icons/icons'
 import { useCallback, useEffect, useMemo } from 'react'
@@ -6,14 +7,12 @@ interface Props {
   // Controller data
   orientation: 'white' | 'black'
   setOrientation: (orientation: 'white' | 'black') => void
-  currentNode?: any
-  currentIndex?: number
+  currentNode: GameNode
   plyCount: number
-  goToNode?: (node: any) => void
+  goToNode: (node: GameNode) => void
   goToNextNode: () => void
   goToPreviousNode: () => void
   goToRootNode: () => void
-  setCurrentIndex?: (index: number) => void
   gameTree?: any
 
   // Optional event handler
@@ -24,13 +23,11 @@ export const BoardController: React.FC<Props> = ({
   orientation,
   setOrientation,
   currentNode,
-  currentIndex,
   plyCount,
   goToNode,
   goToNextNode,
   goToPreviousNode,
   goToRootNode,
-  setCurrentIndex,
   gameTree,
   setCurrentMove,
 }: Props) => {
@@ -40,26 +37,19 @@ export const BoardController: React.FC<Props> = ({
     setOrientation(orientation === 'white' ? 'black' : 'white')
   }, [orientation, setOrientation])
 
-  // Determine navigation state based on available data
   const hasPrevious = useMemo(() => {
     if (currentNode !== undefined) {
       return !!currentNode?.parent
     }
-    if (currentIndex !== undefined) {
-      return currentIndex > 0
-    }
     return false
-  }, [currentNode, currentIndex])
+  }, [currentNode])
 
   const hasNext = useMemo(() => {
     if (currentNode !== undefined) {
       return !!currentNode?.mainChild
     }
-    if (currentIndex !== undefined) {
-      return currentIndex < plyCount - 1
-    }
     return false
-  }, [currentNode, currentIndex, plyCount])
+  }, [currentNode])
 
   const getFirst = useCallback(() => {
     goToRootNode()
@@ -77,24 +67,16 @@ export const BoardController: React.FC<Props> = ({
   }, [goToNextNode, setCurrentMove])
 
   const getLast = useCallback(() => {
-    if (currentNode && goToNode) {
-      // Node-based navigation (Analysis, Play, Training)
-      let lastNode = currentNode
-      while (lastNode?.mainChild) {
-        lastNode = lastNode.mainChild
-      }
-      if (lastNode) {
-        goToNode(lastNode)
-      }
-    } else if (gameTree && setCurrentIndex) {
-      // Index-based navigation (Turing)
-      const mainLine = gameTree.getMainLine()
-      if (mainLine.length > 0) {
-        setCurrentIndex(mainLine.length - 1)
-      }
+    let lastNode = currentNode
+    while (lastNode?.mainChild) {
+      lastNode = lastNode.mainChild
     }
+    if (lastNode) {
+      goToNode(lastNode)
+    }
+
     setCurrentMove?.(null)
-  }, [currentNode, goToNode, gameTree, setCurrentIndex, setCurrentMove])
+  }, [currentNode, goToNode, gameTree, setCurrentMove])
 
   useEffect(() => {
     if (width <= 670) return

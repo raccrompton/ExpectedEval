@@ -13,7 +13,6 @@ export interface IPlayControllerContext extends BaseTreeControllerContext {
   playerActive: ReturnType<typeof usePlayMaiaController>['playerActive']
   toPlay: ReturnType<typeof usePlayMaiaController>['toPlay']
   moves: ReturnType<typeof usePlayMaiaController>['moves']
-  moveTimes: ReturnType<typeof usePlayMaiaController>['moveTimes']
   availableMoves: ReturnType<typeof usePlayMaiaController>['availableMoves']
   pieces: ReturnType<typeof usePlayMaiaController>['pieces']
   moveList: ReturnType<typeof usePlayMaiaController>['moveList']
@@ -21,8 +20,6 @@ export interface IPlayControllerContext extends BaseTreeControllerContext {
   blackClock: ReturnType<typeof usePlayMaiaController>['blackClock']
   lastMoveTime: ReturnType<typeof usePlayMaiaController>['lastMoveTime']
   stats: ReturnType<typeof usePlayMaiaController>['stats']
-  setMoves: ReturnType<typeof usePlayMaiaController>['setMoves']
-  setMoveTimes: ReturnType<typeof usePlayMaiaController>['setMoveTimes']
   setResigned: ReturnType<typeof usePlayMaiaController>['setResigned']
   reset: ReturnType<typeof usePlayMaiaController>['reset']
   makeMove: ReturnType<typeof usePlayMaiaController>['makeMove']
@@ -48,7 +45,6 @@ export const PlayControllerContext =
     playerActive: false,
     toPlay: 'black',
     moves: [],
-    moveTimes: [],
     availableMoves: [],
     pieces: {},
     moveList: [],
@@ -64,8 +60,6 @@ export const PlayControllerContext =
       lastRating: undefined,
       rating: 0,
     },
-    setMoves: fn,
-    setMoveTimes: fn,
     setResigned: fn,
     reset: fn,
     makeMove: fn,
@@ -77,8 +71,6 @@ export const PlayControllerContext =
     goToNextNode: fn,
     goToPreviousNode: fn,
     goToRootNode: fn,
-    currentIndex: 0,
-    setCurrentIndex: fn,
     addMove: fn,
     addMoveWithTime: fn,
   })
