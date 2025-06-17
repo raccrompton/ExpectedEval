@@ -31,7 +31,6 @@ export interface PlayGameConfig {
 export interface PlayedGame extends BaseGame {
   termination?: Termination
   turn: Color
-  tree?: GameTree
 }
 
 export interface AvailableMove {

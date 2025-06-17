@@ -15,10 +15,7 @@ import { useMoveRecommendations } from './useMoveRecommendations'
 import { useBoardDescription } from './useBoardDescription'
 
 export const useAnalysisController = (game: AnalyzedGame) => {
-  const controller = useTreeController(
-    game.tree as GameTree,
-    game.tree.getRoot(),
-  )
+  const controller = useTreeController(game.tree)
 
   const [analysisState, setAnalysisState] = useState(0)
   const inProgressAnalyses = useMemo(() => new Set<string>(), [])
@@ -130,8 +127,18 @@ export const useAnalysisController = (game: AnalyzedGame) => {
   }, [currentMove, controller.currentNode])
 
   return {
+    gameTree: controller.gameTree,
+    currentNode: controller.currentNode,
+    setCurrentNode: controller.setCurrentNode,
+    goToNode: controller.goToNode,
+    goToNextNode: controller.goToNextNode,
+    goToPreviousNode: controller.goToPreviousNode,
+    goToRootNode: controller.goToRootNode,
+    plyCount: controller.plyCount,
+    orientation: controller.orientation,
+    setOrientation: controller.setOrientation,
+
     maiaStatus,
-    controller,
     downloadMaia,
     maiaProgress,
     move,

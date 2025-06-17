@@ -76,7 +76,7 @@ export const useTuringController = () => {
     return buildTuringGameTree(game)
   }, [game])
 
-  const controller = useTreeController(gameTree, undefined, 'white')
+  const controller = useTreeController(gameTree, 'white')
 
   useEffect(() => {
     if (gameTree && game) {

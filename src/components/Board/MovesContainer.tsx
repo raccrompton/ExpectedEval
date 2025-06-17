@@ -3,12 +3,12 @@
 import { Tooltip } from 'react-tooltip'
 import React, { useContext, useMemo, Fragment, useEffect } from 'react'
 import { WindowSizeContext } from 'src/contexts'
-import { GameNode, AnalyzedGame, Termination, ClientBaseGame } from 'src/types'
+import { GameNode, AnalyzedGame, Termination, BaseGame } from 'src/types'
 import { TuringGame } from 'src/types/turing'
 import { useBaseTreeController } from 'src/hooks/useBaseTreeController'
 
 interface AnalysisProps {
-  game: ClientBaseGame | AnalyzedGame
+  game: BaseGame | AnalyzedGame
   highlightIndices?: number[]
   termination?: Termination
   type: 'analysis'
@@ -22,7 +22,7 @@ interface TuringProps {
 }
 
 interface PlayProps {
-  game: ClientBaseGame
+  game: BaseGame
   highlightIndices?: number[]
   termination?: Termination
   type: 'play'

@@ -242,23 +242,7 @@ const Analysis: React.FC<Props> = ({
   const toastId = useRef<string>(null)
   const [currentSquare, setCurrentSquare] = useState<Key | null>(null)
 
-  const {
-    maiaStatus,
-    downloadMaia,
-    maiaProgress,
-    controller,
-    move,
-    moves,
-    currentMaiaModel,
-    setCurrentMaiaModel,
-    colorSanMapping,
-    moveEvaluation,
-    movesByRating,
-    moveRecommendations,
-    moveMap,
-    blunderMeter,
-    boardDescription,
-  } = useAnalysisController(analyzedGame)
+  const controller = useAnalysisController(analyzedGame)
 
   useEffect(() => {
     controller.setCurrentNode(analyzedGame.tree?.getRoot())
@@ -275,9 +259,9 @@ const Analysis: React.FC<Props> = ({
   }, [])
 
   useEffect(() => {
-    if (maiaStatus === 'loading' && !toastId.current) {
+    if (controller.maiaStatus === 'loading' && !toastId.current) {
       toastId.current = toast.loading('Loading Maia Model...')
-    } else if (maiaStatus === 'ready') {
+    } else if (controller.maiaStatus === 'ready') {
       if (toastId.current) {
         toast.success('Loaded Maia! Analysis is ready', {
           id: toastId.current,
@@ -286,7 +270,7 @@ const Analysis: React.FC<Props> = ({
         toast.success('Loaded Maia! Analysis is ready')
       }
     }
-  }, [maiaStatus])
+  }, [controller.maiaStatus])
 
   const launchContinue = useCallback(() => {
     const fen = controller.currentNode?.fen as string
@@ -298,8 +282,8 @@ const Analysis: React.FC<Props> = ({
   useEffect(() => {
     const arr = []
 
-    if (moveEvaluation?.maia) {
-      const maia = Object.entries(moveEvaluation?.maia?.policy)[0]
+    if (controller.moveEvaluation?.maia) {
+      const maia = Object.entries(controller.moveEvaluation?.maia?.policy)[0]
       if (maia) {
         arr.push({
           brush: 'red',
@@ -309,8 +293,10 @@ const Analysis: React.FC<Props> = ({
       }
     }
 
-    if (moveEvaluation?.stockfish) {
-      const stockfish = Object.entries(moveEvaluation?.stockfish.cp_vec)[0]
+    if (controller.moveEvaluation?.stockfish) {
+      const stockfish = Object.entries(
+        controller.moveEvaluation?.stockfish.cp_vec,
+      )[0]
       if (stockfish) {
         arr.push({
           brush: 'blue',
@@ -322,7 +308,11 @@ const Analysis: React.FC<Props> = ({
     }
 
     setArrows(arr)
-  }, [moveEvaluation, controller.currentNode, controller.orientation])
+  }, [
+    controller.moveEvaluation,
+    controller.currentNode,
+    controller.orientation,
+  ])
 
   const hover = (move?: string) => {
     if (move) {
@@ -366,7 +356,7 @@ const Analysis: React.FC<Props> = ({
           newFen,
           moveString,
           san,
-          currentMaiaModel,
+          controller.currentMaiaModel,
         )
         controller.goToNode(newVariation)
       }
@@ -537,7 +527,7 @@ const Analysis: React.FC<Props> = ({
             <div className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]">
               <GameBoard
                 game={analyzedGame}
-                moves={moves}
+                moves={controller.moves}
                 setCurrentSquare={setCurrentSquare}
                 shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
                 currentNode={controller.currentNode as GameNode}
@@ -562,8 +552,8 @@ const Analysis: React.FC<Props> = ({
             />
           </div>
           <ConfigurableScreens
-            currentMaiaModel={currentMaiaModel}
-            setCurrentMaiaModel={setCurrentMaiaModel}
+            currentMaiaModel={controller.currentMaiaModel}
+            setCurrentMaiaModel={controller.setCurrentMaiaModel}
             launchContinue={launchContinue}
             MAIA_MODELS={MAIA_MODELS}
             game={analyzedGame}
@@ -578,32 +568,32 @@ const Analysis: React.FC<Props> = ({
             <Highlight
               hover={hover}
               makeMove={makeMove}
-              currentMaiaModel={currentMaiaModel}
-              recommendations={moveRecommendations}
+              currentMaiaModel={controller.currentMaiaModel}
+              recommendations={controller.moveRecommendations}
               moveEvaluation={
-                moveEvaluation as {
+                controller.moveEvaluation as {
                   maia?: MaiaEvaluation
                   stockfish?: StockfishEvaluation
                 }
               }
-              movesByRating={movesByRating}
-              colorSanMapping={colorSanMapping}
-              boardDescription={boardDescription}
+              movesByRating={controller.movesByRating}
+              colorSanMapping={controller.colorSanMapping}
+              boardDescription={controller.boardDescription}
             />
           </div>
           <div className="flex h-[calc((55vh+4.5rem)/2)] flex-row gap-2">
             <div className="flex h-full w-full flex-col">
               <MoveMap
-                moveMap={moveMap}
-                colorSanMapping={colorSanMapping}
+                moveMap={controller.moveMap}
+                colorSanMapping={controller.colorSanMapping}
                 setHoverArrow={setHoverArrow}
               />
             </div>
             <BlunderMeter
               hover={hover}
               makeMove={makeMove}
-              data={blunderMeter}
-              colorSanMapping={colorSanMapping}
+              data={controller.blunderMeter}
+              colorSanMapping={controller.colorSanMapping}
             />
           </div>
         </div>
@@ -667,8 +657,8 @@ const Analysis: React.FC<Props> = ({
               title="Analysis"
               icon="bar_chart"
               type="analysis"
-              currentMaiaModel={currentMaiaModel}
-              setCurrentMaiaModel={setCurrentMaiaModel}
+              currentMaiaModel={controller.currentMaiaModel}
+              setCurrentMaiaModel={controller.setCurrentMaiaModel}
               MAIA_MODELS={MAIA_MODELS}
               onGameListClick={() => setShowGameListMobile(true)}
               showGameListButton={true}
@@ -678,7 +668,7 @@ const Analysis: React.FC<Props> = ({
             <div className="relative flex h-[100vw] w-screen">
               <GameBoard
                 game={analyzedGame}
-                moves={moves}
+                moves={controller.moves}
                 setCurrentSquare={setCurrentSquare}
                 shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
                 currentNode={controller.currentNode as GameNode}
@@ -712,33 +702,33 @@ const Analysis: React.FC<Props> = ({
               <BlunderMeter
                 hover={hover}
                 makeMove={makeMove}
-                data={blunderMeter}
-                colorSanMapping={colorSanMapping}
+                data={controller.blunderMeter}
+                colorSanMapping={controller.colorSanMapping}
               />
               <Highlight
                 hover={hover}
                 makeMove={makeMove}
-                currentMaiaModel={currentMaiaModel}
-                recommendations={moveRecommendations}
+                currentMaiaModel={controller.currentMaiaModel}
+                recommendations={controller.moveRecommendations}
                 moveEvaluation={
-                  moveEvaluation as {
+                  controller.moveEvaluation as {
                     maia?: MaiaEvaluation
                     stockfish?: StockfishEvaluation
                   }
                 }
-                movesByRating={movesByRating}
-                colorSanMapping={colorSanMapping}
-                boardDescription={boardDescription}
+                movesByRating={controller.movesByRating}
+                colorSanMapping={controller.colorSanMapping}
+                boardDescription={controller.boardDescription}
               />
               <MoveMap
-                moveMap={moveMap}
-                colorSanMapping={colorSanMapping}
+                moveMap={controller.moveMap}
+                colorSanMapping={controller.colorSanMapping}
                 setHoverArrow={setHoverArrow}
               />
             </div>
             <ConfigurableScreens
-              currentMaiaModel={currentMaiaModel}
-              setCurrentMaiaModel={setCurrentMaiaModel}
+              currentMaiaModel={controller.currentMaiaModel}
+              setCurrentMaiaModel={controller.setCurrentMaiaModel}
               launchContinue={launchContinue}
               MAIA_MODELS={MAIA_MODELS}
               game={analyzedGame}
@@ -766,11 +756,15 @@ const Analysis: React.FC<Props> = ({
         />
       </Head>
       <AnimatePresence>
-        {maiaStatus === 'no-cache' || maiaStatus === 'downloading' ? (
-          <DownloadModelModal progress={maiaProgress} download={downloadMaia} />
+        {controller.maiaStatus === 'no-cache' ||
+        controller.maiaStatus === 'downloading' ? (
+          <DownloadModelModal
+            progress={controller.maiaProgress}
+            download={controller.downloadMaia}
+          />
         ) : null}
       </AnimatePresence>
-      <TreeControllerContext.Provider value={{ ...controller }}>
+      <TreeControllerContext.Provider value={controller}>
         {analyzedGame && (isMobile ? mobileLayout : desktopLayout)}
       </TreeControllerContext.Provider>
     </>
