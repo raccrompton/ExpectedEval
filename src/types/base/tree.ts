@@ -80,8 +80,9 @@ export class GameTree {
     move: string,
     san: string,
     activeModel?: string,
+    time?: number,
   ): GameNode {
-    return node.addChild(fen, move, san, true, activeModel)
+    return node.addChild(fen, move, san, true, activeModel, time)
   }
 
   addVariation(
@@ -90,11 +91,12 @@ export class GameTree {
     move: string,
     san: string,
     activeModel?: string,
+    time?: number,
   ): GameNode {
     if (node.findVariation(move)) {
       return node.findVariation(move) as GameNode
     }
-    return node.addChild(fen, move, san, false, activeModel)
+    return node.addChild(fen, move, san, false, activeModel, time)
   }
 
   toMoveArray(): string[] {
@@ -105,6 +107,52 @@ export class GameTree {
       if (node.move) moves.push(node.move)
     }
     return moves
+  }
+
+  toTimeArray(): number[] {
+    const times: number[] = []
+    let node = this.root
+    while (node.mainChild) {
+      node = node.mainChild
+      times.push(node.time || 0)
+    }
+    return times
+  }
+
+  addMoveToMainLine(moveUci: string, time?: number): GameNode | null {
+    const mainLine = this.getMainLine()
+    const lastNode = mainLine[mainLine.length - 1]
+
+    const chess = new Chess(lastNode.fen)
+    const result = chess.move(moveUci, { sloppy: true })
+
+    if (result) {
+      return this.addMainMove(
+        lastNode,
+        chess.fen(),
+        moveUci,
+        result.san,
+        undefined,
+        time,
+      )
+    }
+
+    return null
+  }
+
+  addMovesToMainLine(moves: string[], times?: number[]): GameNode | null {
+    let currentNode: GameNode | null = null
+
+    for (let i = 0; i < moves.length; i++) {
+      const move = moves[i]
+      const time = times?.[i]
+      currentNode = this.addMoveToMainLine(move, time)
+      if (!currentNode) {
+        return null
+      }
+    }
+
+    return currentNode
   }
 }
 
@@ -126,6 +174,7 @@ export class GameNode {
   private _bestMove: boolean
   private _moveNumber: number
   private _unlikelyGoodMove: boolean
+  private _time: number | null
 
   private static readonly BLUNDER_THRESHOLD =
     MOVE_CLASSIFICATION.BLUNDER_THRESHOLD
@@ -146,6 +195,7 @@ export class GameNode {
     san: string | null = null,
     parent: GameNode | null = null,
     mainline = true,
+    time: number | null = null,
   ) {
     this._fen = fen
     this._move = move
@@ -164,6 +214,7 @@ export class GameNode {
     this._turn = this.parseTurn(fen)
     this._check = fen.includes('+')
     this._moveNumber = this.parseMoveNumber(fen, this._turn)
+    this._time = time
   }
 
   get fen(): string {
@@ -216,6 +267,9 @@ export class GameNode {
   }
   get unlikelyGoodMove(): boolean {
     return this._unlikelyGoodMove
+  }
+  get time(): number | null {
+    return this._time
   }
 
   private parseTurn(fen: string): Color {
@@ -314,8 +368,9 @@ export class GameNode {
     san: string,
     mainline = false,
     activeModel?: string,
+    time?: number,
   ): GameNode {
-    const child = new GameNode(fen, move, san, this, mainline)
+    const child = new GameNode(fen, move, san, this, mainline, time || null)
     this._children.push(child)
     if (mainline) {
       this._mainChild = child
@@ -432,5 +487,10 @@ export class GameNode {
     this._mainChild = variation
     variation._mainline = true
     return true
+  }
+
+  // Set the time for this move
+  setTime(time: number): void {
+    this._time = time
   }
 }

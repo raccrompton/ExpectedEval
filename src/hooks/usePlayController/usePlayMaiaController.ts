@@ -38,14 +38,12 @@ const computeTermination = (chess: Chess): Termination | undefined => {
 }
 
 export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
-  // Core game state
   const [gameTree, setGameTree] = useState<GameTree>(
     () => new GameTree(config.startFen || nullFen),
   )
-  const [moveTimes, setMoveTimes] = useState<number[]>([])
+  const [treeVersion, setTreeVersion] = useState<number>(0)
   const [resigned, setResigned] = useState<boolean>(false)
 
-  // Clock state
   const [baseMinutes, incrementSeconds] =
     config.timeControl == 'unlimited'
       ? [0, 0]
@@ -56,7 +54,6 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
   const [blackClock, setBlackClock] = useState<number>(initialClockValue)
   const [lastMoveTime, setLastMoveTime] = useState<number>(0)
 
-  // Navigation state
   const [currentNode, setCurrentNode] = useState<GameNode | undefined>(() =>
     gameTree.getRoot(),
   )
@@ -64,8 +61,15 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
     config.player,
   )
 
-  // Derived game state
-  const moveList = useMemo(() => gameTree.toMoveArray(), [gameTree])
+  const moveList = useMemo(
+    () => gameTree.toMoveArray(),
+    [gameTree, treeVersion],
+  )
+
+  const moveTimes = useMemo(
+    () => gameTree.toTimeArray(),
+    [gameTree, treeVersion],
+  )
 
   const game: PlayedGame = useMemo(() => {
     const mainLine = gameTree.getMainLine()
@@ -80,7 +84,6 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
         } as Termination)
       : computeTermination(chess)
 
-    // Build moves array for compatibility
     const moves = []
     const rootNode = gameTree.getRoot()
     const rootChess = new Chess(rootNode.fen)
@@ -114,12 +117,11 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
       termination,
       turn: chess.turn() == 'b' ? 'black' : 'white',
     }
-  }, [gameTree, resigned, whiteClock, blackClock, id])
+  }, [gameTree, treeVersion, resigned, whiteClock, blackClock, id])
 
   const toPlay: Color | null = game.termination ? null : game.turn
   const playerActive = toPlay == config.player
 
-  // Available moves and pieces
   const { availableMoves, pieces } = useMemo(() => {
     if (!currentNode) return { availableMoves: [], pieces: {} }
 
@@ -146,9 +148,8 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
     }
 
     return { availableMoves, pieces }
-  }, [currentNode, playerActive, game.termination])
+  }, [currentNode, playerActive, game.termination, treeVersion])
 
-  // Navigation helpers
   const goToNode = useCallback((node: GameNode) => setCurrentNode(node), [])
   const goToNextNode = useCallback(() => {
     if (currentNode?.mainChild) setCurrentNode(currentNode.mainChild)
@@ -161,13 +162,14 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
     [gameTree],
   )
 
-  const plyCount = useMemo(() => gameTree.getMainLine().length, [gameTree])
+  const plyCount = useMemo(
+    () => gameTree.getMainLine().length,
+    [gameTree, treeVersion],
+  )
 
-  // Clock management
   const updateClock = useCallback(
     (overrideTime: number | undefined = undefined): number => {
       if (moveList.length < 2) {
-        setMoveTimes([...moveTimes, 0])
         return 0 // Clock does not start until first two moves made
       }
 
@@ -187,14 +189,12 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
         }
       }
 
-      setMoveTimes([...moveTimes, elapsed])
       setLastMoveTime(now)
       return elapsed
     },
     [
       moveList.length,
       lastMoveTime,
-      moveTimes,
       toPlay,
       whiteClock,
       blackClock,
@@ -202,7 +202,6 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
     ],
   )
 
-  // Game end by time
   useEffect(() => {
     if (
       playerActive &&
@@ -227,35 +226,13 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
     whiteClock,
   ])
 
-  // Move handling
   const addMove = useCallback(
     (moveUci: string) => {
-      const mainLine = gameTree.getMainLine()
-      const lastNode = mainLine[mainLine.length - 1]
-      const chess = new Chess(lastNode.fen)
-      const result = chess.move(moveUci, { sloppy: true })
-
-      if (result) {
-        const newTree = new GameTree(gameTree.getRoot().fen)
-        // Rebuild tree with existing moves plus new move
-        const existingMoves = gameTree.toMoveArray()
-        let node = newTree.getRoot()
-
-        for (const move of [...existingMoves, moveUci]) {
-          const tempChess = new Chess(node.fen)
-          const tempResult = tempChess.move(move, { sloppy: true })
-          if (tempResult) {
-            node = newTree.addMainMove(
-              node,
-              tempChess.fen(),
-              move,
-              tempResult.san,
-            )
-          }
-        }
-
-        setGameTree(newTree)
-        setCurrentNode(node) // Move to the new position
+      const newNode = gameTree.addMoveToMainLine(moveUci)
+      if (newNode) {
+        setCurrentNode(newNode)
+        // Force re-render by incrementing tree version
+        setTreeVersion((prev) => prev + 1)
       }
     },
     [gameTree],
@@ -263,40 +240,25 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
 
   const addMoveWithTime = useCallback(
     (moveUci: string, moveTime: number) => {
-      addMove(moveUci)
-      setMoveTimes([...moveTimes, moveTime])
-    },
-    [addMove, moveTimes],
-  )
-
-  // Legacy compatibility
-  const setMoves = useCallback(
-    (newMoves: string[]) => {
-      const newTree = new GameTree(config.startFen || nullFen)
-      let node = newTree.getRoot()
-
-      for (const move of newMoves) {
-        const chess = new Chess(node.fen)
-        const result = chess.move(move, { sloppy: true })
-        if (result) {
-          node = newTree.addMainMove(node, chess.fen(), move, result.san)
-        }
+      const newNode = gameTree.addMoveToMainLine(moveUci, moveTime)
+      if (newNode) {
+        setCurrentNode(newNode)
+        // Force re-render by incrementing tree version
+        setTreeVersion((prev) => prev + 1)
       }
-
-      setGameTree(newTree)
-      setCurrentNode(node)
     },
-    [config.startFen],
+    [gameTree],
   )
 
   const reset = () => {
-    setGameTree(new GameTree(config.startFen || nullFen))
-    setCurrentNode(gameTree.getRoot())
-    setMoveTimes([])
+    const newTree = new GameTree(config.startFen || nullFen)
+    setGameTree(newTree)
+    setCurrentNode(newTree.getRoot())
     setResigned(false)
     setLastMoveTime(0)
     setWhiteClock(initialClockValue)
     setBlackClock(initialClockValue)
+    setTreeVersion((prev) => prev + 1)
   }
 
   const makeMove = async (moveUci: string): Promise<void> => {
@@ -311,7 +273,6 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
   }
 
   return {
-    // Game state
     game,
     gameTree,
     currentNode,
@@ -342,8 +303,6 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
 
     addMove,
     addMoveWithTime,
-    setMoves,
-    setMoveTimes,
     setResigned,
     reset,
     makeMove,
