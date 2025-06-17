@@ -3,7 +3,6 @@ import { useState, useMemo, useCallback } from 'react'
 
 export const useTreeController = (
   gameTree: GameTree,
-  initialNode?: GameNode,
   initialOrientation: Color = 'white',
 ) => {
   const [currentNode, setCurrentNode] = useState<GameNode>(gameTree.getRoot())
@@ -40,6 +39,7 @@ export const useTreeController = (
   }, [gameTree, setCurrentNode])
 
   return {
+    gameTree,
     currentNode,
     setCurrentNode,
     orientation,

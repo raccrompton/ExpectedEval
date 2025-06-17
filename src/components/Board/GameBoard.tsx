@@ -7,10 +7,10 @@ import Chessground from '@react-chess/chessground'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
 
 import { useChessSound } from 'src/hooks'
-import { BaseGame, Check, GameNode, ClientBaseGame, Color } from 'src/types'
+import { BaseGame, Check, GameNode, BaseGame, Color } from 'src/types'
 
 interface Props {
-  game?: BaseGame | ClientBaseGame
+  game?: BaseGame | BaseGame
   currentNode: GameNode
   orientation?: Color
   moves?: Map<string, string[]>

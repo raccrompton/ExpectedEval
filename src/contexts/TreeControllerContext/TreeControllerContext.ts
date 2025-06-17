@@ -14,7 +14,7 @@ const defaultGameTree = new GameTree(new Chess().fen())
 export const TreeControllerContext =
   React.createContext<ITreeControllerContext>({
     gameTree: defaultGameTree,
-    currentNode: undefined,
+    currentNode: defaultGameTree.getRoot(),
     setCurrentNode: () => {
       throw new Error('TreeControllerContext not provided')
     },
@@ -35,8 +35,4 @@ export const TreeControllerContext =
       throw new Error('TreeControllerContext not provided')
     },
     plyCount: 0,
-    currentIndex: 0,
-    setCurrentIndex: (() => {
-      throw new Error('TreeControllerContext not provided')
-    }) as (indexOrUpdater: SetStateAction<number>) => void,
   })
