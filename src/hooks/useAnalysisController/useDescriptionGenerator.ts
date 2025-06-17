@@ -1,26 +1,17 @@
 import { Chess } from 'chess.js'
 
-type StockfishEvals = Record<string, number>   // UCI → eval (white-positive)
-type MaiaEvals = Record<string, number[]>      // UCI → 9-length probability array
+type StockfishEvals = Record<string, number>
+type MaiaEvals = Record<string, number[]>
 
 const A = 1
 const B = 0.8
-const EPS = 0.08    // 8 %
+const EPS = 0.08
 
 const winRate = (p: number) => 1 / (1 + Math.exp(-(p - A) / B))
 const wdl = (p: number) => {
   const w = winRate(p)
   const l = winRate(-p)
   return { w, d: 1 - w - l }
-}
-
-const legalMovesUci = (fen: string) => {
-  const c = new Chess(fen)
-  const s = new Set<string>()
-  c
-    .moves({ verbose: true })
-    .forEach(m => s.add(m.from + m.to + (m.promotion ?? '')))
-  return s
 }
 
 export function describePosition(
@@ -30,13 +21,19 @@ export function describePosition(
   whiteToMove: boolean,
   eps = EPS
 ): string {
-  const legal = legalMovesUci(fen)
+  const chess = new Chess(fen)
+
+  const legal = new Set<string>()
+  chess
+    .moves({ verbose: true })
+    .forEach(m => legal.add(m.from + m.to + (m.promotion ?? '')))
+
   const moves = Object.keys(sf).filter(m => legal.has(m))
   if (!moves.length) return 'No legal moves available.'
 
   const seval: Record<string, number> = {}
   moves.forEach(m => {
-    seval[m] = (whiteToMove ? 1 : -1) * sf[m]
+    seval[m] = (whiteToMove ? 1 : 1) * sf[m]
   })
 
   const opt = moves.reduce((a, b) => (seval[a] > seval[b] ? a : b))
@@ -51,6 +48,20 @@ export function describePosition(
   const abundance =
     nGood === 1 ? 'only one move' : nGood === 2 ? 'two moves' : 'several moves'
 
+  const uciToSan = (uci: string): string => {
+    const from = uci.slice(0, 2)
+    const to = uci.slice(2, 4)
+    const promotion = uci.length > 4 ? uci[4] : undefined
+    const mv = chess.move({ from, to, promotion })
+    const san = mv?.san ?? uci
+    chess.undo()
+    return san
+  }
+
+  const bestGoodMoves = [...good].sort((a, b) => seval[b] - seval[a]).slice(0, 3)
+  const moveList = bestGoodMoves.map(uciToSan).join(', ')
+  const bestMoveSan = uciToSan(opt)
+
   const avgGood = good.reduce((s, m) => s + seval[m], 0) / nGood
 
   let outcome: string
@@ -64,6 +75,7 @@ export function describePosition(
   let setLevels = 0
   let optLevels = 0
   let temptLevels = 0
+  const temptCount: Record<string, number> = {}
 
   for (let lvl = 0; lvl < 9; lvl++) {
     const probs = moves
@@ -79,10 +91,15 @@ export function describePosition(
     if (m1 === opt) optLevels++
 
     const nearTop = (prob: number) => p1 - prob <= eps
+    const addTempt = (uci: string) => {
+      temptCount[uci] = (temptCount[uci] ?? 0) + 1
+      return true
+    }
+
     const tempting =
       inGood &&
-      ((m2 && !good.includes(m2) && nearTop(p2)) ||
-        (m3 && !good.includes(m3) && nearTop(p3)))
+      ((m2 && !good.includes(m2) && nearTop(p2) && addTempt(m2)) ||
+        (m3 && !good.includes(m3) && nearTop(p3) && addTempt(m3)))
 
     if (tempting) temptLevels++
   }
@@ -93,33 +110,47 @@ export function describePosition(
 
   const phrSet =
     setTier === 0
-      ? 'hard for players to find'
+      ? 'hard for human players to find'
       : setTier === 1
       ? 'findable for skilled players'
       : 'straightforward for players across skill levels to find'
 
   let phrBest =
     optTier === 0
-      ? 'hard for players to find'
+      ? 'hard for human players to find'
       : optTier === 1
       ? 'findable for skilled players'
       : 'straightforward for players across skill levels to find'
 
-  if (optTier === 1) phrBest = 'only ' + phrBest
+  if (optTier === 1 && optTier < setTier) phrBest = 'only ' + phrBest
 
   const verb = nGood === 1 ? 'is' : 'are'
   const pron = nGood === 1 ? 'it is' : 'they are'
 
+  let temptText = ''
   const hasTempting = setLevels > 0 && temptLevels > setLevels / 2
-  const temptText = hasTempting ? ' There are also tempting alternatives.' : ''
+  if (hasTempting) {
+    const topTemptUci =
+      Object.entries(temptCount).sort((a, b) => b[1] - a[1])[0]?.[0]
+    const temptSan = topTemptUci ? uciToSan(topTemptUci) : ''
+    temptText =
+      temptSan !== ''
+        ? ` There are also tempting alternatives, such as ${temptSan}.`
+        : ' There are also tempting alternatives.'
+    if (!(optTier < setTier) && setTier == 2) {
+    temptText = ` However, there are tempting alternatives, such as ${temptSan}.`
+  }
+
+  }
+
 
   if (nGood === 1) {
-    return `There ${verb} ${abundance} ${outcome}, and ${pron} ${phrSet}.${temptText}`
+    return `There ${verb} ${abundance} (${moveList}) ${outcome}, and ${pron} ${phrSet}.${temptText}`
   }
 
   if (optTier < setTier) {
-    return `There ${verb} ${abundance} ${outcome}, and ${pron} ${phrSet}, but the best move is ${phrBest}.${temptText}`
+    return `There ${verb} ${abundance} (${moveList}) ${outcome}, and ${pron} ${phrSet}, but the best move (${bestMoveSan}) is ${phrBest}.${temptText}`
   }
 
-  return `There ${verb} ${abundance} ${outcome}, and ${pron} ${phrSet}.${temptText}`
+  return `There ${verb} ${abundance} (${moveList}) ${outcome}, and ${pron} ${phrSet}.${temptText}`
 }
