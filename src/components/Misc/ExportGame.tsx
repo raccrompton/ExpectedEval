@@ -12,7 +12,7 @@ interface AnalysisProps {
   blackPlayer: string
   event: string
   type: 'analysis'
-  currentNode?: GameNode
+  currentNode: GameNode
 }
 
 interface PlayProps {
@@ -22,7 +22,7 @@ interface PlayProps {
   blackPlayer: string
   event: string
   type: 'play'
-  currentNode?: never
+  currentNode: GameNode
 }
 
 interface TuringProps {
@@ -31,7 +31,7 @@ interface TuringProps {
   blackPlayer: string
   event: string
   type: 'turing'
-  currentNode?: never
+  currentNode: GameNode
 }
 
 type Props = AnalysisProps | PlayProps | TuringProps
@@ -46,7 +46,7 @@ export const ExportGame: React.FC<Props> = (props) => {
   const { currentNode, gameTree } =
     type === 'analysis'
       ? {
-          currentNode: props.currentNode || controller.currentNode,
+          currentNode: props.currentNode,
           gameTree: (props.game as AnalyzedGame).tree,
         }
       : type === 'play'
@@ -60,37 +60,21 @@ export const ExportGame: React.FC<Props> = (props) => {
           }
 
   useEffect(() => {
-    if (gameTree && currentNode) {
-      const tree = new GameTree(gameTree.getRoot().fen)
-      tree.setHeader('ID', game.id)
-      tree.setHeader('Event', event)
-      tree.setHeader('Site', 'https://maiachess.com/')
-      tree.setHeader('White', whitePlayer)
-      tree.setHeader('Black', blackPlayer)
-      if (game.termination) {
-        tree.setHeader('Result', game.termination.result)
-        if (game.termination.condition) {
-          tree.setHeader('Termination', game.termination.condition)
-        }
-      }
-
-      setPgn(gameTree.toPGN())
-      setFen(currentNode.fen)
-    } else {
-      // Fallback to legacy array-based approach
-      const initial = new Chess(game.moves[0]?.board || new Chess().fen())
-      initial.addHeader('ID', game.id)
-      initial.addHeader('Event', event)
-      initial.addHeader('Site', `https://maiachess.com/`)
-      initial.addHeader('White', whitePlayer)
-      initial.addHeader('Black', blackPlayer)
-      if (game.termination) {
-        initial.addHeader('Result', game.termination.result)
-        if (game.termination.condition) {
-          initial.addHeader('Termination', game.termination.condition)
-        }
+    const tree = new GameTree(gameTree.getRoot().fen)
+    tree.setHeader('ID', game.id)
+    tree.setHeader('Event', event)
+    tree.setHeader('Site', 'https://maiachess.com/')
+    tree.setHeader('White', whitePlayer)
+    tree.setHeader('Black', blackPlayer)
+    if (game.termination) {
+      tree.setHeader('Result', game.termination.result)
+      if (game.termination.condition) {
+        tree.setHeader('Termination', game.termination.condition)
       }
     }
+
+    setPgn(gameTree.toPGN())
+    setFen(currentNode.fen)
   }, [
     currentNode,
     game.moves,
