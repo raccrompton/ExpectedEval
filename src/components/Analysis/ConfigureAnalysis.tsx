@@ -17,11 +17,6 @@ export const ConfigureAnalysis: React.FC<Props> = ({
   launchContinue,
   MAIA_MODELS,
 }: Props) => {
-  const [, setPreferLegacyAnalysis] = useLocalStorage(
-    'preferLegacyAnalysis',
-    false,
-  )
-
   return (
     <div className="flex w-full flex-col items-start justify-start gap-1 p-4">
       <div className="flex w-full flex-col gap-0.5">
@@ -42,17 +37,6 @@ export const ConfigureAnalysis: React.FC<Props> = ({
         launchContinue={launchContinue}
         background="bg-human-4/60 hover:bg-human-4/80 text-primary/70 hover:text-primary !px-2 !py-1.5 !text-sm"
       />
-      <p className="mt-2 text-xs text-secondary">
-        If you are having performance issues, you can switch to our{' '}
-        <Link
-          href={window.location.href.replace('/analysis', '/analysis/legacy')}
-          onClick={() => setPreferLegacyAnalysis(true)}
-          className="text-primary/80 underline transition duration-200 hover:text-primary/100"
-        >
-          Legacy Analysis
-        </Link>{' '}
-        page to continue your analysis without Maia 2.
-      </p>
     </div>
   )
 }

@@ -17,7 +17,7 @@ import { useBoardDescription } from './useBoardDescription'
 export const useAnalysisController = (game: AnalyzedGame) => {
   const controller = useTreeController(
     game.tree as GameTree,
-    game.tree?.getRoot(),
+    game.tree.getRoot(),
   )
 
   const [analysisState, setAnalysisState] = useState(0)

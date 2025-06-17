@@ -24,7 +24,7 @@ export interface BaseGame {
 export interface ClientBaseGame {
   id: string
   moves: Move[]
-  tree?: GameTree
+  tree: GameTree
 }
 
 export interface Game extends BaseGame {
