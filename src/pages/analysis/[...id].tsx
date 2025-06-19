@@ -46,8 +46,8 @@ import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
 import { Chess, PieceSymbol } from 'chess.ts'
 import { AnimatePresence } from 'framer-motion'
+import { useAnalysisController } from 'src/hooks'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
-import { useAnalysisController, useLocalStorage } from 'src/hooks'
 import { ConfigurableScreens } from 'src/components/Analysis/ConfigurableScreens'
 
 const MAIA_MODELS = [
