@@ -22,7 +22,7 @@ export interface IPlayControllerContext extends BaseTreeControllerContext {
   stats: ReturnType<typeof usePlayController>['stats']
   setResigned: ReturnType<typeof usePlayController>['setResigned']
   reset: ReturnType<typeof usePlayController>['reset']
-  makePlayerMove: ReturnType<typeof usePlayController>['makeMove']
+  makePlayerMove: ReturnType<typeof usePlayController>['makePlayerMove']
   updateClock: ReturnType<typeof usePlayController>['updateClock']
   setCurrentNode: ReturnType<typeof usePlayController>['setCurrentNode']
   addMove: ReturnType<typeof usePlayController>['addMove']
@@ -37,7 +37,7 @@ const defaultGameTree = new GameTree(new Chess().fen())
 
 export const PlayControllerContext =
   React.createContext<IPlayControllerContext>({
-    game: { id: '', moves: [], turn: 'black' },
+    game: { id: '', moves: [], turn: 'black', tree: defaultGameTree },
     playType: 'againstMaia',
     timeControl: 'unlimited',
     player: 'white',

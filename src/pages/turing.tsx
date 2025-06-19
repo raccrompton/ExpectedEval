@@ -126,7 +126,7 @@ const Turing: React.FC<Props> = (props: Props) => {
             <StatsDisplay stats={stats} />
           </div>
           <div className="relative flex aspect-square w-full max-w-[75vh]">
-            <GameBoard game={game} currentNode={controller.currentNode!} />
+            <GameBoard game={game} currentNode={controller.currentNode} />
           </div>
           <div
             style={{
