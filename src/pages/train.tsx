@@ -38,13 +38,12 @@ import {
   Highlight,
   MoveMap,
   BlunderMeter,
-  MovesByRating,
 } from 'src/components'
 import { useTrainingController } from 'src/hooks/useTrainingController'
 import { useAnalysisController } from 'src/hooks/useAnalysisController'
 import { AllStats, useStats } from 'src/hooks/useStats'
 import { TrainingGame, Status } from 'src/types/training'
-import { AnalyzedGame, MaiaEvaluation, StockfishEvaluation } from 'src/types'
+import { MaiaEvaluation, StockfishEvaluation } from 'src/types'
 import { ModalContext, WindowSizeContext } from 'src/contexts'
 import { TrainingControllerContext } from 'src/contexts/TrainingControllerContext'
 import {
@@ -52,7 +51,7 @@ import {
   getCurrentPlayer,
   getAvailableMovesArray,
   requiresPromotion,
-} from 'src/pages/train/utils'
+} from 'src/utils/train/utils'
 import { mockAnalysisData } from 'src/hooks/useAnalysisController/mockData'
 
 const statsLoader = async () => {
