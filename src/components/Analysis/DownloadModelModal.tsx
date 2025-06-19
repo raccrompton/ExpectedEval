@@ -76,6 +76,12 @@ export const DownloadModelModal: React.FC<Props> = ({
               />
             </div>
           ) : null}
+          <Link
+            href="/"
+            className="order-2 flex h-8 cursor-pointer select-none items-center gap-1 self-end rounded bg-background-2 px-3 text-sm transition duration-200 hover:bg-background-3 md:order-3 md:h-10 md:px-4 md:text-base"
+          >
+            <p>Return Home</p>
+          </Link>
           <div
             tabIndex={0}
             role="button"
