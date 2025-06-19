@@ -527,7 +527,7 @@ const Analysis: React.FC<Props> = ({
             <div className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]">
               <GameBoard
                 game={analyzedGame}
-                moves={controller.moves}
+                availableMoves={controller.moves}
                 setCurrentSquare={setCurrentSquare}
                 shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
                 currentNode={controller.currentNode as GameNode}
@@ -668,7 +668,7 @@ const Analysis: React.FC<Props> = ({
             <div className="relative flex h-[100vw] w-screen">
               <GameBoard
                 game={analyzedGame}
-                moves={controller.moves}
+                availableMoves={controller.moves}
                 setCurrentSquare={setCurrentSquare}
                 shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
                 currentNode={controller.currentNode as GameNode}

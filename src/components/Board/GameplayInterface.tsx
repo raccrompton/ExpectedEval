@@ -1,19 +1,18 @@
-import Head from 'next/head'
-import type { DrawShape } from 'chessground/draw'
-import { useCallback, useContext, useMemo, useState } from 'react'
-
-import { AuthContext, ThemeContext, WindowSizeContext } from 'src/contexts'
 import {
   GameInfo,
+  GameBoard,
   GameClock,
   ExportGame,
   StatsDisplay,
+  PromotionOverlay,
   MovesContainer,
   BoardController,
-  PromotionOverlay,
-  GameBoard,
 } from 'src/components'
+import Head from 'next/head'
 import { useUnload } from 'src/hooks/useUnload'
+import type { DrawShape } from 'chessground/draw'
+import { useCallback, useContext, useMemo, useState } from 'react'
+import { AuthContext, ThemeContext, WindowSizeContext } from 'src/contexts'
 import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
 
 interface Props {
@@ -28,64 +27,61 @@ export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
 ) => {
   const {
     game,
-    playType,
-    maiaVersion,
-    availableMoves,
-    makeMove,
-    player,
-    timeControl,
     stats,
+    player,
+    playType,
     gameTree,
-    orientation,
-    setOrientation,
-    currentNode,
-    setCurrentNode,
     goToNode,
-    goToNextNode,
-    goToPreviousNode,
-    goToRootNode,
     plyCount,
+    orientation,
+    timeControl,
+    currentNode,
+    maiaVersion,
+    goToRootNode,
+    goToNextNode,
+    availableMoves,
+    makePlayerMove,
+    setOrientation,
+    goToPreviousNode,
   } = useContext(PlayControllerContext)
   const { theme } = useContext(ThemeContext)
-  const { isMobile } = useContext(WindowSizeContext)
-
   const { user } = useContext(AuthContext)
+  const { isMobile } = useContext(WindowSizeContext)
 
   const [promotionFromTo, setPromotionFromTo] = useState<
     [string, string] | null
   >(null)
 
-  const setCurrentMove = useCallback(
+  const onPlayerMakeMove = useCallback(
     (move: [string, string] | null) => {
       if (move) {
-        const matching = availableMoves.filter((m: any) => {
+        const matching = availableMoves.filter((m) => {
           return m.from == move[0] && m.to == move[1]
         })
 
         if (matching.length > 1) {
           // Multiple matching moves (i.e. promotion)
-          // Show promotion UI
           setPromotionFromTo(move)
         } else {
           const moveUci =
             matching[0].from + matching[0].to + (matching[0].promotion ?? '')
-          makeMove(moveUci)
+          makePlayerMove(moveUci)
         }
       }
     },
-    [availableMoves, makeMove, setPromotionFromTo],
+    [availableMoves, makePlayerMove, setPromotionFromTo],
   )
 
-  const selectPromotion = useCallback(
+  const onPlayerSelectPromotion = useCallback(
     (piece: string) => {
       if (!promotionFromTo) {
         return
       }
       setPromotionFromTo(null)
       const moveUci = promotionFromTo[0] + promotionFromTo[1] + piece
-      makeMove(moveUci)
+      makePlayerMove(moveUci)
     },
-    [promotionFromTo, setPromotionFromTo, makeMove],
+    [promotionFromTo, setPromotionFromTo, makePlayerMove],
   )
 
   useUnload((e) => {
@@ -95,7 +91,7 @@ export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
     }
   })
 
-  const moveMap = useMemo(() => {
+  const availableMovesMapped = useMemo(() => {
     const result = new Map()
 
     for (const move of availableMoves) {
@@ -181,6 +177,7 @@ export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
               <ExportGame
                 game={game}
                 gameTree={gameTree}
+                currentNode={currentNode}
                 whitePlayer={whitePlayer ?? 'Unknown'}
                 blackPlayer={blackPlayer ?? 'Unknown'}
                 event={`Play vs. ${maiaTitle}`}
@@ -192,17 +189,17 @@ export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
           <div className="relative flex aspect-square w-full max-w-[75vh]">
             <GameBoard
               game={game}
-              moves={moveMap}
-              setCurrentMove={setCurrentMove}
+              availableMoves={availableMovesMapped}
+              onPlayerMakeMove={onPlayerMakeMove}
               shapes={props.boardShapes}
-              currentNode={currentNode!}
+              currentNode={currentNode}
               orientation={orientation}
             />
             {promotionFromTo ? (
               <PromotionOverlay
                 player={player}
                 file={promotionFromTo[1].slice(0)}
-                selectPromotion={selectPromotion}
+                onPlayerSelectPromotion={onPlayerSelectPromotion}
               />
             ) : null}
           </div>
@@ -263,17 +260,17 @@ export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
           <div className="relative flex aspect-square h-[100vw] w-screen">
             <GameBoard
               game={game}
-              moves={moveMap}
-              setCurrentMove={setCurrentMove}
+              availableMoves={availableMovesMapped}
+              onPlayerMakeMove={onPlayerMakeMove}
               shapes={props.boardShapes}
-              currentNode={currentNode!}
+              currentNode={currentNode}
               orientation={orientation}
             />
             {promotionFromTo ? (
               <PromotionOverlay
                 player={player}
                 file={promotionFromTo[1].slice(0)}
-                selectPromotion={selectPromotion}
+                onPlayerSelectPromotion={onPlayerSelectPromotion}
               />
             ) : null}
           </div>
@@ -309,6 +306,7 @@ export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
               <ExportGame
                 game={game}
                 gameTree={gameTree}
+                currentNode={currentNode}
                 whitePlayer={whitePlayer ?? 'Unknown'}
                 blackPlayer={blackPlayer ?? 'Unknown'}
                 event={`Play vs. ${maiaTitle}`}

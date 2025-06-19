@@ -1,25 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Chess } from 'chess.ts'
+import { useChessSound } from 'src/hooks'
 import { defaults } from 'chessground/state'
-import { useCallback, useMemo, Dispatch, SetStateAction } from 'react'
 import type { Key } from 'chessground/types'
 import Chessground from '@react-chess/chessground'
+import { BaseGame, Check, GameNode, Color } from 'src/types'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
-
-import { useChessSound } from 'src/hooks'
-import { BaseGame, Check, GameNode, BaseGame, Color } from 'src/types'
+import { useCallback, useMemo, Dispatch, SetStateAction } from 'react'
 
 interface Props {
-  game?: BaseGame | BaseGame
+  game?: BaseGame
   currentNode: GameNode
   orientation?: Color
-  moves?: Map<string, string[]>
+  availableMoves?: Map<string, string[]>
   move?: {
     fen: string
     move: [string, string]
     check?: Check
   }
-  setCurrentMove?: (move: [string, string] | null) => void
+  onPlayerMakeMove?: (move: [string, string] | null) => void
   setCurrentSquare?: Dispatch<SetStateAction<Key | null>>
   shapes?: DrawShape[]
   brushes?: DrawBrushes
@@ -31,9 +30,9 @@ export const GameBoard: React.FC<Props> = ({
   game,
   currentNode,
   orientation = 'white',
-  moves,
+  availableMoves,
   move,
-  setCurrentMove,
+  onPlayerMakeMove,
   setCurrentSquare,
   shapes,
   brushes,
@@ -44,12 +43,10 @@ export const GameBoard: React.FC<Props> = ({
 
   const after = useCallback(
     (from: string, to: string) => {
-      if (setCurrentMove) setCurrentMove([from, to])
+      if (onPlayerMakeMove) onPlayerMakeMove([from, to])
       if (setCurrentSquare) setCurrentSquare(null)
 
-      // Determine current FEN for sound calculation
       const currentFen = currentNode.fen
-
       if (currentFen) {
         const chess = new Chess(currentFen)
         const pieceAtDestination = chess.get(to)
@@ -92,14 +89,14 @@ export const GameBoard: React.FC<Props> = ({
       }
     },
     [
-      setCurrentMove,
-      setCurrentSquare,
-      currentNode,
       move,
       game,
-      playSound,
       gameTree,
       goToNode,
+      playSound,
+      currentNode,
+      onPlayerMakeMove,
+      setCurrentSquare,
     ],
   )
 
@@ -133,14 +130,14 @@ export const GameBoard: React.FC<Props> = ({
       config={{
         movable: {
           free: false,
-          dests: moves as any,
+          dests: availableMoves as any,
           events: {
             after,
           },
         },
         events: {
           select: (key) => {
-            setCurrentMove && setCurrentMove(null)
+            onPlayerMakeMove && onPlayerMakeMove(null)
             setCurrentSquare && setCurrentSquare(key)
           },
         },

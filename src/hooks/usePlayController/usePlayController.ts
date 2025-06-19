@@ -1,15 +1,15 @@
+import {
+  Color,
+  Check,
+  GameNode,
+  GameTree,
+  Termination,
+  PlayGameConfig,
+} from 'src/types'
+import { AllStats } from '../useStats'
+import { PlayedGame } from 'src/types/play'
 import { Chess, Piece, SQUARES } from 'chess.ts'
 import { useMemo, useState, useCallback, useEffect } from 'react'
-import {
-  PlayGameConfig,
-  GameTree,
-  GameNode,
-  Color,
-  Termination,
-  Check,
-} from 'src/types'
-import { PlayedGame } from 'src/types/play'
-import { AllStats } from '../useStats'
 
 const nullFen = new Chess().fen()
 
@@ -37,7 +37,7 @@ const computeTermination = (chess: Chess): Termination | undefined => {
   }
 }
 
-export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
+export const usePlayController = (id: string, config: PlayGameConfig) => {
   const [gameTree, setGameTree] = useState<GameTree>(
     () => new GameTree(config.startFen || nullFen),
   )
@@ -259,8 +259,10 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
     setTreeVersion((prev) => prev + 1)
   }
 
-  const makeMove = async (moveUci: string): Promise<void> => {
-    throw new Error('makeMove should be overridden by the consuming component')
+  const makePlayerMove = async (moveUci: string): Promise<void> => {
+    throw new Error(
+      'makePlayerMove should be overridden by the consuming component',
+    )
   }
 
   const stats: AllStats = {
@@ -303,7 +305,7 @@ export const usePlayMaiaController = (id: string, config: PlayGameConfig) => {
     addMoveWithTime,
     setResigned,
     reset,
-    makeMove,
+    makePlayerMove,
     updateClock,
   }
 }

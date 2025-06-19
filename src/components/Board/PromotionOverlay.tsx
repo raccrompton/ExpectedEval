@@ -7,12 +7,12 @@ import { TreeControllerContext } from 'src/contexts'
 interface Props {
   player: Color
   file: string
-  selectPromotion: (piece: string) => void
+  onPlayerSelectPromotion: (piece: string) => void
 }
 
 export const PromotionOverlay: React.FC<Props> = ({
   file,
-  selectPromotion,
+  onPlayerSelectPromotion,
 }: Props) => {
   const { orientation } = useContext(TreeControllerContext)
 
@@ -43,7 +43,7 @@ export const PromotionOverlay: React.FC<Props> = ({
             return (
               <button
                 key={piece}
-                onClick={() => selectPromotion(piece)}
+                onClick={() => onPlayerSelectPromotion(piece)}
                 className="flex h-1/4 w-full items-center justify-center bg-engine-3 hover:bg-engine-4"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
