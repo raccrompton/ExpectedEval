@@ -44,6 +44,13 @@ import { TrainingGame, Status } from 'src/types/training'
 import { AnalyzedGame, MaiaEvaluation, StockfishEvaluation } from 'src/types'
 import { ModalContext, WindowSizeContext } from 'src/contexts'
 import { TrainingControllerContext } from 'src/contexts/TrainingControllerContext'
+import {
+  convertTrainingGameToAnalyzedGame,
+  getCurrentPlayer,
+  getAvailableMovesArray,
+  requiresPromotion,
+} from 'src/pages/train/utils'
+import { mockAnalysisData } from 'src/hooks/useAnalysisController/mockData'
 
 const statsLoader = async () => {
   const stats = await getTrainingPlayerStats()
@@ -51,28 +58,6 @@ const statsLoader = async () => {
     gamesPlayed: Math.max(0, stats.totalPuzzles),
     gamesWon: stats.puzzlesSolved,
     rating: stats.rating,
-  }
-}
-
-const convertTrainingGameToAnalyzedGame = (
-  trainingGame: TrainingGame,
-): AnalyzedGame => {
-  const maiaEvaluations: { [rating: string]: MaiaEvaluation }[] = []
-  const stockfishEvaluations: (StockfishEvaluation | undefined)[] = []
-  const availableMoves = []
-
-  for (let i = 0; i < trainingGame.moves.length; i++) {
-    maiaEvaluations.push({})
-    stockfishEvaluations.push(undefined)
-    availableMoves.push({})
-  }
-
-  return {
-    ...trainingGame,
-    maiaEvaluations,
-    stockfishEvaluations,
-    availableMoves,
-    type: 'play' as const,
   }
 }
 
@@ -277,9 +262,7 @@ const Train: React.FC<Props> = ({
     const currentNode = showAnalysis
       ? analysisController.currentNode
       : controller.currentNode
-    if (!currentNode) return 'white'
-    const chess = new Chess(currentNode.fen)
-    return chess.turn() === 'w' ? 'white' : 'black'
+    return getCurrentPlayer(currentNode)
   }, [showAnalysis, analysisController.currentNode, controller.currentNode])
 
   useEffect(() => {
@@ -315,16 +298,9 @@ const Train: React.FC<Props> = ({
       if (!playedMove) return
 
       if (showAnalysis) {
-        const availableMoves = Array.from(
-          analysisController.moves.entries(),
-        ).flatMap(([from, tos]) => tos.map((to) => ({ from, to })))
+        const availableMoves = getAvailableMovesArray(analysisController.moves)
 
-        const matching = availableMoves.filter((m) => {
-          return m.from === playedMove[0] && m.to === playedMove[1]
-        })
-
-        if (matching.length > 1) {
-          // Multiple matching moves (i.e. promot
+        if (requiresPromotion(playedMove, availableMoves)) {
           setPromotionFromTo(playedMove)
           return
         }
@@ -366,16 +342,11 @@ const Train: React.FC<Props> = ({
         }
       } else {
         // In puzzle mode, check for promotions in available moves
-        const availableMoves = Array.from(
-          controller.availableMovesMapped.entries(),
-        ).flatMap(([from, tos]) => tos.map((to) => ({ from, to })))
+        const availableMoves = getAvailableMovesArray(
+          controller.availableMovesMapped,
+        )
 
-        const matching = availableMoves.filter((m) => {
-          return m.from === playedMove[0] && m.to === playedMove[1]
-        })
-
-        if (matching.length > 1) {
-          // Multiple matching moves (i.e. promotion)
+        if (requiresPromotion(playedMove, availableMoves)) {
           setPromotionFromTo(playedMove)
           return
         }
@@ -490,159 +461,76 @@ const Train: React.FC<Props> = ({
     window.open(url)
   }, [controller, analysisController, showAnalysis])
 
-  // Mock data for blurred analysis preview
-  const mockAnalysisData = useMemo(
-    () => ({
-      colorSanMapping: {
-        e2e4: { san: 'e4', color: '#4CAF50' },
-        d2d4: { san: 'd4', color: '#2196F3' },
-        g1f3: { san: 'Nf3', color: '#FF9800' },
-        b1c3: { san: 'Nc3', color: '#9C27B0' },
-      },
-      moveEvaluation: {
-        maia: {
-          value: 0.52,
-          policy: {
-            e2e4: 0.35,
-            d2d4: 0.28,
-            g1f3: 0.18,
-            b1c3: 0.12,
-          },
-        },
-        stockfish: {
-          sent: true,
-          depth: 15,
-          model_move: 'e2e4',
-          model_optimal_cp: 25,
-          cp_vec: {
-            e2e4: 25,
-            d2d4: 20,
-            g1f3: 15,
-            b1c3: 10,
-          },
-          cp_relative_vec: {
-            e2e4: 0,
-            d2d4: -5,
-            g1f3: -10,
-            b1c3: -15,
-          },
-        },
-      },
-      recommendations: {
-        maia: [
-          { move: 'e2e4', prob: 0.35 },
-          { move: 'd2d4', prob: 0.28 },
-          { move: 'g1f3', prob: 0.18 },
-          { move: 'b1c3', prob: 0.12 },
-        ],
-        stockfish: [
-          { move: 'e2e4', cp: 25, winrate: 0.52 },
-          { move: 'd2d4', cp: 20, winrate: 0.51 },
-          { move: 'g1f3', cp: 15, winrate: 0.5 },
-          { move: 'b1c3', cp: 10, winrate: 0.49 },
-        ],
-      },
-      movesByRating: [
-        { rating: 1100, e2e4: 45, d2d4: 35, g1f3: 15, b1c3: 5 },
-        { rating: 1300, e2e4: 40, d2d4: 38, g1f3: 18, b1c3: 4 },
-        { rating: 1500, e2e4: 38, d2d4: 40, g1f3: 20, b1c3: 2 },
-        { rating: 1700, e2e4: 35, d2d4: 42, g1f3: 21, b1c3: 2 },
-        { rating: 1900, e2e4: 33, d2d4: 44, g1f3: 22, b1c3: 1 },
-      ],
-      moveMap: [
-        { move: 'e2e4', x: -0.1, y: 45 },
-        { move: 'd2d4', x: -0.2, y: 40 },
-        { move: 'g1f3', x: -0.8, y: 20 },
-        { move: 'b1c3', x: -1.2, y: 15 },
-      ],
-      blunderMeter: {
-        goodMoves: {
-          probability: 65,
-          moves: [
-            { move: 'e2e4', probability: 35 },
-            { move: 'd2d4', probability: 30 },
-          ],
-        },
-        okMoves: {
-          probability: 25,
-          moves: [
-            { move: 'g1f3', probability: 18 },
-            { move: 'b1c3', probability: 7 },
-          ],
-        },
-        blunderMoves: {
-          probability: 10,
-          moves: [
-            { move: 'h2h4', probability: 5 },
-            { move: 'a2a4', probability: 5 },
-          ],
-        },
-      },
-    }),
-    [],
+  const hover = useCallback(
+    (move?: string) => {
+      if (move && showAnalysis) {
+        setHoverArrow({
+          orig: move.slice(0, 2) as Key,
+          dest: move.slice(2, 4) as Key,
+          brush: 'green',
+          modifiers: { lineWidth: 10 },
+        })
+      } else {
+        setHoverArrow(null)
+      }
+    },
+    [showAnalysis],
   )
 
-  // Analysis component handlers
-  const hover = (move?: string) => {
-    if (move && showAnalysis) {
-      setHoverArrow({
-        orig: move.slice(0, 2) as Key,
-        dest: move.slice(2, 4) as Key,
-        brush: 'green',
-        modifiers: {
-          lineWidth: 10,
-        },
+  const makeMove = useCallback(
+    (move: string) => {
+      if (
+        !showAnalysis ||
+        !analysisController.currentNode ||
+        !analyzedGame.tree
+      )
+        return
+
+      const chess = new Chess(analysisController.currentNode.fen)
+      const moveAttempt = chess.move({
+        from: move.slice(0, 2),
+        to: move.slice(2, 4),
+        promotion: move[4] ? (move[4] as PieceSymbol) : undefined,
       })
-    } else {
-      setHoverArrow(null)
-    }
-  }
 
-  const makeMove = (move: string) => {
-    if (!showAnalysis || !analysisController.currentNode || !analyzedGame.tree)
-      return
+      if (moveAttempt) {
+        const newFen = chess.fen()
+        const moveString =
+          moveAttempt.from +
+          moveAttempt.to +
+          (moveAttempt.promotion ? moveAttempt.promotion : '')
+        const san = moveAttempt.san
 
-    const chess = new Chess(analysisController.currentNode.fen)
-    const moveAttempt = chess.move({
-      from: move.slice(0, 2),
-      to: move.slice(2, 4),
-      promotion: move[4] ? (move[4] as PieceSymbol) : undefined,
-    })
-
-    if (moveAttempt) {
-      const newFen = chess.fen()
-      const moveString =
-        moveAttempt.from +
-        moveAttempt.to +
-        (moveAttempt.promotion ? moveAttempt.promotion : '')
-      const san = moveAttempt.san
-
-      if (analysisController.currentNode.mainChild?.move === moveString) {
-        analysisController.goToNode(analysisController.currentNode.mainChild)
-      } else {
-        const newVariation = analyzedGame.tree.addVariation(
-          analysisController.currentNode,
-          newFen,
-          moveString,
-          san,
-          analysisController.currentMaiaModel,
-        )
-        analysisController.goToNode(newVariation)
+        if (analysisController.currentNode.mainChild?.move === moveString) {
+          analysisController.goToNode(analysisController.currentNode.mainChild)
+        } else {
+          const newVariation = analyzedGame.tree.addVariation(
+            analysisController.currentNode,
+            newFen,
+            moveString,
+            san,
+            analysisController.currentMaiaModel,
+          )
+          analysisController.goToNode(newVariation)
+        }
       }
-    }
-  }
+    },
+    [showAnalysis, analysisController, analyzedGame],
+  )
 
-  const mockHover = () => {
-    // Intentionally empty - no-op for blurred components
-  }
-  const mockMakeMove = () => {
-    // Intentionally empty - no-op for blurred components
-  }
-  const mockSetHoverArrow = () => {
-    // Intentionally empty - no-op for blurred components
-  }
+  /**
+   * No-op handlers for blurred analysis components in puzzle mode
+   */
+  const mockHover = useCallback(() => {
+    // Intentionally empty - no interaction allowed in puzzle mode
+  }, [])
+  const mockMakeMove = useCallback(() => {
+    // Intentionally empty - no moves allowed in puzzle mode
+  }, [])
+  const mockSetHoverArrow = useCallback(() => {
+    // Intentionally empty - no hover arrows in puzzle mode
+  }, [])
 
-  // Generate arrows for best moves when in analysis mode
   useEffect(() => {
     if (!showAnalysis || !analysisController.moveEvaluation) {
       setArrows([])
