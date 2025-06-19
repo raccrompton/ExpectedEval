@@ -1,1 +1,1 @@
-export * from './usePlayMaiaController'
+export * from './usePlayController'

@@ -4,11 +4,11 @@ import { backOff } from 'exponential-backoff'
 import type { DrawShape } from 'chessground/draw'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { getGameMove, submitGameMove, getPlayPlayerStats } from 'src/api'
 import { PlayGameConfig } from 'src/types'
 import { useStats } from 'src/hooks/useStats'
 import { useChessSound } from 'src/hooks/useChessSound'
-import { usePlayMaiaController } from './usePlayMaiaController'
+import { usePlayController } from './usePlayController'
+import { getGameMove, submitGameMove, getPlayPlayerStats } from 'src/api'
 
 const brainStatsLoader = async () => {
   const stats = await getPlayPlayerStats()
@@ -32,7 +32,7 @@ export const useHandBrainController = (
   id: string,
   playGameConfig: PlayGameConfig,
 ) => {
-  const controller = usePlayMaiaController(id, playGameConfig)
+  const controller = usePlayController(id, playGameConfig)
   const { playSound } = useChessSound()
   const isBrain = playGameConfig.isBrain
 
@@ -109,7 +109,7 @@ export const useHandBrainController = (
     selectedPiece,
   ])
 
-  const makeMove = useCallback(
+  const makePlayerMove = useCallback(
     async (moveUci: string) => {
       controller.updateClock()
       controller.addMove(moveUci)
@@ -200,13 +200,13 @@ export const useHandBrainController = (
           },
         )
         const nextMove = maiaMoves['top_move']
-        makeMove(nextMove)
+        makePlayerMove(nextMove)
         playSound(false)
       }
     },
     [
       controller.moveList,
-      makeMove,
+      makePlayerMove,
       movablePieceTypes,
       playGameConfig.maiaPartnerVersion,
       playGameConfig.startFen,
@@ -287,7 +287,7 @@ export const useHandBrainController = (
   return {
     ...controller,
     availableMoves,
-    makeMove,
+    makeMove: makePlayerMove,
     boardShapes,
     selectedPiece,
     movablePieceTypes,

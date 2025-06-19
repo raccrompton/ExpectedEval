@@ -1,32 +1,32 @@
 import React from 'react'
 import { Chess } from 'chess.ts'
 import { GameTree } from 'src/types'
-import { usePlayMaiaController } from 'src/hooks/usePlayController'
+import { usePlayController } from 'src/hooks/usePlayController'
 import { BaseTreeControllerContext } from '../BaseTreeControllerContext'
 
 export interface IPlayControllerContext extends BaseTreeControllerContext {
-  game: ReturnType<typeof usePlayMaiaController>['game']
-  playType: ReturnType<typeof usePlayMaiaController>['playType']
-  timeControl: ReturnType<typeof usePlayMaiaController>['timeControl']
-  player: ReturnType<typeof usePlayMaiaController>['player']
-  maiaVersion: ReturnType<typeof usePlayMaiaController>['maiaVersion']
-  playerActive: ReturnType<typeof usePlayMaiaController>['playerActive']
-  toPlay: ReturnType<typeof usePlayMaiaController>['toPlay']
-  moves: ReturnType<typeof usePlayMaiaController>['moves']
-  availableMoves: ReturnType<typeof usePlayMaiaController>['availableMoves']
-  pieces: ReturnType<typeof usePlayMaiaController>['pieces']
-  moveList: ReturnType<typeof usePlayMaiaController>['moveList']
-  whiteClock: ReturnType<typeof usePlayMaiaController>['whiteClock']
-  blackClock: ReturnType<typeof usePlayMaiaController>['blackClock']
-  lastMoveTime: ReturnType<typeof usePlayMaiaController>['lastMoveTime']
-  stats: ReturnType<typeof usePlayMaiaController>['stats']
-  setResigned: ReturnType<typeof usePlayMaiaController>['setResigned']
-  reset: ReturnType<typeof usePlayMaiaController>['reset']
-  makeMove: ReturnType<typeof usePlayMaiaController>['makeMove']
-  updateClock: ReturnType<typeof usePlayMaiaController>['updateClock']
-  setCurrentNode: ReturnType<typeof usePlayMaiaController>['setCurrentNode']
-  addMove: ReturnType<typeof usePlayMaiaController>['addMove']
-  addMoveWithTime: ReturnType<typeof usePlayMaiaController>['addMoveWithTime']
+  game: ReturnType<typeof usePlayController>['game']
+  playType: ReturnType<typeof usePlayController>['playType']
+  timeControl: ReturnType<typeof usePlayController>['timeControl']
+  player: ReturnType<typeof usePlayController>['player']
+  maiaVersion: ReturnType<typeof usePlayController>['maiaVersion']
+  playerActive: ReturnType<typeof usePlayController>['playerActive']
+  toPlay: ReturnType<typeof usePlayController>['toPlay']
+  moves: ReturnType<typeof usePlayController>['moves']
+  availableMoves: ReturnType<typeof usePlayController>['availableMoves']
+  pieces: ReturnType<typeof usePlayController>['pieces']
+  moveList: ReturnType<typeof usePlayController>['moveList']
+  whiteClock: ReturnType<typeof usePlayController>['whiteClock']
+  blackClock: ReturnType<typeof usePlayController>['blackClock']
+  lastMoveTime: ReturnType<typeof usePlayController>['lastMoveTime']
+  stats: ReturnType<typeof usePlayController>['stats']
+  setResigned: ReturnType<typeof usePlayController>['setResigned']
+  reset: ReturnType<typeof usePlayController>['reset']
+  makePlayerMove: ReturnType<typeof usePlayController>['makeMove']
+  updateClock: ReturnType<typeof usePlayController>['updateClock']
+  setCurrentNode: ReturnType<typeof usePlayController>['setCurrentNode']
+  addMove: ReturnType<typeof usePlayController>['addMove']
+  addMoveWithTime: ReturnType<typeof usePlayController>['addMoveWithTime']
 }
 
 const fn = () => {
@@ -62,7 +62,7 @@ export const PlayControllerContext =
     },
     setResigned: fn,
     reset: fn,
-    makeMove: fn,
+    makePlayerMove: fn,
     updateClock: fn,
     gameTree: defaultGameTree,
     currentNode: defaultGameTree.getRoot(),
