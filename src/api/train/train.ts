@@ -54,7 +54,7 @@ export const getTrainingGame = async () => {
 
   // Build game tree from moves
   if (moves.length === 0) {
-    throw new Error("Moves array is empty. Cannot initialize GameTree.");
+    throw new Error('Moves array is empty. Cannot initialize GameTree.')
   }
   const gameTree = new GameTree(moves[0].board)
   let currentNode = gameTree.getRoot()
