@@ -38,17 +38,17 @@ export const Feedback: React.FC<Props> = ({
   `
   const incorrectContent = `
   ##### ${controller.currentNode.san} is incorrect
-  Try again or give up to see the best move.
+  Try again or give up to analyze the board and see the best move.
   `
 
   const correctContent = `
   ##### Correct! ${controller.currentNode.san} is the best move.
-  You can now explore the position.
+  You can now explore and analyze the position by making moves, or train on another position.
   `
 
   const gaveUpContent = `
   ##### Explore the position
-  Explore the current position by using the move map, or train on another position.`
+  Explore the current position by making moves or train on another position.`
 
   const content = useMemo(() => {
     if (status === 'archived') {
