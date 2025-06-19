@@ -1,65 +1,97 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import { Chess } from 'chess.ts'
+import toast from 'react-hot-toast'
 import { useContext, useEffect, useState } from 'react'
 
-import { PlayedGame } from 'src/types'
-import { GameControllerContext } from 'src/contexts'
+import { PlayedGame, AnalyzedGame, GameTree, GameNode } from 'src/types'
+import { useBaseTreeController } from 'src/hooks/useBaseTreeController'
 
-interface Props {
+interface AnalysisProps {
+  game: AnalyzedGame
+  whitePlayer: string
+  blackPlayer: string
+  event: string
+  type: 'analysis'
+  currentNode: GameNode
+}
+
+interface PlayProps {
+  game: PlayedGame
+  gameTree?: GameTree
+  whitePlayer: string
+  blackPlayer: string
+  event: string
+  type: 'play'
+  currentNode: GameNode
+}
+
+interface TuringProps {
   game: PlayedGame
   whitePlayer: string
   blackPlayer: string
   event: string
+  type: 'turing'
+  currentNode: GameNode
 }
 
-export const ExportGame: React.FC<Props> = ({
-  game,
-  whitePlayer,
-  blackPlayer,
-  event,
-}) => {
+type Props = AnalysisProps | PlayProps | TuringProps
+
+export const ExportGame: React.FC<Props> = (props) => {
+  const { game, whitePlayer, blackPlayer, event, type } = props
   const [fen, setFen] = useState('')
   const [pgn, setPgn] = useState('')
-  const [fullPgn, setFullPgn] = useState(true)
-  const { currentIndex } = useContext(GameControllerContext)
+
+  const controller = useBaseTreeController(type)
+
+  const { currentNode, gameTree } =
+    type === 'analysis'
+      ? {
+          currentNode: props.currentNode,
+          gameTree: (props.game as AnalyzedGame).tree,
+        }
+      : type === 'play'
+        ? {
+            currentNode: controller.currentNode,
+            gameTree: (props as PlayProps).gameTree || controller.gameTree,
+          }
+        : {
+            currentNode: controller.currentNode,
+            gameTree: controller.gameTree,
+          }
 
   useEffect(() => {
-    const chess = new Chess()
-    game.moves.forEach((move) => {
-      if (move.san) {
-        chess.move(move.san)
-      }
-    })
-    setPgn(chess.pgn())
-  }, [game.moves])
-
-  useEffect(() => {
-    const initial = new Chess(game.moves[0].board)
-    initial.addHeader('ID', game.id)
-    initial.addHeader('Event', event)
-    initial.addHeader('Site', `https://maiachess.com/`)
-    initial.addHeader('White', whitePlayer)
-    initial.addHeader('Black', blackPlayer)
+    const tree = new GameTree(gameTree.getRoot().fen)
+    tree.setHeader('ID', game.id)
+    tree.setHeader('Event', event)
+    tree.setHeader('Site', 'https://maiachess.com/')
+    tree.setHeader('White', whitePlayer)
+    tree.setHeader('Black', blackPlayer)
     if (game.termination) {
-      initial.addHeader('Result', game.termination.result)
+      tree.setHeader('Result', game.termination.result)
       if (game.termination.condition) {
-        initial.addHeader('Termination', game.termination.condition)
+        tree.setHeader('Termination', game.termination.condition)
       }
     }
-    game.moves.forEach((move, index) => {
-      if (!move.san || (!fullPgn && index > currentIndex)) {
-        return
-      }
 
-      initial.move(move.san)
-    })
-
-    setFen(game.moves[currentIndex].board)
-    setPgn(initial.pgn())
-  }, [currentIndex, game.moves, fullPgn])
+    setPgn(gameTree.toPGN())
+    setFen(currentNode.fen)
+  }, [
+    currentNode,
+    game.moves,
+    game.id,
+    game.termination,
+    whitePlayer,
+    blackPlayer,
+    event,
+    gameTree,
+    type,
+  ])
 
   const copy = (content: string) => {
     navigator.clipboard.writeText(content)
+    if (type === 'analysis') {
+      toast.success('Copied to clipboard')
+    }
   }
 
   return (
@@ -95,16 +127,6 @@ export const ExportGame: React.FC<Props> = ({
             <p className="select-none text-sm font-semibold tracking-wider text-secondary">
               PGN
             </p>
-            <div className="ml-4 flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={fullPgn}
-                onChange={(e) => setFullPgn(e.target.checked)}
-              />
-              <p className="text-xs text-secondary">
-                Export PGN of entire game
-              </p>
-            </div>
           </div>
           <i
             tabIndex={0}

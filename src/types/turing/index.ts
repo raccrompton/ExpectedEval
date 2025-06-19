@@ -1,9 +1,10 @@
-import { Termination, Color, Player } from '..'
+import { Termination, Color, Player, GameTree } from '..'
 import { BaseGame } from '../base'
 
 export interface TuringGame extends BaseGame {
   termination: Termination
   result?: TuringSubmissionResult
+  tree: GameTree
 }
 
 export interface TuringSubmissionResult {

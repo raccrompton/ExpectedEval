@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   useStockfishEngine,
   useMaiaEngine,
-  useAnalysisGameController,
+  useTreeController,
   useLocalStorage,
 } from '..'
 import { AnalyzedGame, GameTree } from 'src/types'
@@ -14,11 +14,11 @@ import { useEngineAnalysis } from './useEngineAnalysis'
 import { useMoveRecommendations } from './useMoveRecommendations'
 import { useBoardDescription } from './useBoardDescription'
 
-export const useAnalysisController = (game: AnalyzedGame) => {
-  const controller = useAnalysisGameController(
-    game.tree as GameTree,
-    game.tree?.getRoot(),
-  )
+export const useAnalysisController = (
+  game: AnalyzedGame,
+  initialOrientation?: 'white' | 'black',
+) => {
+  const controller = useTreeController(game.tree, initialOrientation)
 
   const [analysisState, setAnalysisState] = useState(0)
   const inProgressAnalyses = useMemo(() => new Set<string>(), [])
@@ -130,8 +130,18 @@ export const useAnalysisController = (game: AnalyzedGame) => {
   }, [currentMove, controller.currentNode])
 
   return {
+    gameTree: controller.gameTree,
+    currentNode: controller.currentNode,
+    setCurrentNode: controller.setCurrentNode,
+    goToNode: controller.goToNode,
+    goToNextNode: controller.goToNextNode,
+    goToPreviousNode: controller.goToPreviousNode,
+    goToRootNode: controller.goToRootNode,
+    plyCount: controller.plyCount,
+    orientation: controller.orientation,
+    setOrientation: controller.setOrientation,
+
     maiaStatus,
-    controller,
     downloadMaia,
     maiaProgress,
     move,

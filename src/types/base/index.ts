@@ -19,22 +19,10 @@ export interface Move {
 export interface BaseGame {
   id: string
   moves: Move[]
-}
-
-export interface ClientBaseGame {
-  id: string
-  moves: Move[]
-  tree?: GameTree
+  tree: GameTree
 }
 
 export interface Game extends BaseGame {
-  gameType: string
-  blackPlayer: Player
-  whitePlayer: Player
-  termination: Termination
-}
-
-export interface ClientGame extends ClientBaseGame {
   gameType: string
   blackPlayer: Player
   whitePlayer: Player

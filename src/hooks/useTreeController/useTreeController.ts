@@ -1,14 +1,11 @@
 import { Color, GameTree, GameNode } from 'src/types'
 import { useState, useMemo, useCallback } from 'react'
 
-export const useAnalysisGameController = (
+export const useTreeController = (
   gameTree: GameTree,
-  initialNode?: GameNode,
   initialOrientation: Color = 'white',
 ) => {
-  const [currentNode, setCurrentNode] = useState<GameNode | undefined>(
-    initialNode ?? gameTree?.getRoot(),
-  )
+  const [currentNode, setCurrentNode] = useState<GameNode>(gameTree.getRoot())
   const [orientation, setOrientation] = useState<Color>(initialOrientation)
 
   const plyCount = useMemo(() => {
@@ -42,6 +39,7 @@ export const useAnalysisGameController = (
   }, [gameTree, setCurrentNode])
 
   return {
+    gameTree,
     currentNode,
     setCurrentNode,
     orientation,
