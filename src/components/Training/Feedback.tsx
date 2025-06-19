@@ -1,5 +1,5 @@
 import { Chess } from 'chess.ts'
-import { useMemo, Dispatch, SetStateAction, useCallback } from 'react'
+import { useMemo, Dispatch, SetStateAction } from 'react'
 
 import { Markdown } from 'src/components'
 import { useTrainingController } from 'src/hooks'
@@ -65,11 +65,11 @@ export const Feedback: React.FC<Props> = ({
   }, [defaultContent, incorrectContent, correctContent, status, targetIndex])
 
   return (
-    <div className="flex w-screen flex-1 flex-col justify-between gap-2 rounded-sm bg-background-1 p-3 md:w-auto md:gap-0 md:p-5">
+    <div className="flex w-screen flex-1 flex-col rounded-sm bg-background-1 p-3 md:w-auto md:p-5 lg:justify-between">
       <div>
         <Markdown>{content.trim()}</Markdown>
       </div>
-      <div className="flex flex-col gap-1.5">
+      <div className="mt-2 flex min-w-32 flex-row gap-1.5 lg:mt-0 lg:flex-col">
         {status !== 'archived' && (
           <>
             {status === 'incorrect' && (
@@ -85,8 +85,13 @@ export const Feedback: React.FC<Props> = ({
             )}
             {status !== 'correct' && status !== 'incorrect' && (
               <button
-                onClick={() => controller.reset()}
-                disabled={status == 'loading'}
+                onClick={() => {
+                  controller.reset()
+                  if (status !== 'success' && status !== 'forfeit') {
+                    setStatus('default')
+                  }
+                }}
+                disabled={status == 'loading' || status == 'default'}
                 className="flex w-full justify-center rounded-sm bg-engine-3 py-1.5 text-sm font-medium text-primary transition duration-300 hover:bg-engine-4 disabled:bg-backdrop disabled:text-secondary"
               >
                 Reset

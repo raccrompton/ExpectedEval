@@ -30,14 +30,23 @@ const buildTrainingGameTree = (game: TrainingGame): GameTree => {
 
 export const useTrainingController = (game: TrainingGame) => {
   const gameTree = useMemo(() => buildTrainingGameTree(game), [game])
-  const initialOrientation = useMemo(
-    () => (game.targetIndex % 2 === 0 ? 'white' : 'black'),
-    [game.targetIndex],
-  )
+  const initialOrientation = useMemo(() => {
+    const puzzleFen = game.moves[game.targetIndex].board
+    const chess = new Chess(puzzleFen)
+    return chess.turn() === 'w' ? 'white' : 'black'
+  }, [game.targetIndex, game.moves])
   const controller = useTreeController(gameTree, initialOrientation)
 
   const puzzleStartingNode = useMemo(() => {
-    return gameTree.getRoot()
+    let node = gameTree.getRoot()
+    for (let i = 1; i <= game.targetIndex; i++) {
+      if (node.mainChild) {
+        node = node.mainChild
+      } else {
+        break
+      }
+    }
+    return node
   }, [gameTree, game.targetIndex])
 
   useEffect(() => {
