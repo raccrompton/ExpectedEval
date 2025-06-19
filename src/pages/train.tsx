@@ -16,6 +16,8 @@ import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
 import { Chess, PieceSymbol } from 'chess.ts'
+import { AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
 import {
   getTrainingGame,
   logPuzzleGuesses,
@@ -32,6 +34,7 @@ import {
   AuthenticatedWrapper,
   GameBoard,
   PromotionOverlay,
+  DownloadModelModal,
   Highlight,
   MoveMap,
   BlunderMeter,
@@ -255,6 +258,7 @@ const Train: React.FC<Props> = ({
   const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
   const [arrows, setArrows] = useState<DrawShape[]>([])
   const analysisSyncedRef = useRef(false)
+  const toastId = useRef<string | null>(null)
   const [promotionFromTo, setPromotionFromTo] = useState<
     [string, string] | null
   >(null)
@@ -285,6 +289,27 @@ const Train: React.FC<Props> = ({
       analysisSyncedRef.current = false
     }
   }, [showAnalysis, analysisController, controller.currentNode])
+
+  // Toast notifications for Maia model status
+  useEffect(() => {
+    return () => {
+      toast.dismiss()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (analysisController.maiaStatus === 'loading' && !toastId.current) {
+      toastId.current = toast.loading('Loading Maia Model...')
+    } else if (analysisController.maiaStatus === 'ready') {
+      if (toastId.current) {
+        toast.success('Loaded Maia! Analysis is ready', {
+          id: toastId.current,
+        })
+      } else {
+        toast.success('Loaded Maia! Analysis is ready')
+      }
+    }
+  }, [analysisController.maiaStatus])
 
   const onSelectSquare = useCallback(
     (square: Key) => {
@@ -1045,6 +1070,15 @@ const Train: React.FC<Props> = ({
           content="Collection of chess training and analysis tools centered around Maia."
         />
       </Head>
+      <AnimatePresence>
+        {analysisController.maiaStatus === 'no-cache' ||
+        analysisController.maiaStatus === 'downloading' ? (
+          <DownloadModelModal
+            progress={analysisController.maiaProgress}
+            download={analysisController.downloadMaia}
+          />
+        ) : null}
+      </AnimatePresence>
       <TrainingControllerContext.Provider value={controller}>
         {trainingGame && (isMobile ? mobileLayout : desktopLayout)}
       </TrainingControllerContext.Provider>
