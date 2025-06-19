@@ -73,7 +73,7 @@ export const BoardController: React.FC<Props> = ({
     }
 
     setCurrentMove?.(null)
-  }, [currentNode, goToNode, gameTree, setCurrentMove])
+  }, [currentNode, goToNode, setCurrentMove])
 
   useEffect(() => {
     if (width <= 670) return
