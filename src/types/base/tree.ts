@@ -476,6 +476,11 @@ export class GameNode {
     return false
   }
 
+  removeAllChildren(): void {
+    this._children = []
+    this._mainChild = null
+  }
+
   promoteVariation(move: string): boolean {
     const variation = this.findVariation(move)
     if (!variation) return false

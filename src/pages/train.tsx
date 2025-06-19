@@ -10,12 +10,10 @@ import {
   SetStateAction,
 } from 'react'
 import Head from 'next/head'
-import { Chess } from 'chess.ts'
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
-
 import {
   getTrainingGame,
   logPuzzleGuesses,
@@ -23,7 +21,6 @@ import {
 } from 'src/api'
 import {
   Loading,
-  MovePlot,
   GameInfo,
   Feedback,
   PuzzleLog,
@@ -31,12 +28,9 @@ import {
   BoardController,
   ContinueAgainstMaia,
   AuthenticatedWrapper,
-  VerticalEvaluationBar,
-  HorizontalEvaluationBar,
-  PositionEvaluationContainer,
   GameBoard,
 } from 'src/components'
-import { useTrainingTreeController } from 'src/hooks/useTrainingController'
+import { useTrainingController } from 'src/hooks/useTrainingController'
 import { AllStats, useStats } from 'src/hooks/useStats'
 import { TrainingGame, Status } from 'src/types/training'
 import { ModalContext, WindowSizeContext } from 'src/contexts'
@@ -83,8 +77,8 @@ const TrainPage: NextPage = () => {
 
     setStatus('default')
     setUserGuesses([])
-    setTrainingGames(trainingGames.concat([game]))
     setCurrentIndex(trainingGames.length)
+    setTrainingGames(trainingGames.concat([game]))
     setPreviousGameResults(previousGameResults.concat([{ ...game }]))
   }, [trainingGames, previousGameResults, router])
 
@@ -228,41 +222,32 @@ const Train: React.FC<Props> = ({
   getNewGame,
   logGuess,
 }: Props) => {
+  const controller = useTrainingController(trainingGame)
+
   const { width } = useContext(WindowSizeContext)
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
-  const [latestGuess, setLatestGuess] = useState<string | null>(null)
   const [movePlotHover, setMovePlotHover] = useState<DrawShape | null>(null)
 
-  const trainingController = useTrainingTreeController(trainingGame)
-
-  const {
-    moves,
-    controller,
-    moveEvaluation,
-    setCurrentMove,
-    data,
-    move,
-    parseMove,
-    currentMove,
-    currentSquare,
-    setCurrentSquare,
-  } = trainingController
-
-  const turn =
-    new Chess(trainingGame.moves[trainingGame.targetIndex].board).turn() === 'w'
-      ? 'white'
-      : 'black'
-
   useEffect(() => {
-    setMovePlotHover(null)
-  }, [trainingGame.id])
+    if (controller.currentNode.fen === controller.puzzleStartingNode.fen) {
+      setStatus('default')
+    }
+  }, [controller.currentNode])
 
-  const setAndSaveCurrentMove = useCallback(
-    (playedMove: null | [string, string]) => {
-      setCurrentMove(playedMove)
+  const onSelectSquare = useCallback(
+    (square: Key) => {
+      controller.reset()
+      setStatus('default')
+    },
+    [controller],
+  )
 
-      if (playedMove != null && status !== 'correct' && status !== 'forfeit') {
-        setLatestGuess(parseMove(playedMove)?.san || null)
+  const onPlayerMakeMove = useCallback(
+    (playedMove: [string, string]) => {
+      const moveUci = playedMove[0] + playedMove[1]
+      controller.onPlayerGuess(moveUci)
+
+      if (status !== 'correct' && status !== 'forfeit') {
         logGuess(
           trainingGame.id,
           playedMove,
@@ -272,7 +257,7 @@ const Train: React.FC<Props> = ({
         )
       }
     },
-    [setCurrentMove, logGuess, trainingGame.id, status, setStatus],
+    [controller, logGuess, trainingGame.id, status, setStatus],
   )
 
   const setAndGiveUp = useCallback(() => {
@@ -280,21 +265,9 @@ const Train: React.FC<Props> = ({
     setStatus('forfeit')
   }, [trainingGame.id, logGuess, setStatus])
 
-  const showArrow = (node: { data: { move: string } }) => {
-    const move = node.data.move
-    const orig = move.slice(0, 2)
-    const dest = move.slice(2, 4)
-    setMovePlotHover({
-      brush: 'green',
-      orig: orig as Key,
-      dest: dest as Key,
-    })
-  }
-
   const launchContinue = useCallback(() => {
-    const fen = trainingGame.moves[controller.currentIndex].board
-
-    const url = '/play' + '?fen=' + encodeURIComponent(fen)
+    const url =
+      '/play' + '?fen=' + encodeURIComponent(controller.currentNode.fen)
 
     window.open(url)
   }, [trainingGame, controller])
@@ -332,19 +305,12 @@ const Train: React.FC<Props> = ({
           <div className="relative flex aspect-square w-full max-w-[75vh]">
             <GameBoard
               game={trainingGame}
-              currentNode={trainingController.currentNode}
-              orientation={trainingController.orientation}
-              availableMoves={moves}
-              move={move}
-              setCurrentMove={setAndSaveCurrentMove}
-              setCurrentSquare={setCurrentSquare}
+              currentNode={controller.currentNode}
+              orientation={controller.orientation}
+              onPlayerMakeMove={onPlayerMakeMove}
+              availableMoves={controller.availableMovesMapped}
               shapes={movePlotHover ? [movePlotHover] : undefined}
-            />
-          </div>
-          <div>
-            <VerticalEvaluationBar
-              value={moveEvaluation?.maia}
-              label="Maia White Win %"
+              onSelectSquare={onSelectSquare}
             />
           </div>
           <div
@@ -361,7 +327,7 @@ const Train: React.FC<Props> = ({
                 }}
                 className="flex h-[40vh] w-[40vh] [&>div]:h-[inherit] [&>div]:max-h-[inherit] [&>div]:max-w-[inherit]"
               >
-                <MovePlot
+                {/* <MovePlot
                   data={data}
                   onMove={setCurrentMove}
                   currentMove={currentMove}
@@ -369,7 +335,7 @@ const Train: React.FC<Props> = ({
                   disabled={status !== 'correct' && status !== 'forfeit'}
                   onMouseEnter={showArrow}
                   onMouseLeave={() => setMovePlotHover(null)}
-                />
+                /> */}
               </div>
               <div
                 style={{
@@ -387,44 +353,40 @@ const Train: React.FC<Props> = ({
               className="-mt-1 h-1 w-full"
             />
             <div className="flex-none">
-              <PositionEvaluationContainer moveEvaluation={moveEvaluation} />
+              {/* <PositionEvaluationContainer moveEvaluation={moveEvaluation} /> */}
             </div>
             <div className="flex flex-1 flex-col items-stretch">
               <Feedback
                 status={status}
                 game={trainingGame}
                 setStatus={setStatus}
-                latestGuess={latestGuess}
                 setAndGiveUp={setAndGiveUp}
-                trainingController={trainingController}
+                controller={controller}
                 getNewGame={getNewGame}
               />
             </div>
             <div className="flex-none">
               <BoardController
-                orientation={trainingController.orientation}
-                setOrientation={trainingController.setOrientation}
-                currentNode={trainingController.currentNode}
-                currentIndex={trainingController.currentIndex}
-                plyCount={trainingController.plyCount}
-                goToNode={trainingController.goToNode}
-                goToNextNode={trainingController.goToNextNode}
-                goToPreviousNode={trainingController.goToPreviousNode}
-                goToRootNode={trainingController.goToRootNode}
-                setCurrentIndex={trainingController.setCurrentIndex}
-                gameTree={trainingController.gameTree}
-                setCurrentMove={setCurrentMove}
+                orientation={controller.orientation}
+                setOrientation={controller.setOrientation}
+                currentNode={controller.currentNode}
+                plyCount={controller.plyCount}
+                goToNode={controller.goToNode}
+                goToNextNode={controller.goToNextNode}
+                goToPreviousNode={controller.goToPreviousNode}
+                goToRootNode={controller.goToRootNode}
+                gameTree={controller.gameTree}
               />
             </div>
           </div>
         </div>
         <div className="mr-8 flex items-center justify-center">
-          <HorizontalEvaluationBar
+          {/* <HorizontalEvaluationBar
             min={0}
             max={1}
             value={moveEvaluation?.stockfish}
             label="Stockfish Evaluation"
-          />
+          /> */}
         </div>
       </div>
     </>
@@ -455,30 +417,26 @@ const Train: React.FC<Props> = ({
           <div className="relative flex aspect-square h-[100vw] w-screen">
             <GameBoard
               game={trainingGame}
-              currentNode={trainingController.currentNode}
-              orientation={trainingController.orientation}
-              availableMoves={moves}
-              move={move}
-              setCurrentMove={setAndSaveCurrentMove}
-              setCurrentSquare={setCurrentSquare}
+              currentNode={controller.currentNode}
+              orientation={controller.orientation}
+              availableMoves={controller.availableMovesMapped}
+              onPlayerMakeMove={onPlayerMakeMove}
               shapes={movePlotHover ? [movePlotHover] : undefined}
+              onSelectSquare={onSelectSquare}
             />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="flex-none">
               <BoardController
-                orientation={trainingController.orientation}
-                setOrientation={trainingController.setOrientation}
-                currentNode={trainingController.currentNode}
-                currentIndex={trainingController.currentIndex}
-                plyCount={trainingController.plyCount}
-                goToNode={trainingController.goToNode}
-                goToNextNode={trainingController.goToNextNode}
-                goToPreviousNode={trainingController.goToPreviousNode}
-                goToRootNode={trainingController.goToRootNode}
-                setCurrentIndex={trainingController.setCurrentIndex}
-                gameTree={trainingController.gameTree}
-                setCurrentMove={setCurrentMove}
+                orientation={controller.orientation}
+                setOrientation={controller.setOrientation}
+                currentNode={controller.currentNode}
+                plyCount={controller.plyCount}
+                goToNode={controller.goToNode}
+                goToNextNode={controller.goToNextNode}
+                goToPreviousNode={controller.goToPreviousNode}
+                goToRootNode={controller.goToRootNode}
+                gameTree={controller.gameTree}
               />
             </div>
             <div className="flex flex-1 flex-col items-stretch">
@@ -486,8 +444,7 @@ const Train: React.FC<Props> = ({
                 status={status}
                 game={trainingGame}
                 setStatus={setStatus}
-                latestGuess={latestGuess}
-                trainingController={trainingController}
+                controller={controller}
                 setAndGiveUp={setAndGiveUp}
                 getNewGame={getNewGame}
               />
@@ -495,7 +452,7 @@ const Train: React.FC<Props> = ({
             <StatsDisplay stats={stats} />
             <div className="flex">
               <div className="flex h-[20vh] w-screen flex-none [&>div]:h-[inherit] [&>div]:max-h-[inherit] [&>div]:max-w-[inherit]">
-                <MovePlot
+                {/* <MovePlot
                   data={data}
                   onMove={setCurrentMove}
                   currentMove={currentMove}
@@ -503,7 +460,7 @@ const Train: React.FC<Props> = ({
                   disabled={status !== 'correct' && status !== 'forfeit'}
                   onMouseEnter={showArrow}
                   onMouseLeave={() => setMovePlotHover(null)}
-                />
+                /> */}
               </div>
               <div
                 style={{
@@ -521,7 +478,7 @@ const Train: React.FC<Props> = ({
               className="-mt-1 h-1 w-full"
             />
             <div className="w-full flex-none">
-              <PositionEvaluationContainer moveEvaluation={moveEvaluation} />
+              {/* <PositionEvaluationContainer moveEvaluation={moveEvaluation} /> */}
             </div>
             <ContinueAgainstMaia launchContinue={launchContinue} />
           </div>
@@ -539,7 +496,7 @@ const Train: React.FC<Props> = ({
           content="Collection of chess training and analysis tools centered around Maia."
         />
       </Head>
-      <TrainingControllerContext.Provider value={trainingController}>
+      <TrainingControllerContext.Provider value={controller}>
         {trainingGame && (isMobile ? mobileLayout : desktopLayout)}
       </TrainingControllerContext.Provider>
     </>

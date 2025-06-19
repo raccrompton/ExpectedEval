@@ -2,17 +2,16 @@ import { Chess } from 'chess.ts'
 import { useMemo, Dispatch, SetStateAction, useCallback } from 'react'
 
 import { Markdown } from 'src/components'
-import { useTrainingTreeController } from 'src/hooks'
+import { useTrainingController } from 'src/hooks'
 import { TrainingGame, Status } from 'src/types/training'
 
 interface Props {
-  latestGuess: string | null
-  trainingController: ReturnType<typeof useTrainingTreeController>
+  status: string
   game: TrainingGame
   setAndGiveUp: () => void
-  status: string
-  setStatus: Dispatch<SetStateAction<Status>>
   getNewGame: () => Promise<void>
+  setStatus: Dispatch<SetStateAction<Status>>
+  controller: ReturnType<typeof useTrainingController>
 }
 
 export const Feedback: React.FC<Props> = ({
@@ -20,13 +19,9 @@ export const Feedback: React.FC<Props> = ({
   status,
   setStatus,
   getNewGame,
-  latestGuess,
   setAndGiveUp,
-  trainingController,
+  controller: controller,
 }: Props) => {
-  const { controller, move, currentMove, setCurrentMove, moveEvaluation } =
-    trainingController
-  const { currentIndex, setCurrentIndex } = controller
   const { targetIndex } = game
 
   const turn =
@@ -42,12 +37,12 @@ export const Feedback: React.FC<Props> = ({
   Find the best move for **${turn}**!
   `
   const incorrectContent = `
-  ##### ${latestGuess} is incorrect
+  ##### ${controller.currentNode.san} is incorrect
   Try again or give up to see the best move.
   `
 
   const correctContent = `
-  ##### Correct! ${latestGuess} is the best move.
+  ##### Correct! ${controller.currentNode.san} is the best move.
   You can now explore the position.
   `
 
@@ -67,22 +62,7 @@ export const Feedback: React.FC<Props> = ({
     } else {
       return defaultContent
     }
-  }, [
-    currentIndex,
-    currentMove,
-    defaultContent,
-    move,
-    incorrectContent,
-    moveEvaluation,
-    correctContent,
-    status,
-    targetIndex,
-  ])
-
-  const moveToTarget = useCallback(() => {
-    setCurrentMove(null)
-    setCurrentIndex(game.targetIndex)
-  }, [game.targetIndex, setCurrentIndex])
+  }, [defaultContent, incorrectContent, correctContent, status, targetIndex])
 
   return (
     <div className="flex w-screen flex-1 flex-col justify-between gap-2 rounded-sm bg-background-1 p-3 md:w-auto md:gap-0 md:p-5">
@@ -92,11 +72,11 @@ export const Feedback: React.FC<Props> = ({
       <div className="flex flex-col gap-1.5">
         {status !== 'archived' && (
           <>
-            {status === 'incorrect' && currentMove && (
+            {status === 'incorrect' && (
               <button
                 onClick={() => {
                   setStatus('default')
-                  setCurrentMove(null)
+                  controller.reset()
                 }}
                 className="flex w-full justify-center rounded-sm bg-engine-3 py-1.5 text-sm font-medium text-primary transition duration-300 hover:bg-engine-4 disabled:bg-backdrop disabled:text-secondary"
               >
@@ -105,8 +85,8 @@ export const Feedback: React.FC<Props> = ({
             )}
             {status !== 'correct' && status !== 'incorrect' && (
               <button
-                onClick={moveToTarget}
-                disabled={status == 'loading' || !currentMove}
+                onClick={() => controller.reset()}
+                disabled={status == 'loading'}
                 className="flex w-full justify-center rounded-sm bg-engine-3 py-1.5 text-sm font-medium text-primary transition duration-300 hover:bg-engine-4 disabled:bg-backdrop disabled:text-secondary"
               >
                 Reset
@@ -123,7 +103,6 @@ export const Feedback: React.FC<Props> = ({
             {(status === 'forfeit' || status === 'correct') && (
               <button
                 onClick={async () => {
-                  setCurrentMove(null)
                   await getNewGame()
                 }}
                 className="flex w-full justify-center rounded-sm bg-human-3 py-1.5 text-sm font-medium text-primary transition duration-300 hover:bg-human-4 disabled:bg-backdrop disabled:text-secondary"
