@@ -83,20 +83,6 @@ export const Feedback: React.FC<Props> = ({
                 Try Again
               </button>
             )}
-            {status !== 'correct' && status !== 'incorrect' && (
-              <button
-                onClick={() => {
-                  controller.reset()
-                  if (status !== 'success' && status !== 'forfeit') {
-                    setStatus('default')
-                  }
-                }}
-                disabled={status == 'loading' || status == 'default'}
-                className="flex w-full justify-center rounded-sm bg-engine-3 py-1.5 text-sm font-medium text-primary transition duration-300 hover:bg-engine-4 disabled:bg-backdrop disabled:text-secondary"
-              >
-                Reset
-              </button>
-            )}
             {status !== 'forfeit' && status !== 'correct' && (
               <button
                 onClick={setAndGiveUp}

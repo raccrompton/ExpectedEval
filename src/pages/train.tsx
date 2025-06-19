@@ -244,7 +244,10 @@ const Train: React.FC<Props> = ({
     return convertTrainingGameToAnalyzedGame(trainingGame)
   }, [trainingGame])
 
-  const analysisController = useAnalysisController(analyzedGame)
+  const analysisController = useAnalysisController(
+    analyzedGame,
+    controller.orientation,
+  )
 
   const { width } = useContext(WindowSizeContext)
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])

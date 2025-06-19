@@ -14,8 +14,11 @@ import { useEngineAnalysis } from './useEngineAnalysis'
 import { useMoveRecommendations } from './useMoveRecommendations'
 import { useBoardDescription } from './useBoardDescription'
 
-export const useAnalysisController = (game: AnalyzedGame) => {
-  const controller = useTreeController(game.tree)
+export const useAnalysisController = (
+  game: AnalyzedGame,
+  initialOrientation?: 'white' | 'black',
+) => {
+  const controller = useTreeController(game.tree, initialOrientation)
 
   const [analysisState, setAnalysisState] = useState(0)
   const inProgressAnalyses = useMemo(() => new Set<string>(), [])
