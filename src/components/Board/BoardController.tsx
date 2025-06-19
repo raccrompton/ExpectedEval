@@ -1,10 +1,9 @@
-import { GameNode } from 'src/types'
 import { useWindowSize } from 'src/hooks'
+import { GameNode, GameTree } from 'src/types'
 import { FlipIcon } from 'src/components/Icons/icons'
 import { useCallback, useEffect, useMemo } from 'react'
 
 interface Props {
-  // Controller data
   orientation: 'white' | 'black'
   setOrientation: (orientation: 'white' | 'black') => void
   currentNode: GameNode
@@ -13,9 +12,7 @@ interface Props {
   goToNextNode: () => void
   goToPreviousNode: () => void
   goToRootNode: () => void
-  gameTree?: any
-
-  // Optional event handler
+  gameTree: GameTree
   setCurrentMove?: (move: [string, string] | null) => void
 }
 

@@ -496,6 +496,7 @@ const Analysis: React.FC<Props> = ({
                 type="analysis"
               />
               <BoardController
+                gameTree={controller.gameTree}
                 orientation={controller.orientation}
                 setOrientation={controller.setOrientation}
                 currentNode={controller.currentNode}
@@ -680,6 +681,7 @@ const Analysis: React.FC<Props> = ({
             <div className="flex w-full flex-col gap-0">
               <div className="w-full !flex-grow-0">
                 <BoardController
+                  gameTree={controller.gameTree}
                   orientation={controller.orientation}
                   setOrientation={controller.setOrientation}
                   currentNode={controller.currentNode}
