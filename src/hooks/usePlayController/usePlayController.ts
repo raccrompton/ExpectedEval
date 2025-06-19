@@ -9,6 +9,7 @@ import {
 import { AllStats } from '../useStats'
 import { PlayedGame } from 'src/types/play'
 import { Chess, Piece, SQUARES } from 'chess.ts'
+import { useTreeController } from '../useTreeController'
 import { useMemo, useState, useCallback, useEffect } from 'react'
 
 const nullFen = new Chess().fen()
@@ -41,6 +42,8 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
   const [gameTree, setGameTree] = useState<GameTree>(
     () => new GameTree(config.startFen || nullFen),
   )
+  const controller = useTreeController(gameTree, config.player)
+
   const [treeVersion, setTreeVersion] = useState<number>(0)
   const [resigned, setResigned] = useState<boolean>(false)
 
@@ -53,11 +56,6 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
   const [whiteClock, setWhiteClock] = useState<number>(initialClockValue)
   const [blackClock, setBlackClock] = useState<number>(initialClockValue)
   const [lastMoveTime, setLastMoveTime] = useState<number>(0)
-
-  const [currentNode, setCurrentNode] = useState<GameNode>(gameTree.getRoot())
-  const [orientation, setOrientation] = useState<'white' | 'black'>(
-    config.player,
-  )
 
   const moveList = useMemo(
     () => gameTree.toMoveArray(),
@@ -121,9 +119,9 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
   const playerActive = toPlay == config.player
 
   const { availableMoves, pieces } = useMemo(() => {
-    if (!currentNode) return { availableMoves: [], pieces: {} }
+    if (!controller.currentNode) return { availableMoves: [], pieces: {} }
 
-    const chess = new Chess(currentNode.fen)
+    const chess = new Chess(controller.currentNode.fen)
     const verboseMoves = chess.moves({ verbose: true })
 
     const cantMove = !playerActive || game.termination
@@ -146,24 +144,7 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
     }
 
     return { availableMoves, pieces }
-  }, [currentNode, playerActive, game.termination, treeVersion])
-
-  const goToNode = useCallback((node: GameNode) => setCurrentNode(node), [])
-  const goToNextNode = useCallback(() => {
-    if (currentNode?.mainChild) setCurrentNode(currentNode.mainChild)
-  }, [currentNode])
-  const goToPreviousNode = useCallback(() => {
-    if (currentNode?.parent) setCurrentNode(currentNode.parent)
-  }, [currentNode])
-  const goToRootNode = useCallback(
-    () => setCurrentNode(gameTree.getRoot()),
-    [gameTree],
-  )
-
-  const plyCount = useMemo(
-    () => gameTree.getMainLine().length,
-    [gameTree, treeVersion],
-  )
+  }, [controller.currentNode, playerActive, game.termination, treeVersion])
 
   const updateClock = useCallback(
     (overrideTime: number | undefined = undefined): number => {
@@ -228,30 +209,30 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
     (moveUci: string) => {
       const newNode = gameTree.addMoveToMainLine(moveUci)
       if (newNode) {
-        setCurrentNode(newNode)
+        controller.setCurrentNode(newNode)
         // Force re-render by incrementing tree version
         setTreeVersion((prev) => prev + 1)
       }
     },
-    [gameTree],
+    [gameTree, controller],
   )
 
   const addMoveWithTime = useCallback(
     (moveUci: string, moveTime: number) => {
       const newNode = gameTree.addMoveToMainLine(moveUci, moveTime)
       if (newNode) {
-        setCurrentNode(newNode)
+        controller.setCurrentNode(newNode)
         // Force re-render by incrementing tree version
         setTreeVersion((prev) => prev + 1)
       }
     },
-    [gameTree],
+    [gameTree, controller],
   )
 
   const reset = () => {
     const newTree = new GameTree(config.startFen || nullFen)
     setGameTree(newTree)
-    setCurrentNode(newTree.getRoot())
+    controller.setCurrentNode(newTree.getRoot())
     setResigned(false)
     setLastMoveTime(0)
     setWhiteClock(initialClockValue)
@@ -275,7 +256,7 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
   return {
     game,
     gameTree,
-    currentNode,
+    currentNode: controller.currentNode,
     player: config.player,
     playType: config.playType,
     maiaVersion: config.maiaVersion,
@@ -292,14 +273,14 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
     lastMoveTime,
     stats,
 
-    setCurrentNode,
-    goToNode,
-    goToNextNode,
-    goToPreviousNode,
-    goToRootNode,
-    plyCount,
-    orientation,
-    setOrientation,
+    setCurrentNode: controller.setCurrentNode,
+    goToNode: controller.goToNode,
+    goToNextNode: controller.goToNextNode,
+    goToPreviousNode: controller.goToPreviousNode,
+    goToRootNode: controller.goToRootNode,
+    plyCount: controller.plyCount,
+    orientation: controller.orientation,
+    setOrientation: controller.setOrientation,
 
     addMove,
     addMoveWithTime,
