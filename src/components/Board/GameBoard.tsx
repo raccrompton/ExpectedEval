@@ -13,12 +13,8 @@ interface Props {
   currentNode: GameNode
   orientation?: Color
   availableMoves?: Map<string, string[]>
-  move?: {
-    fen: string
-    move: [string, string]
-    check?: Check
-  }
-  onPlayerMakeMove?: (move: [string, string] | null) => void
+  onSelectSquare?: (square: Key) => void
+  onPlayerMakeMove?: (move: [string, string]) => void
   setCurrentSquare?: Dispatch<SetStateAction<Key | null>>
   shapes?: DrawShape[]
   brushes?: DrawBrushes
@@ -28,16 +24,16 @@ interface Props {
 
 export const GameBoard: React.FC<Props> = ({
   game,
-  currentNode,
-  orientation = 'white',
-  availableMoves,
-  move,
-  onPlayerMakeMove,
-  setCurrentSquare,
   shapes,
   brushes,
   goToNode,
   gameTree,
+  currentNode,
+  orientation = 'white',
+  availableMoves,
+  onPlayerMakeMove,
+  setCurrentSquare,
+  onSelectSquare,
 }: Props) => {
   const { playSound } = useChessSound()
 
@@ -89,7 +85,6 @@ export const GameBoard: React.FC<Props> = ({
       }
     },
     [
-      move,
       game,
       gameTree,
       goToNode,
@@ -100,29 +95,23 @@ export const GameBoard: React.FC<Props> = ({
     ],
   )
 
-  // Determine board configuration
   const boardConfig = useMemo(() => {
-    // For training: prioritize move result over currentNode when a move is made
-    const fen = move ? move.fen : currentNode.fen
+    const fen = currentNode.fen
 
-    const lastMove = move
-      ? move.move
-      : currentNode.move
-        ? ([currentNode.move.slice(0, 2), currentNode.move.slice(2, 4)] as [
-            Key,
-            Key,
-          ])
-        : []
-
-    const check = move ? move.check : currentNode.check
+    const lastMove = currentNode.move
+      ? ([currentNode.move.slice(0, 2), currentNode.move.slice(2, 4)] as [
+          Key,
+          Key,
+        ])
+      : []
 
     return {
       fen,
       lastMove,
-      check,
+      check: currentNode.check,
       orientation: orientation as 'white' | 'black',
     }
-  }, [move, currentNode, game, orientation])
+  }, [currentNode, game, orientation])
 
   return (
     <Chessground
@@ -137,7 +126,7 @@ export const GameBoard: React.FC<Props> = ({
         },
         events: {
           select: (key) => {
-            onPlayerMakeMove && onPlayerMakeMove(null)
+            onSelectSquare && onSelectSquare(key)
             setCurrentSquare && setCurrentSquare(key)
           },
         },

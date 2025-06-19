@@ -11,7 +11,7 @@ export interface TrainingGame extends Game {
   availableMoves: AvailableMoves
   targetIndex: number
   result?: boolean
-  tree?: GameTree
+  tree: GameTree
 }
 
 export type Status =
