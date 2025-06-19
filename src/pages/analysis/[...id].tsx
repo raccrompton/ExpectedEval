@@ -37,6 +37,7 @@ import {
   AuthenticatedWrapper,
   MovesContainer,
   BoardController,
+  PromotionOverlay,
 } from 'src/components'
 import Head from 'next/head'
 import toast from 'react-hot-toast'
@@ -241,6 +242,9 @@ const Analysis: React.FC<Props> = ({
   const [screen, setScreen] = useState(screens[0])
   const toastId = useRef<string>(null)
   const [currentSquare, setCurrentSquare] = useState<Key | null>(null)
+  const [promotionFromTo, setPromotionFromTo] = useState<
+    [string, string] | null
+  >(null)
 
   const controller = useAnalysisController(analyzedGame)
 
@@ -362,6 +366,51 @@ const Analysis: React.FC<Props> = ({
       }
     }
   }
+
+  const onPlayerMakeMove = useCallback(
+    (playedMove: [string, string] | null) => {
+      if (!playedMove) return
+
+      // Check for promotions in available moves
+      const availableMoves = Array.from(controller.moves.entries()).flatMap(
+        ([from, tos]) => tos.map((to) => ({ from, to })),
+      )
+
+      const matching = availableMoves.filter((m) => {
+        return m.from === playedMove[0] && m.to === playedMove[1]
+      })
+
+      if (matching.length > 1) {
+        // Multiple matching moves (i.e. promotion)
+        setPromotionFromTo(playedMove)
+        return
+      }
+
+      // Single move
+      const moveUci = playedMove[0] + playedMove[1]
+      makeMove(moveUci)
+    },
+    [controller.moves, makeMove],
+  )
+
+  const onPlayerSelectPromotion = useCallback(
+    (piece: string) => {
+      if (!promotionFromTo) {
+        return
+      }
+      setPromotionFromTo(null)
+      const moveUci = promotionFromTo[0] + promotionFromTo[1] + piece
+      makeMove(moveUci)
+    },
+    [promotionFromTo, setPromotionFromTo, makeMove],
+  )
+
+  // Determine current player for promotion overlay
+  const currentPlayer = useMemo(() => {
+    if (!controller.currentNode) return 'white'
+    const chess = new Chess(controller.currentNode.fen)
+    return chess.turn() === 'w' ? 'white' : 'black'
+  }, [controller.currentNode])
 
   const Player = ({
     name,
@@ -533,9 +582,17 @@ const Analysis: React.FC<Props> = ({
                 shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
                 currentNode={controller.currentNode as GameNode}
                 orientation={controller.orientation}
+                onPlayerMakeMove={onPlayerMakeMove}
                 goToNode={controller.goToNode}
                 gameTree={analyzedGame.tree}
               />
+              {promotionFromTo ? (
+                <PromotionOverlay
+                  player={currentPlayer}
+                  file={promotionFromTo[1].slice(0, 1)}
+                  onPlayerSelectPromotion={onPlayerSelectPromotion}
+                />
+              ) : null}
             </div>
             <Player
               name={
@@ -674,9 +731,17 @@ const Analysis: React.FC<Props> = ({
                 shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
                 currentNode={controller.currentNode as GameNode}
                 orientation={controller.orientation}
+                onPlayerMakeMove={onPlayerMakeMove}
                 goToNode={controller.goToNode}
                 gameTree={analyzedGame.tree}
               />
+              {promotionFromTo ? (
+                <PromotionOverlay
+                  player={currentPlayer}
+                  file={promotionFromTo[1].slice(0, 1)}
+                  onPlayerSelectPromotion={onPlayerSelectPromotion}
+                />
+              ) : null}
             </div>
             <div className="flex w-full flex-col gap-0">
               <div className="w-full !flex-grow-0">
