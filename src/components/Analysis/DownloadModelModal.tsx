@@ -12,11 +12,6 @@ export const DownloadModelModal: React.FC<Props> = ({
   progress,
   download,
 }: Props) => {
-  const [preferLegacyAnalysis, setPreferLegacyAnalysis] = useLocalStorage(
-    'preferLegacyAnalysis',
-    false,
-  )
-
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => {
@@ -66,26 +61,7 @@ export const DownloadModelModal: React.FC<Props> = ({
           </ul>
           <p className="text-primary/80">
             Maia 2 will run entirely on your device but requires a one-time 90mb
-            download. If you prefer to use our older analysis, you can still use
-            our{' '}
-            <Link
-              href={window.location.href.replace(
-                '/analysis',
-                '/analysis/legacy',
-              )}
-              onClick={() => setPreferLegacyAnalysis(true)}
-              className="text-primary/80 underline transition duration-200 hover:text-primary/100"
-            >
-              Legacy Analysis
-            </Link>{' '}
-            page or go back{' '}
-            <Link
-              href="/"
-              className="text-primary/80 underline transition duration-200 hover:text-primary/100"
-            >
-              home
-            </Link>
-            .
+            download.
           </p>
         </div>
         <div className="mt-6 flex w-full flex-col items-center justify-end gap-2 md:flex-row">
@@ -101,11 +77,10 @@ export const DownloadModelModal: React.FC<Props> = ({
             </div>
           ) : null}
           <Link
-            href={window.location.href.replace('/analysis', '/analysis/legacy')}
-            className="order-1 flex h-8 cursor-pointer select-none items-center gap-1 self-end rounded bg-background-3 px-3 text-sm transition duration-200 hover:bg-background-2/90 md:order-2 md:h-10 md:px-4 md:text-base"
-            onClick={() => setPreferLegacyAnalysis(true)}
+            href="/"
+            className="order-2 flex h-8 cursor-pointer select-none items-center gap-1 self-end rounded bg-background-2 px-3 text-sm transition duration-200 hover:bg-background-3 md:order-3 md:h-10 md:px-4 md:text-base"
           >
-            <p>Use Legacy Analysis by Default</p>
+            <p>Return Home</p>
           </Link>
           <div
             tabIndex={0}
