@@ -38,6 +38,9 @@ export const getTuringGame = async () => {
   )
 
   // Build game tree from moves
+  if (moves.length === 0) {
+    throw new Error('No moves available to initialize the game tree');
+  }
   const gameTree = new GameTree(moves[0].board)
   let currentNode = gameTree.getRoot()
 
