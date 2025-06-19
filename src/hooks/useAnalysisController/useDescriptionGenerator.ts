@@ -1,4 +1,4 @@
-import { Chess } from 'chess.js'
+import { Chess, PieceSymbol } from 'chess.ts'
 
 type StockfishEvals = Record<string, number>
 type MaiaEvals = Record<string, number[]>
@@ -19,27 +19,27 @@ export function describePosition(
   sf: StockfishEvals,
   maia: MaiaEvals,
   whiteToMove: boolean,
-  eps = EPS
+  eps = EPS,
 ): string {
   const chess = new Chess(fen)
 
   const legal = new Set<string>()
   chess
     .moves({ verbose: true })
-    .forEach(m => legal.add(m.from + m.to + (m.promotion ?? '')))
+    .forEach((m) => legal.add(m.from + m.to + (m.promotion ?? '')))
 
-  const moves = Object.keys(sf).filter(m => legal.has(m))
+  const moves = Object.keys(sf).filter((m) => legal.has(m))
   if (!moves.length) return 'No legal moves available.'
 
   const seval: Record<string, number> = {}
-  moves.forEach(m => {
+  moves.forEach((m) => {
     seval[m] = (whiteToMove ? 1 : 1) * sf[m]
   })
 
   const opt = moves.reduce((a, b) => (seval[a] > seval[b] ? a : b))
   const { w: wOpt, d: dOpt } = wdl(seval[opt])
 
-  const good = moves.filter(m => {
+  const good = moves.filter((m) => {
     const { w, d } = wdl(seval[m])
     return Math.abs(w - wOpt) <= eps && Math.abs(d - dOpt) <= eps
   })
@@ -52,13 +52,15 @@ export function describePosition(
     const from = uci.slice(0, 2)
     const to = uci.slice(2, 4)
     const promotion = uci.length > 4 ? uci[4] : undefined
-    const mv = chess.move({ from, to, promotion })
+    const mv = chess.move({ from, to, promotion: promotion as PieceSymbol })
     const san = mv?.san ?? uci
     chess.undo()
     return san
   }
 
-  const bestGoodMoves = [...good].sort((a, b) => seval[b] - seval[a]).slice(0, 3)
+  const bestGoodMoves = [...good]
+    .sort((a, b) => seval[b] - seval[a])
+    .slice(0, 3)
   const moveList = bestGoodMoves.map(uciToSan).join(', ')
   const bestMoveSan = uciToSan(opt)
 
@@ -79,7 +81,7 @@ export function describePosition(
 
   for (let lvl = 0; lvl < 9; lvl++) {
     const probs = moves
-      .map(m => [maia[m]?.[lvl] ?? 0, m] as [number, string])
+      .map((m) => [maia[m]?.[lvl] ?? 0, m] as [number, string])
       .sort((a, b) => b[0] - a[0])
 
     const [p1, m1] = probs[0]
@@ -112,15 +114,15 @@ export function describePosition(
     setTier === 0
       ? 'hard for human players to find'
       : setTier === 1
-      ? 'findable for skilled players'
-      : 'straightforward for players across skill levels to find'
+        ? 'findable for skilled players'
+        : 'straightforward for players across skill levels to find'
 
   let phrBest =
     optTier === 0
       ? 'hard for human players to find'
       : optTier === 1
-      ? 'findable for skilled players'
-      : 'straightforward for players across skill levels to find'
+        ? 'findable for skilled players'
+        : 'straightforward for players across skill levels to find'
 
   if (optTier === 1 && optTier < setTier) phrBest = 'only ' + phrBest
 
@@ -130,19 +132,18 @@ export function describePosition(
   let temptText = ''
   const hasTempting = setLevels > 0 && temptLevels > setLevels / 2
   if (hasTempting) {
-    const topTemptUci =
-      Object.entries(temptCount).sort((a, b) => b[1] - a[1])[0]?.[0]
+    const topTemptUci = Object.entries(temptCount).sort(
+      (a, b) => b[1] - a[1],
+    )[0]?.[0]
     const temptSan = topTemptUci ? uciToSan(topTemptUci) : ''
     temptText =
       temptSan !== ''
         ? ` There are also tempting alternatives, such as ${temptSan}.`
         : ' There are also tempting alternatives.'
     if (!(optTier < setTier) && setTier == 2) {
-    temptText = ` However, there are tempting alternatives, such as ${temptSan}.`
+      temptText = ` However, there are tempting alternatives, such as ${temptSan}.`
+    }
   }
-
-  }
-
 
   if (nGood === 1) {
     return `There ${verb} ${abundance} (${moveList}) ${outcome}, and ${pron} ${phrSet}.${temptText}`
