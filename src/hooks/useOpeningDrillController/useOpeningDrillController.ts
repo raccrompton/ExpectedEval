@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { Chess, PieceSymbol } from 'chess.ts'
 import { getGameMove } from 'src/api/play/play'
 import { useTreeController } from '../useTreeController'
@@ -96,12 +96,27 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
     currentSelection?.playerColor || 'white',
   )
 
+  // Set board orientation based on player color
+  useEffect(() => {
+    if (currentSelection?.playerColor) {
+      controller.setOrientation(currentSelection.playerColor)
+    }
+  }, [currentSelection?.playerColor, controller])
+
   // Sync controller when switching selections
   useEffect(() => {
-    if (currentDrillGame?.tree) {
+    if (currentDrillGame?.tree && currentDrillGame.moves.length === 0) {
+      // Only reset to root if no moves have been made
       controller.setCurrentNode(currentDrillGame.tree.getRoot())
+    } else if (currentDrillGame?.tree && currentDrillGame.moves.length > 0) {
+      // Navigate to the last move if moves exist
+      const mainLine = currentDrillGame.tree.getMainLine()
+      const targetNode = mainLine[currentDrillGame.moves.length] // moves.length is 0-based, but mainLine includes root at index 0
+      if (targetNode) {
+        controller.setCurrentNode(targetNode)
+      }
     }
-  }, [currentSelectionIndex, currentDrillGame?.tree, controller])
+  }, [currentSelectionIndex, controller])
 
   // Determine if it's the player's turn
   const isPlayerTurn = useMemo(() => {
@@ -135,35 +150,34 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
       if (!currentDrillGame || !controller.currentNode || !isPlayerTurn) return
 
       try {
-        // Add the player's move to the game tree
+        // Validate the move first
         const chess = new Chess(controller.currentNode.fen)
-        const moveObj = chess.move({
-          from: moveUci.slice(0, 2),
-          to: moveUci.slice(2, 4),
-          promotion: moveUci[4] ? (moveUci[4] as PieceSymbol) : undefined,
-        })
+        const moveObj = chess.move(moveUci, { sloppy: true })
 
         if (!moveObj) return
 
+        // Add the move to the game tree
         const newNode = currentDrillGame.tree.addMoveToMainLine(moveUci)
         if (newNode) {
-          controller.setCurrentNode(newNode)
-
-          // Update the drill game
+          // Update the drill game state first
           const updatedGame = {
             ...currentDrillGame,
             moves: [...currentDrillGame.moves, moveUci],
             currentFen: newNode.fen,
           }
+
           setDrillGames((prev) => ({
             ...prev,
             [currentSelection.id]: updatedGame,
           }))
 
+          // Then update the controller to the new node
+          controller.setCurrentNode(newNode)
+
           // Get Maia's response after a short delay
           setTimeout(async () => {
-            await makeMaiaMove(newNode)
-          }, 500)
+            await makeMaiaMoveRef.current(newNode)
+          }, 800)
         }
       } catch (error) {
         console.error('Error making player move:', error)
@@ -179,7 +193,7 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
 
       try {
         const response = await getGameMove(
-          currentDrillGame.moves,
+          [],
           currentSelection.maiaVersion,
           fromNode.fen,
           null,
@@ -191,18 +205,20 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
         if (maiaMove) {
           const newNode = currentDrillGame.tree.addMoveToMainLine(maiaMove)
           if (newNode) {
-            controller.setCurrentNode(newNode)
-
-            // Update the drill game
+            // Update the drill game state first
             const updatedGame = {
               ...currentDrillGame,
               moves: [...currentDrillGame.moves, maiaMove],
               currentFen: newNode.fen,
             }
+
             setDrillGames((prev) => ({
               ...prev,
               [currentSelection.id]: updatedGame,
             }))
+
+            // Then update the controller to the new node
+            controller.setCurrentNode(newNode)
           }
         }
       } catch (error) {
@@ -211,6 +227,10 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
     },
     [currentDrillGame, controller, currentSelection],
   )
+
+  // Store makeMaiaMove in a ref to avoid circular dependencies
+  const makeMaiaMoveRef = useRef(makeMaiaMove)
+  makeMaiaMoveRef.current = makeMaiaMove
 
   // Handle initial Maia move if needed
   useEffect(() => {
@@ -222,10 +242,10 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
     ) {
       // It's Maia's turn to move first
       setTimeout(() => {
-        makeMaiaMove(controller.currentNode)
+        makeMaiaMoveRef.current(controller.currentNode)
       }, 1000)
     }
-  }, [currentDrillGame, controller.currentNode, isPlayerTurn, makeMaiaMove])
+  }, [currentDrillGame, controller.currentNode, isPlayerTurn])
 
   // Switch to a different opening selection
   const switchToSelection = useCallback(
