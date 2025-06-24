@@ -37,17 +37,19 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
 }) => {
   const currentSelection = selections[currentSelectionIndex]
 
-  // Create a base game structure for MovesContainer
-  const baseGame = {
-    id: currentSelection?.id || 'opening-drill',
-    tree: gameTree,
-    moves: [],
-    termination: {
-      result: '*',
-      winner: 'none' as const,
-      condition: 'Normal',
-    },
-  }
+  // Create a base game structure for MovesContainer that uses the live tree
+  const baseGame = React.useMemo(() => {
+    return {
+      id: currentSelection?.id || 'opening-drill',
+      tree: gameTree, // Use the live gameTree from the controller
+      moves: [],
+      termination: {
+        result: '*',
+        winner: 'none' as const,
+        condition: 'Normal',
+      },
+    }
+  }, [currentSelection?.id, gameTree, plyCount]) // Add plyCount to dependencies to force updates
 
   return (
     <div className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72">

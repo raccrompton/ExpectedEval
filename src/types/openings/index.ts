@@ -1,4 +1,4 @@
-import { GameTree } from '../base'
+import { GameTree, GameNode } from '../base'
 
 export interface Opening {
   id: string
@@ -37,4 +37,5 @@ export interface OpeningDrillGame {
   tree: GameTree
   currentFen: string
   toPlay: 'white' | 'black'
+  openingEndNode?: GameNode | null // Store where the opening ends
 }
