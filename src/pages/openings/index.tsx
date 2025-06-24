@@ -263,70 +263,49 @@ const OpeningsPage: NextPage = () => {
     // No special handling needed for opening drills
   }, [])
 
-  // Player info for the board
+  // No-op function for disabling orientation changes
+  const noOpSetOrientation = useCallback((_orientation: 'white' | 'black') => {
+    // Orientation is controlled by player color selection, not user input
+  }, [])
+
+  // Player info for the board - simplified logic based on player color selection
   const topPlayer = useMemo(() => {
     if (!controller.currentSelection) return { name: 'Unknown', color: 'black' }
 
-    const isWhiteOnTop = controller.orientation === 'black'
     const playerColor = controller.currentSelection.playerColor
     const maiaVersion = controller.currentSelection.maiaVersion
 
-    if (isWhiteOnTop) {
-      // White player is on top
-      return {
-        name:
-          playerColor === 'white'
-            ? 'You'
-            : maiaVersion.replace('maia_kdd_', 'Maia '),
-        rating:
-          playerColor === 'white' ? undefined : parseInt(maiaVersion.slice(-4)),
-        color: 'white' as const,
-      }
-    } else {
-      // Black player is on top
-      return {
-        name:
-          playerColor === 'black'
-            ? 'You'
-            : maiaVersion.replace('maia_kdd_', 'Maia '),
-        rating:
-          playerColor === 'black' ? undefined : parseInt(maiaVersion.slice(-4)),
-        color: 'black' as const,
-      }
+    // When player is white: white on bottom, black on top
+    // When player is black: black on bottom, white on top
+    const topPlayerColor = playerColor === 'white' ? 'black' : 'white'
+
+    return {
+      name:
+        topPlayerColor === playerColor
+          ? 'You'
+          : maiaVersion.replace('maia_kdd_', 'Maia '),
+      color: topPlayerColor,
     }
-  }, [controller.currentSelection, controller.orientation])
+  }, [controller.currentSelection])
 
   const bottomPlayer = useMemo(() => {
     if (!controller.currentSelection) return { name: 'Unknown', color: 'white' }
 
-    const isWhiteOnBottom = controller.orientation === 'white'
     const playerColor = controller.currentSelection.playerColor
     const maiaVersion = controller.currentSelection.maiaVersion
 
-    if (isWhiteOnBottom) {
-      // White player is on bottom
-      return {
-        name:
-          playerColor === 'white'
-            ? 'You'
-            : maiaVersion.replace('maia_kdd_', 'Maia '),
-        rating:
-          playerColor === 'white' ? undefined : parseInt(maiaVersion.slice(-4)),
-        color: 'white' as const,
-      }
-    } else {
-      // Black player is on bottom
-      return {
-        name:
-          playerColor === 'black'
-            ? 'You'
-            : maiaVersion.replace('maia_kdd_', 'Maia '),
-        rating:
-          playerColor === 'black' ? undefined : parseInt(maiaVersion.slice(-4)),
-        color: 'black' as const,
-      }
+    // When player is white: white on bottom, black on top
+    // When player is black: black on bottom, white on top
+    const bottomPlayerColor = playerColor
+
+    return {
+      name:
+        bottomPlayerColor === playerColor
+          ? 'You'
+          : maiaVersion.replace('maia_kdd_', 'Maia '),
+      color: bottomPlayerColor,
     }
-  }, [controller.currentSelection, controller.orientation])
+  }, [controller.currentSelection])
 
   // Show download modal if Maia model needs to be downloaded
   if (
@@ -395,18 +374,14 @@ const OpeningsPage: NextPage = () => {
           goToRootNode={controller.goToRootNode}
           plyCount={controller.plyCount}
           orientation={controller.orientation}
-          setOrientation={controller.setOrientation}
+          setOrientation={noOpSetOrientation}
           analysisEnabled={controller.analysisEnabled}
         />
 
         {/* Center - Game Board */}
         <div className="flex h-[85vh] w-[45vh] flex-col gap-2 2xl:w-[55vh]">
           <div className="flex w-full flex-col overflow-hidden rounded">
-            <PlayerInfo
-              name={topPlayer.name}
-              rating={topPlayer.rating}
-              color={topPlayer.color}
-            />
+            <PlayerInfo name={topPlayer.name} color={topPlayer.color} />
             <div className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]">
               <GameBoard
                 currentNode={controller.currentNode}
@@ -424,11 +399,7 @@ const OpeningsPage: NextPage = () => {
                 />
               )}
             </div>
-            <PlayerInfo
-              name={bottomPlayer.name}
-              rating={bottomPlayer.rating}
-              color={bottomPlayer.color}
-            />
+            <PlayerInfo name={bottomPlayer.name} color={bottomPlayer.color} />
           </div>
 
           <div className="flex flex-col gap-2">
@@ -469,11 +440,7 @@ const OpeningsPage: NextPage = () => {
       <div className="mt-2 flex h-full flex-col items-start justify-start gap-1">
         {/* Mobile board and controls - simplified layout */}
         <div className="flex w-full flex-col">
-          <PlayerInfo
-            name={topPlayer.name}
-            rating={topPlayer.rating}
-            color={topPlayer.color}
-          />
+          <PlayerInfo name={topPlayer.name} color={topPlayer.color} />
           <div className="relative flex aspect-square h-[100vw] w-screen">
             <GameBoard
               currentNode={controller.currentNode}
@@ -491,17 +458,13 @@ const OpeningsPage: NextPage = () => {
               />
             )}
           </div>
-          <PlayerInfo
-            name={bottomPlayer.name}
-            rating={bottomPlayer.rating}
-            color={bottomPlayer.color}
-          />
+          <PlayerInfo name={bottomPlayer.name} color={bottomPlayer.color} />
         </div>
 
         <div className="flex h-auto w-full flex-col gap-1">
           <BoardController
             orientation={controller.orientation}
-            setOrientation={controller.setOrientation}
+            setOrientation={noOpSetOrientation}
             currentNode={controller.currentNode}
             plyCount={controller.plyCount}
             goToNode={controller.goToNode}
@@ -509,6 +472,7 @@ const OpeningsPage: NextPage = () => {
             goToPreviousNode={controller.goToPreviousNode}
             goToRootNode={controller.goToRootNode}
             gameTree={controller.gameTree}
+            disableFlip={true}
           />
 
           {/* Current selection info */}

@@ -14,6 +14,7 @@ interface Props {
   goToRootNode: () => void
   gameTree: GameTree
   setCurrentMove?: (move: [string, string] | null) => void
+  disableFlip?: boolean
 }
 
 export const BoardController: React.FC<Props> = ({
@@ -27,6 +28,7 @@ export const BoardController: React.FC<Props> = ({
   goToRootNode,
   gameTree,
   setCurrentMove,
+  disableFlip = false,
 }: Props) => {
   const { width } = useWindowSize()
 
@@ -97,7 +99,7 @@ export const BoardController: React.FC<Props> = ({
           if (hasPrevious) getFirst()
           break
         case 'f':
-          toggleBoardOrientation()
+          if (!disableFlip) toggleBoardOrientation()
           break
         default:
       }
@@ -119,7 +121,8 @@ export const BoardController: React.FC<Props> = ({
   return (
     <div className="flex w-full flex-row items-center gap-[1px] md:rounded">
       <button
-        onClick={toggleBoardOrientation}
+        onClick={disableFlip ? undefined : toggleBoardOrientation}
+        disabled={disableFlip}
         className="flex h-7 flex-1 items-center justify-center bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40 md:rounded-sm"
       >
         {FlipIcon}
