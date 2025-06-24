@@ -4,7 +4,13 @@ import { getGameMove } from 'src/api/play/play'
 import { useTreeController } from '../useTreeController'
 import { useChessSound } from '../useChessSound'
 import { GameTree, GameNode } from 'src/types'
-import { OpeningSelection, OpeningDrillGame } from 'src/types/openings'
+import {
+  OpeningSelection,
+  OpeningDrillGame,
+  CompletedDrill,
+  DrillPerformanceData,
+  OverallPerformanceData,
+} from 'src/types/openings'
 
 // Helper function to parse PGN and create moves in the tree
 const parsePgnToTree = (pgn: string, gameTree: GameTree): GameNode | null => {
@@ -54,91 +60,139 @@ const parsePgnToTree = (pgn: string, gameTree: GameTree): GameNode | null => {
   return currentNode
 }
 
-export const useOpeningDrillController = (selections: OpeningSelection[]) => {
-  const [currentSelectionIndex, setCurrentSelectionIndex] = useState(0)
-  const [drillGames, setDrillGames] = useState<{
-    [key: string]: OpeningDrillGame
-  }>({})
+// Helper function to shuffle array
+const shuffleArray = <T>(array: T[]): T[] => {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
+export const useOpeningDrillController = (
+  allSelections: OpeningSelection[],
+) => {
+  // Drilling state
+  const [remainingDrills, setRemainingDrills] = useState<OpeningSelection[]>([])
+  const [currentDrill, setCurrentDrill] = useState<OpeningSelection | null>(
+    null,
+  )
+  const [completedDrills, setCompletedDrills] = useState<CompletedDrill[]>([])
+  const [currentDrillGame, setCurrentDrillGame] =
+    useState<OpeningDrillGame | null>(null)
   const [analysisEnabled, setAnalysisEnabled] = useState(false)
 
-  const currentSelection = selections[currentSelectionIndex]
+  // Performance tracking state
+  const [showPerformanceModal, setShowPerformanceModal] = useState(false)
+  const [showFinalModal, setShowFinalModal] = useState(false)
+  const [currentPerformanceData, setCurrentPerformanceData] =
+    useState<DrillPerformanceData | null>(null)
+
+  // Flag to track when we're waiting for Maia's response (to prevent navigation-triggered moves)
+  const [waitingForMaiaResponse, setWaitingForMaiaResponse] = useState(false)
+
+  // Flag to track if player chose to continue analyzing past the target move count
+  const [continueAnalyzingMode, setContinueAnalyzingMode] = useState(false)
 
   // Add chess sound hook
   const { playSound } = useChessSound()
 
-  // Initialize drill games from selections
+  // Initialize drilling session - shuffle and set first drill
   useEffect(() => {
-    const games: { [key: string]: OpeningDrillGame } = {}
-    selections.forEach((selection) => {
-      const startingFen =
-        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' // Always start from initial position
-      const gameTree = new GameTree(startingFen)
+    if (allSelections.length > 0 && remainingDrills.length === 0) {
+      const shuffled = shuffleArray(allSelections)
+      setRemainingDrills(shuffled)
+      setCurrentDrill(shuffled[0])
+    }
+  }, [allSelections, remainingDrills.length])
 
-      // Parse the PGN to populate the tree with opening moves
-      const pgn = selection.variation
-        ? selection.variation.pgn
-        : selection.opening.pgn
-      const endNode = parsePgnToTree(pgn, gameTree)
+  // Initialize current drill game when drill changes
+  useEffect(() => {
+    if (!currentDrill) return
 
-      games[selection.id] = {
-        id: selection.id,
-        selection,
-        moves: [], // Track only the moves made during drilling, not the opening moves
-        tree: gameTree,
-        currentFen: endNode?.fen || startingFen,
-        toPlay: endNode
-          ? new Chess(endNode.fen).turn() === 'w'
-            ? 'white'
-            : 'black'
-          : 'white',
-        openingEndNode: endNode, // Store where the opening ends
-      }
-    })
-    setDrillGames(games)
-  }, [selections])
+    const startingFen =
+      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+    const gameTree = new GameTree(startingFen)
 
-  const currentDrillGame = drillGames[currentSelection?.id]
+    // Parse the PGN to populate the tree with opening moves
+    const pgn = currentDrill.variation
+      ? currentDrill.variation.pgn
+      : currentDrill.opening.pgn
+    const endNode = parsePgnToTree(pgn, gameTree)
+
+    const drillGame: OpeningDrillGame = {
+      id: currentDrill.id,
+      selection: currentDrill,
+      moves: [],
+      tree: gameTree,
+      currentFen: endNode?.fen || startingFen,
+      toPlay: endNode
+        ? new Chess(endNode.fen).turn() === 'w'
+          ? 'white'
+          : 'black'
+        : 'white',
+      openingEndNode: endNode,
+      playerMoveCount: 0,
+    }
+
+    setCurrentDrillGame(drillGame)
+    setWaitingForMaiaResponse(false)
+    setContinueAnalyzingMode(false) // Reset continue analyzing mode for new drill
+  }, [currentDrill])
 
   // Use the current drill game's tree, or create a default one
   const gameTree = currentDrillGame?.tree || new GameTree(new Chess().fen())
   const controller = useTreeController(
     gameTree,
-    currentSelection?.playerColor || 'white',
+    currentDrill?.playerColor || 'white',
   )
 
   // Sync the controller's current node with the drill game state
   useEffect(() => {
-    // Only sync when switching to a different game or when no moves have been made yet
-    // Don't sync during active gameplay as it would reset the current position
     if (currentDrillGame && currentDrillGame.moves.length === 0) {
       if (currentDrillGame.openingEndNode) {
-        // Navigate to the end of the opening moves
         controller.setCurrentNode(currentDrillGame.openingEndNode)
       } else if (currentDrillGame.tree) {
-        // Navigate to root if no opening end node
         controller.setCurrentNode(currentDrillGame.tree.getRoot())
       }
     }
-  }, [currentDrillGame?.id, controller]) // Only depend on the drill game ID to avoid infinite loops
+  }, [currentDrillGame?.id, controller])
 
   // Set board orientation based on player color
   useEffect(() => {
-    if (currentSelection?.playerColor) {
-      controller.setOrientation(currentSelection.playerColor)
+    if (currentDrill?.playerColor) {
+      controller.setOrientation(currentDrill.playerColor)
     }
-  }, [currentSelection?.playerColor, controller])
+  }, [currentDrill?.playerColor, controller])
 
   // Determine if it's the player's turn
   const isPlayerTurn = useMemo(() => {
     if (!currentDrillGame || !controller.currentNode) return true
     const chess = new Chess(controller.currentNode.fen)
     const currentTurn = chess.turn() === 'w' ? 'white' : 'black'
-    return currentTurn === currentSelection.playerColor
-  }, [currentDrillGame, controller.currentNode, currentSelection?.playerColor])
+    return currentTurn === currentDrill?.playerColor
+  }, [currentDrillGame, controller.currentNode, currentDrill?.playerColor])
 
-  // Available moves for the current position
+  // Check if drill is complete (reached target move count and not in continue analyzing mode)
+  const isDrillComplete = useMemo(() => {
+    if (!currentDrillGame || !currentDrill) return false
+    return (
+      currentDrillGame.playerMoveCount >= currentDrill.targetMoveNumber &&
+      !continueAnalyzingMode
+    )
+  }, [currentDrillGame, currentDrill, continueAnalyzingMode])
+
+  // Check if we're at the opening end position (can't go further back)
+  const isAtOpeningEnd = useMemo(() => {
+    if (!currentDrillGame || !controller.currentNode) return false
+    return controller.currentNode === currentDrillGame.openingEndNode
+  }, [currentDrillGame, controller.currentNode])
+
+  // Available moves for the current position - only when it's the player's turn
   const moves = useMemo(() => {
-    if (!controller.currentNode) return new Map<string, string[]>()
+    if (!controller.currentNode || !isPlayerTurn)
+      return new Map<string, string[]>()
 
     const moveMap = new Map<string, string[]>()
     const chess = new Chess(controller.currentNode.fen)
@@ -150,9 +204,183 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
     })
 
     return moveMap
-  }, [controller.currentNode])
+  }, [controller.currentNode, isPlayerTurn])
 
-  // Make a move for the player - enhanced to support variations
+  // Function to evaluate drill performance
+  const evaluateDrillPerformance = useCallback(
+    (drillGame: OpeningDrillGame): DrillPerformanceData => {
+      const { selection, tree, playerMoveCount } = drillGame
+
+      // For now, simple evaluation based on final position
+      // In a real implementation, this would analyze each move
+      const finalNode = controller.currentNode || tree.getRoot()
+      const finalChess = new Chess(finalNode.fen)
+      const finalEval = 0 // Placeholder - would need actual evaluation
+
+      // Mock performance data - in real implementation, analyze each move
+      const goodMoves = Math.floor(playerMoveCount * 0.7) // 70% good moves
+      const blunders = Math.max(
+        0,
+        playerMoveCount - goodMoves - Math.floor(playerMoveCount * 0.2),
+      )
+      const accuracy =
+        playerMoveCount > 0 ? (goodMoves / playerMoveCount) * 100 : 100
+
+      const completedDrill: CompletedDrill = {
+        selection,
+        finalNode,
+        playerMoves: drillGame.moves.filter((_, index) => {
+          // Only count player moves (assuming alternating turns)
+          const isPlayerMove =
+            selection.playerColor === 'white'
+              ? index % 2 === 0
+              : index % 2 === 1
+          return isPlayerMove
+        }),
+        totalMoves: playerMoveCount,
+        blunders: Array(blunders).fill('placeholder'),
+        goodMoves: Array(goodMoves).fill('placeholder'),
+        finalEvaluation: finalEval,
+        completedAt: new Date(),
+      }
+
+      const feedback = []
+      if (accuracy >= 90) {
+        feedback.push('Excellent performance! You played very accurately.')
+      } else if (accuracy >= 70) {
+        feedback.push('Good job! Most of your moves were strong.')
+      } else if (accuracy >= 50) {
+        feedback.push('Decent performance, but there is room for improvement.')
+      } else {
+        feedback.push('This opening needs more practice. Review the key moves.')
+      }
+
+      if (blunders === 0) {
+        feedback.push('Perfect! No blunders detected.')
+      } else if (blunders === 1) {
+        feedback.push('Only one blunder - great focus!')
+      } else {
+        feedback.push(
+          `Watch out for blunders - ${blunders} detected in this game.`,
+        )
+      }
+
+      return {
+        drill: completedDrill,
+        evaluationChart: [], // Placeholder
+        accuracy,
+        blunderCount: blunders,
+        goodMoveCount: goodMoves,
+        feedback,
+      }
+    },
+    [controller.currentNode],
+  )
+
+  // Complete current drill and show performance modal
+  const completeDrill = useCallback(() => {
+    if (!currentDrillGame) return
+
+    const performanceData = evaluateDrillPerformance(currentDrillGame)
+    setCurrentPerformanceData(performanceData)
+    setCompletedDrills((prev) => [...prev, performanceData.drill])
+    setShowPerformanceModal(true)
+  }, [currentDrillGame, evaluateDrillPerformance])
+
+  // Move to next drill
+  const moveToNextDrill = useCallback(() => {
+    setShowPerformanceModal(false)
+    setCurrentPerformanceData(null)
+    setContinueAnalyzingMode(false) // Reset continue analyzing mode for next drill
+
+    const newRemaining = remainingDrills.slice(1)
+    setRemainingDrills(newRemaining)
+
+    if (newRemaining.length > 0) {
+      setCurrentDrill(newRemaining[0])
+    } else {
+      // All drills completed - show final modal
+      setShowFinalModal(true)
+    }
+  }, [remainingDrills])
+
+  // Continue analyzing current drill
+  const continueAnalyzing = useCallback(() => {
+    setShowPerformanceModal(false)
+    setAnalysisEnabled(true) // Auto-enable analysis
+    setContinueAnalyzingMode(true) // Allow moves beyond target count
+  }, [])
+
+  // Calculate overall performance data
+  const overallPerformanceData = useMemo((): OverallPerformanceData => {
+    if (completedDrills.length === 0) {
+      return {
+        totalDrills: allSelections.length,
+        completedDrills: [],
+        overallAccuracy: 0,
+        totalBlunders: 0,
+        totalGoodMoves: 0,
+        bestPerformance: null,
+        worstPerformance: null,
+        averageEvaluation: 0,
+      }
+    }
+
+    const totalGoodMoves = completedDrills.reduce(
+      (sum, drill) => sum + drill.goodMoves.length,
+      0,
+    )
+    const totalMoves = completedDrills.reduce(
+      (sum, drill) => sum + drill.totalMoves,
+      0,
+    )
+    const overallAccuracy =
+      totalMoves > 0 ? (totalGoodMoves / totalMoves) * 100 : 0
+    const totalBlunders = completedDrills.reduce(
+      (sum, drill) => sum + drill.blunders.length,
+      0,
+    )
+    const averageEvaluation =
+      completedDrills.reduce((sum, drill) => sum + drill.finalEvaluation, 0) /
+      completedDrills.length
+
+    const bestPerformance = completedDrills.reduce((best, drill) => {
+      const accuracy =
+        drill.totalMoves > 0
+          ? (drill.goodMoves.length / drill.totalMoves) * 100
+          : 0
+      const bestAccuracy =
+        best && best.totalMoves > 0
+          ? (best.goodMoves.length / best.totalMoves) * 100
+          : 0
+      return accuracy > bestAccuracy ? drill : best
+    }, completedDrills[0])
+
+    const worstPerformance = completedDrills.reduce((worst, drill) => {
+      const accuracy =
+        drill.totalMoves > 0
+          ? (drill.goodMoves.length / drill.totalMoves) * 100
+          : 0
+      const worstAccuracy =
+        worst && worst.totalMoves > 0
+          ? (worst.goodMoves.length / worst.totalMoves) * 100
+          : 100
+      return accuracy < worstAccuracy ? drill : worst
+    }, completedDrills[0])
+
+    return {
+      totalDrills: allSelections.length,
+      completedDrills,
+      overallAccuracy,
+      totalBlunders,
+      totalGoodMoves,
+      bestPerformance,
+      worstPerformance,
+      averageEvaluation,
+    }
+  }, [completedDrills, allSelections.length])
+
+  // Make a move for the player - enhanced to support variations and completion checking
   const makePlayerMove = useCallback(
     async (moveUci: string, fromNode?: GameNode) => {
       if (!currentDrillGame || !controller.currentNode || !isPlayerTurn) return
@@ -180,95 +408,113 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
           // Move already exists, just navigate to it
           newNode = existingChild
         } else {
-          // Create new move - determine if we should add to main line or create variation
-          // We create a variation only if:
-          // 1. We're making a move from a position that's NOT the current position (i.e., we went back to an earlier position)
-          // 2. AND there's already a main child from that position
-          // 3. AND we're making a different move than the existing main child
-          const isGoingBackToEarlierPosition =
-            nodeToMoveFrom !== controller.currentNode
-          const hasExistingMainChild = !!nodeToMoveFrom.mainChild
-          const isDifferentFromMainChild =
-            nodeToMoveFrom.mainChild?.move !== moveUci
-
-          if (
-            isGoingBackToEarlierPosition &&
-            hasExistingMainChild &&
-            isDifferentFromMainChild
-          ) {
-            // We went back to an earlier position and are making a different move than what's already there - create variation
-
-            newNode = controller.gameTree.addVariation(
-              nodeToMoveFrom,
-              chess.fen(),
-              moveUci,
-              moveObj.san,
-              currentSelection.maiaVersion,
-            )
-          } else {
-            // Continue the main line (this is the normal case for sequential moves)
-
-            newNode = controller.gameTree.addMainMove(
-              nodeToMoveFrom,
-              chess.fen(),
-              moveUci,
-              moveObj.san,
-            )
+          // If we're making a move from an earlier position, clear the main line from this point forward
+          // This allows overwriting the previous line when making different moves
+          if (nodeToMoveFrom.mainChild) {
+            // Remove all children to clear the main line from this point
+            nodeToMoveFrom.removeAllChildren()
           }
+
+          // Add the new move as the main line continuation
+          newNode = controller.gameTree.addMainMove(
+            nodeToMoveFrom,
+            chess.fen(),
+            moveUci,
+            moveObj.san,
+          )
         }
 
         if (newNode) {
-          // Update the controller to the new node immediately
+          // Check if this was a capture move for sound effect
+          const isCapture = !!chess.get(moveUci.slice(2, 4))
+
+          // Play sound effect
+          playSound(isCapture)
+
+          // Update the controller to the new node
           controller.setCurrentNode(newNode)
 
-          // Update the drill game state
+          // Update drill game state
+          // Recalculate from the main line after opening
+          const mainLine = controller.gameTree.getMainLine()
+          const openingLength = currentDrillGame.openingEndNode
+            ? currentDrillGame.openingEndNode.getPath().length
+            : 1
+          const movesAfterOpening = mainLine.slice(openingLength)
+
+          // Simple player move count - count moves where it's the player's turn
+          let playerMoveCount = 0
+          if (currentDrillGame.openingEndNode) {
+            const openingChess = new Chess(currentDrillGame.openingEndNode.fen)
+            let isPlayerTurn =
+              (openingChess.turn() === 'w') ===
+              (currentDrill?.playerColor === 'white')
+
+            for (const moveNode of movesAfterOpening) {
+              if (isPlayerTurn) {
+                playerMoveCount++
+              }
+              isPlayerTurn = !isPlayerTurn
+            }
+          }
+
           const updatedGame = {
             ...currentDrillGame,
-            moves: [...currentDrillGame.moves, moveUci],
+            moves: movesAfterOpening
+              .map((node) => node.move)
+              .filter(Boolean) as string[],
             currentFen: newNode.fen,
+            playerMoveCount,
           }
 
-          setDrillGames((prev) => ({
-            ...prev,
-            [currentSelection.id]: updatedGame,
-          }))
+          setCurrentDrillGame(updatedGame)
 
-          // Get Maia's response after a short delay if it's now Maia's turn
-          const newChess = new Chess(newNode.fen)
-          const newTurn = newChess.turn() === 'w' ? 'white' : 'black'
+          // Set flag to indicate we're waiting for Maia's response (after player move, it becomes Maia's turn)
+          setWaitingForMaiaResponse(true)
 
-          if (newTurn !== currentSelection.playerColor) {
-            setTimeout(async () => {
-              await makeMaiaMoveRef.current(newNode)
-            }, 800)
+          // Check if drill is complete after this move (only if not in continue analyzing mode)
+          if (
+            updatedGame.playerMoveCount >= currentDrill!.targetMoveNumber &&
+            !continueAnalyzingMode
+          ) {
+            // Delay completion to allow for Maia's response if it's Maia's turn
+            setTimeout(() => {
+              completeDrill()
+            }, 1500)
           }
-        } else {
-          console.log('Failed to create new node')
         }
       } catch (error) {
         console.error('Error making player move:', error)
       }
     },
-    [currentDrillGame, controller, currentSelection, isPlayerTurn],
+    [
+      currentDrillGame,
+      controller,
+      isPlayerTurn,
+      playSound,
+      currentDrill,
+      completeDrill,
+      continueAnalyzingMode,
+    ],
   )
 
-  // Make a move for Maia - enhanced to support variations
+  // Make Maia move
   const makeMaiaMove = useCallback(
-    async (fromNode: GameNode) => {
-      if (!currentDrillGame) return
+    async (fromNode: GameNode | null) => {
+      if (!currentDrillGame || !currentDrill || !fromNode) return
 
       try {
         const response = await getGameMove(
           [],
-          currentSelection.maiaVersion,
+          currentDrill.maiaVersion,
           fromNode.fen,
           null,
           0,
           0,
         )
-
         const maiaMove = response.top_move
-        if (maiaMove) {
+
+        if (maiaMove && maiaMove.length >= 4) {
           let newNode: GameNode | null = null
 
           // Check if this move already exists as a child
@@ -277,38 +523,19 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
           )
 
           if (existingChild) {
-            // Move already exists, just navigate to it
             newNode = existingChild
           } else {
-            // Create new move - determine if we should add to main line or create variation
-            // For Maia moves, we typically continue the main line unless we're in a variation
-            if (fromNode.mainChild && fromNode !== controller.currentNode) {
-              // We're making a move from a position that's not current and already has a main child - create variation
-              const chess = new Chess(fromNode.fen)
-              const moveObj = chess.move(maiaMove, { sloppy: true })
+            // For opening drills, always continue the main line to ensure proper navigation
+            const chess = new Chess(fromNode.fen)
+            const moveObj = chess.move(maiaMove, { sloppy: true })
 
-              if (moveObj) {
-                newNode = controller.gameTree.addVariation(
-                  fromNode,
-                  chess.fen(),
-                  maiaMove,
-                  moveObj.san,
-                  currentSelection.maiaVersion,
-                )
-              }
-            } else {
-              // Continue the main line (normal case)
-              const chess = new Chess(fromNode.fen)
-              const moveObj = chess.move(maiaMove, { sloppy: true })
-
-              if (moveObj) {
-                newNode = controller.gameTree.addMainMove(
-                  fromNode,
-                  chess.fen(),
-                  maiaMove,
-                  moveObj.san,
-                )
-              }
+            if (moveObj) {
+              newNode = controller.gameTree.addMainMove(
+                fromNode,
+                chess.fen(),
+                maiaMove,
+                moveObj.san,
+              )
             }
           }
 
@@ -324,25 +551,52 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
             // Update the controller to the new node immediately
             controller.setCurrentNode(newNode)
 
-            // Update the drill game state (but keep the same tree reference)
-            const updatedGame = {
-              ...currentDrillGame,
-              moves: [...currentDrillGame.moves, maiaMove],
-              currentFen: newNode.fen,
-              // Don't update the tree reference - keep the same one
+            // Update the drill game state
+            // Recalculate from the main line after opening
+            const mainLine = controller.gameTree.getMainLine()
+            const openingLength = currentDrillGame.openingEndNode
+              ? currentDrillGame.openingEndNode.getPath().length
+              : 1
+            const movesAfterOpening = mainLine.slice(openingLength)
+
+            // Simple player move count - count moves where it's the player's turn
+            let playerMoveCount = 0
+            if (currentDrillGame.openingEndNode) {
+              const openingChess = new Chess(
+                currentDrillGame.openingEndNode.fen,
+              )
+              let isPlayerTurn =
+                (openingChess.turn() === 'w') ===
+                (currentDrill?.playerColor === 'white')
+
+              for (const moveNode of movesAfterOpening) {
+                if (isPlayerTurn) {
+                  playerMoveCount++
+                }
+                isPlayerTurn = !isPlayerTurn
+              }
             }
 
-            setDrillGames((prev) => ({
-              ...prev,
-              [currentSelection.id]: updatedGame,
-            }))
+            const updatedGame = {
+              ...currentDrillGame,
+              moves: movesAfterOpening
+                .map((node) => node.move)
+                .filter(Boolean) as string[],
+              currentFen: newNode.fen,
+              playerMoveCount,
+            }
+
+            setCurrentDrillGame(updatedGame)
+
+            // Clear the waiting flag since Maia has responded
+            setWaitingForMaiaResponse(false)
           }
         }
       } catch (error) {
         console.error('Error making Maia move:', error)
       }
     },
-    [currentDrillGame, controller, currentSelection, playSound],
+    [currentDrillGame, controller, currentDrill, playSound],
   )
 
   // Store makeMaiaMove in a ref to avoid circular dependencies
@@ -355,44 +609,59 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
       currentDrillGame &&
       controller.currentNode &&
       !isPlayerTurn &&
-      currentDrillGame.moves.length === 0 && // Only for initial position after opening
-      currentDrillGame.openingEndNode && // Only if we have an opening end node
-      controller.currentNode === currentDrillGame.openingEndNode // Only if we're at the opening end position
+      currentDrillGame.moves.length === 0 &&
+      currentDrillGame.openingEndNode &&
+      controller.currentNode === currentDrillGame.openingEndNode &&
+      !isDrillComplete
     ) {
       // It's Maia's turn to move first from the opening position
+      setWaitingForMaiaResponse(true)
       setTimeout(() => {
         makeMaiaMoveRef.current(controller.currentNode)
       }, 1000)
     }
-  }, [currentDrillGame, controller.currentNode, isPlayerTurn])
+  }, [currentDrillGame, controller.currentNode, isPlayerTurn, isDrillComplete])
 
-  // Switch to a different opening selection
-  const switchToSelection = useCallback(
-    (index: number) => {
-      if (index >= 0 && index < selections.length) {
-        setCurrentSelectionIndex(index)
-      }
-    },
-    [selections.length],
-  )
+  // Handle Maia's response after player moves - only when we're actually waiting for a response
+  useEffect(() => {
+    if (
+      currentDrillGame &&
+      controller.currentNode &&
+      !isPlayerTurn &&
+      waitingForMaiaResponse &&
+      !isDrillComplete
+    ) {
+      // It's Maia's turn to respond to the player's move
+      const timeoutId = setTimeout(() => {
+        makeMaiaMoveRef.current(controller.currentNode)
+      }, 1000)
 
-  // Reset current game to starting position
-  const resetCurrentGame = useCallback(() => {
-    if (!currentSelection) return
+      return () => clearTimeout(timeoutId)
+    }
+  }, [
+    currentDrillGame,
+    controller.currentNode,
+    isPlayerTurn,
+    waitingForMaiaResponse,
+    isDrillComplete,
+  ])
+
+  // Reset current drill to starting position
+  const resetCurrentDrill = useCallback(() => {
+    if (!currentDrill) return
 
     const startingFen =
-      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' // Always start from initial position
+      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
     const gameTree = new GameTree(startingFen)
 
-    // Parse the PGN to populate the tree with opening moves
-    const pgn = currentSelection.variation
-      ? currentSelection.variation.pgn
-      : currentSelection.opening.pgn
+    const pgn = currentDrill.variation
+      ? currentDrill.variation.pgn
+      : currentDrill.opening.pgn
     const endNode = parsePgnToTree(pgn, gameTree)
 
     const resetGame: OpeningDrillGame = {
-      id: currentSelection.id,
-      selection: currentSelection,
+      id: currentDrill.id,
+      selection: currentDrill,
       moves: [],
       tree: gameTree,
       currentFen: endNode?.fen || startingFen,
@@ -402,68 +671,23 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
           : 'black'
         : 'white',
       openingEndNode: endNode,
+      playerMoveCount: 0,
     }
 
-    // Update the drill games state
-    setDrillGames((prev) => ({
-      ...prev,
-      [currentSelection.id]: resetGame,
-    }))
-
-    // The useEffect will handle syncing the controller with the new tree
-  }, [currentSelection])
-
-  // Reset specific opening to starting position
-  const resetOpening = useCallback(
-    (selectionId: string) => {
-      const selection = selections.find((s) => s.id === selectionId)
-      if (!selection) return
-
-      const startingFen =
-        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' // Always start from initial position
-      const gameTree = new GameTree(startingFen)
-
-      // Parse the PGN to populate the tree with opening moves
-      const pgn = selection.variation
-        ? selection.variation.pgn
-        : selection.opening.pgn
-      const endNode = parsePgnToTree(pgn, gameTree)
-
-      const resetGame: OpeningDrillGame = {
-        id: selection.id,
-        selection: selection,
-        moves: [],
-        tree: gameTree,
-        currentFen: endNode?.fen || startingFen,
-        toPlay: endNode
-          ? new Chess(endNode.fen).turn() === 'w'
-            ? 'white'
-            : 'black'
-          : 'white',
-        openingEndNode: endNode,
-      }
-
-      // Update the drill games state
-      setDrillGames((prev) => ({
-        ...prev,
-        [selection.id]: resetGame,
-      }))
-
-      // If this is the current selection, sync the controller
-      if (selection.id === currentSelection?.id) {
-        // The useEffect will handle syncing the controller with the new tree
-      }
-    },
-    [selections, currentSelection],
-  )
+    setCurrentDrillGame(resetGame)
+    setWaitingForMaiaResponse(false)
+    setContinueAnalyzingMode(false) // Reset continue analyzing mode when resetting drill
+  }, [currentDrill])
 
   return {
-    // Game state
-    currentSelection,
-    currentSelectionIndex,
-    drillGames,
+    // Drill state
+    currentDrill,
+    remainingDrills,
+    completedDrills,
     currentDrillGame,
     isPlayerTurn,
+    isDrillComplete,
+    isAtOpeningEnd,
 
     // Tree controller
     gameTree: controller.gameTree,
@@ -482,12 +706,20 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
 
     // Actions
     makePlayerMove,
-    switchToSelection,
-    resetCurrentGame,
-    resetOpening,
+    resetCurrentDrill,
+    completeDrill,
+    moveToNextDrill,
+    continueAnalyzing,
 
     // Analysis
     analysisEnabled,
     setAnalysisEnabled,
+
+    // Modal states
+    showPerformanceModal,
+    showFinalModal,
+    currentPerformanceData,
+    overallPerformanceData,
+    setShowFinalModal,
   }
 }

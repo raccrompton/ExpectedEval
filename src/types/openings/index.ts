@@ -21,21 +21,56 @@ export interface OpeningSelection {
   variation: OpeningVariation | null
   playerColor: 'white' | 'black'
   maiaVersion: string
-  id: string // unique identifier for the selection
+  targetMoveNumber: number
+  id: string
 }
 
 export interface OpeningDrillState {
   selections: OpeningSelection[]
-  currentSelectionIndex: number
+  completedDrills: CompletedDrill[]
+  currentDrill: OpeningSelection | null
+  remainingDrills: OpeningSelection[]
   analysisEnabled: boolean
 }
 
 export interface OpeningDrillGame {
   id: string
   selection: OpeningSelection
-  moves: string[] // UCI moves
+  moves: string[]
   tree: GameTree
   currentFen: string
   toPlay: 'white' | 'black'
-  openingEndNode?: GameNode | null // Store where the opening ends
+  openingEndNode?: GameNode | null
+  playerMoveCount: number
+}
+
+export interface CompletedDrill {
+  selection: OpeningSelection
+  finalNode: GameNode
+  playerMoves: string[]
+  totalMoves: number
+  blunders: string[]
+  goodMoves: string[]
+  finalEvaluation: number
+  completedAt: Date
+}
+
+export interface DrillPerformanceData {
+  drill: CompletedDrill
+  evaluationChart: Array<{ move: number; evaluation: number }>
+  accuracy: number
+  blunderCount: number
+  goodMoveCount: number
+  feedback: string[]
+}
+
+export interface OverallPerformanceData {
+  totalDrills: number
+  completedDrills: CompletedDrill[]
+  overallAccuracy: number
+  totalBlunders: number
+  totalGoodMoves: number
+  bestPerformance: CompletedDrill | null
+  worstPerformance: CompletedDrill | null
+  averageEvaluation: number
 }

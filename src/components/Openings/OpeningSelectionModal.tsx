@@ -39,6 +39,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     MAIA_VERSIONS[4],
   ) // Default to 1500
   const [selectedColor, setSelectedColor] = useState<'white' | 'black'>('white')
+  const [targetMoveNumber, setTargetMoveNumber] = useState(10)
   const [searchTerm, setSearchTerm] = useState('')
 
   // Prevent background scrolling when modal is open
@@ -82,11 +83,12 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     if (isDuplicateSelection(previewOpening, previewVariation)) return
 
     const newSelection: OpeningSelection = {
-      id: `${previewOpening.id}-${previewVariation?.id || 'main'}-${selectedColor}-${selectedMaiaVersion.id}`,
+      id: `${previewOpening.id}-${previewVariation?.id || 'main'}-${selectedColor}-${selectedMaiaVersion.id}-${targetMoveNumber}`,
       opening: previewOpening,
       variation: previewVariation,
       playerColor: selectedColor,
       maiaVersion: selectedMaiaVersion.id,
+      targetMoveNumber,
     }
 
     setSelections([...selections, newSelection])
@@ -103,11 +105,12 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     if (isDuplicateSelection(opening, variation)) return
 
     const newSelection: OpeningSelection = {
-      id: `${opening.id}-${variation?.id || 'main'}-${selectedColor}-${selectedMaiaVersion.id}`,
+      id: `${opening.id}-${variation?.id || 'main'}-${selectedColor}-${selectedMaiaVersion.id}-${targetMoveNumber}`,
       opening,
       variation,
       playerColor: selectedColor,
       maiaVersion: selectedMaiaVersion.id,
+      targetMoveNumber,
     }
 
     setSelections([...selections, newSelection])
@@ -128,7 +131,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="relative flex h-[90vh] max-h-[850px] w-[98vw] max-w-[1400px] flex-col items-start justify-start overflow-hidden rounded-lg bg-background-1 shadow-2xl"
+        className="relative flex h-[90vh] max-h-[900px] w-[98vw] max-w-[1400px] flex-col items-start justify-start overflow-hidden rounded-lg bg-background-1 shadow-2xl"
       >
         {/* Close Button - Top Right of Modal */}
         <button
@@ -259,7 +262,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
             </div>
 
             <div className="flex flex-1 items-center justify-center p-4">
-              <div className="aspect-square w-full max-w-sm">
+              <div className="aspect-square w-full max-w-[300px]">
                 <Chessground
                   contained
                   config={{
@@ -286,7 +289,13 @@ export const OpeningSelectionModal: React.FC<Props> = ({
                         : 'bg-background-2 hover:bg-background-3'
                     }`}
                   >
-                    <span className="material-symbols-outlined">chess</span>
+                    <div className="relative h-5 w-5">
+                      <Image
+                        src="/assets/pieces/white king.svg"
+                        fill={true}
+                        alt="white king"
+                      />
+                    </div>
                     White
                   </button>
                   <button
@@ -297,7 +306,13 @@ export const OpeningSelectionModal: React.FC<Props> = ({
                         : 'bg-background-2 hover:bg-background-3'
                     }`}
                   >
-                    <span className="material-symbols-outlined">chess</span>
+                    <div className="relative h-5 w-5">
+                      <Image
+                        src="/assets/pieces/black king.svg"
+                        fill={true}
+                        alt="black king"
+                      />
+                    </div>
                     Black
                   </button>
                 </div>
@@ -324,6 +339,30 @@ export const OpeningSelectionModal: React.FC<Props> = ({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Move Count Configuration */}
+              <div>
+                <p className="mb-2 text-sm font-medium">
+                  Target Move Count: {targetMoveNumber}
+                </p>
+                <input
+                  type="range"
+                  min="5"
+                  max="30"
+                  value={targetMoveNumber}
+                  onChange={(e) =>
+                    setTargetMoveNumber(parseInt(e.target.value) || 10)
+                  }
+                  className="w-full accent-human-4"
+                />
+                <div className="mt-1 flex justify-between text-xs text-secondary">
+                  <span>5</span>
+                  <span>30</span>
+                </div>
+                <p className="mt-1 text-xs text-secondary">
+                  How many moves you want to play in this opening
+                </p>
               </div>
 
               <button
@@ -392,13 +431,15 @@ export const OpeningSelectionModal: React.FC<Props> = ({
                             <div className="flex items-center gap-1 text-xs text-secondary">
                               {selection.variation && (
                                 <span className="truncate">
-                                  {selection.variation.name}
+                                  {selection.variation.name} •
                                 </span>
                               )}
                               <span>
                                 v. Maia{' '}
-                                {selection.maiaVersion.replace('maia_kdd_', '')}
+                                {selection.maiaVersion.replace('maia_kdd_', '')}{' '}
+                                •
                               </span>
+                              <span>{selection.targetMoveNumber} moves</span>
                             </div>
                           </div>
                         </div>

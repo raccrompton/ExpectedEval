@@ -1,204 +1,204 @@
 import React from 'react'
 import Image from 'next/image'
-import { Tooltip } from 'react-tooltip'
-import { OpeningSelection, GameNode, GameTree } from 'src/types'
-import { GameInfo } from '../Misc/GameInfo'
-import { MovesContainer } from '../Board/MovesContainer'
-import { BoardController } from '../Board/BoardController'
+import { CompletedDrill, OpeningSelection } from 'src/types/openings'
 
 interface Props {
-  selections: OpeningSelection[]
-  currentSelectionIndex: number
-  onSwitchSelection: (index: number) => void
-  onResetCurrent: () => void
-  onResetOpening: (selectionId: string) => void
-  gameTree: GameTree
-  currentNode: GameNode
-  goToNode: (node: GameNode) => void
-  goToNextNode: () => void
-  goToPreviousNode: () => void
-  goToRootNode: () => void
-  plyCount: number
-  orientation: 'white' | 'black'
-  setOrientation: (orientation: 'white' | 'black') => void
-  analysisEnabled: boolean
+  currentDrill: OpeningSelection | null
+  completedDrills: CompletedDrill[]
+  remainingDrills: OpeningSelection[]
+  onResetCurrentDrill: () => void
+  onChangeSelections?: () => void
 }
 
 export const OpeningDrillSidebar: React.FC<Props> = ({
-  selections,
-  currentSelectionIndex,
-  onSwitchSelection,
-  onResetCurrent,
-  onResetOpening,
-  gameTree,
-  currentNode,
-  goToNode,
-  goToNextNode,
-  goToPreviousNode,
-  goToRootNode,
-  plyCount,
-  orientation,
-  setOrientation,
-  analysisEnabled,
+  currentDrill,
+  completedDrills,
+  remainingDrills,
+  onResetCurrentDrill,
+  onChangeSelections,
 }) => {
-  const currentSelection = selections[currentSelectionIndex]
-
-  // Create a base game structure for MovesContainer that uses the live tree
-  const baseGame = React.useMemo(() => {
-    return {
-      id: currentSelection?.id || 'opening-drill',
-      tree: gameTree, // Use the live gameTree from the controller
-      moves: [],
-      termination: {
-        result: '*',
-        winner: 'none' as const,
-        condition: 'Normal',
-      },
-    }
-  }, [currentSelection?.id, gameTree, plyCount]) // Add plyCount to dependencies to force updates
-
   return (
-    <div className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72">
-      <GameInfo title="Drill Openings" icon="school" type="analysis">
-        <div className="flex flex-col gap-2">
-          <div className="min-h-[30px]">
-            <p className="text-sm text-secondary">
-              Current Opening:{' '}
-              <span className="text-primary">
-                {currentSelection?.opening.name}
-              </span>
-            </p>
-            <div className="min-h-[20px]">
-              {currentSelection?.variation && (
-                <p className="text-sm text-secondary">
-                  Variation:{' '}
-                  <span className="text-primary">
-                    {currentSelection.variation.name}
-                  </span>
+    <div className="flex h-full w-72 flex-col border-r border-white/10 bg-background-1">
+      {/* Current Drill Info */}
+      <div className="border-b border-white/10 p-4">
+        <h2 className="mb-2 text-lg font-bold text-primary">Current Drill</h2>
+        {currentDrill ? (
+          <div className="space-y-2">
+            <div>
+              <p className="text-sm font-medium text-primary">
+                {currentDrill.opening.name}
+              </p>
+              {currentDrill.variation && (
+                <p className="text-xs text-secondary">
+                  {currentDrill.variation.name}
                 </p>
               )}
             </div>
-          </div>
-        </div>
-      </GameInfo>
-
-      <div className="flex max-h-[25vh] min-h-[25vh] flex-col overflow-hidden rounded bg-background-1">
-        <div className="flex items-center justify-between border-b border-white/10 p-3">
-          <h3 className="font-semibold">
-            Selected Openings ({selections.length})
-          </h3>
-          <button
-            onClick={onResetCurrent}
-            className="text-xs text-secondary transition-colors hover:text-primary"
-            data-tooltip-id="reset-all-tooltip"
-          >
-            <span className="material-symbols-outlined text-base">refresh</span>
-          </button>
-          <Tooltip
-            id="reset-all-tooltip"
-            content="Reset All Openings"
-            place="top"
-            delayShow={300}
-            className="z-50 !bg-background-2 !px-2 !py-1 !text-xs"
-          />
-        </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {selections.map((selection, index) => (
-            <div
-              key={selection.id}
-              className={`flex cursor-pointer items-center justify-between border-b border-white/5 p-3 transition-colors ${
-                index === currentSelectionIndex
-                  ? 'bg-human-2/20'
-                  : 'hover:bg-human-2/10'
-              }`}
-            >
-              <div
-                role="button"
-                tabIndex={0}
-                className="min-w-0 flex-1"
-                onClick={() => onSwitchSelection(index)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    onSwitchSelection(index)
+            <div className="flex items-center gap-2 text-xs text-secondary">
+              <div className="relative h-4 w-4">
+                <Image
+                  src={
+                    currentDrill.playerColor === 'white'
+                      ? '/assets/pieces/white king.svg'
+                      : '/assets/pieces/black king.svg'
                   }
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="relative h-5 w-5 flex-shrink-0">
-                    <Image
-                      src={
-                        selection.playerColor === 'white'
-                          ? '/assets/pieces/white king.svg'
-                          : '/assets/pieces/black king.svg'
-                      }
-                      fill={true}
-                      alt={`${selection.playerColor} king`}
-                    />
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-sm font-medium text-primary">
-                      {selection.opening.name}
-                    </span>
-                    <div className="flex items-center gap-1 text-xs text-secondary">
-                      {selection.variation && (
-                        <>
-                          <span className="truncate whitespace-nowrap">
-                            {selection.variation.name}
-                          </span>
-                          <span>•</span>
-                        </>
-                      )}
-                      <span className="whitespace-nowrap">
-                        v. Maia {selection.maiaVersion.replace('maia_kdd_', '')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                  fill={true}
+                  alt={`${currentDrill.playerColor} king`}
+                />
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onResetOpening(selection.id)
-                }}
-                className="ml-2 text-secondary transition-colors hover:text-primary"
-                data-tooltip-id={`reset-opening-${selection.id}`}
-              >
-                <span className="material-symbols-outlined text-sm">
-                  refresh
-                </span>
-              </button>
-              <Tooltip
-                id={`reset-opening-${selection.id}`}
-                content="Reset Opening"
-                place="top"
-                delayShow={300}
-                className="z-50 !bg-background-2 !px-2 !py-1 !text-xs"
-              />
+              <span>
+                vs Maia {currentDrill.maiaVersion.replace('maia_kdd_', '')}
+              </span>
+              <span>•</span>
+              <span>{currentDrill.targetMoveNumber} moves</span>
             </div>
-          ))}
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={onResetCurrentDrill}
+                className="flex-1 rounded bg-background-2 px-3 py-1 text-xs transition-colors hover:bg-background-3"
+              >
+                Reset
+              </button>
+              {onChangeSelections && (
+                <button
+                  onClick={onChangeSelections}
+                  className="flex-1 rounded bg-background-2 px-3 py-1 text-xs transition-colors hover:bg-background-3"
+                >
+                  Change
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-secondary">No drill selected</p>
+        )}
+      </div>
+
+      {/* Drill Progress */}
+      <div className="border-b border-white/10 p-4">
+        <h3 className="mb-2 text-sm font-medium text-primary">Progress</h3>
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs">
+            <span className="text-secondary">Completed</span>
+            <span className="font-medium text-green-400">
+              {completedDrills.length}
+            </span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-secondary">Remaining</span>
+            <span className="font-medium text-human-4">
+              {remainingDrills.length}
+            </span>
+          </div>
+          <div className="h-2 w-full rounded bg-background-2">
+            <div
+              className="h-full rounded bg-human-4 transition-all duration-300"
+              style={{
+                width: `${
+                  completedDrills.length > 0
+                    ? (completedDrills.length /
+                        (completedDrills.length + remainingDrills.length)) *
+                      100
+                    : 0
+                }%`,
+              }}
+            />
+          </div>
         </div>
       </div>
 
-      <div className="flex h-1/2 w-full flex-1 flex-col gap-2">
-        <div className="flex h-full flex-col overflow-y-scroll">
-          <MovesContainer
-            game={baseGame}
-            type="analysis"
-            showAnnotations={analysisEnabled}
-          />
-          <BoardController
-            gameTree={gameTree}
-            orientation={orientation}
-            setOrientation={setOrientation}
-            currentNode={currentNode}
-            plyCount={plyCount}
-            goToNode={goToNode}
-            goToNextNode={goToNextNode}
-            goToPreviousNode={goToPreviousNode}
-            goToRootNode={goToRootNode}
-            disableFlip={true}
-          />
+      {/* Completed Drills List */}
+      <div className="flex h-96 flex-col overflow-hidden">
+        <div className="border-b border-white/10 p-3">
+          <h3 className="text-sm font-medium text-primary">
+            Completed Drills ({completedDrills.length})
+          </h3>
+        </div>
+        <div className="flex h-full flex-col">
+          {completedDrills.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <p className="max-w-[12rem] text-center text-xs text-secondary">
+                Complete your first opening drill to see your progress here
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1 p-2">
+              {completedDrills.map((completedDrill, index) => {
+                const accuracy =
+                  completedDrill.totalMoves > 0
+                    ? Math.round(
+                        (completedDrill.goodMoves.length /
+                          completedDrill.totalMoves) *
+                          100,
+                      )
+                    : 0
+
+                return (
+                  <div
+                    key={completedDrill.selection.id}
+                    className="rounded bg-background-2 p-2 transition-colors hover:bg-background-3"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-primary">
+                          {completedDrill.selection.opening.name}
+                        </p>
+                        {completedDrill.selection.variation && (
+                          <p className="text-xs text-secondary">
+                            {completedDrill.selection.variation.name}
+                          </p>
+                        )}
+                        <div className="mt-1 flex items-center gap-2 text-xs">
+                          <div className="relative h-3 w-3">
+                            <Image
+                              src={
+                                completedDrill.selection.playerColor === 'white'
+                                  ? '/assets/pieces/white king.svg'
+                                  : '/assets/pieces/black king.svg'
+                              }
+                              fill={true}
+                              alt={`${completedDrill.selection.playerColor} king`}
+                            />
+                          </div>
+                          <span className="text-secondary">
+                            vs Maia{' '}
+                            {completedDrill.selection.maiaVersion.replace(
+                              'maia_kdd_',
+                              '',
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div
+                          className={`text-xs font-bold ${
+                            accuracy >= 80
+                              ? 'text-green-400'
+                              : accuracy >= 60
+                                ? 'text-yellow-400'
+                                : 'text-red-400'
+                          }`}
+                        >
+                          {accuracy}%
+                        </div>
+                        <div className="text-xs text-secondary">
+                          {completedDrill.totalMoves} moves
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-1 flex gap-4 text-xs">
+                      <span className="text-green-400">
+                        ✓ {completedDrill.goodMoves.length}
+                      </span>
+                      <span className="text-red-400">
+                        ✗ {completedDrill.blunders.length}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
