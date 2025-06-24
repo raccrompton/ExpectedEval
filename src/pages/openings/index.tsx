@@ -27,6 +27,7 @@ import {
   getAvailableMovesArray,
   requiresPromotion,
 } from 'src/utils/train/utils'
+import { TreeControllerContext } from 'src/contexts/TreeControllerContext/TreeControllerContext'
 
 const OpeningsPage: NextPage = () => {
   const [showSelectionModal, setShowSelectionModal] = useState(true)
@@ -359,7 +360,9 @@ const OpeningsPage: NextPage = () => {
           content="Practice chess openings against Maia"
         />
       </Head>
-      {isMobile ? mobileLayout() : desktopLayout()}
+      <TreeControllerContext.Provider value={controller}>
+        {isMobile ? mobileLayout() : desktopLayout()}
+      </TreeControllerContext.Provider>
     </>
   )
 }

@@ -5,6 +5,54 @@ import { useTreeController } from '../useTreeController'
 import { GameTree, GameNode } from 'src/types'
 import { OpeningSelection, OpeningDrillGame } from 'src/types/openings'
 
+// Helper function to parse PGN and create moves in the tree
+const parsePgnToTree = (pgn: string, gameTree: GameTree): GameNode | null => {
+  if (!pgn || pgn.trim() === '') return gameTree.getRoot()
+
+  const chess = new Chess()
+  let currentNode = gameTree.getRoot()
+
+  // Remove move numbers and extra spaces, split by spaces
+  const moveText = pgn.replace(/\d+\./g, '').trim()
+  const moves = moveText.split(/\s+/).filter((move) => move && move !== '')
+
+  for (const moveStr of moves) {
+    try {
+      const moveObj = chess.move(moveStr)
+      if (!moveObj) break
+
+      const moveUci = moveObj.from + moveObj.to + (moveObj.promotion || '')
+
+      // Check if this move already exists as a child
+      const existingChild = currentNode.children.find(
+        (child: GameNode) => child.move === moveUci,
+      )
+
+      if (existingChild) {
+        currentNode = existingChild
+      } else {
+        // Add move as main child
+        const newNode = gameTree.addMainMove(
+          currentNode,
+          chess.fen(),
+          moveUci,
+          moveObj.san,
+        )
+        if (newNode) {
+          currentNode = newNode
+        } else {
+          break
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing move:', moveStr, error)
+      break
+    }
+  }
+
+  return currentNode
+}
+
 export const useOpeningDrillController = (selections: OpeningSelection[]) => {
   const [currentSelectionIndex, setCurrentSelectionIndex] = useState(0)
   const [drillGames, setDrillGames] = useState<{
@@ -18,28 +66,56 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
   useEffect(() => {
     const games: { [key: string]: OpeningDrillGame } = {}
     selections.forEach((selection) => {
-      const startingFen = selection.variation
-        ? selection.variation.fen
-        : selection.opening.fen
+      const startingFen =
+        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' // Always start from initial position
       const gameTree = new GameTree(startingFen)
+
+      // Parse the PGN to populate the tree with opening moves
+      const pgn = selection.variation
+        ? selection.variation.pgn
+        : selection.opening.pgn
+      const endNode = parsePgnToTree(pgn, gameTree)
 
       games[selection.id] = {
         id: selection.id,
         selection,
-        moves: [],
+        moves: [], // Track only the moves made during drilling, not the opening moves
         tree: gameTree,
-        currentFen: startingFen,
-        toPlay: new Chess(startingFen).turn() === 'w' ? 'white' : 'black',
+        currentFen: endNode?.fen || startingFen,
+        toPlay: endNode
+          ? new Chess(endNode.fen).turn() === 'w'
+            ? 'white'
+            : 'black'
+          : 'white',
+        openingEndNode: endNode, // Store where the opening ends
       }
     })
     setDrillGames(games)
   }, [selections])
 
   const currentDrillGame = drillGames[currentSelection?.id]
+
+  // Use the current drill game's tree, or create a default one
+  const gameTree = currentDrillGame?.tree || new GameTree(new Chess().fen())
   const controller = useTreeController(
-    currentDrillGame?.tree || new GameTree(new Chess().fen()),
+    gameTree,
     currentSelection?.playerColor || 'white',
   )
+
+  // Sync the controller's current node with the drill game state
+  useEffect(() => {
+    // Only sync when switching to a different game or when no moves have been made yet
+    // Don't sync during active gameplay as it would reset the current position
+    if (currentDrillGame && currentDrillGame.moves.length === 0) {
+      if (currentDrillGame.openingEndNode) {
+        // Navigate to the end of the opening moves
+        controller.setCurrentNode(currentDrillGame.openingEndNode)
+      } else if (currentDrillGame.tree) {
+        // Navigate to root if no opening end node
+        controller.setCurrentNode(currentDrillGame.tree.getRoot())
+      }
+    }
+  }, [currentDrillGame?.id, controller]) // Only depend on the drill game ID to avoid infinite loops
 
   // Set board orientation based on player color
   useEffect(() => {
@@ -48,27 +124,10 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
     }
   }, [currentSelection?.playerColor, controller])
 
-  // Sync controller when switching selections
-  useEffect(() => {
-    if (currentDrillGame?.tree && currentDrillGame.moves.length === 0) {
-      // Only reset to root if no moves have been made
-      controller.setCurrentNode(currentDrillGame.tree.getRoot())
-    } else if (currentDrillGame?.tree && currentDrillGame.moves.length > 0) {
-      // Navigate to the last move if moves exist
-      const mainLine = currentDrillGame.tree.getMainLine()
-      const targetNode = mainLine[currentDrillGame.moves.length] // moves.length is 0-based, but mainLine includes root at index 0
-      if (targetNode) {
-        controller.setCurrentNode(targetNode)
-      }
-    }
-  }, [currentSelectionIndex, controller])
-
   // Determine if it's the player's turn
   const isPlayerTurn = useMemo(() => {
-    if (!currentDrillGame) return true
-    const chess = new Chess(
-      controller.currentNode?.fen || currentDrillGame.currentFen,
-    )
+    if (!currentDrillGame || !controller.currentNode) return true
+    const chess = new Chess(controller.currentNode.fen)
     const currentTurn = chess.turn() === 'w' ? 'white' : 'black'
     return currentTurn === currentSelection.playerColor
   }, [currentDrillGame, controller.currentNode, currentSelection?.playerColor])
@@ -101,7 +160,10 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
         const chess = new Chess(nodeToMoveFrom.fen)
         const moveObj = chess.move(moveUci, { sloppy: true })
 
-        if (!moveObj) return
+        if (!moveObj) {
+          console.log('Invalid move:', moveUci)
+          return
+        }
 
         let newNode: GameNode | null = null
 
@@ -114,13 +176,25 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
           // Move already exists, just navigate to it
           newNode = existingChild
         } else {
-          // Create new move - add to main line if we're on main line, otherwise create variation
+          // Create new move - determine if we should add to main line or create variation
+          // We create a variation only if:
+          // 1. We're making a move from a position that's NOT the current position (i.e., we went back to an earlier position)
+          // 2. AND there's already a main child from that position
+          // 3. AND we're making a different move than the existing main child
+          const isGoingBackToEarlierPosition =
+            nodeToMoveFrom !== controller.currentNode
+          const hasExistingMainChild = !!nodeToMoveFrom.mainChild
+          const isDifferentFromMainChild =
+            nodeToMoveFrom.mainChild?.move !== moveUci
+
           if (
-            nodeToMoveFrom.mainChild &&
-            nodeToMoveFrom === controller.currentNode
+            isGoingBackToEarlierPosition &&
+            hasExistingMainChild &&
+            isDifferentFromMainChild
           ) {
-            // We're on the main line and there's already a main child - create variation
-            newNode = currentDrillGame.tree.addVariation(
+            // We went back to an earlier position and are making a different move than what's already there - create variation
+
+            newNode = controller.gameTree.addVariation(
               nodeToMoveFrom,
               chess.fen(),
               moveUci,
@@ -128,13 +202,22 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
               currentSelection.maiaVersion,
             )
           } else {
-            // Add to main line
-            newNode = currentDrillGame.tree.addMoveToMainLine(moveUci)
+            // Continue the main line (this is the normal case for sequential moves)
+
+            newNode = controller.gameTree.addMainMove(
+              nodeToMoveFrom,
+              chess.fen(),
+              moveUci,
+              moveObj.san,
+            )
           }
         }
 
         if (newNode) {
-          // Update the drill game state first
+          // Update the controller to the new node immediately
+          controller.setCurrentNode(newNode)
+
+          // Update the drill game state
           const updatedGame = {
             ...currentDrillGame,
             moves: [...currentDrillGame.moves, moveUci],
@@ -146,9 +229,6 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
             [currentSelection.id]: updatedGame,
           }))
 
-          // Then update the controller to the new node
-          controller.setCurrentNode(newNode)
-
           // Get Maia's response after a short delay if it's now Maia's turn
           const newChess = new Chess(newNode.fen)
           const newTurn = newChess.turn() === 'w' ? 'white' : 'black'
@@ -158,6 +238,8 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
               await makeMaiaMoveRef.current(newNode)
             }, 800)
           }
+        } else {
+          console.log('Failed to create new node')
         }
       } catch (error) {
         console.error('Error making player move:', error)
@@ -194,14 +276,15 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
             // Move already exists, just navigate to it
             newNode = existingChild
           } else {
-            // Create new move - add to main line if we're on main line, otherwise create variation
-            if (fromNode.mainChild) {
-              // There's already a main child - create variation
+            // Create new move - determine if we should add to main line or create variation
+            // For Maia moves, we typically continue the main line unless we're in a variation
+            if (fromNode.mainChild && fromNode !== controller.currentNode) {
+              // We're making a move from a position that's not current and already has a main child - create variation
               const chess = new Chess(fromNode.fen)
               const moveObj = chess.move(maiaMove, { sloppy: true })
 
               if (moveObj) {
-                newNode = currentDrillGame.tree.addVariation(
+                newNode = controller.gameTree.addVariation(
                   fromNode,
                   chess.fen(),
                   maiaMove,
@@ -210,26 +293,37 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
                 )
               }
             } else {
-              // Add to main line
-              newNode = currentDrillGame.tree.addMoveToMainLine(maiaMove)
+              // Continue the main line (normal case)
+              const chess = new Chess(fromNode.fen)
+              const moveObj = chess.move(maiaMove, { sloppy: true })
+
+              if (moveObj) {
+                newNode = controller.gameTree.addMainMove(
+                  fromNode,
+                  chess.fen(),
+                  maiaMove,
+                  moveObj.san,
+                )
+              }
             }
           }
 
           if (newNode) {
-            // Update the drill game state first
+            // Update the controller to the new node immediately
+            controller.setCurrentNode(newNode)
+
+            // Update the drill game state (but keep the same tree reference)
             const updatedGame = {
               ...currentDrillGame,
               moves: [...currentDrillGame.moves, maiaMove],
               currentFen: newNode.fen,
+              // Don't update the tree reference - keep the same one
             }
 
             setDrillGames((prev) => ({
               ...prev,
               [currentSelection.id]: updatedGame,
             }))
-
-            // Then update the controller to the new node
-            controller.setCurrentNode(newNode)
           }
         }
       } catch (error) {
@@ -249,9 +343,11 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
       currentDrillGame &&
       controller.currentNode &&
       !isPlayerTurn &&
-      currentDrillGame.moves.length === 0
+      currentDrillGame.moves.length === 0 && // Only for initial position after opening
+      currentDrillGame.openingEndNode && // Only if we have an opening end node
+      controller.currentNode === currentDrillGame.openingEndNode // Only if we're at the opening end position
     ) {
-      // It's Maia's turn to move first
+      // It's Maia's turn to move first from the opening position
       setTimeout(() => {
         makeMaiaMoveRef.current(controller.currentNode)
       }, 1000)
@@ -268,33 +364,42 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
     [selections.length],
   )
 
-  // Note: Analyzed game conversion moved to OpeningDrillAnalysis component for real-time updates
-
   // Reset current game to starting position
   const resetCurrentGame = useCallback(() => {
     if (!currentSelection) return
 
-    const startingFen = currentSelection.variation
-      ? currentSelection.variation.fen
-      : currentSelection.opening.fen
+    const startingFen =
+      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' // Always start from initial position
     const gameTree = new GameTree(startingFen)
+
+    // Parse the PGN to populate the tree with opening moves
+    const pgn = currentSelection.variation
+      ? currentSelection.variation.pgn
+      : currentSelection.opening.pgn
+    const endNode = parsePgnToTree(pgn, gameTree)
 
     const resetGame: OpeningDrillGame = {
       id: currentSelection.id,
       selection: currentSelection,
       moves: [],
       tree: gameTree,
-      currentFen: startingFen,
-      toPlay: new Chess(startingFen).turn() === 'w' ? 'white' : 'black',
+      currentFen: endNode?.fen || startingFen,
+      toPlay: endNode
+        ? new Chess(endNode.fen).turn() === 'w'
+          ? 'white'
+          : 'black'
+        : 'white',
+      openingEndNode: endNode,
     }
 
+    // Update the drill games state
     setDrillGames((prev) => ({
       ...prev,
       [currentSelection.id]: resetGame,
     }))
 
-    controller.setCurrentNode(gameTree.getRoot())
-  }, [currentSelection, controller])
+    // The useEffect will handle syncing the controller with the new tree
+  }, [currentSelection])
 
   return {
     // Game state
