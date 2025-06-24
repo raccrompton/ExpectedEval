@@ -18,6 +18,7 @@ import {
   BoardController,
   PromotionOverlay,
   PlayerInfo,
+  DownloadModelModal,
 } from 'src/components'
 import {
   useOpeningDrillController,
@@ -187,12 +188,26 @@ const OpeningsPage: NextPage = () => {
     setHoverArrow(null)
   }, [controller.currentNode])
 
-  // Show selection modal when no selections are made
+  // Hover function for analysis components
+  const hover = useCallback((move?: string) => {
+    if (move) {
+      setHoverArrow({
+        orig: move.slice(0, 2) as Key,
+        dest: move.slice(2, 4) as Key,
+        brush: 'green',
+        modifiers: { lineWidth: 10 },
+      })
+    } else {
+      setHoverArrow(null)
+    }
+  }, [])
+
+  // Show selection modal when no selections are made and Maia model is ready
   useEffect(() => {
-    if (selections.length === 0) {
+    if (selections.length === 0 && analysisController.maiaStatus === 'ready') {
       setShowSelectionModal(true)
     }
-  }, [selections.length])
+  }, [selections.length, analysisController.maiaStatus])
 
   const handleCompleteSelection = useCallback(
     (newSelections: OpeningSelection[]) => {
@@ -313,6 +328,31 @@ const OpeningsPage: NextPage = () => {
     }
   }, [controller.currentSelection, controller.orientation])
 
+  // Show download modal if Maia model needs to be downloaded
+  if (
+    analysisController.maiaStatus === 'no-cache' ||
+    analysisController.maiaStatus === 'downloading'
+  ) {
+    return (
+      <>
+        <Head>
+          <title>Opening Drills – Maia Chess</title>
+          <meta
+            name="description"
+            content="Practice chess openings against Maia"
+          />
+        </Head>
+        <AnimatePresence>
+          <DownloadModelModal
+            progress={analysisController.maiaProgress}
+            download={analysisController.downloadMaia}
+          />
+        </AnimatePresence>
+      </>
+    )
+  }
+
+  // Show selection modal when no selections are made (after model is ready)
   if (selections.length === 0 || showSelectionModal) {
     return (
       <>
@@ -417,6 +457,8 @@ const OpeningsPage: NextPage = () => {
             controller.currentSelection?.maiaVersion || 'maia_kdd_1500'
           }
           analysisController={analysisController}
+          hover={hover}
+          setHoverArrow={setHoverArrow}
         />
       </div>
     </div>

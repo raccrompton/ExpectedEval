@@ -60,7 +60,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
   return (
     <div className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72">
       <GameInfo title="Drill Openings" icon="school" type="analysis">
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           <div className="min-h-[30px]">
             <p className="text-sm text-secondary">
               Current Opening:{' '}
@@ -143,13 +143,13 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
                     <div className="flex items-center gap-1 text-xs text-secondary">
                       {selection.variation && (
                         <>
-                          <span className="truncate">
+                          <span className="truncate whitespace-nowrap">
                             {selection.variation.name}
                           </span>
                           <span>•</span>
                         </>
                       )}
-                      <span>
+                      <span className="whitespace-nowrap">
                         v. Maia {selection.maiaVersion.replace('maia_kdd_', '')}
                       </span>
                     </div>

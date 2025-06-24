@@ -117,9 +117,9 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   return (
     <ModalContainer dismiss={onClose}>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         className="relative flex h-[90vh] max-h-[800px] w-[98vw] max-w-[1400px] rounded-lg bg-background-1 shadow-2xl"
       >
         {/* Close Button - Top Right of Modal */}
@@ -156,15 +156,15 @@ export const OpeningSelectionModal: React.FC<Props> = ({
           </div>
 
           <div
-            className="flex-1 overflow-y-auto p-4"
+            className="red-scrollbar flex flex-1 flex-col gap-1 overflow-y-auto p-4"
             style={{ userSelect: 'none' }}
           >
             {filteredOpenings.map((opening) => (
-              <div key={opening.id} className="mb-4">
+              <div key={opening.id} className="flex flex-col">
                 <div
                   role="button"
                   tabIndex={0}
-                  className={`cursor-pointer rounded p-3 transition-colors ${
+                  className={`mb-2 cursor-pointer rounded p-3 transition-colors ${
                     previewOpening.id === opening.id && !previewVariation
                       ? 'bg-human-2/20'
                       : 'hover:bg-human-2/10'
@@ -192,7 +192,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
                     </div>
                   </div>
                 </div>
-
                 {opening.variations.map((variation) => (
                   <div
                     key={variation.id}
@@ -252,7 +251,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
           </div>
 
           {/* Selection Controls */}
-          <div className="space-y-4 border-t border-white/10 p-4">
+          <div className="flex flex-col gap-4 border-t border-white/10 p-4">
             {/* Color Selection */}
             <div>
               <p className="mb-2 text-sm font-medium">Play as:</p>
@@ -290,8 +289,10 @@ export const OpeningSelectionModal: React.FC<Props> = ({
                 onChange={(e) => {
                   const version = MAIA_VERSIONS.find(
                     (v) => v.id === e.target.value,
-                  )!
-                  setSelectedMaiaVersion(version)
+                  )
+                  if (version) {
+                    setSelectedMaiaVersion(version)
+                  }
                 }}
                 className="w-full rounded bg-background-2 p-2 text-sm focus:outline-none"
               >
@@ -330,7 +331,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
                 drilling.
               </p>
             ) : (
-              <div className="space-y-3">
+              <div className="flex flex-col">
                 {selections.map((selection) => (
                   <div
                     key={selection.id}
@@ -384,11 +385,11 @@ export const OpeningSelectionModal: React.FC<Props> = ({
             )}
           </div>
 
-          <div className="border-t border-white/10 p-4">
+          <div className="p-4">
             <button
               onClick={handleStartDrilling}
               disabled={selections.length === 0}
-              className="w-full rounded bg-human-4 py-3 font-medium transition-colors hover:bg-human-4/80 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded bg-human-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Start Drilling ({selections.length} opening
               {selections.length !== 1 ? 's' : ''})
