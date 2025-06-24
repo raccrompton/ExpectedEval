@@ -197,6 +197,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
             goToNextNode={goToNextNode}
             goToPreviousNode={goToPreviousNode}
             goToRootNode={goToRootNode}
+            disableFlip={true}
           />
         </div>
       </div>
