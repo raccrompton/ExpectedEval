@@ -15,6 +15,7 @@ interface Props {
   gameTree: GameTree
   setCurrentMove?: (move: [string, string] | null) => void
   disableFlip?: boolean
+  disablePrevious?: boolean
 }
 
 export const BoardController: React.FC<Props> = ({
@@ -29,6 +30,7 @@ export const BoardController: React.FC<Props> = ({
   gameTree,
   setCurrentMove,
   disableFlip = false,
+  disablePrevious = false,
 }: Props) => {
   const { width } = useWindowSize()
 
@@ -84,7 +86,7 @@ export const BoardController: React.FC<Props> = ({
       switch (e.key) {
         case 'Left':
         case 'ArrowLeft':
-          if (hasPrevious) getPrevious()
+          if (hasPrevious && !disablePrevious) getPrevious()
           break
         case 'Right':
         case 'ArrowRight':
@@ -96,7 +98,7 @@ export const BoardController: React.FC<Props> = ({
           break
         case 'Up':
         case 'ArrowUp':
-          if (hasPrevious) getFirst()
+          if (hasPrevious && !disablePrevious) getFirst()
           break
         case 'f':
           if (!disableFlip) toggleBoardOrientation()
@@ -116,6 +118,7 @@ export const BoardController: React.FC<Props> = ({
     getFirst,
     getLast,
     toggleBoardOrientation,
+    disablePrevious,
   ])
 
   return (
@@ -129,14 +132,14 @@ export const BoardController: React.FC<Props> = ({
       </button>
       <button
         onClick={getFirst}
-        disabled={!hasPrevious}
+        disabled={!hasPrevious || disablePrevious}
         className="flex h-7 flex-1 items-center justify-center bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40 md:rounded-sm"
       >
         &#8249;&#8249;&#8249;
       </button>
       <button
         onClick={getPrevious}
-        disabled={!hasPrevious}
+        disabled={!hasPrevious || disablePrevious}
         className="flex h-7 flex-1 items-center justify-center bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40 md:rounded-sm"
       >
         &#8249;
