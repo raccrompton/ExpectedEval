@@ -1,4 +1,6 @@
 import React from 'react'
+import Image from 'next/image'
+import { Tooltip } from 'react-tooltip'
 import { OpeningSelection, GameNode, GameTree } from 'src/types'
 import { GameInfo } from '../Misc/GameInfo'
 import { MovesContainer } from '../Board/MovesContainer'
@@ -9,6 +11,7 @@ interface Props {
   currentSelectionIndex: number
   onSwitchSelection: (index: number) => void
   onResetCurrent: () => void
+  onResetOpening: (selectionId: string) => void
   gameTree: GameTree
   currentNode: GameNode
   goToNode: (node: GameNode) => void
@@ -18,6 +21,7 @@ interface Props {
   plyCount: number
   orientation: 'white' | 'black'
   setOrientation: (orientation: 'white' | 'black') => void
+  analysisEnabled: boolean
 }
 
 export const OpeningDrillSidebar: React.FC<Props> = ({
@@ -25,6 +29,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
   currentSelectionIndex,
   onSwitchSelection,
   onResetCurrent,
+  onResetOpening,
   gameTree,
   currentNode,
   goToNode,
@@ -34,6 +39,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
   plyCount,
   orientation,
   setOrientation,
+  analysisEnabled,
 }) => {
   const currentSelection = selections[currentSelectionIndex]
 
@@ -53,36 +59,25 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
 
   return (
     <div className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72">
-      <GameInfo title="Opening Drill" icon="school" type="analysis">
+      <GameInfo title="Drill Openings" icon="school" type="analysis">
         <div className="space-y-2">
-          <p className="text-sm text-secondary">
-            Current Opening:{' '}
-            <span className="text-primary">
-              {currentSelection?.opening.name}
-            </span>
-          </p>
-          {currentSelection?.variation && (
+          <div className="min-h-[30px]">
             <p className="text-sm text-secondary">
-              Variation:{' '}
+              Current Opening:{' '}
               <span className="text-primary">
-                {currentSelection.variation.name}
+                {currentSelection?.opening.name}
               </span>
             </p>
-          )}
-          <div className="flex items-center gap-2 text-sm">
-            <span
-              className={`inline-flex items-center gap-1 ${
-                currentSelection?.playerColor === 'white'
-                  ? 'text-white'
-                  : 'text-gray-400'
-              }`}
-            >
-              <span className="material-symbols-outlined text-xs">chess</span>
-              Playing as {currentSelection?.playerColor}
-            </span>
-            <span className="text-human-3">
-              vs {currentSelection?.maiaVersion.replace('maia_kdd_', 'Maia ')}
-            </span>
+            <div className="min-h-[20px]">
+              {currentSelection?.variation && (
+                <p className="text-sm text-secondary">
+                  Variation:{' '}
+                  <span className="text-primary">
+                    {currentSelection.variation.name}
+                  </span>
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </GameInfo>
@@ -94,65 +89,92 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
           </h3>
           <button
             onClick={onResetCurrent}
-            className="text-xs text-secondary transition-colors hover:text-human-4"
-            title="Reset current opening"
+            className="text-xs text-secondary transition-colors hover:text-primary"
+            data-tooltip-id="reset-all-tooltip"
           >
-            <span className="material-symbols-outlined text-sm">refresh</span>
+            <span className="material-symbols-outlined text-base">refresh</span>
           </button>
+          <Tooltip
+            id="reset-all-tooltip"
+            content="Reset All Openings"
+            place="top"
+            delayShow={300}
+            className="z-50 !bg-background-2 !px-2 !py-1 !text-xs"
+          />
         </div>
 
         <div className="flex-1 overflow-y-auto">
           {selections.map((selection, index) => (
             <div
               key={selection.id}
-              role="button"
-              tabIndex={0}
-              className={`cursor-pointer border-b border-white/5 p-3 transition-colors ${
+              className={`flex cursor-pointer items-center justify-between border-b border-white/5 p-3 transition-colors ${
                 index === currentSelectionIndex
                   ? 'bg-human-2/20'
                   : 'hover:bg-human-2/10'
               }`}
-              onClick={() => onSwitchSelection(index)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  onSwitchSelection(index)
-                }
-              }}
             >
-              <div className="flex items-start justify-between">
-                <div className="min-w-0 flex-1">
-                  <h4 className="truncate text-sm font-medium">
-                    {selection.opening.name}
-                  </h4>
-                  {selection.variation && (
-                    <p className="truncate text-xs text-secondary">
-                      {selection.variation.name}
-                    </p>
-                  )}
-                  <div className="mt-1 flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center gap-1 text-xs ${
+              <div
+                role="button"
+                tabIndex={0}
+                className="min-w-0 flex-1"
+                onClick={() => onSwitchSelection(index)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    onSwitchSelection(index)
+                  }
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative h-5 w-5 flex-shrink-0">
+                    <Image
+                      src={
                         selection.playerColor === 'white'
-                          ? 'text-white'
-                          : 'text-gray-400'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-xs">
-                        chess
+                          ? '/assets/pieces/white king.svg'
+                          : '/assets/pieces/black king.svg'
+                      }
+                      fill={true}
+                      alt={`${selection.playerColor} king`}
+                    />
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-sm font-medium text-primary">
+                      {selection.opening.name}
+                    </span>
+                    <div className="flex items-center gap-1 text-xs text-secondary">
+                      {selection.variation && (
+                        <>
+                          <span className="truncate">
+                            {selection.variation.name}
+                          </span>
+                          <span>•</span>
+                        </>
+                      )}
+                      <span>
+                        v. Maia {selection.maiaVersion.replace('maia_kdd_', '')}
                       </span>
-                      {selection.playerColor}
-                    </span>
-                    <span className="text-xs text-human-3">
-                      {selection.maiaVersion.replace('maia_kdd_', 'Maia ')}
-                    </span>
+                    </div>
                   </div>
                 </div>
-                {index === currentSelectionIndex && (
-                  <span className="material-symbols-outlined ml-2 text-sm text-human-3">
-                    play_arrow
-                  </span>
-                )}
               </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onResetOpening(selection.id)
+                }}
+                className="ml-2 text-secondary transition-colors hover:text-primary"
+                data-tooltip-id={`reset-opening-${selection.id}`}
+              >
+                <span className="material-symbols-outlined text-sm">
+                  refresh
+                </span>
+              </button>
+              <Tooltip
+                id={`reset-opening-${selection.id}`}
+                content="Reset Opening"
+                place="top"
+                delayShow={300}
+                className="z-50 !bg-background-2 !px-2 !py-1 !text-xs"
+              />
             </div>
           ))}
         </div>
@@ -160,7 +182,11 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
 
       <div className="flex h-1/2 w-full flex-1 flex-col gap-2">
         <div className="flex h-full flex-col overflow-y-scroll">
-          <MovesContainer game={baseGame} type="analysis" />
+          <MovesContainer
+            game={baseGame}
+            type="analysis"
+            showAnnotations={analysisEnabled}
+          />
           <BoardController
             gameTree={gameTree}
             orientation={orientation}

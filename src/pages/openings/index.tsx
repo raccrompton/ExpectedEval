@@ -15,6 +15,7 @@ import {
   GameBoard,
   BoardController,
   PromotionOverlay,
+  PlayerInfo,
 } from 'src/components'
 import {
   useOpeningDrillController,
@@ -190,6 +191,71 @@ const OpeningsPage: NextPage = () => {
     // No special handling needed for opening drills
   }, [])
 
+  // Player info for the board
+  const topPlayer = useMemo(() => {
+    if (!controller.currentSelection) return { name: 'Unknown', color: 'black' }
+
+    const isWhiteOnTop = controller.orientation === 'black'
+    const playerColor = controller.currentSelection.playerColor
+    const maiaVersion = controller.currentSelection.maiaVersion
+
+    if (isWhiteOnTop) {
+      // White player is on top
+      return {
+        name:
+          playerColor === 'white'
+            ? 'You'
+            : maiaVersion.replace('maia_kdd_', 'Maia '),
+        rating:
+          playerColor === 'white' ? undefined : parseInt(maiaVersion.slice(-4)),
+        color: 'white' as const,
+      }
+    } else {
+      // Black player is on top
+      return {
+        name:
+          playerColor === 'black'
+            ? 'You'
+            : maiaVersion.replace('maia_kdd_', 'Maia '),
+        rating:
+          playerColor === 'black' ? undefined : parseInt(maiaVersion.slice(-4)),
+        color: 'black' as const,
+      }
+    }
+  }, [controller.currentSelection, controller.orientation])
+
+  const bottomPlayer = useMemo(() => {
+    if (!controller.currentSelection) return { name: 'Unknown', color: 'white' }
+
+    const isWhiteOnBottom = controller.orientation === 'white'
+    const playerColor = controller.currentSelection.playerColor
+    const maiaVersion = controller.currentSelection.maiaVersion
+
+    if (isWhiteOnBottom) {
+      // White player is on bottom
+      return {
+        name:
+          playerColor === 'white'
+            ? 'You'
+            : maiaVersion.replace('maia_kdd_', 'Maia '),
+        rating:
+          playerColor === 'white' ? undefined : parseInt(maiaVersion.slice(-4)),
+        color: 'white' as const,
+      }
+    } else {
+      // Black player is on bottom
+      return {
+        name:
+          playerColor === 'black'
+            ? 'You'
+            : maiaVersion.replace('maia_kdd_', 'Maia '),
+        rating:
+          playerColor === 'black' ? undefined : parseInt(maiaVersion.slice(-4)),
+        color: 'black' as const,
+      }
+    }
+  }, [controller.currentSelection, controller.orientation])
+
   if (selections.length === 0 || showSelectionModal) {
     return (
       <>
@@ -223,6 +289,7 @@ const OpeningsPage: NextPage = () => {
           currentSelectionIndex={controller.currentSelectionIndex}
           onSwitchSelection={controller.switchToSelection}
           onResetCurrent={controller.resetCurrentGame}
+          onResetOpening={controller.resetOpening}
           gameTree={controller.gameTree}
           currentNode={controller.currentNode}
           goToNode={controller.goToNode}
@@ -232,26 +299,39 @@ const OpeningsPage: NextPage = () => {
           plyCount={controller.plyCount}
           orientation={controller.orientation}
           setOrientation={controller.setOrientation}
+          analysisEnabled={controller.analysisEnabled}
         />
 
         {/* Center - Game Board */}
         <div className="flex h-[85vh] w-[45vh] flex-col gap-2 2xl:w-[55vh]">
-          <div className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]">
-            <GameBoard
-              currentNode={controller.currentNode}
-              orientation={controller.orientation}
-              onPlayerMakeMove={onPlayerMakeMove}
-              availableMoves={controller.moves}
-              shapes={[]}
-              onSelectSquare={onSelectSquare}
+          <div className="flex w-full flex-col overflow-hidden rounded">
+            <PlayerInfo
+              name={topPlayer.name}
+              rating={topPlayer.rating}
+              color={topPlayer.color}
             />
-            {promotionFromTo && (
-              <PromotionOverlay
-                player={currentPlayer}
-                file={promotionFromTo[1].slice(0, 1)}
-                onPlayerSelectPromotion={onPlayerSelectPromotion}
+            <div className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]">
+              <GameBoard
+                currentNode={controller.currentNode}
+                orientation={controller.orientation}
+                onPlayerMakeMove={onPlayerMakeMove}
+                availableMoves={controller.moves}
+                shapes={[]}
+                onSelectSquare={onSelectSquare}
               />
-            )}
+              {promotionFromTo && (
+                <PromotionOverlay
+                  player={currentPlayer}
+                  file={promotionFromTo[1].slice(0, 1)}
+                  onPlayerSelectPromotion={onPlayerSelectPromotion}
+                />
+              )}
+            </div>
+            <PlayerInfo
+              name={bottomPlayer.name}
+              rating={bottomPlayer.rating}
+              color={bottomPlayer.color}
+            />
           </div>
 
           <div className="flex flex-col gap-2">
@@ -289,22 +369,34 @@ const OpeningsPage: NextPage = () => {
     <div className="flex h-full flex-1 flex-col justify-center gap-1">
       <div className="mt-2 flex h-full flex-col items-start justify-start gap-1">
         {/* Mobile board and controls - simplified layout */}
-        <div className="relative flex aspect-square h-[100vw] w-screen">
-          <GameBoard
-            currentNode={controller.currentNode}
-            orientation={controller.orientation}
-            onPlayerMakeMove={onPlayerMakeMove}
-            availableMoves={controller.moves}
-            shapes={[]}
-            onSelectSquare={onSelectSquare}
+        <div className="flex w-full flex-col">
+          <PlayerInfo
+            name={topPlayer.name}
+            rating={topPlayer.rating}
+            color={topPlayer.color}
           />
-          {promotionFromTo && (
-            <PromotionOverlay
-              player={currentPlayer}
-              file={promotionFromTo[1].slice(0, 1)}
-              onPlayerSelectPromotion={onPlayerSelectPromotion}
+          <div className="relative flex aspect-square h-[100vw] w-screen">
+            <GameBoard
+              currentNode={controller.currentNode}
+              orientation={controller.orientation}
+              onPlayerMakeMove={onPlayerMakeMove}
+              availableMoves={controller.moves}
+              shapes={[]}
+              onSelectSquare={onSelectSquare}
             />
-          )}
+            {promotionFromTo && (
+              <PromotionOverlay
+                player={currentPlayer}
+                file={promotionFromTo[1].slice(0, 1)}
+                onPlayerSelectPromotion={onPlayerSelectPromotion}
+              />
+            )}
+          </div>
+          <PlayerInfo
+            name={bottomPlayer.name}
+            rating={bottomPlayer.rating}
+            color={bottomPlayer.color}
+          />
         </div>
 
         <div className="flex h-auto w-full flex-col gap-1">

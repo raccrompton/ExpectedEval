@@ -401,6 +401,50 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
     // The useEffect will handle syncing the controller with the new tree
   }, [currentSelection])
 
+  // Reset specific opening to starting position
+  const resetOpening = useCallback(
+    (selectionId: string) => {
+      const selection = selections.find((s) => s.id === selectionId)
+      if (!selection) return
+
+      const startingFen =
+        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' // Always start from initial position
+      const gameTree = new GameTree(startingFen)
+
+      // Parse the PGN to populate the tree with opening moves
+      const pgn = selection.variation
+        ? selection.variation.pgn
+        : selection.opening.pgn
+      const endNode = parsePgnToTree(pgn, gameTree)
+
+      const resetGame: OpeningDrillGame = {
+        id: selection.id,
+        selection: selection,
+        moves: [],
+        tree: gameTree,
+        currentFen: endNode?.fen || startingFen,
+        toPlay: endNode
+          ? new Chess(endNode.fen).turn() === 'w'
+            ? 'white'
+            : 'black'
+          : 'white',
+        openingEndNode: endNode,
+      }
+
+      // Update the drill games state
+      setDrillGames((prev) => ({
+        ...prev,
+        [selection.id]: resetGame,
+      }))
+
+      // If this is the current selection, sync the controller
+      if (selection.id === currentSelection?.id) {
+        // The useEffect will handle syncing the controller with the new tree
+      }
+    },
+    [selections, currentSelection],
+  )
+
   return {
     // Game state
     currentSelection,
@@ -428,6 +472,7 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
     makePlayerMove,
     switchToSelection,
     resetCurrentGame,
+    resetOpening,
 
     // Analysis
     analysisEnabled,
