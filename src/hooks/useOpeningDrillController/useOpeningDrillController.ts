@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { Chess, PieceSymbol } from 'chess.ts'
 import { getGameMove } from 'src/api/play/play'
 import { useTreeController } from '../useTreeController'
+import { useChessSound } from '../useChessSound'
 import { GameTree, GameNode } from 'src/types'
 import { OpeningSelection, OpeningDrillGame } from 'src/types/openings'
 
@@ -61,6 +62,9 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
   const [analysisEnabled, setAnalysisEnabled] = useState(false)
 
   const currentSelection = selections[currentSelectionIndex]
+
+  // Add chess sound hook
+  const { playSound } = useChessSound()
 
   // Initialize drill games from selections
   useEffect(() => {
@@ -309,6 +313,14 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
           }
 
           if (newNode) {
+            // Check if this was a capture move for sound effect
+            const chess = new Chess(fromNode.fen)
+            const pieceAtDestination = chess.get(maiaMove.slice(2, 4))
+            const isCapture = !!pieceAtDestination
+
+            // Play sound effect for Maia's move
+            playSound(isCapture)
+
             // Update the controller to the new node immediately
             controller.setCurrentNode(newNode)
 
@@ -330,7 +342,7 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
         console.error('Error making Maia move:', error)
       }
     },
-    [currentDrillGame, controller, currentSelection],
+    [currentDrillGame, controller, currentSelection, playSound],
   )
 
   // Store makeMaiaMove in a ref to avoid circular dependencies

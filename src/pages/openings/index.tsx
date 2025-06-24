@@ -1,9 +1,11 @@
 import Head from 'next/head'
 import { NextPage } from 'next'
+import { useRouter } from 'next/router'
 import { useState, useEffect, useContext, useCallback, useMemo } from 'react'
 import { Chess, PieceSymbol } from 'chess.ts'
 import { AnimatePresence } from 'framer-motion'
 import type { Key } from 'chessground/types'
+import type { DrawShape } from 'chessground/draw'
 
 import { WindowSizeContext } from 'src/contexts'
 import { OpeningSelection, AnalyzedGame } from 'src/types'
@@ -31,11 +33,14 @@ import {
 import { TreeControllerContext } from 'src/contexts/TreeControllerContext/TreeControllerContext'
 
 const OpeningsPage: NextPage = () => {
+  const router = useRouter()
   const [showSelectionModal, setShowSelectionModal] = useState(true)
   const [selections, setSelections] = useState<OpeningSelection[]>([])
   const [promotionFromTo, setPromotionFromTo] = useState<
     [string, string] | null
   >(null)
+  const [arrows, setArrows] = useState<DrawShape[]>([])
+  const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
 
   // Pre-load engines when page loads - keep them at top level to prevent reloading
   const { status: maiaStatus } = useMaiaEngine()
@@ -133,6 +138,55 @@ const OpeningsPage: NextPage = () => {
     }
   }, [controller.currentNode, analysisController])
 
+  // Set arrows for Maia and Stockfish recommendations when analysis is enabled
+  useEffect(() => {
+    if (!controller.analysisEnabled) {
+      setArrows([])
+      return
+    }
+
+    const arr = []
+
+    if (analysisController.moveEvaluation?.maia) {
+      const maia = Object.entries(
+        analysisController.moveEvaluation?.maia?.policy,
+      )[0]
+      if (maia) {
+        arr.push({
+          brush: 'red',
+          orig: maia[0].slice(0, 2) as Key,
+          dest: maia[0].slice(2, 4) as Key,
+        } as DrawShape)
+      }
+    }
+
+    if (analysisController.moveEvaluation?.stockfish) {
+      const stockfish = Object.entries(
+        analysisController.moveEvaluation?.stockfish.cp_vec,
+      )[0]
+      if (stockfish) {
+        arr.push({
+          brush: 'blue',
+          orig: stockfish[0].slice(0, 2) as Key,
+          dest: stockfish[0].slice(2, 4) as Key,
+          modifiers: { lineWidth: 8 },
+        })
+      }
+    }
+
+    setArrows(arr)
+  }, [
+    controller.analysisEnabled,
+    analysisController.moveEvaluation,
+    analysisController.currentNode,
+    analysisController.orientation,
+  ])
+
+  // Clear hover arrow when node changes
+  useEffect(() => {
+    setHoverArrow(null)
+  }, [controller.currentNode])
+
   // Show selection modal when no selections are made
   useEffect(() => {
     if (selections.length === 0) {
@@ -151,8 +205,11 @@ const OpeningsPage: NextPage = () => {
   const handleCloseModal = useCallback(() => {
     if (selections.length > 0) {
       setShowSelectionModal(false)
+    } else {
+      // If no selections, redirect to home page
+      router.push('/')
     }
-  }, [selections.length])
+  }, [selections.length, router])
 
   const currentPlayer = useMemo(() => {
     if (!controller.currentNode) return 'white'
@@ -316,7 +373,7 @@ const OpeningsPage: NextPage = () => {
                 orientation={controller.orientation}
                 onPlayerMakeMove={onPlayerMakeMove}
                 availableMoves={controller.moves}
-                shapes={[]}
+                shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
                 onSelectSquare={onSelectSquare}
               />
               {promotionFromTo && (
@@ -337,12 +394,12 @@ const OpeningsPage: NextPage = () => {
           <div className="flex flex-col gap-2">
             <button
               onClick={() => setShowSelectionModal(true)}
-              className="w-full rounded bg-background-2 py-2 text-sm text-secondary transition-colors hover:bg-background-3"
+              className="flex w-full items-center justify-center rounded bg-background-2 py-2 text-sm text-secondary transition-colors hover:bg-background-3"
             >
               <span className="material-symbols-outlined mr-1 text-sm">
                 settings
               </span>
-              Change Selections
+              Change Selected Openings
             </button>
           </div>
         </div>
@@ -381,7 +438,7 @@ const OpeningsPage: NextPage = () => {
               orientation={controller.orientation}
               onPlayerMakeMove={onPlayerMakeMove}
               availableMoves={controller.moves}
-              shapes={[]}
+              shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
               onSelectSquare={onSelectSquare}
             />
             {promotionFromTo && (
