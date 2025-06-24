@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import Image from 'next/image'
 import { AnimatePresence, motion } from 'framer-motion'
 import Chessground from '@react-chess/chessground'
 import { Opening, OpeningVariation, OpeningSelection } from 'src/types'
@@ -139,7 +140,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
           </div>
 
           {/* Search Bar */}
-          <div className="border-b border-white/10 px-4 pb-4">
+          <div className="border-b border-white/10 p-4">
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-secondary">
                 search
@@ -333,50 +334,50 @@ export const OpeningSelectionModal: React.FC<Props> = ({
                 {selections.map((selection) => (
                   <div
                     key={selection.id}
-                    className="rounded bg-background-2 p-3"
+                    className="flex cursor-pointer items-center justify-between border-b border-white/5 p-3 transition-colors hover:bg-human-2/10"
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="text-sm font-medium">
-                          {selection.opening.name}
-                        </h4>
-                        {selection.variation && (
-                          <p className="text-xs text-secondary">
-                            {selection.variation.name}
-                          </p>
-                        )}
-                        <div className="mt-1 flex items-center gap-2">
-                          <span
-                            className={`inline-flex items-center gap-1 text-xs ${
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-5 w-5 flex-shrink-0">
+                          <Image
+                            src={
                               selection.playerColor === 'white'
-                                ? 'text-white'
-                                : 'text-gray-400'
-                            }`}
-                          >
-                            <span className="material-symbols-outlined text-xs">
-                              chess
-                            </span>
-                            {selection.playerColor}
-                          </span>
-                          <span className="text-xs text-human-3">
-                            vs{' '}
-                            {
-                              MAIA_VERSIONS.find(
-                                (v) => v.id === selection.maiaVersion,
-                              )?.name
+                                ? '/assets/pieces/white king.svg'
+                                : '/assets/pieces/black king.svg'
                             }
+                            fill={true}
+                            alt={`${selection.playerColor} king`}
+                          />
+                        </div>
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate text-sm font-medium text-primary">
+                            {selection.opening.name}
                           </span>
+                          <div className="flex items-center gap-1 text-xs text-secondary">
+                            {selection.variation && (
+                              <>
+                                <span className="truncate">
+                                  {selection.variation.name}
+                                </span>
+                                <span>•</span>
+                              </>
+                            )}
+                            <span>
+                              v. Maia{' '}
+                              {selection.maiaVersion.replace('maia_kdd_', '')}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <button
-                        onClick={() => removeSelection(selection.id)}
-                        className="text-secondary transition-colors hover:text-human-4"
-                      >
-                        <span className="material-symbols-outlined text-sm">
-                          close
-                        </span>
-                      </button>
                     </div>
+                    <button
+                      onClick={() => removeSelection(selection.id)}
+                      className="ml-2 text-secondary transition-colors hover:text-human-4"
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        close
+                      </span>
+                    </button>
                   </div>
                 ))}
               </div>
