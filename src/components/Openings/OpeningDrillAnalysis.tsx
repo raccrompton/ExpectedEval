@@ -1,56 +1,148 @@
-import React from 'react'
+import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react'
 import { Highlight, MoveMap, BlunderMeter } from '../Analysis'
-import { useAnalysisController } from 'src/hooks'
-import { AnalyzedGame } from 'src/types'
+import { GameNode } from 'src/types'
 import { GameTree } from 'src/types/base/tree'
-import { Chess } from 'chess.ts'
-
-// Create a mock analyzed game for when no real game is available
-const createMockAnalyzedGame = (): AnalyzedGame => ({
-  id: 'mock',
-  blackPlayer: { name: 'Player', rating: undefined },
-  whitePlayer: { name: 'Player', rating: undefined },
-  moves: [],
-  availableMoves: [],
-  gameType: 'play',
-  termination: {
-    result: '*',
-    winner: 'none',
-    condition: 'Normal',
-  },
-  maiaEvaluations: [],
-  stockfishEvaluations: [],
-  tree: new GameTree(new Chess().fen()),
-  type: 'play',
-})
+import { Chess, PieceSymbol } from 'chess.ts'
+import type { Key } from 'chessground/types'
+import type { DrawShape } from 'chessground/draw'
+import toast from 'react-hot-toast'
 
 interface Props {
-  analyzedGame: AnalyzedGame | null
+  currentNode: GameNode | null
+  gameTree: GameTree | null
   analysisEnabled: boolean
   onToggleAnalysis: () => void
+  playerColor: 'white' | 'black'
+  maiaVersion: string
+  analysisController: any // Analysis controller passed from parent
 }
 
 export const OpeningDrillAnalysis: React.FC<Props> = ({
-  analyzedGame,
+  currentNode,
+  gameTree,
   analysisEnabled,
   onToggleAnalysis,
+  playerColor,
+  maiaVersion,
+  analysisController,
 }) => {
-  // Always call the hook but use mock data when disabled
-  const analysisController = useAnalysisController(
-    analyzedGame || createMockAnalyzedGame(),
-    'white',
+  const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
+  const toastId = useRef<string | null>(null)
+
+  // Toast notifications for Maia model status
+  useEffect(() => {
+    return () => {
+      toast.dismiss()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (analysisController.maiaStatus === 'loading' && !toastId.current) {
+      toastId.current = toast.loading('Loading Maia Model...')
+    } else if (analysisController.maiaStatus === 'ready') {
+      if (toastId.current) {
+        toast.success('Loaded Maia! Analysis is ready', {
+          id: toastId.current,
+        })
+        toastId.current = null
+      } else {
+        toast.success('Loaded Maia! Analysis is ready')
+      }
+    }
+  }, [analysisController.maiaStatus])
+
+  const hover = useCallback(
+    (move?: string) => {
+      if (move && analysisEnabled) {
+        setHoverArrow({
+          orig: move.slice(0, 2) as Key,
+          dest: move.slice(2, 4) as Key,
+          brush: 'green',
+          modifiers: { lineWidth: 10 },
+        })
+      } else {
+        setHoverArrow(null)
+      }
+    },
+    [analysisEnabled],
   )
-  const mockHover = () => {
-    // No-op for disabled analysis
-  }
 
-  const mockMakeMove = () => {
-    // No-op for disabled analysis
-  }
+  const makeMove = useCallback(
+    (move: string) => {
+      if (!analysisEnabled || !currentNode || !gameTree) return
 
-  const mockSetHoverArrow = () => {
-    // No-op for disabled analysis
-  }
+      const chess = new Chess(currentNode.fen)
+      const moveAttempt = chess.move({
+        from: move.slice(0, 2),
+        to: move.slice(2, 4),
+        promotion: move[4] ? (move[4] as PieceSymbol) : undefined,
+      })
+
+      if (moveAttempt) {
+        const newFen = chess.fen()
+        const moveString =
+          moveAttempt.from +
+          moveAttempt.to +
+          (moveAttempt.promotion ? moveAttempt.promotion : '')
+        const san = moveAttempt.san
+
+        // Check if this move already exists as a child
+        const existingChild = currentNode.children.find(
+          (child: any) => child.move === moveString,
+        )
+
+        if (existingChild) {
+          // Move already exists, just navigate to it
+          analysisController.goToNode(existingChild)
+        } else if (currentNode.mainChild?.move === moveString) {
+          // This is the main child move
+          analysisController.goToNode(currentNode.mainChild)
+        } else {
+          // Create new variation
+          const newVariation = gameTree.addVariation(
+            currentNode,
+            newFen,
+            moveString,
+            san,
+            analysisController.currentMaiaModel,
+          )
+          analysisController.goToNode(newVariation)
+        }
+      }
+    },
+    [analysisEnabled, currentNode, gameTree, analysisController],
+  )
+
+  // No-op handlers for blurred analysis components when disabled
+  const mockHover = useCallback(() => {
+    // Intentionally empty - no interaction allowed when analysis disabled
+  }, [])
+
+  const mockMakeMove = useCallback(() => {
+    // Intentionally empty - no moves allowed when analysis disabled
+  }, [])
+
+  const mockSetHoverArrow = useCallback(() => {
+    // Intentionally empty - no hover arrows when analysis disabled
+  }, [])
+
+  // Create empty data structures that match expected types
+  const emptyBlunderMeterData = useMemo(
+    () => ({
+      goodMoves: { moves: [], probability: 0 },
+      okMoves: { moves: [], probability: 0 },
+      blunderMoves: { moves: [], probability: 0 },
+    }),
+    [],
+  )
+
+  const emptyRecommendations = useMemo(
+    () => ({
+      maia: undefined,
+      stockfish: undefined,
+    }),
+    [],
+  )
 
   return (
     <div className="flex h-[calc(55vh+4.5rem)] w-full flex-col gap-2">
@@ -79,21 +171,31 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
       <div className="relative">
         <div className="flex h-[calc((55vh+4.5rem)/2)]">
           <Highlight
-            hover={mockHover}
-            makeMove={mockMakeMove}
-            currentMaiaModel="maia_kdd_1500"
-            recommendations={analysisController.moveRecommendations}
-            moveEvaluation={
-              analysisController.moveEvaluation || {
-                maia: undefined,
-                stockfish: undefined,
-              }
+            hover={analysisEnabled ? hover : mockHover}
+            makeMove={analysisEnabled ? makeMove : mockMakeMove}
+            currentMaiaModel={analysisController.currentMaiaModel}
+            recommendations={
+              analysisEnabled
+                ? analysisController.moveRecommendations
+                : emptyRecommendations
             }
-            movesByRating={analysisController.movesByRating}
-            colorSanMapping={analysisController.colorSanMapping}
+            moveEvaluation={
+              analysisEnabled && analysisController.moveEvaluation
+                ? analysisController.moveEvaluation
+                : {
+                    maia: undefined,
+                    stockfish: undefined,
+                  }
+            }
+            movesByRating={
+              analysisEnabled ? analysisController.movesByRating : undefined
+            }
+            colorSanMapping={
+              analysisEnabled ? analysisController.colorSanMapping : {}
+            }
             boardDescription={
               analysisEnabled
-                ? 'This position offers multiple strategic options. Consider central control and piece development.'
+                ? analysisController.boardDescription || 'Analyzing position...'
                 : 'Analysis is disabled. Enable analysis to see detailed move evaluations and recommendations.'
             }
           />
@@ -118,16 +220,26 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
         <div className="flex h-[calc((55vh+4.5rem)/2)] flex-row gap-2">
           <div className="flex h-full w-full flex-col">
             <MoveMap
-              moveMap={analysisController.moveMap}
-              colorSanMapping={analysisController.colorSanMapping}
-              setHoverArrow={mockSetHoverArrow}
+              moveMap={analysisEnabled ? analysisController.moveMap : undefined}
+              colorSanMapping={
+                analysisEnabled ? analysisController.colorSanMapping : {}
+              }
+              setHoverArrow={
+                analysisEnabled ? setHoverArrow : mockSetHoverArrow
+              }
             />
           </div>
           <BlunderMeter
-            hover={mockHover}
-            makeMove={mockMakeMove}
-            data={analysisController.blunderMeter}
-            colorSanMapping={analysisController.colorSanMapping}
+            hover={analysisEnabled ? hover : mockHover}
+            makeMove={analysisEnabled ? makeMove : mockMakeMove}
+            data={
+              analysisEnabled
+                ? analysisController.blunderMeter
+                : emptyBlunderMeterData
+            }
+            colorSanMapping={
+              analysisEnabled ? analysisController.colorSanMapping : {}
+            }
           />
         </div>
         {!analysisEnabled && (

@@ -1,12 +1,23 @@
 import React from 'react'
-import { OpeningSelection } from 'src/types'
+import { OpeningSelection, GameNode, GameTree } from 'src/types'
 import { GameInfo } from '../Misc/GameInfo'
+import { MovesContainer } from '../Board/MovesContainer'
+import { BoardController } from '../Board/BoardController'
 
 interface Props {
   selections: OpeningSelection[]
   currentSelectionIndex: number
   onSwitchSelection: (index: number) => void
   onResetCurrent: () => void
+  gameTree: GameTree
+  currentNode: GameNode
+  goToNode: (node: GameNode) => void
+  goToNextNode: () => void
+  goToPreviousNode: () => void
+  goToRootNode: () => void
+  plyCount: number
+  orientation: 'white' | 'black'
+  setOrientation: (orientation: 'white' | 'black') => void
 }
 
 export const OpeningDrillSidebar: React.FC<Props> = ({
@@ -14,8 +25,29 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
   currentSelectionIndex,
   onSwitchSelection,
   onResetCurrent,
+  gameTree,
+  currentNode,
+  goToNode,
+  goToNextNode,
+  goToPreviousNode,
+  goToRootNode,
+  plyCount,
+  orientation,
+  setOrientation,
 }) => {
   const currentSelection = selections[currentSelectionIndex]
+
+  // Create a base game structure for MovesContainer
+  const baseGame = {
+    id: currentSelection?.id || 'opening-drill',
+    tree: gameTree,
+    moves: [],
+    termination: {
+      result: '*',
+      winner: 'none' as const,
+      condition: 'Normal',
+    },
+  }
 
   return (
     <div className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72">
@@ -53,7 +85,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
         </div>
       </GameInfo>
 
-      <div className="flex flex-col overflow-hidden rounded bg-background-1">
+      <div className="flex max-h-[25vh] min-h-[25vh] flex-col overflow-hidden rounded bg-background-1">
         <div className="flex items-center justify-between border-b border-white/10 p-3">
           <h3 className="font-semibold">
             Selected Openings ({selections.length})
@@ -121,6 +153,23 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="flex h-1/2 w-full flex-1 flex-col gap-2">
+        <div className="flex h-full flex-col overflow-y-scroll">
+          <MovesContainer game={baseGame} type="analysis" />
+          <BoardController
+            gameTree={gameTree}
+            orientation={orientation}
+            setOrientation={setOrientation}
+            currentNode={currentNode}
+            plyCount={plyCount}
+            goToNode={goToNode}
+            goToNextNode={goToNextNode}
+            goToPreviousNode={goToPreviousNode}
+            goToRootNode={goToRootNode}
+          />
         </div>
       </div>
     </div>
