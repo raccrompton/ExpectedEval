@@ -15,6 +15,8 @@ interface Props {
   playerColor: 'white' | 'black'
   maiaVersion: string
   analysisController: any // Analysis controller passed from parent
+  hover: (move?: string) => void
+  setHoverArrow: React.Dispatch<React.SetStateAction<DrawShape | null>>
 }
 
 export const OpeningDrillAnalysis: React.FC<Props> = ({
@@ -25,8 +27,9 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
   playerColor,
   maiaVersion,
   analysisController,
+  hover: parentHover,
+  setHoverArrow: parentSetHoverArrow,
 }) => {
-  const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
   const toastId = useRef<string | null>(null)
 
   // Toast notifications for Maia model status
@@ -54,17 +57,12 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
   const hover = useCallback(
     (move?: string) => {
       if (move && analysisEnabled) {
-        setHoverArrow({
-          orig: move.slice(0, 2) as Key,
-          dest: move.slice(2, 4) as Key,
-          brush: 'green',
-          modifiers: { lineWidth: 10 },
-        })
+        parentHover(move)
       } else {
-        setHoverArrow(null)
+        parentHover()
       }
     },
-    [analysisEnabled],
+    [analysisEnabled, parentHover],
   )
 
   const makeMove = useCallback(
@@ -86,27 +84,23 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
           (moveAttempt.promotion ? moveAttempt.promotion : '')
         const san = moveAttempt.san
 
-        // Check if this move already exists as a child
-        const existingChild = currentNode.children.find(
-          (child: any) => child.move === moveString,
-        )
-
-        if (existingChild) {
-          // Move already exists, just navigate to it
-          analysisController.goToNode(existingChild)
-        } else if (currentNode.mainChild?.move === moveString) {
-          // This is the main child move
+        // For opening drills, always update the main line instead of creating variations
+        // If the move already exists as the main child, just navigate to it
+        if (currentNode.mainChild?.move === moveString) {
           analysisController.goToNode(currentNode.mainChild)
         } else {
-          // Create new variation
-          const newVariation = gameTree.addVariation(
+          // Remove any existing children first to replace the main line from this point forward
+          currentNode.removeAllChildren()
+
+          // Create new main line continuation
+          const newNode = gameTree.addMainMove(
             currentNode,
             newFen,
             moveString,
             san,
             analysisController.currentMaiaModel,
           )
-          analysisController.goToNode(newVariation)
+          analysisController.goToNode(newNode)
         }
       }
     },
@@ -225,7 +219,7 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
                 analysisEnabled ? analysisController.colorSanMapping : {}
               }
               setHoverArrow={
-                analysisEnabled ? setHoverArrow : mockSetHoverArrow
+                analysisEnabled ? parentSetHoverArrow : mockSetHoverArrow
               }
             />
           </div>
