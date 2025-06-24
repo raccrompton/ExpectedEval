@@ -2,63 +2,8 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { Chess, PieceSymbol } from 'chess.ts'
 import { getGameMove } from 'src/api/play/play'
 import { useTreeController } from '../useTreeController'
-import { GameTree, GameNode, AnalyzedGame } from 'src/types'
+import { GameTree, GameNode } from 'src/types'
 import { OpeningSelection, OpeningDrillGame } from 'src/types/openings'
-
-const convertOpeningToAnalyzedGame = (
-  drillGame: OpeningDrillGame,
-): AnalyzedGame => {
-  const selection = drillGame.selection
-
-  // Convert string moves to Move objects for the analyzed game
-  const gameTree = drillGame.tree
-  const mainLine = gameTree.getMainLine()
-  const moves = mainLine.slice(1).map((node) => ({
-    board: node.fen,
-    lastMove: node.move
-      ? ([node.move.slice(0, 2), node.move.slice(2, 4)] as [string, string])
-      : undefined,
-    san: node.san || '',
-    uci: node.move || '',
-  }))
-
-  // Create analyzed game structure with proper opening position
-  return {
-    id: drillGame.id,
-    blackPlayer: {
-      name:
-        selection.playerColor === 'black'
-          ? 'You'
-          : selection.maiaVersion.replace('maia_kdd_', 'Maia '),
-      rating:
-        selection.playerColor === 'black'
-          ? undefined
-          : parseInt(selection.maiaVersion.slice(-4)),
-    },
-    whitePlayer: {
-      name:
-        selection.playerColor === 'white'
-          ? 'You'
-          : selection.maiaVersion.replace('maia_kdd_', 'Maia '),
-      rating:
-        selection.playerColor === 'white'
-          ? undefined
-          : parseInt(selection.maiaVersion.slice(-4)),
-    },
-    moves,
-    availableMoves: moves.map(() => ({})), // Empty available moves for each position
-    gameType: 'play' as const,
-    termination: {
-      result: '*',
-      winner: 'none',
-      condition: 'Normal',
-    },
-    maiaEvaluations: moves.map(() => ({})), // Empty evaluations for each position
-    stockfishEvaluations: moves.map(() => undefined), // Empty evaluations for each position
-    tree: drillGame.tree,
-    type: 'play' as const,
-  }
-}
 
 export const useOpeningDrillController = (selections: OpeningSelection[]) => {
   const [currentSelectionIndex, setCurrentSelectionIndex] = useState(0)
@@ -144,20 +89,50 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
     return moveMap
   }, [controller.currentNode])
 
-  // Make a move for the player
+  // Make a move for the player - enhanced to support variations
   const makePlayerMove = useCallback(
-    async (moveUci: string) => {
+    async (moveUci: string, fromNode?: GameNode) => {
       if (!currentDrillGame || !controller.currentNode || !isPlayerTurn) return
 
       try {
+        const nodeToMoveFrom = fromNode || controller.currentNode
+
         // Validate the move first
-        const chess = new Chess(controller.currentNode.fen)
+        const chess = new Chess(nodeToMoveFrom.fen)
         const moveObj = chess.move(moveUci, { sloppy: true })
 
         if (!moveObj) return
 
-        // Add the move to the game tree
-        const newNode = currentDrillGame.tree.addMoveToMainLine(moveUci)
+        let newNode: GameNode | null = null
+
+        // Check if this move already exists as a child
+        const existingChild = nodeToMoveFrom.children.find(
+          (child: GameNode) => child.move === moveUci,
+        )
+
+        if (existingChild) {
+          // Move already exists, just navigate to it
+          newNode = existingChild
+        } else {
+          // Create new move - add to main line if we're on main line, otherwise create variation
+          if (
+            nodeToMoveFrom.mainChild &&
+            nodeToMoveFrom === controller.currentNode
+          ) {
+            // We're on the main line and there's already a main child - create variation
+            newNode = currentDrillGame.tree.addVariation(
+              nodeToMoveFrom,
+              chess.fen(),
+              moveUci,
+              moveObj.san,
+              currentSelection.maiaVersion,
+            )
+          } else {
+            // Add to main line
+            newNode = currentDrillGame.tree.addMoveToMainLine(moveUci)
+          }
+        }
+
         if (newNode) {
           // Update the drill game state first
           const updatedGame = {
@@ -174,10 +149,15 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
           // Then update the controller to the new node
           controller.setCurrentNode(newNode)
 
-          // Get Maia's response after a short delay
-          setTimeout(async () => {
-            await makeMaiaMoveRef.current(newNode)
-          }, 800)
+          // Get Maia's response after a short delay if it's now Maia's turn
+          const newChess = new Chess(newNode.fen)
+          const newTurn = newChess.turn() === 'w' ? 'white' : 'black'
+
+          if (newTurn !== currentSelection.playerColor) {
+            setTimeout(async () => {
+              await makeMaiaMoveRef.current(newNode)
+            }, 800)
+          }
         }
       } catch (error) {
         console.error('Error making player move:', error)
@@ -186,7 +166,7 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
     [currentDrillGame, controller, currentSelection, isPlayerTurn],
   )
 
-  // Make a move for Maia
+  // Make a move for Maia - enhanced to support variations
   const makeMaiaMove = useCallback(
     async (fromNode: GameNode) => {
       if (!currentDrillGame) return
@@ -203,7 +183,38 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
 
         const maiaMove = response.top_move
         if (maiaMove) {
-          const newNode = currentDrillGame.tree.addMoveToMainLine(maiaMove)
+          let newNode: GameNode | null = null
+
+          // Check if this move already exists as a child
+          const existingChild = fromNode.children.find(
+            (child: GameNode) => child.move === maiaMove,
+          )
+
+          if (existingChild) {
+            // Move already exists, just navigate to it
+            newNode = existingChild
+          } else {
+            // Create new move - add to main line if we're on main line, otherwise create variation
+            if (fromNode.mainChild) {
+              // There's already a main child - create variation
+              const chess = new Chess(fromNode.fen)
+              const moveObj = chess.move(maiaMove, { sloppy: true })
+
+              if (moveObj) {
+                newNode = currentDrillGame.tree.addVariation(
+                  fromNode,
+                  chess.fen(),
+                  maiaMove,
+                  moveObj.san,
+                  currentSelection.maiaVersion,
+                )
+              }
+            } else {
+              // Add to main line
+              newNode = currentDrillGame.tree.addMoveToMainLine(maiaMove)
+            }
+          }
+
           if (newNode) {
             // Update the drill game state first
             const updatedGame = {
@@ -257,11 +268,7 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
     [selections.length],
   )
 
-  // Convert current drill game to analyzed game for analysis integration
-  const analyzedGame = useMemo(() => {
-    if (!currentDrillGame) return null
-    return convertOpeningToAnalyzedGame(currentDrillGame)
-  }, [currentDrillGame])
+  // Note: Analyzed game conversion moved to OpeningDrillAnalysis component for real-time updates
 
   // Reset current game to starting position
   const resetCurrentGame = useCallback(() => {
@@ -296,7 +303,6 @@ export const useOpeningDrillController = (selections: OpeningSelection[]) => {
     drillGames,
     currentDrillGame,
     isPlayerTurn,
-    analyzedGame,
 
     // Tree controller
     gameTree: controller.gameTree,

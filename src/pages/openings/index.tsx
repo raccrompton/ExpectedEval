@@ -6,7 +6,7 @@ import { AnimatePresence } from 'framer-motion'
 import type { Key } from 'chessground/types'
 
 import { WindowSizeContext } from 'src/contexts'
-import { OpeningSelection } from 'src/types'
+import { OpeningSelection, AnalyzedGame } from 'src/types'
 import openings from 'src/utils/openings/openings.json'
 import {
   OpeningSelectionModal,
@@ -16,7 +16,12 @@ import {
   BoardController,
   PromotionOverlay,
 } from 'src/components'
-import { useOpeningDrillController } from 'src/hooks'
+import {
+  useOpeningDrillController,
+  useMaiaEngine,
+  useStockfishEngine,
+  useAnalysisController,
+} from 'src/hooks'
 import {
   getCurrentPlayer,
   getAvailableMovesArray,
@@ -30,8 +35,101 @@ const OpeningsPage: NextPage = () => {
     [string, string] | null
   >(null)
 
+  // Pre-load engines when page loads - keep them at top level to prevent reloading
+  const { status: maiaStatus } = useMaiaEngine()
+  const { streamEvaluations } = useStockfishEngine()
+
   const controller = useOpeningDrillController(selections)
   const { isMobile } = useContext(WindowSizeContext)
+
+  // Create analyzed game for analysis controller at top level
+  const analyzedGame = useMemo((): AnalyzedGame | null => {
+    if (!controller.gameTree || !controller.currentSelection) return null
+
+    const mainLine = controller.gameTree.getMainLine()
+    const moves = mainLine.slice(1).map((node) => {
+      const move = node.move
+      return {
+        board: node.fen,
+        lastMove: move
+          ? ([move.slice(0, 2), move.slice(2, 4)] as [string, string])
+          : undefined,
+        san: node.san || '',
+        uci: move || '',
+      }
+    })
+
+    return {
+      id: `opening-drill-${Date.now()}`,
+      tree: controller.gameTree,
+      blackPlayer: {
+        name:
+          controller.currentSelection.playerColor === 'black'
+            ? 'You'
+            : controller.currentSelection.maiaVersion.replace(
+                'maia_kdd_',
+                'Maia ',
+              ),
+        rating:
+          controller.currentSelection.playerColor === 'black'
+            ? undefined
+            : parseInt(controller.currentSelection.maiaVersion.slice(-4)),
+      },
+      whitePlayer: {
+        name:
+          controller.currentSelection.playerColor === 'white'
+            ? 'You'
+            : controller.currentSelection.maiaVersion.replace(
+                'maia_kdd_',
+                'Maia ',
+              ),
+        rating:
+          controller.currentSelection.playerColor === 'white'
+            ? undefined
+            : parseInt(controller.currentSelection.maiaVersion.slice(-4)),
+      },
+      moves,
+      availableMoves: moves.map(() => ({})),
+      gameType: 'play' as const,
+      termination: {
+        result: '*',
+        winner: 'none' as const,
+        condition: 'Normal',
+      },
+      maiaEvaluations: moves.map(() => ({})),
+      stockfishEvaluations: moves.map(() => undefined),
+      type: 'play' as const,
+    }
+  }, [controller.gameTree, controller.currentSelection])
+
+  // Analysis controller at top level to prevent reloading
+  const analysisController = useAnalysisController(
+    analyzedGame || {
+      id: 'empty',
+      tree: controller.gameTree,
+      blackPlayer: { name: 'Black' },
+      whitePlayer: { name: 'White' },
+      moves: [],
+      availableMoves: [],
+      gameType: 'play' as const,
+      termination: {
+        result: '*',
+        winner: 'none' as const,
+        condition: 'Normal',
+      },
+      maiaEvaluations: [],
+      stockfishEvaluations: [],
+      type: 'play' as const,
+    },
+    controller.currentSelection?.playerColor || 'white',
+  )
+
+  // Sync analysis controller with current node
+  useEffect(() => {
+    if (controller.currentNode && analysisController.setCurrentNode) {
+      analysisController.setCurrentNode(controller.currentNode)
+    }
+  }, [controller.currentNode, analysisController])
 
   // Show selection modal when no selections are made
   useEffect(() => {
@@ -124,6 +222,15 @@ const OpeningsPage: NextPage = () => {
           currentSelectionIndex={controller.currentSelectionIndex}
           onSwitchSelection={controller.switchToSelection}
           onResetCurrent={controller.resetCurrentGame}
+          gameTree={controller.gameTree}
+          currentNode={controller.currentNode}
+          goToNode={controller.goToNode}
+          goToNextNode={controller.goToNextNode}
+          goToPreviousNode={controller.goToPreviousNode}
+          goToRootNode={controller.goToRootNode}
+          plyCount={controller.plyCount}
+          orientation={controller.orientation}
+          setOrientation={controller.setOrientation}
         />
 
         {/* Center - Game Board */}
@@ -146,18 +253,6 @@ const OpeningsPage: NextPage = () => {
             )}
           </div>
 
-          <BoardController
-            orientation={controller.orientation}
-            setOrientation={controller.setOrientation}
-            currentNode={controller.currentNode}
-            plyCount={controller.plyCount}
-            goToNode={controller.goToNode}
-            goToNextNode={controller.goToNextNode}
-            goToPreviousNode={controller.goToPreviousNode}
-            goToRootNode={controller.goToRootNode}
-            gameTree={controller.gameTree}
-          />
-
           <div className="flex flex-col gap-2">
             <button
               onClick={() => setShowSelectionModal(true)}
@@ -173,11 +268,17 @@ const OpeningsPage: NextPage = () => {
 
         {/* Right Panel - Analysis */}
         <OpeningDrillAnalysis
-          analyzedGame={controller.analyzedGame}
+          currentNode={controller.currentNode}
+          gameTree={controller.gameTree}
           analysisEnabled={controller.analysisEnabled}
           onToggleAnalysis={() =>
             controller.setAnalysisEnabled(!controller.analysisEnabled)
           }
+          playerColor={controller.currentSelection?.playerColor || 'white'}
+          maiaVersion={
+            controller.currentSelection?.maiaVersion || 'maia_kdd_1500'
+          }
+          analysisController={analysisController}
         />
       </div>
     </div>

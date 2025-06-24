@@ -38,19 +38,39 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     MAIA_VERSIONS[4],
   ) // Default to 1500
   const [selectedColor, setSelectedColor] = useState<'white' | 'black'>('white')
+  const [searchTerm, setSearchTerm] = useState('')
 
   const previewFen = useMemo(() => {
     return previewVariation ? previewVariation.fen : previewOpening.fen
   }, [previewOpening, previewVariation])
 
-  const isSelected = (opening: Opening, variation: OpeningVariation | null) => {
+  const filteredOpenings = useMemo(() => {
+    if (!searchTerm) return openings
+    return openings.filter(
+      (opening) =>
+        opening.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        opening.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        opening.variations.some((variation) =>
+          variation.name.toLowerCase().includes(searchTerm.toLowerCase()),
+        ),
+    )
+  }, [openings, searchTerm])
+
+  const isDuplicateSelection = (
+    opening: Opening,
+    variation: OpeningVariation | null,
+  ) => {
     return selections.some(
-      (s) => s.opening.id === opening.id && s.variation?.id === variation?.id,
+      (s) =>
+        s.opening.id === opening.id &&
+        s.variation?.id === variation?.id &&
+        s.playerColor === selectedColor &&
+        s.maiaVersion === selectedMaiaVersion.id,
     )
   }
 
   const addSelection = () => {
-    if (isSelected(previewOpening, previewVariation)) return
+    if (isDuplicateSelection(previewOpening, previewVariation)) return
 
     const newSelection: OpeningSelection = {
       id: `${previewOpening.id}-${previewVariation?.id || 'main'}-${selectedColor}-${selectedMaiaVersion.id}`,
@@ -71,7 +91,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     opening: Opening,
     variation: OpeningVariation | null,
   ) => {
-    if (isSelected(opening, variation)) return
+    if (isDuplicateSelection(opening, variation)) return
 
     const newSelection: OpeningSelection = {
       id: `${opening.id}-${variation?.id || 'main'}-${selectedColor}-${selectedMaiaVersion.id}`,
@@ -99,29 +119,46 @@ export const OpeningSelectionModal: React.FC<Props> = ({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="flex h-[90vh] max-h-[800px] w-[98vw] max-w-[1400px] rounded-lg bg-background-1 shadow-2xl"
+        className="relative flex h-[90vh] max-h-[800px] w-[98vw] max-w-[1400px] rounded-lg bg-background-1 shadow-2xl"
       >
+        {/* Close Button - Top Right of Modal */}
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 z-10 text-secondary transition-colors hover:text-primary"
+        >
+          <span className="material-symbols-outlined">close</span>
+        </button>
+
         {/* Left Panel - Opening Selection */}
         <div className="flex w-1/3 flex-col border-r border-white/10">
-          <div className="border-b border-white/10 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold">Select Openings</h2>
-                <p className="mt-1 text-xs text-secondary">
-                  Double-click any opening to quickly add it
-                </p>
-              </div>
-              <button
-                onClick={onClose}
-                className="text-secondary transition-colors hover:text-primary"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
+          <div className="flex h-20 flex-col justify-center border-b border-white/10 p-4">
+            <h2 className="text-xl font-bold">Select Openings</h2>
+            <p className="mt-1 text-xs text-secondary">
+              Double-click any opening to quickly add it
+            </p>
+          </div>
+
+          {/* Search Bar */}
+          <div className="border-b border-white/10 px-4 pb-4">
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-secondary">
+                search
+              </span>
+              <input
+                type="text"
+                placeholder="Search openings..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full rounded bg-background-2 py-2 pl-10 pr-4 text-sm text-primary placeholder-secondary focus:outline-none focus:ring-1 focus:ring-human-4"
+              />
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
-            {openings.map((opening) => (
+          <div
+            className="flex-1 overflow-y-auto p-4"
+            style={{ userSelect: 'none' }}
+          >
+            {filteredOpenings.map((opening) => (
               <div key={opening.id} className="mb-4">
                 <div
                   role="button"
@@ -152,11 +189,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
                         {opening.description}
                       </p>
                     </div>
-                    {isSelected(opening, null) && (
-                      <span className="material-symbols-outlined text-human-3">
-                        check_circle
-                      </span>
-                    )}
                   </div>
                 </div>
 
@@ -187,11 +219,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
                   >
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-secondary">{variation.name}</p>
-                      {isSelected(opening, variation) && (
-                        <span className="material-symbols-outlined text-sm text-human-3">
-                          check_circle
-                        </span>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -202,7 +229,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
 
         {/* Center Panel - Preview */}
         <div className="flex w-1/3 flex-col">
-          <div className="border-b border-white/10 p-4">
+          <div className="flex h-20 flex-col justify-center border-b border-white/10 p-4">
             <h3 className="text-lg font-semibold">{previewOpening.name}</h3>
             {previewVariation && (
               <p className="text-sm text-secondary">{previewVariation.name}</p>
@@ -277,11 +304,11 @@ export const OpeningSelectionModal: React.FC<Props> = ({
 
             <button
               onClick={addSelection}
-              disabled={isSelected(previewOpening, previewVariation)}
+              disabled={isDuplicateSelection(previewOpening, previewVariation)}
               className="w-full rounded bg-human-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSelected(previewOpening, previewVariation)
-                ? 'Already Selected'
+              {isDuplicateSelection(previewOpening, previewVariation)
+                ? 'Already Added with Same Settings'
                 : 'Add to Drill'}
             </button>
           </div>
@@ -289,7 +316,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
 
         {/* Right Panel - Selected Openings */}
         <div className="flex w-1/3 flex-col border-l border-white/10">
-          <div className="border-b border-white/10 p-4">
+          <div className="flex h-20 flex-col justify-center border-b border-white/10 p-4">
             <h3 className="text-lg font-semibold">
               Selected Openings ({selections.length})
             </h3>
