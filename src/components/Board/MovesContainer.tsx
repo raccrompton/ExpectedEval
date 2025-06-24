@@ -12,6 +12,7 @@ interface AnalysisProps {
   highlightIndices?: number[]
   termination?: Termination
   type: 'analysis'
+  showAnnotations?: boolean
 }
 
 interface TuringProps {
@@ -19,6 +20,7 @@ interface TuringProps {
   highlightIndices?: number[]
   termination?: Termination
   type: 'turing'
+  showAnnotations?: boolean
 }
 
 interface PlayProps {
@@ -26,6 +28,7 @@ interface PlayProps {
   highlightIndices?: number[]
   termination?: Termination
   type: 'play'
+  showAnnotations?: boolean
 }
 
 type Props = AnalysisProps | TuringProps | PlayProps
@@ -103,7 +106,13 @@ function UnlikelyGoodMoveIcon() {
 }
 
 export const MovesContainer: React.FC<Props> = (props) => {
-  const { game, highlightIndices, termination, type } = props
+  const {
+    game,
+    highlightIndices,
+    termination,
+    type,
+    showAnnotations = true,
+  } = props
   const { isMobile } = useContext(WindowSizeContext)
 
   const baseController = useBaseTreeController(type)
@@ -208,8 +217,6 @@ export const MovesContainer: React.FC<Props> = (props) => {
 
     return pairs
   }, [mainLineNodes, isMobile])
-
-  const showAnnotations = type === 'analysis'
 
   if (isMobile) {
     return (
