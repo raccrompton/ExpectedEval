@@ -59,14 +59,14 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
             <div className="mt-3 flex gap-2">
               <button
                 onClick={onResetCurrentDrill}
-                className="flex-1 rounded bg-background-2 px-3 py-1 text-xs transition-colors hover:bg-background-3"
+                className="w-full rounded bg-background-2 py-1 text-xs transition-colors hover:bg-background-3"
               >
-                Reset
+                Reset Drill
               </button>
               {onChangeSelections && (
                 <button
                   onClick={onChangeSelections}
-                  className="flex-1 rounded bg-background-2 px-3 py-1 text-xs transition-colors hover:bg-background-3"
+                  className="w-full rounded bg-background-2 py-1 text-xs transition-colors hover:bg-background-3"
                 >
                   Change
                 </button>
@@ -81,25 +81,14 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
       {/* Drill Progress */}
       <div className="border-b border-white/10 p-4">
         <h3 className="mb-2 text-sm font-medium text-primary">
-          Drill Progress
+          Completed Drills ({completedDrills.length})
         </h3>
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
-            <span className="text-secondary">Current Drill</span>
+            <span className="text-secondary">Drill Progress</span>
             <span className="font-medium text-human-4">
-              {currentDrillIndex + 1} of {totalDrills}
-            </span>
-          </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-secondary">Completed</span>
-            <span className="font-medium text-green-400">
-              {completedDrills.length}
-            </span>
-          </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-secondary">Remaining</span>
-            <span className="font-medium text-yellow-400">
-              {totalDrills - completedDrills.length}
+              {Math.min(completedDrills.length + 1, totalDrills)} of{' '}
+              {totalDrills}
             </span>
           </div>
           <div className="h-2 w-full rounded bg-background-2">
@@ -108,7 +97,10 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
               style={{
                 width: `${
                   totalDrills > 0
-                    ? (completedDrills.length / totalDrills) * 100
+                    ? Math.min(
+                        (completedDrills.length / totalDrills) * 100,
+                        100,
+                      )
                     : 0
                 }%`,
               }}
@@ -118,10 +110,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
       </div>
 
       {/* Completed Drills List */}
-      <div className="flex h-96 flex-col overflow-hidden">
-        <h3 className="p-3 text-sm font-medium text-primary">
-          Completed Drills ({completedDrills.length})
-        </h3>
+      <div className="flex h-64 flex-col overflow-hidden">
         <div className="red-scrollbar flex h-full flex-col overflow-y-auto">
           {completedDrills.length === 0 ? (
             <div className="flex h-full items-center justify-center">
@@ -144,7 +133,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
                 return (
                   <div
                     key={completedDrill.selection.id}
-                    className="bg-background-2 p-2 transition-colors hover:bg-background-3"
+                    className="border-b border-white/5 bg-background-1 px-3 py-2 transition-colors"
                   >
                     <div className="flex items-start justify-between">
                       <div className="min-w-0 flex-1">

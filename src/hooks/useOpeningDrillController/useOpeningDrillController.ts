@@ -84,6 +84,7 @@ export const useOpeningDrillController = (
     useState<OpeningDrillGame | null>(null)
   const [analysisEnabled, setAnalysisEnabled] = useState(false)
   const [currentDrillIndex, setCurrentDrillIndex] = useState(0)
+  const [allDrillsCompleted, setAllDrillsCompleted] = useState(false)
 
   // Performance tracking state
   const [showPerformanceModal, setShowPerformanceModal] = useState(false)
@@ -104,17 +105,18 @@ export const useOpeningDrillController = (
   useEffect(() => {
     if (
       configuration.drillSequence.length > 0 &&
-      remainingDrills.length === 0
+      remainingDrills.length === 0 &&
+      !allDrillsCompleted
     ) {
       setRemainingDrills(configuration.drillSequence)
       setCurrentDrill(configuration.drillSequence[0])
       setCurrentDrillIndex(0)
     }
-  }, [configuration.drillSequence, remainingDrills.length])
+  }, [configuration.drillSequence, remainingDrills.length, allDrillsCompleted])
 
   // Initialize current drill game when drill changes
   useEffect(() => {
-    if (!currentDrill) return
+    if (!currentDrill || allDrillsCompleted) return
 
     const startingFen =
       'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
@@ -144,7 +146,7 @@ export const useOpeningDrillController = (
     setCurrentDrillGame(drillGame)
     setWaitingForMaiaResponse(false)
     setContinueAnalyzingMode(false) // Reset continue analyzing mode for new drill
-  }, [currentDrill])
+  }, [currentDrill, allDrillsCompleted])
 
   // Use the current drill game's tree, or create a default one
   const gameTree = currentDrillGame?.tree || new GameTree(new Chess().fen())
@@ -193,6 +195,13 @@ export const useOpeningDrillController = (
     if (!currentDrillGame || !controller.currentNode) return false
     return controller.currentNode === currentDrillGame.openingEndNode
   }, [currentDrillGame, controller.currentNode])
+
+  // Check if all drills are completed
+  const areAllDrillsCompleted = useMemo(() => {
+    return (
+      allDrillsCompleted || completedDrills.length >= configuration.drillCount
+    )
+  }, [allDrillsCompleted, completedDrills.length, configuration.drillCount])
 
   // Available moves for the current position - only when it's the player's turn
   const moves = useMemo(() => {
@@ -290,9 +299,8 @@ export const useOpeningDrillController = (
     setCurrentPerformanceData(performanceData)
     setCompletedDrills((prev) => [...prev, performanceData.drill])
 
-    // Move drill from remaining to completed
-    setRemainingDrills((prev) => prev.slice(1))
-
+    // Don't remove from remaining drills here - do it in moveToNextDrill
+    // This ensures proper counting for the performance modal
     setShowPerformanceModal(true)
   }, [currentDrillGame, evaluateDrillPerformance])
 
@@ -302,14 +310,18 @@ export const useOpeningDrillController = (
     setCurrentPerformanceData(null)
     setContinueAnalyzingMode(false) // Reset continue analyzing mode for next drill
 
+    // Remove the completed drill from remaining drills
+    setRemainingDrills((prev) => prev.slice(1))
+
     const nextIndex = currentDrillIndex + 1
 
-    // The drill has already been moved from remaining to completed in completeDrill()
+    // Check if there are more drills to complete
     if (nextIndex < configuration.drillSequence.length) {
       setCurrentDrill(configuration.drillSequence[nextIndex])
       setCurrentDrillIndex(nextIndex)
     } else {
       // All drills completed - show final modal
+      setAllDrillsCompleted(true)
       setShowFinalModal(true)
     }
   }, [currentDrillIndex, configuration.drillSequence])
@@ -319,6 +331,29 @@ export const useOpeningDrillController = (
     setShowPerformanceModal(false)
     setAnalysisEnabled(true) // Auto-enable analysis
     setContinueAnalyzingMode(true) // Allow moves beyond target count
+  }, [])
+
+  // Continue analyzing from final modal - just enable analysis mode
+  const continueAnalyzingFromFinal = useCallback(() => {
+    setShowFinalModal(false)
+    setAnalysisEnabled(true) // Auto-enable analysis
+    setContinueAnalyzingMode(true) // Allow moves beyond target count
+  }, [])
+
+  // Reset drill session for new openings
+  const resetDrillSession = useCallback(() => {
+    setAllDrillsCompleted(false)
+    setRemainingDrills([])
+    setCompletedDrills([])
+    setCurrentDrill(null)
+    setCurrentDrillGame(null)
+    setCurrentDrillIndex(0)
+    setAnalysisEnabled(false)
+    setContinueAnalyzingMode(false)
+    setShowPerformanceModal(false)
+    setShowFinalModal(false)
+    setCurrentPerformanceData(null)
+    setWaitingForMaiaResponse(false)
   }, [])
 
   // Calculate overall performance data
@@ -722,6 +757,7 @@ export const useOpeningDrillController = (
     completeDrill,
     moveToNextDrill,
     continueAnalyzing,
+    continueAnalyzingFromFinal,
 
     // Analysis
     analysisEnabled,
@@ -733,5 +769,11 @@ export const useOpeningDrillController = (
     currentPerformanceData,
     overallPerformanceData,
     setShowFinalModal,
+
+    // Reset drill session
+    resetDrillSession,
+
+    // Check if all drills are completed
+    areAllDrillsCompleted,
   }
 }
