@@ -251,6 +251,7 @@ export const useOpeningDrillController = (
               : index % 2 === 1
           return isPlayerMove
         }),
+        allMoves: drillGame.moves, // Store the full move sequence
         totalMoves: playerMoveCount,
         blunders: Array(blunders).fill('placeholder'),
         goodMoves: Array(goodMoves).fill('placeholder'),
@@ -355,6 +356,125 @@ export const useOpeningDrillController = (
     setCurrentPerformanceData(null)
     setWaitingForMaiaResponse(false)
   }, [])
+
+  // Load a specific completed drill for analysis
+  const loadCompletedDrill = useCallback(
+    (completedDrill: CompletedDrill) => {
+      // Set the drill as current
+      setCurrentDrill(completedDrill.selection)
+
+      // Check if this drill is already the current drill and we can reuse the game tree
+      if (
+        currentDrillGame &&
+        currentDrillGame.selection.id === completedDrill.selection.id &&
+        currentDrillGame.playerMoveCount === completedDrill.totalMoves
+      ) {
+        // Reuse the existing game tree and just enable analysis mode
+        setAnalysisEnabled(true)
+        setContinueAnalyzingMode(true)
+        setWaitingForMaiaResponse(false)
+        return
+      }
+
+      // Try to reconstruct the game tree from the finalNode path
+      const startingFen =
+        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+      const gameTree = new GameTree(startingFen)
+
+      // Parse the PGN to populate the tree with opening moves
+      const pgn = completedDrill.selection.variation
+        ? completedDrill.selection.variation.pgn
+        : completedDrill.selection.opening.pgn
+      const endNode = parsePgnToTree(pgn, gameTree)
+
+      let finalNode = endNode
+
+      // Reconstruct the full game using the stored allMoves sequence
+      if (
+        endNode &&
+        completedDrill.allMoves &&
+        completedDrill.allMoves.length > 0
+      ) {
+        let currentNode = endNode
+        const chess = new Chess(endNode.fen)
+
+        // Replay all moves from the drill (both player and Maia moves)
+        for (const moveUci of completedDrill.allMoves) {
+          try {
+            const moveObj = chess.move(moveUci, { sloppy: true })
+            if (moveObj) {
+              const newNode = gameTree.addMainMove(
+                currentNode,
+                chess.fen(),
+                moveUci,
+                moveObj.san,
+              )
+              if (newNode) {
+                currentNode = newNode
+                finalNode = newNode
+              }
+            }
+          } catch (error) {
+            console.error('Error replaying move:', moveUci, error)
+            break
+          }
+        }
+      } else if (endNode && completedDrill.playerMoves.length > 0) {
+        // Fallback: use only player moves if allMoves is not available
+        let currentNode = endNode
+        const chess = new Chess(endNode.fen)
+
+        for (const moveUci of completedDrill.playerMoves) {
+          try {
+            const moveObj = chess.move(moveUci, { sloppy: true })
+            if (moveObj) {
+              const newNode = gameTree.addMainMove(
+                currentNode,
+                chess.fen(),
+                moveUci,
+                moveObj.san,
+              )
+              if (newNode) {
+                currentNode = newNode
+                finalNode = newNode
+              }
+            }
+          } catch (error) {
+            console.error('Error replaying player move:', moveUci, error)
+            break
+          }
+        }
+      }
+
+      const loadedGame: OpeningDrillGame = {
+        id: completedDrill.selection.id + '-replay',
+        selection: completedDrill.selection,
+        moves: completedDrill.allMoves || completedDrill.playerMoves,
+        tree: gameTree,
+        currentFen: finalNode?.fen || endNode?.fen || startingFen,
+        toPlay: finalNode
+          ? new Chess(finalNode.fen).turn() === 'w'
+            ? 'white'
+            : 'black'
+          : 'white',
+        openingEndNode: endNode,
+        playerMoveCount: completedDrill.totalMoves,
+      }
+
+      setCurrentDrillGame(loadedGame)
+      setAnalysisEnabled(true) // Auto-enable analysis when loading a completed drill
+      setContinueAnalyzingMode(true) // Allow moves beyond target count
+      setWaitingForMaiaResponse(false)
+
+      // Set the controller to the final position after a brief delay
+      setTimeout(() => {
+        if (finalNode) {
+          controller.setCurrentNode(finalNode)
+        }
+      }, 100)
+    },
+    [controller, currentDrillGame],
+  )
 
   // Calculate overall performance data
   const overallPerformanceData = useMemo((): OverallPerformanceData => {
@@ -775,5 +895,8 @@ export const useOpeningDrillController = (
 
     // Check if all drills are completed
     areAllDrillsCompleted,
+
+    // Load a specific completed drill for analysis
+    loadCompletedDrill,
   }
 }
