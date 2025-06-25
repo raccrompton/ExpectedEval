@@ -25,11 +25,19 @@ export interface OpeningSelection {
   id: string
 }
 
-export interface OpeningDrillState {
+export interface DrillConfiguration {
   selections: OpeningSelection[]
+  drillCount: number
+  drillSequence: OpeningSelection[]
+}
+
+export interface OpeningDrillState {
+  configuration: DrillConfiguration
   completedDrills: CompletedDrill[]
   currentDrill: OpeningSelection | null
   remainingDrills: OpeningSelection[]
+  currentDrillIndex: number
+  totalDrills: number
   analysisEnabled: boolean
 }
 

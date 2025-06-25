@@ -6,6 +6,8 @@ interface Props {
   currentDrill: OpeningSelection | null
   completedDrills: CompletedDrill[]
   remainingDrills: OpeningSelection[]
+  currentDrillIndex: number
+  totalDrills: number
   onResetCurrentDrill: () => void
   onChangeSelections?: () => void
 }
@@ -14,11 +16,13 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
   currentDrill,
   completedDrills,
   remainingDrills,
+  currentDrillIndex,
+  totalDrills,
   onResetCurrentDrill,
   onChangeSelections,
 }) => {
   return (
-    <div className="flex h-full w-72 flex-col border-r border-white/10 bg-background-1">
+    <div className="flex h-full w-full flex-col border-r border-white/10 bg-background-1 2xl:min-w-72">
       {/* Current Drill Info */}
       <div className="border-b border-white/10 p-4">
         <h2 className="mb-2 text-lg font-bold text-primary">Current Drill</h2>
@@ -76,8 +80,16 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
 
       {/* Drill Progress */}
       <div className="border-b border-white/10 p-4">
-        <h3 className="mb-2 text-sm font-medium text-primary">Progress</h3>
+        <h3 className="mb-2 text-sm font-medium text-primary">
+          Drill Progress
+        </h3>
         <div className="space-y-2">
+          <div className="flex justify-between text-xs">
+            <span className="text-secondary">Current Drill</span>
+            <span className="font-medium text-human-4">
+              {currentDrillIndex + 1} of {totalDrills}
+            </span>
+          </div>
           <div className="flex justify-between text-xs">
             <span className="text-secondary">Completed</span>
             <span className="font-medium text-green-400">
@@ -86,8 +98,8 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
           </div>
           <div className="flex justify-between text-xs">
             <span className="text-secondary">Remaining</span>
-            <span className="font-medium text-human-4">
-              {remainingDrills.length}
+            <span className="font-medium text-yellow-400">
+              {totalDrills - completedDrills.length}
             </span>
           </div>
           <div className="h-2 w-full rounded bg-background-2">
@@ -95,10 +107,8 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
               className="h-full rounded bg-human-4 transition-all duration-300"
               style={{
                 width: `${
-                  completedDrills.length > 0
-                    ? (completedDrills.length /
-                        (completedDrills.length + remainingDrills.length)) *
-                      100
+                  totalDrills > 0
+                    ? (completedDrills.length / totalDrills) * 100
                     : 0
                 }%`,
               }}
@@ -109,12 +119,10 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
 
       {/* Completed Drills List */}
       <div className="flex h-96 flex-col overflow-hidden">
-        <div className="border-b border-white/10 p-3">
-          <h3 className="text-sm font-medium text-primary">
-            Completed Drills ({completedDrills.length})
-          </h3>
-        </div>
-        <div className="flex h-full flex-col">
+        <h3 className="p-3 text-sm font-medium text-primary">
+          Completed Drills ({completedDrills.length})
+        </h3>
+        <div className="red-scrollbar flex h-full flex-col overflow-y-auto">
           {completedDrills.length === 0 ? (
             <div className="flex h-full items-center justify-center">
               <p className="max-w-[12rem] text-center text-xs text-secondary">
@@ -122,7 +130,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-1 p-2">
+            <div className="flex flex-col">
               {completedDrills.map((completedDrill, index) => {
                 const accuracy =
                   completedDrill.totalMoves > 0
@@ -136,7 +144,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
                 return (
                   <div
                     key={completedDrill.selection.id}
-                    className="rounded bg-background-2 p-2 transition-colors hover:bg-background-3"
+                    className="bg-background-2 p-2 transition-colors hover:bg-background-3"
                   >
                     <div className="flex items-start justify-between">
                       <div className="min-w-0 flex-1">

@@ -10,6 +10,7 @@ import {
   CompletedDrill,
   DrillPerformanceData,
   OverallPerformanceData,
+  DrillConfiguration,
 } from 'src/types/openings'
 
 // Helper function to parse PGN and create moves in the tree
@@ -71,7 +72,7 @@ const shuffleArray = <T>(array: T[]): T[] => {
 }
 
 export const useOpeningDrillController = (
-  allSelections: OpeningSelection[],
+  configuration: DrillConfiguration,
 ) => {
   // Drilling state
   const [remainingDrills, setRemainingDrills] = useState<OpeningSelection[]>([])
@@ -82,6 +83,7 @@ export const useOpeningDrillController = (
   const [currentDrillGame, setCurrentDrillGame] =
     useState<OpeningDrillGame | null>(null)
   const [analysisEnabled, setAnalysisEnabled] = useState(false)
+  const [currentDrillIndex, setCurrentDrillIndex] = useState(0)
 
   // Performance tracking state
   const [showPerformanceModal, setShowPerformanceModal] = useState(false)
@@ -98,14 +100,17 @@ export const useOpeningDrillController = (
   // Add chess sound hook
   const { playSound } = useChessSound()
 
-  // Initialize drilling session - shuffle and set first drill
+  // Initialize drilling session from configuration
   useEffect(() => {
-    if (allSelections.length > 0 && remainingDrills.length === 0) {
-      const shuffled = shuffleArray(allSelections)
-      setRemainingDrills(shuffled)
-      setCurrentDrill(shuffled[0])
+    if (
+      configuration.drillSequence.length > 0 &&
+      remainingDrills.length === 0
+    ) {
+      setRemainingDrills(configuration.drillSequence)
+      setCurrentDrill(configuration.drillSequence[0])
+      setCurrentDrillIndex(0)
     }
-  }, [allSelections, remainingDrills.length])
+  }, [configuration.drillSequence, remainingDrills.length])
 
   // Initialize current drill game when drill changes
   useEffect(() => {
@@ -284,6 +289,10 @@ export const useOpeningDrillController = (
     const performanceData = evaluateDrillPerformance(currentDrillGame)
     setCurrentPerformanceData(performanceData)
     setCompletedDrills((prev) => [...prev, performanceData.drill])
+
+    // Move drill from remaining to completed
+    setRemainingDrills((prev) => prev.slice(1))
+
     setShowPerformanceModal(true)
   }, [currentDrillGame, evaluateDrillPerformance])
 
@@ -293,16 +302,17 @@ export const useOpeningDrillController = (
     setCurrentPerformanceData(null)
     setContinueAnalyzingMode(false) // Reset continue analyzing mode for next drill
 
-    const newRemaining = remainingDrills.slice(1)
-    setRemainingDrills(newRemaining)
+    const nextIndex = currentDrillIndex + 1
 
-    if (newRemaining.length > 0) {
-      setCurrentDrill(newRemaining[0])
+    // The drill has already been moved from remaining to completed in completeDrill()
+    if (nextIndex < configuration.drillSequence.length) {
+      setCurrentDrill(configuration.drillSequence[nextIndex])
+      setCurrentDrillIndex(nextIndex)
     } else {
       // All drills completed - show final modal
       setShowFinalModal(true)
     }
-  }, [remainingDrills])
+  }, [currentDrillIndex, configuration.drillSequence])
 
   // Continue analyzing current drill
   const continueAnalyzing = useCallback(() => {
@@ -315,7 +325,7 @@ export const useOpeningDrillController = (
   const overallPerformanceData = useMemo((): OverallPerformanceData => {
     if (completedDrills.length === 0) {
       return {
-        totalDrills: allSelections.length,
+        totalDrills: configuration.drillCount,
         completedDrills: [],
         overallAccuracy: 0,
         totalBlunders: 0,
@@ -369,7 +379,7 @@ export const useOpeningDrillController = (
     }, completedDrills[0])
 
     return {
-      totalDrills: allSelections.length,
+      totalDrills: configuration.drillCount,
       completedDrills,
       overallAccuracy,
       totalBlunders,
@@ -378,7 +388,7 @@ export const useOpeningDrillController = (
       worstPerformance,
       averageEvaluation,
     }
-  }, [completedDrills, allSelections.length])
+  }, [completedDrills, configuration.drillCount])
 
   // Make a move for the player - enhanced to support variations and completion checking
   const makePlayerMove = useCallback(
@@ -685,6 +695,8 @@ export const useOpeningDrillController = (
     remainingDrills,
     completedDrills,
     currentDrillGame,
+    currentDrillIndex,
+    totalDrills: configuration.drillCount,
     isPlayerTurn,
     isDrillComplete,
     isAtOpeningEnd,

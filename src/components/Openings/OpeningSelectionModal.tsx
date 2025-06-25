@@ -2,7 +2,12 @@ import React, { useState, useMemo, useEffect } from 'react'
 import Image from 'next/image'
 import { AnimatePresence, motion } from 'framer-motion'
 import Chessground from '@react-chess/chessground'
-import { Opening, OpeningVariation, OpeningSelection } from 'src/types'
+import {
+  Opening,
+  OpeningVariation,
+  OpeningSelection,
+  DrillConfiguration,
+} from 'src/types'
 import { ModalContainer } from '../Misc/ModalContainer'
 
 const MAIA_VERSIONS = [
@@ -20,7 +25,7 @@ const MAIA_VERSIONS = [
 interface Props {
   openings: Opening[]
   initialSelections?: OpeningSelection[]
-  onComplete: (selections: OpeningSelection[]) => void
+  onComplete: (configuration: DrillConfiguration) => void
   onClose: () => void
 }
 
@@ -40,6 +45,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   ) // Default to 1500
   const [selectedColor, setSelectedColor] = useState<'white' | 'black'>('white')
   const [targetMoveNumber, setTargetMoveNumber] = useState(10)
+  const [drillCount, setDrillCount] = useState(5)
   const [searchTerm, setSearchTerm] = useState('')
 
   // Prevent background scrolling when modal is open
@@ -119,9 +125,42 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     setPreviewVariation(variation)
   }
 
+  // Helper function to generate drill sequence
+  const generateDrillSequence = (
+    selections: OpeningSelection[],
+    count: number,
+  ): OpeningSelection[] => {
+    if (selections.length === 0) return []
+    if (count <= selections.length) {
+      // If drill count is less than or equal to selections, just shuffle and take the required amount
+      const shuffled = [...selections].sort(() => Math.random() - 0.5)
+      return shuffled.slice(0, count)
+    }
+
+    // If drill count is more than selections, ensure each opening is played at least once
+    const sequence: OpeningSelection[] = [...selections]
+    const remaining = count - selections.length
+
+    // Fill remaining slots by randomly picking from selections
+    for (let i = 0; i < remaining; i++) {
+      const randomSelection =
+        selections[Math.floor(Math.random() * selections.length)]
+      sequence.push(randomSelection)
+    }
+
+    // Shuffle the final sequence
+    return sequence.sort(() => Math.random() - 0.5)
+  }
+
   const handleStartDrilling = () => {
     if (selections.length > 0) {
-      onComplete(selections)
+      const drillSequence = generateDrillSequence(selections, drillCount)
+      const configuration: DrillConfiguration = {
+        selections,
+        drillCount,
+        drillSequence,
+      }
+      onComplete(configuration)
     }
   }
 
@@ -455,14 +494,39 @@ export const OpeningSelectionModal: React.FC<Props> = ({
               )}
             </div>
 
-            <div className="p-4">
+            <div className="border-t border-white/10 p-4">
+              {/* Drill Count Configuration */}
+              <div className="mb-4">
+                <p className="mb-2 text-sm font-medium">
+                  Number of Drills: {drillCount}
+                </p>
+                <input
+                  type="range"
+                  min="1"
+                  max="50"
+                  value={drillCount}
+                  onChange={(e) => setDrillCount(parseInt(e.target.value) || 5)}
+                  className="w-full accent-human-4"
+                />
+                <div className="mt-1 flex justify-between text-xs text-secondary">
+                  <span>1</span>
+                  <span>50</span>
+                </div>
+                <p className="mt-1 text-xs text-secondary">
+                  {drillCount <= selections.length
+                    ? `You'll play ${drillCount} of your selected openings`
+                    : selections.length > 0
+                      ? `Each opening played at least once, with ${drillCount - selections.length} repeats`
+                      : 'Total number of opening drills to complete'}
+                </p>
+              </div>
+
               <button
                 onClick={handleStartDrilling}
                 disabled={selections.length === 0}
                 className="w-full rounded bg-human-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Start Drilling ({selections.length} opening
-                {selections.length !== 1 ? 's' : ''})
+                Start Drilling ({drillCount} drill{drillCount !== 1 ? 's' : ''})
               </button>
             </div>
           </div>
