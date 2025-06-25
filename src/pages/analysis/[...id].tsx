@@ -722,6 +722,7 @@ const Analysis: React.FC<Props> = ({
               makeMove={makeMove}
               data={controller.blunderMeter}
               colorSanMapping={controller.colorSanMapping}
+              moveEvaluation={controller.moveEvaluation}
             />
           </div>
         </div>
