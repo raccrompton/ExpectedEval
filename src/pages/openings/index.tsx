@@ -258,8 +258,9 @@ const OpeningsPage: NextPage = () => {
   )
 
   const handleChangeSelections = useCallback(() => {
+    controller.resetDrillSession()
     setShowSelectionModal(true)
-  }, [])
+  }, [controller])
 
   // No-op function for disabling orientation changes
   const noOpSetOrientation = useCallback((_orientation: 'white' | 'black') => {
@@ -486,14 +487,15 @@ const OpeningsPage: NextPage = () => {
                   />
                 </div>
               </div>
-              {controller.remainingDrills.length > 1 && (
-                <button
-                  onClick={controller.moveToNextDrill}
-                  className="rounded bg-human-4 px-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80"
-                >
-                  Next Drill
-                </button>
-              )}
+              {controller.remainingDrills.length > 1 &&
+                !controller.areAllDrillsCompleted && (
+                  <button
+                    onClick={controller.moveToNextDrill}
+                    className="rounded bg-human-4 px-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80"
+                  >
+                    Next Drill
+                  </button>
+                )}
             </div>
           )}
         </div>
@@ -571,14 +573,15 @@ const OpeningsPage: NextPage = () => {
           >
             Change Openings
           </button>
-          {controller.remainingDrills.length > 1 && (
-            <button
-              onClick={controller.moveToNextDrill}
-              className="rounded bg-human-4 px-4 py-2 text-sm font-medium"
-            >
-              Next
-            </button>
-          )}
+          {controller.remainingDrills.length > 1 &&
+            !controller.areAllDrillsCompleted && (
+              <button
+                onClick={controller.moveToNextDrill}
+                className="rounded bg-human-4 px-4 py-2 text-sm font-medium"
+              >
+                Next
+              </button>
+            )}
         </div>
 
         {/* Mobile progress */}
@@ -644,7 +647,7 @@ const OpeningsPage: NextPage = () => {
             performanceData={controller.overallPerformanceData}
             onContinueAnalyzing={controller.continueAnalyzingFromFinal}
             onSelectNewOpenings={() => {
-              controller.setShowFinalModal(false)
+              controller.resetDrillSession()
               setShowSelectionModal(true)
             }}
           />
