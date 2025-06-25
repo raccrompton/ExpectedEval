@@ -8,7 +8,7 @@ import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
 
 import { WindowSizeContext, TreeControllerContext } from 'src/contexts'
-import { OpeningSelection, AnalyzedGame } from 'src/types'
+import { OpeningSelection, AnalyzedGame, DrillConfiguration } from 'src/types'
 import openings from 'src/utils/openings/openings.json'
 import {
   OpeningSelectionModal,
@@ -38,7 +38,8 @@ import {
 const OpeningsPage: NextPage = () => {
   const router = useRouter()
   const [showSelectionModal, setShowSelectionModal] = useState(true)
-  const [selections, setSelections] = useState<OpeningSelection[]>([])
+  const [drillConfiguration, setDrillConfiguration] =
+    useState<DrillConfiguration | null>(null)
   const [promotionFromTo, setPromotionFromTo] = useState<
     [string, string] | null
   >(null)
@@ -49,7 +50,16 @@ const OpeningsPage: NextPage = () => {
   const { status: maiaStatus } = useMaiaEngine()
   const { streamEvaluations } = useStockfishEngine()
 
-  const controller = useOpeningDrillController(selections)
+  // Create empty configuration if none exists
+  const emptyConfiguration: DrillConfiguration = {
+    selections: [],
+    drillCount: 0,
+    drillSequence: [],
+  }
+
+  const controller = useOpeningDrillController(
+    drillConfiguration || emptyConfiguration,
+  )
   const { isMobile } = useContext(WindowSizeContext)
 
   // Create analyzed game for analysis controller
@@ -229,16 +239,19 @@ const OpeningsPage: NextPage = () => {
     }))
   }, [controller.gameTree, controller.currentNode])
 
-  // Show selection modal when no selections are made and Maia model is ready
+  // Show selection modal when no drill configuration exists and Maia model is ready
   useEffect(() => {
-    if (selections.length === 0 && analysisController.maiaStatus === 'ready') {
+    if (
+      (!drillConfiguration || drillConfiguration.selections.length === 0) &&
+      analysisController.maiaStatus === 'ready'
+    ) {
       setShowSelectionModal(true)
     }
-  }, [selections.length, analysisController.maiaStatus])
+  }, [drillConfiguration, analysisController.maiaStatus])
 
   const handleCompleteSelection = useCallback(
-    (newSelections: OpeningSelection[]) => {
-      setSelections(newSelections)
+    (configuration: DrillConfiguration) => {
+      setDrillConfiguration(configuration)
       setShowSelectionModal(false)
     },
     [],
@@ -343,8 +356,12 @@ const OpeningsPage: NextPage = () => {
     )
   }
 
-  // Show selection modal when no selections are made (after model is ready)
-  if (selections.length === 0 || showSelectionModal) {
+  // Show selection modal when no drill configuration exists (after model is ready)
+  if (
+    !drillConfiguration ||
+    drillConfiguration.selections.length === 0 ||
+    showSelectionModal
+  ) {
     return (
       <>
         <Head>
@@ -357,7 +374,7 @@ const OpeningsPage: NextPage = () => {
         <AnimatePresence>
           <OpeningSelectionModal
             openings={openings}
-            initialSelections={selections}
+            initialSelections={drillConfiguration?.selections || []}
             onComplete={handleCompleteSelection}
             onClose={() => setShowSelectionModal(false)}
           />
@@ -371,11 +388,13 @@ const OpeningsPage: NextPage = () => {
       <div className="flex h-full w-[90%] flex-row gap-4">
         {/* Left Sidebar */}
         <div className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72">
-          <div className="flex flex-col">
+          <div className="flex w-full flex-col">
             <OpeningDrillSidebar
               currentDrill={controller.currentDrill}
               completedDrills={controller.completedDrills}
               remainingDrills={controller.remainingDrills}
+              currentDrillIndex={controller.currentDrillIndex}
+              totalDrills={controller.totalDrills}
               onResetCurrentDrill={controller.resetCurrentDrill}
               onChangeSelections={handleChangeSelections}
             />
