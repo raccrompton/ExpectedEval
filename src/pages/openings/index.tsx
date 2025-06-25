@@ -400,18 +400,37 @@ const OpeningsPage: NextPage = () => {
             />
           </div>
 
-          {/* Moves Container at the very bottom */}
-          <div className="flex h-[25vh] flex-col overflow-hidden">
+          {/* Moves Container with Board Controller */}
+          <div className="flex h-[30vh] flex-col overflow-hidden">
             {controller.currentDrillGame && (
-              <MovesContainer
-                game={{
-                  id: controller.currentDrillGame.id,
-                  tree: controller.gameTree,
-                  moves: movesForContainer,
-                }}
-                type="analysis"
-                showAnnotations={false}
-              />
+              <div className="flex h-full flex-col">
+                <div className="flex-1 overflow-hidden">
+                  <MovesContainer
+                    game={{
+                      id: controller.currentDrillGame.id,
+                      tree: controller.gameTree,
+                      moves: movesForContainer,
+                    }}
+                    type="analysis"
+                    showAnnotations={false}
+                  />
+                </div>
+                <div className="border-t border-white/10">
+                  <BoardController
+                    gameTree={controller.gameTree}
+                    orientation={controller.orientation}
+                    setOrientation={noOpSetOrientation}
+                    currentNode={controller.currentNode}
+                    plyCount={controller.plyCount}
+                    goToNode={controller.goToNode}
+                    goToNextNode={controller.goToNextNode}
+                    goToPreviousNode={customGoToPreviousNode}
+                    goToRootNode={customGoToRootNode}
+                    disableFlip={true}
+                    disablePrevious={controller.isAtOpeningEnd}
+                  />
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -440,31 +459,34 @@ const OpeningsPage: NextPage = () => {
             <PlayerInfo name={bottomPlayer.name} color={bottomPlayer.color} />
           </div>
 
-          {/* Controls under board */}
-          <div className="flex w-full flex-col gap-2">
-            <BoardController
-              gameTree={controller.gameTree}
-              orientation={controller.orientation}
-              setOrientation={noOpSetOrientation}
-              currentNode={controller.currentNode}
-              plyCount={controller.plyCount}
-              goToNode={controller.goToNode}
-              goToNextNode={controller.goToNextNode}
-              goToPreviousNode={customGoToPreviousNode}
-              goToRootNode={customGoToRootNode}
-              disableFlip={true}
-              disablePrevious={controller.isAtOpeningEnd}
-            />
-
-            {/* Drill controls */}
-            <div className="flex gap-2">
-              <button
-                onClick={handleChangeSelections}
-                className="flex-1 rounded bg-background-2 py-2 text-sm transition-colors hover:bg-background-3"
-              >
-                Change Selected Openings
-              </button>
-              {controller.remainingDrills.length > 0 && (
+          {/* Drill progress with next drill button */}
+          {controller.currentDrillGame && controller.currentDrill && (
+            <div className="flex w-full items-center gap-3 rounded bg-background-1 p-3">
+              <div className="flex-1">
+                <div className="mb-1 flex justify-between text-xs">
+                  <span className="text-secondary">Move Progress</span>
+                  <span className="font-medium text-primary">
+                    {controller.currentDrillGame.playerMoveCount}/
+                    {controller.currentDrill.targetMoveNumber}
+                  </span>
+                </div>
+                <div className="h-2 w-full rounded bg-background-3">
+                  <div
+                    className="h-full rounded bg-human-3 transition-all duration-300"
+                    style={{
+                      width: `${
+                        controller.currentDrill.targetMoveNumber > 0
+                          ? (controller.currentDrillGame.playerMoveCount /
+                              controller.currentDrill.targetMoveNumber) *
+                            100
+                          : 0
+                      }%`,
+                      maxWidth: '100%',
+                    }}
+                  />
+                </div>
+              </div>
+              {controller.remainingDrills.length > 1 && (
                 <button
                   onClick={controller.moveToNextDrill}
                   className="rounded bg-human-4 px-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80"
@@ -473,18 +495,7 @@ const OpeningsPage: NextPage = () => {
                 </button>
               )}
             </div>
-
-            {/* Current drill progress only */}
-            {controller.currentDrillGame && controller.currentDrill && (
-              <div className="rounded bg-background-2 p-2 text-center text-sm">
-                <span className="text-secondary">Progress: </span>
-                <span className="font-medium text-primary">
-                  {controller.currentDrillGame.playerMoveCount}/
-                  {controller.currentDrill.targetMoveNumber} moves
-                </span>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Right Panel - Analysis */}
@@ -560,7 +571,7 @@ const OpeningsPage: NextPage = () => {
           >
             Change Openings
           </button>
-          {controller.remainingDrills.length > 0 && (
+          {controller.remainingDrills.length > 1 && (
             <button
               onClick={controller.moveToNextDrill}
               className="rounded bg-human-4 px-4 py-2 text-sm font-medium"
@@ -621,7 +632,7 @@ const OpeningsPage: NextPage = () => {
               performanceData={controller.currentPerformanceData}
               onContinueAnalyzing={controller.continueAnalyzing}
               onNextDrill={controller.moveToNextDrill}
-              isLastDrill={controller.remainingDrills.length === 0}
+              isLastDrill={controller.remainingDrills.length <= 1}
             />
           )}
       </AnimatePresence>
@@ -631,7 +642,7 @@ const OpeningsPage: NextPage = () => {
         {controller.showFinalModal && (
           <FinalCompletionModal
             performanceData={controller.overallPerformanceData}
-            onContinueAnalyzing={() => controller.setShowFinalModal(false)}
+            onContinueAnalyzing={controller.continueAnalyzingFromFinal}
             onSelectNewOpenings={() => {
               controller.setShowFinalModal(false)
               setShowSelectionModal(true)
