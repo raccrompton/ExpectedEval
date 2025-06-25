@@ -10,6 +10,7 @@ interface Props {
   totalDrills: number
   onResetCurrentDrill: () => void
   onChangeSelections?: () => void
+  onLoadCompletedDrill?: (drill: CompletedDrill) => void
 }
 
 export const OpeningDrillSidebar: React.FC<Props> = ({
@@ -20,6 +21,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
   totalDrills,
   onResetCurrentDrill,
   onChangeSelections,
+  onLoadCompletedDrill,
 }) => {
   return (
     <div className="flex h-full w-full flex-col border-r border-white/10 bg-background-1 2xl:min-w-72">
@@ -120,6 +122,11 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
             </div>
           ) : (
             <div className="flex flex-col">
+              {onLoadCompletedDrill && (
+                <div className="px-3 py-2 text-xs text-secondary">
+                  Click on any drill below to analyze it
+                </div>
+              )}
               {completedDrills.map((completedDrill, index) => {
                 const accuracy =
                   completedDrill.totalMoves > 0
@@ -130,10 +137,32 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
                       )
                     : 0
 
+                // Check if this drill is currently loaded
+                const isCurrentlyLoaded =
+                  currentDrill &&
+                  currentDrill.opening.id ===
+                    completedDrill.selection.opening.id &&
+                  currentDrill.variation?.id ===
+                    completedDrill.selection.variation?.id &&
+                  currentDrill.playerColor ===
+                    completedDrill.selection.playerColor &&
+                  currentDrill.maiaVersion ===
+                    completedDrill.selection.maiaVersion
+
                 return (
-                  <div
+                  <button
                     key={completedDrill.selection.id}
-                    className="border-b border-white/5 bg-background-1 px-3 py-2 transition-colors"
+                    className={`w-full border-b border-white/5 px-3 py-2 text-left transition-colors ${
+                      isCurrentlyLoaded
+                        ? 'border-human-4/30 bg-human-4/20'
+                        : 'bg-background-1'
+                    } ${
+                      onLoadCompletedDrill
+                        ? 'cursor-pointer hover:bg-background-2'
+                        : ''
+                    }`}
+                    onClick={() => onLoadCompletedDrill?.(completedDrill)}
+                    disabled={!onLoadCompletedDrill}
                   >
                     <div className="flex items-start justify-between">
                       <div className="min-w-0 flex-1">
@@ -191,7 +220,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
                         ✗ {completedDrill.blunders.length}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 )
               })}
             </div>

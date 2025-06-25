@@ -56,6 +56,7 @@ export interface CompletedDrill {
   selection: OpeningSelection
   finalNode: GameNode
   playerMoves: string[]
+  allMoves: string[]
   totalMoves: number
   blunders: string[]
   goodMoves: string[]
