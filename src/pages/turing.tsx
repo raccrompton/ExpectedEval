@@ -107,13 +107,8 @@ const Turing: React.FC<Props> = (props: Props) => {
   const desktopLayout = (
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-1 py-10">
-        <div className="mt-2 flex w-full flex-row items-center justify-center gap-1">
-          <div
-            style={{
-              maxWidth: 'min(20vw, 100vw - 75vh)',
-            }}
-            className="flex h-[75vh] w-[40vh] flex-col justify-between"
-          >
+        <div className="mx-auto mt-2 flex w-[90%] flex-row items-center justify-between gap-4">
+          <div className="flex h-[75vh] min-w-64 flex-grow flex-col justify-between">
             <div className="flex w-full flex-col gap-2">
               <GameInfo title="Bot or Not" icon="smart_toy" type="turing">
                 {Info}
@@ -125,15 +120,10 @@ const Turing: React.FC<Props> = (props: Props) => {
             </div>
             <StatsDisplay stats={stats} />
           </div>
-          <div className="relative flex aspect-square w-full max-w-[75vh]">
+          <div className="relative flex aspect-square w-full max-w-[75vh] flex-shrink-0">
             <GameBoard game={game} currentNode={controller.currentNode} />
           </div>
-          <div
-            style={{
-              maxWidth: 'min(20vw, 100vw - 75vh)',
-            }}
-            className="flex h-[75vh] w-[40vh] flex-col gap-1"
-          >
+          <div className="flex h-[75vh] min-w-64 flex-grow flex-col gap-1">
             <div className="relative bottom-0 h-full min-h-[38px] flex-1">
               <MovesContainer
                 game={game}
