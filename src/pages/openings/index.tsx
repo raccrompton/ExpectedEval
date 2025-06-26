@@ -497,6 +497,14 @@ const OpeningsPage: NextPage = () => {
                     Next Drill
                   </button>
                 )}
+              {controller.areAllDrillsCompleted && (
+                <button
+                  onClick={controller.showSummary}
+                  className="rounded bg-human-3 px-4 py-2 text-sm font-medium transition-colors hover:bg-human-3/80"
+                >
+                  View Summary
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -583,6 +591,14 @@ const OpeningsPage: NextPage = () => {
                 Next
               </button>
             )}
+          {controller.areAllDrillsCompleted && (
+            <button
+              onClick={controller.showSummary}
+              className="rounded bg-human-3 px-4 py-2 text-sm font-medium"
+            >
+              Summary
+            </button>
+          )}
         </div>
 
         {/* Mobile progress */}
