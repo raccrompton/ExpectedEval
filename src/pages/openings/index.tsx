@@ -38,6 +38,18 @@ import {
 const OpeningsPage: NextPage = () => {
   const router = useRouter()
   const [showSelectionModal, setShowSelectionModal] = useState(true)
+  const [isReopenedModal, setIsReopenedModal] = useState(false)
+
+  // Handle modal close with navigation
+  const handleCloseModal = () => {
+    if (isReopenedModal) {
+      // Modal was reopened from within the page, just close it
+      setShowSelectionModal(false)
+    } else {
+      // Modal was opened from initial page load, redirect to home
+      router.push('/')
+    }
+  }
   const [drillConfiguration, setDrillConfiguration] =
     useState<DrillConfiguration | null>(null)
   const [promotionFromTo, setPromotionFromTo] = useState<
@@ -259,6 +271,8 @@ const OpeningsPage: NextPage = () => {
 
   const handleChangeSelections = useCallback(() => {
     controller.resetDrillSession()
+    // Mark that this is a reopened modal so it just closes instead of navigating
+    setIsReopenedModal(true)
     setShowSelectionModal(true)
   }, [controller])
 
@@ -377,7 +391,7 @@ const OpeningsPage: NextPage = () => {
             openings={openings}
             initialSelections={drillConfiguration?.selections || []}
             onComplete={handleCompleteSelection}
-            onClose={() => setShowSelectionModal(false)}
+            onClose={handleCloseModal}
           />
         </AnimatePresence>
       </>
