@@ -122,11 +122,6 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
             </div>
           ) : (
             <div className="flex flex-col">
-              {onLoadCompletedDrill && (
-                <div className="px-3 py-2 text-xs text-secondary">
-                  Click on any drill below to analyze it
-                </div>
-              )}
               {completedDrills.map((completedDrill, index) => {
                 const accuracy =
                   completedDrill.totalMoves > 0

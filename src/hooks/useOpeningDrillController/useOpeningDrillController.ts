@@ -341,6 +341,11 @@ export const useOpeningDrillController = (
     setContinueAnalyzingMode(true) // Allow moves beyond target count
   }, [])
 
+  // Show final summary modal
+  const showSummary = useCallback(() => {
+    setShowFinalModal(true)
+  }, [])
+
   // Reset drill session for new openings
   const resetDrillSession = useCallback(() => {
     setAllDrillsCompleted(false)
@@ -899,5 +904,8 @@ export const useOpeningDrillController = (
 
     // Load a specific completed drill for analysis
     loadCompletedDrill,
+
+    // Show final summary modal
+    showSummary,
   }
 }
