@@ -794,6 +794,7 @@ export const useOpeningDrillController = (
       controller.currentNode &&
       !isPlayerTurn &&
       waitingForMaiaResponse &&
+      currentDrillGame.moves.length > 0 && // Only respond if moves have been made (not initial setup)
       !isDrillComplete
     ) {
       // It's Maia's turn to respond to the player's move
