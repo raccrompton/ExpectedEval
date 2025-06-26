@@ -300,7 +300,24 @@ export const useOpeningDrillController = (
 
       const performanceData = evaluateDrillPerformance(drillGame)
       setCurrentPerformanceData(performanceData)
-      setCompletedDrills((prev) => [...prev, performanceData.drill])
+
+      // Check if this drill already exists in completedDrills and update it instead of adding new
+      setCompletedDrills((prev) => {
+        const existingIndex = prev.findIndex(
+          (completedDrill) =>
+            completedDrill.selection.id === drillGame.selection.id,
+        )
+
+        if (existingIndex !== -1) {
+          // Update existing drill
+          const updated = [...prev]
+          updated[existingIndex] = performanceData.drill
+          return updated
+        } else {
+          // Add new drill
+          return [...prev, performanceData.drill]
+        }
+      })
 
       // Don't remove from remaining drills here - do it in moveToNextDrill
       // This ensures proper counting for the performance modal
