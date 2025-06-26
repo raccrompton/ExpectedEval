@@ -188,7 +188,8 @@ export const OpeningSelectionModal: React.FC<Props> = ({
             <div className="flex h-20 flex-col justify-center gap-1 border-b border-white/10 p-4">
               <h2 className="text-xl font-bold">Select Openings</h2>
               <p className="text-xs text-secondary">
-                Double-click any opening to quickly add it
+                Click the + button to quickly add an opening with current
+                settings
               </p>
             </div>
 
@@ -215,65 +216,105 @@ export const OpeningSelectionModal: React.FC<Props> = ({
               {filteredOpenings.map((opening) => (
                 <div key={opening.id} className="flex flex-col">
                   <div
-                    role="button"
-                    tabIndex={0}
-                    className={`mb-1 cursor-pointer p-4 transition-colors ${
+                    className={`group mb-1 transition-colors ${
                       previewOpening.id === opening.id && !previewVariation
                         ? 'bg-human-2/20'
                         : 'hover:bg-human-2/10'
                     }`}
-                    onClick={() => {
-                      setPreviewOpening(opening)
-                      setPreviewVariation(null)
-                    }}
-                    onDoubleClick={() => {
-                      addQuickSelection(opening, null)
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        setPreviewOpening(opening)
-                        setPreviewVariation(null)
-                      }
-                    }}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">{opening.name}</h3>
-                        <p className="text-sm text-secondary">
-                          {opening.description}
-                        </p>
+                    <div className="flex items-center">
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        className="flex-1 cursor-pointer p-4"
+                        onClick={() => {
+                          setPreviewOpening(opening)
+                          setPreviewVariation(null)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            setPreviewOpening(opening)
+                            setPreviewVariation(null)
+                          }
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">{opening.name}</h3>
+                            <p className="text-sm text-secondary">
+                              {opening.description}
+                            </p>
+                          </div>
+                        </div>
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          addQuickSelection(opening, null)
+                        }}
+                        disabled={isDuplicateSelection(opening, null)}
+                        className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
+                        title={
+                          isDuplicateSelection(opening, null)
+                            ? 'Already added with current settings'
+                            : 'Add opening with current settings'
+                        }
+                      >
+                        <span className="material-symbols-outlined text-base">
+                          add
+                        </span>
+                      </button>
                     </div>
                   </div>
                   {opening.variations.map((variation) => (
                     <div
                       key={variation.id}
-                      role="button"
-                      tabIndex={0}
-                      className={`cursor-pointer px-6 py-1 transition-colors ${
+                      className={`group transition-colors ${
                         previewOpening.id === opening.id &&
                         previewVariation?.id === variation.id
                           ? 'bg-human-2/20'
                           : 'hover:bg-human-2/10'
                       }`}
-                      onClick={() => {
-                        setPreviewOpening(opening)
-                        setPreviewVariation(variation)
-                      }}
-                      onDoubleClick={() => {
-                        addQuickSelection(opening, variation)
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          setPreviewOpening(opening)
-                          setPreviewVariation(variation)
-                        }
-                      }}
                     >
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-secondary">
-                          {variation.name}
-                        </p>
+                      <div className="flex items-center">
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          className="flex-1 cursor-pointer px-6 py-1"
+                          onClick={() => {
+                            setPreviewOpening(opening)
+                            setPreviewVariation(variation)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              setPreviewOpening(opening)
+                              setPreviewVariation(variation)
+                            }
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-secondary">
+                              {variation.name}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            addQuickSelection(opening, variation)
+                          }}
+                          disabled={isDuplicateSelection(opening, variation)}
+                          className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
+                          title={
+                            isDuplicateSelection(opening, variation)
+                              ? 'Already added with current settings'
+                              : 'Add variation with current settings'
+                          }
+                        >
+                          <span className="material-symbols-outlined text-base">
+                            add
+                          </span>
+                        </button>
                       </div>
                     </div>
                   ))}
