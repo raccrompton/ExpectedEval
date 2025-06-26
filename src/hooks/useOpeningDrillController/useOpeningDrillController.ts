@@ -466,17 +466,19 @@ export const useOpeningDrillController = (
         playerMoveCount: completedDrill.totalMoves,
       }
 
+      // Important: Set the loaded game state first before setting controller position
+      // This ensures the useEffect hooks see the correct moves.length > 0 state
       setCurrentDrillGame(loadedGame)
       setAnalysisEnabled(true) // Auto-enable analysis when loading a completed drill
       setContinueAnalyzingMode(true) // Allow moves beyond target count
-      setWaitingForMaiaResponse(false)
+      setWaitingForMaiaResponse(false) // Ensure we're not waiting for Maia
 
-      // Set the controller to the final position after a brief delay
+      // Set the controller to the final position after ensuring game state is set
       setTimeout(() => {
         if (finalNode) {
           controller.setCurrentNode(finalNode)
         }
-      }, 100)
+      }, 50) // Shorter delay to ensure state is synchronized
     },
     [controller, currentDrillGame],
   )
@@ -549,6 +551,41 @@ export const useOpeningDrillController = (
       averageEvaluation,
     }
   }, [completedDrills, configuration.drillCount])
+
+  // Helper function to update a completed drill with new moves
+  const updateCompletedDrill = useCallback(
+    (updatedGame: OpeningDrillGame) => {
+      // Check if this is a loaded completed drill (ID ends with '-replay')
+      if (updatedGame.id.endsWith('-replay')) {
+        const originalId = updatedGame.id.replace('-replay', '')
+
+        setCompletedDrills((prev) =>
+          prev.map((completedDrill) => {
+            if (completedDrill.selection.id === originalId) {
+              // Update the completed drill with new moves and final position
+              const finalNode = controller.currentNode
+              return {
+                ...completedDrill,
+                allMoves: updatedGame.moves,
+                playerMoves: updatedGame.moves.filter((_, index) => {
+                  // Only count player moves (assuming alternating turns)
+                  const isPlayerMove =
+                    completedDrill.selection.playerColor === 'white'
+                      ? index % 2 === 0
+                      : index % 2 === 1
+                  return isPlayerMove
+                }),
+                totalMoves: updatedGame.playerMoveCount,
+                finalNode: finalNode || completedDrill.finalNode,
+              }
+            }
+            return completedDrill
+          }),
+        )
+      }
+    },
+    [controller],
+  )
 
   // Make a move for the player - enhanced to support variations and completion checking
   const makePlayerMove = useCallback(
@@ -639,6 +676,9 @@ export const useOpeningDrillController = (
 
           setCurrentDrillGame(updatedGame)
 
+          // Update completed drill if this is a loaded completed drill
+          updateCompletedDrill(updatedGame)
+
           // Set flag to indicate we're waiting for Maia's response (after player move, it becomes Maia's turn)
           setWaitingForMaiaResponse(true)
 
@@ -665,6 +705,7 @@ export const useOpeningDrillController = (
       currentDrill,
       completeDrill,
       continueAnalyzingMode,
+      updateCompletedDrill,
     ],
   )
 
@@ -758,6 +799,9 @@ export const useOpeningDrillController = (
 
             setCurrentDrillGame(updatedGame)
 
+            // Update completed drill if this is a loaded completed drill
+            updateCompletedDrill(updatedGame)
+
             // Clear the waiting flag since Maia has responded
             setWaitingForMaiaResponse(false)
           }
@@ -766,7 +810,13 @@ export const useOpeningDrillController = (
         console.error('Error making Maia move:', error)
       }
     },
-    [currentDrillGame, controller, currentDrill, playSound],
+    [
+      currentDrillGame,
+      controller,
+      currentDrill,
+      playSound,
+      updateCompletedDrill,
+    ],
   )
 
   // Store makeMaiaMove in a ref to avoid circular dependencies
@@ -779,10 +829,11 @@ export const useOpeningDrillController = (
       currentDrillGame &&
       controller.currentNode &&
       !isPlayerTurn &&
-      currentDrillGame.moves.length === 0 &&
+      currentDrillGame.moves.length === 0 && // Only for fresh drills, not loaded ones
       currentDrillGame.openingEndNode &&
       controller.currentNode === currentDrillGame.openingEndNode &&
-      !isDrillComplete
+      !isDrillComplete &&
+      !continueAnalyzingMode // Don't trigger when in analysis mode (like when loading completed drills)
     ) {
       // It's Maia's turn to move first from the opening position
       setWaitingForMaiaResponse(true)
@@ -790,7 +841,13 @@ export const useOpeningDrillController = (
         makeMaiaMoveRef.current(controller.currentNode)
       }, 1000)
     }
-  }, [currentDrillGame, controller.currentNode, isPlayerTurn, isDrillComplete])
+  }, [
+    currentDrillGame,
+    controller.currentNode,
+    isPlayerTurn,
+    isDrillComplete,
+    continueAnalyzingMode,
+  ])
 
   // Handle Maia's response after player moves - only when we're actually waiting for a response
   useEffect(() => {
