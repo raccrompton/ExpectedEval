@@ -293,17 +293,21 @@ export const useOpeningDrillController = (
   )
 
   // Complete current drill and show performance modal
-  const completeDrill = useCallback(() => {
-    if (!currentDrillGame) return
+  const completeDrill = useCallback(
+    (gameToComplete?: OpeningDrillGame) => {
+      const drillGame = gameToComplete || currentDrillGame
+      if (!drillGame) return
 
-    const performanceData = evaluateDrillPerformance(currentDrillGame)
-    setCurrentPerformanceData(performanceData)
-    setCompletedDrills((prev) => [...prev, performanceData.drill])
+      const performanceData = evaluateDrillPerformance(drillGame)
+      setCurrentPerformanceData(performanceData)
+      setCompletedDrills((prev) => [...prev, performanceData.drill])
 
-    // Don't remove from remaining drills here - do it in moveToNextDrill
-    // This ensures proper counting for the performance modal
-    setShowPerformanceModal(true)
-  }, [currentDrillGame, evaluateDrillPerformance])
+      // Don't remove from remaining drills here - do it in moveToNextDrill
+      // This ensures proper counting for the performance modal
+      setShowPerformanceModal(true)
+    },
+    [currentDrillGame, evaluateDrillPerformance],
+  )
 
   // Move to next drill
   const moveToNextDrill = useCallback(() => {
@@ -471,7 +475,14 @@ export const useOpeningDrillController = (
       setCurrentDrillGame(loadedGame)
       setAnalysisEnabled(true) // Auto-enable analysis when loading a completed drill
       setContinueAnalyzingMode(true) // Allow moves beyond target count
-      setWaitingForMaiaResponse(false) // Ensure we're not waiting for Maia
+
+      // Check if it's Maia's turn after loading and set waiting flag accordingly
+      const isMaiaTurn = finalNode
+        ? new Chess(finalNode.fen).turn() !==
+          (completedDrill.selection.playerColor === 'white' ? 'w' : 'b')
+        : false
+
+      setWaitingForMaiaResponse(isMaiaTurn) // Set to true if it's Maia's turn, false otherwise
 
       // Set the controller to the final position after ensuring game state is set
       setTimeout(() => {
@@ -689,7 +700,7 @@ export const useOpeningDrillController = (
           ) {
             // Delay completion to allow for Maia's response if it's Maia's turn
             setTimeout(() => {
-              completeDrill()
+              completeDrill(updatedGame)
             }, 1500)
           }
         }
