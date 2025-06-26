@@ -48,14 +48,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   const [drillCount, setDrillCount] = useState(5)
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Prevent background scrolling when modal is open
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = 'unset'
-    }
-  }, [])
-
   const previewFen = useMemo(() => {
     return previewVariation ? previewVariation.fen : previewOpening.fen
   }, [previewOpening, previewVariation])
