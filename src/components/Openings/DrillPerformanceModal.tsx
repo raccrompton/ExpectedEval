@@ -43,7 +43,6 @@ const AnimatedGameReplay: React.FC<{
   onMoveClick,
 }) => {
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1)
-  const [isPlaying, setIsPlaying] = useState(false) // Start paused for interactive mode
   const [chess] = useState(() => new Chess(openingFen))
   const [currentFen, setCurrentFen] = useState(openingFen)
   const [currentMoveQuality, setCurrentMoveQuality] = useState<string | null>(
@@ -217,14 +216,6 @@ const AnimatedGameReplay: React.FC<{
           <p className="text-xs text-secondary">
             Watch your opening unfold with move quality indicators
           </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="rounded bg-human-4 px-2 py-1 text-xs transition-colors hover:bg-human-4/80"
-          >
-            {isPlaying ? 'Pause' : 'Play'}
-          </button>
         </div>
       </div>
 
@@ -471,16 +462,12 @@ const EvaluationChart: React.FC<{
   evaluationChart: DrillPerformanceData['evaluationChart']
   moveAnalyses: MoveAnalysis[]
   currentMoveIndex?: number
-  chartHighlightMove?: number | null
   onHoverMove?: (moveIndex: number) => void
-  onClickMove?: (moveIndex: number) => void
 }> = ({
   evaluationChart,
   moveAnalyses,
   currentMoveIndex = -1,
-  chartHighlightMove,
   onHoverMove,
-  onClickMove,
 }) => {
   if (evaluationChart.length === 0) {
     return (
@@ -490,7 +477,7 @@ const EvaluationChart: React.FC<{
     )
   }
 
-  // Transform data for Recharts with move analysis
+  // Transform data for Recharts with proper area handling at zero crossings
   const chartData = evaluationChart.map((point, index) => {
     // Find corresponding move analysis to get SAN notation
     const moveAnalysis = moveAnalyses[index]
@@ -502,9 +489,11 @@ const EvaluationChart: React.FC<{
       moveClassification: point.moveClassification,
       isCurrentMove: index === currentMoveIndex,
       san: moveAnalysis?.san || '',
-      // For shaded areas - split positive and negative evaluations
+      // Areas extend from zero line to evaluation (no gaps)
       whiteAdvantage: point.evaluation > 0 ? point.evaluation : 0,
       blackAdvantage: point.evaluation < 0 ? point.evaluation : 0,
+      // Add zero baseline for proper area rendering
+      zero: 0,
     }
   })
 
@@ -529,24 +518,19 @@ const EvaluationChart: React.FC<{
       <div className="mb-3">
         <h4 className="text-sm font-medium">Position Evaluation</h4>
         <p className="text-xs text-secondary">
-          Track how the position&apos;s value changed throughout the opening
+          Track how the position&apos;s value changed throughout the
+          post-opening
         </p>
       </div>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
-            margin={{ top: 15, right: 20, left: 25, bottom: 25 }}
+            margin={{ top: 15, right: 20, left: -20, bottom: 20 }}
             onMouseMove={(data) => {
               if (data && data.activeLabel && onHoverMove) {
                 const moveIndex = parseInt(data.activeLabel as string) - 1
                 onHoverMove(moveIndex)
-              }
-            }}
-            onClick={(data) => {
-              if (data && data.activeLabel && onClickMove) {
-                const moveIndex = parseInt(data.activeLabel as string) - 1
-                onClickMove(moveIndex)
               }
             }}
           >
@@ -561,7 +545,6 @@ const EvaluationChart: React.FC<{
               label={{
                 value: 'Ply Number',
                 position: 'insideBottom',
-                offset: -15,
                 style: {
                   textAnchor: 'middle',
                   fill: '#9ca3af',
@@ -577,6 +560,7 @@ const EvaluationChart: React.FC<{
               label={{
                 value: 'Evaluation',
                 angle: -90,
+                dx: 24,
                 position: 'insideLeft',
                 style: {
                   textAnchor: 'middle',
@@ -587,20 +571,24 @@ const EvaluationChart: React.FC<{
             />
             <Tooltip content={<CustomTooltip />} />
 
-            {/* Shaded areas for advantage - enhanced visibility */}
+            {/* White advantage area (positive evaluations only) */}
             <Area
               type="monotone"
               dataKey="whiteAdvantage"
               stroke="none"
-              fill="rgba(240, 240, 240, 0.6)"
-              fillOpacity={0.7}
+              fill="rgba(255, 255, 255, 0.4)"
+              fillOpacity={0.5}
+              connectNulls={false}
             />
+
+            {/* Black advantage area (negative evaluations only) */}
             <Area
               type="monotone"
               dataKey="blackAdvantage"
               stroke="none"
-              fill="rgba(60, 60, 60, 0.6)"
-              fillOpacity={0.8}
+              fill="rgba(75, 85, 99, 0.5)"
+              fillOpacity={0.6}
+              connectNulls={false}
             />
 
             {/* Reference line at 0 evaluation */}
@@ -610,44 +598,13 @@ const EvaluationChart: React.FC<{
               strokeWidth={2}
             />
 
-            {/* Current move reference line */}
-            {currentMoveIndex >= 0 && currentMoveIndex < chartData.length && (
-              <ReferenceLine
-                x={currentMoveIndex + 1}
-                stroke="#f59e0b"
-                strokeWidth={3}
-                strokeDasharray="5 5"
-                opacity={0.8}
-              />
-            )}
-
-            {/* Clicked move reference line (from move list) */}
-            {chartHighlightMove !== null &&
-              chartHighlightMove !== undefined &&
-              chartHighlightMove >= 0 &&
-              chartHighlightMove < chartData.length &&
-              chartHighlightMove !== currentMoveIndex && (
-                <ReferenceLine
-                  x={chartHighlightMove + 1}
-                  stroke="#ec4899"
-                  strokeWidth={2}
-                  strokeDasharray="3 3"
-                  opacity={0.9}
-                />
-              )}
-
             <Line
               type="monotone"
               dataKey="evaluation"
               stroke="#e5e7eb"
               strokeWidth={2}
               dot={<CustomDot />}
-              activeDot={{
-                r: 8,
-                stroke: '#f59e0b',
-                strokeWidth: 2,
-                fill: '#f59e0b',
-              }}
+              activeDot={false}
             />
           </ComposedChart>
         </ResponsiveContainer>
@@ -835,9 +792,6 @@ export const DrillPerformanceModal: React.FC<Props> = ({
   isLastDrill,
 }) => {
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1)
-  const [chartHighlightMove, setChartHighlightMove] = useState<number | null>(
-    null,
-  )
   const [hoveredMoveIndex, setHoveredMoveIndex] = useState<number | null>(null)
 
   const { drill, evaluationChart, moveAnalyses, ratingComparison } =
@@ -848,9 +802,8 @@ export const DrillPerformanceModal: React.FC<Props> = ({
     setHoveredMoveIndex(moveIndex)
   }
 
-  // Handle click on move list - highlight on chart
+  // Handle click on move list
   const handleMoveClick = (moveIndex: number) => {
-    setChartHighlightMove(moveIndex)
     setCurrentMoveIndex(moveIndex)
   }
 
@@ -902,9 +855,7 @@ export const DrillPerformanceModal: React.FC<Props> = ({
               evaluationChart={evaluationChart}
               moveAnalyses={moveAnalyses}
               currentMoveIndex={currentMoveIndex}
-              chartHighlightMove={chartHighlightMove}
               onHoverMove={handleChartHover}
-              onClickMove={handleMoveClick}
             />
           </div>
 
