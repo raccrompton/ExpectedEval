@@ -3,6 +3,8 @@ import { Chess, PieceSymbol } from 'chess.ts'
 import { getGameMove } from 'src/api/play/play'
 import { useTreeController } from '../useTreeController'
 import { useChessSound } from '../useChessSound'
+import { useStockfishEngine } from '../useStockfishEngine'
+import { useMaiaEngine } from '../useMaiaEngine'
 import { GameTree, GameNode } from 'src/types'
 import {
   OpeningSelection,
@@ -12,6 +14,7 @@ import {
   OverallPerformanceData,
   DrillConfiguration,
 } from 'src/types/openings'
+import { analyzeDrillPerformance } from 'src/utils/openings/drillAnalysis'
 
 // Helper function to parse PGN and create moves in the tree
 const parsePgnToTree = (pgn: string, gameTree: GameTree): GameNode | null => {
@@ -91,6 +94,7 @@ export const useOpeningDrillController = (
   const [showFinalModal, setShowFinalModal] = useState(false)
   const [currentPerformanceData, setCurrentPerformanceData] =
     useState<DrillPerformanceData | null>(null)
+  const [isAnalyzingDrill, setIsAnalyzingDrill] = useState(false)
 
   // Flag to track when we're waiting for Maia's response (to prevent navigation-triggered moves)
   const [waitingForMaiaResponse, setWaitingForMaiaResponse] = useState(false)
@@ -100,6 +104,10 @@ export const useOpeningDrillController = (
 
   // Add chess sound hook
   const { playSound } = useChessSound()
+
+  // Add engine hooks for analysis
+  const { streamEvaluations } = useStockfishEngine()
+  const { maia } = useMaiaEngine()
 
   // Initialize drilling session from configuration
   useEffect(() => {
@@ -220,19 +228,31 @@ export const useOpeningDrillController = (
     return moveMap
   }, [controller.currentNode, isPlayerTurn])
 
-  // Function to evaluate drill performance
+  // Function to evaluate drill performance using comprehensive analysis
   const evaluateDrillPerformance = useCallback(
-    (drillGame: OpeningDrillGame): DrillPerformanceData => {
-      const { selection, tree, playerMoveCount } = drillGame
+    async (drillGame: OpeningDrillGame): Promise<DrillPerformanceData> => {
+      const finalNode = controller.currentNode || drillGame.tree.getRoot()
 
-      // For now, simple evaluation based on final position
-      // In a real implementation, this would analyze each move
-      const finalNode = controller.currentNode || tree.getRoot()
-      const finalChess = new Chess(finalNode.fen)
-      const finalEval = 0 // Placeholder - would need actual evaluation
+      try {
+        // Use comprehensive analysis if engines are available
+        if (maia && streamEvaluations) {
+          return await analyzeDrillPerformance(
+            drillGame,
+            finalNode,
+            streamEvaluations,
+            maia,
+          )
+        }
+      } catch (error) {
+        console.error(
+          'Error in comprehensive analysis, falling back to basic:',
+          error,
+        )
+      }
 
-      // Mock performance data - in real implementation, analyze each move
-      const goodMoves = Math.floor(playerMoveCount * 0.7) // 70% good moves
+      // Fallback to basic analysis if engines not available
+      const { selection, playerMoveCount } = drillGame
+      const goodMoves = Math.floor(playerMoveCount * 0.7)
       const blunders = Math.max(
         0,
         playerMoveCount - goodMoves - Math.floor(playerMoveCount * 0.2),
@@ -244,84 +264,91 @@ export const useOpeningDrillController = (
         selection,
         finalNode,
         playerMoves: drillGame.moves.filter((_, index) => {
-          // Only count player moves (assuming alternating turns)
           const isPlayerMove =
             selection.playerColor === 'white'
               ? index % 2 === 0
               : index % 2 === 1
           return isPlayerMove
         }),
-        allMoves: drillGame.moves, // Store the full move sequence
+        allMoves: drillGame.moves,
         totalMoves: playerMoveCount,
         blunders: Array(blunders).fill('placeholder'),
         goodMoves: Array(goodMoves).fill('placeholder'),
-        finalEvaluation: finalEval,
+        finalEvaluation: 0,
         completedAt: new Date(),
       }
 
-      const feedback = []
+      const feedback = [
+        'Analysis temporarily unavailable. Basic feedback provided.',
+      ]
       if (accuracy >= 90) {
         feedback.push('Excellent performance! You played very accurately.')
       } else if (accuracy >= 70) {
         feedback.push('Good job! Most of your moves were strong.')
-      } else if (accuracy >= 50) {
-        feedback.push('Decent performance, but there is room for improvement.')
       } else {
-        feedback.push('This opening needs more practice. Review the key moves.')
-      }
-
-      if (blunders === 0) {
-        feedback.push('Perfect! No blunders detected.')
-      } else if (blunders === 1) {
-        feedback.push('Only one blunder - great focus!')
-      } else {
-        feedback.push(
-          `Watch out for blunders - ${blunders} detected in this game.`,
-        )
+        feedback.push('This opening needs more practice.')
       }
 
       return {
         drill: completedDrill,
-        evaluationChart: [], // Placeholder
+        evaluationChart: [],
         accuracy,
         blunderCount: blunders,
         goodMoveCount: goodMoves,
+        inaccuracyCount: 0,
+        mistakeCount: 0,
+        excellentMoveCount: 0,
         feedback,
+        moveAnalyses: [],
+        ratingComparison: [],
+        bestPlayerMoves: [],
+        worstPlayerMoves: [],
+        averageEvaluationLoss: 0,
+        openingKnowledge: 75,
       }
     },
-    [controller.currentNode],
+    [controller.currentNode, maia, streamEvaluations],
   )
 
   // Complete current drill and show performance modal
   const completeDrill = useCallback(
-    (gameToComplete?: OpeningDrillGame) => {
+    async (gameToComplete?: OpeningDrillGame) => {
       const drillGame = gameToComplete || currentDrillGame
       if (!drillGame) return
 
-      const performanceData = evaluateDrillPerformance(drillGame)
-      setCurrentPerformanceData(performanceData)
+      try {
+        setIsAnalyzingDrill(true) // Show loading state
+        const performanceData = await evaluateDrillPerformance(drillGame)
+        setCurrentPerformanceData(performanceData)
 
-      // Check if this drill already exists in completedDrills and update it instead of adding new
-      setCompletedDrills((prev) => {
-        const existingIndex = prev.findIndex(
-          (completedDrill) =>
-            completedDrill.selection.id === drillGame.selection.id,
-        )
+        // Check if this drill already exists in completedDrills and update it instead of adding new
+        setCompletedDrills((prev) => {
+          const existingIndex = prev.findIndex(
+            (completedDrill) =>
+              completedDrill.selection.id === drillGame.selection.id,
+          )
 
-        if (existingIndex !== -1) {
-          // Update existing drill
-          const updated = [...prev]
-          updated[existingIndex] = performanceData.drill
-          return updated
-        } else {
-          // Add new drill
-          return [...prev, performanceData.drill]
-        }
-      })
+          if (existingIndex !== -1) {
+            // Update existing drill
+            const updated = [...prev]
+            updated[existingIndex] = performanceData.drill
+            return updated
+          } else {
+            // Add new drill
+            return [...prev, performanceData.drill]
+          }
+        })
 
-      // Don't remove from remaining drills here - do it in moveToNextDrill
-      // This ensures proper counting for the performance modal
-      setShowPerformanceModal(true)
+        // Don't remove from remaining drills here - do it in moveToNextDrill
+        // This ensures proper counting for the performance modal
+        setShowPerformanceModal(true)
+      } catch (error) {
+        console.error('Error completing drill analysis:', error)
+        // Still show modal even if analysis fails
+        setShowPerformanceModal(true)
+      } finally {
+        setIsAnalyzingDrill(false) // Turn off loading state
+      }
     },
     [currentDrillGame, evaluateDrillPerformance],
   )
@@ -980,6 +1007,7 @@ export const useOpeningDrillController = (
     currentPerformanceData,
     overallPerformanceData,
     setShowFinalModal,
+    isAnalyzingDrill,
 
     // Reset drill session
     resetDrillSession,
