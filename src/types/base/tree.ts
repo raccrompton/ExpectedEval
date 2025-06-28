@@ -49,7 +49,6 @@ export class GameTree {
 
     this.headers.forEach((value, key) => {
       chess.addHeader(key, value)
-      chess.addHeader(key, value)
     })
 
     let complete = false
