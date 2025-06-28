@@ -52,6 +52,42 @@ export interface OpeningDrillGame {
   playerMoveCount: number
 }
 
+// Enhanced move analysis for detailed feedback
+export interface MoveAnalysis {
+  move: string
+  san: string
+  fen: string
+  moveNumber: number
+  isPlayerMove: boolean
+  evaluation: number
+  classification: 'excellent' | 'good' | 'inaccuracy' | 'mistake' | 'blunder'
+  evaluationLoss: number
+  bestMove?: string
+  bestEvaluation?: number
+  stockfishBestMove?: string
+  maiaBestMove?: string
+}
+
+// Rating comparison data
+export interface RatingComparison {
+  rating: number
+  probability: number
+  moveMatch: boolean
+}
+
+// Enhanced evaluation chart data
+export interface EvaluationPoint {
+  moveNumber: number
+  evaluation: number
+  isPlayerMove: boolean
+  moveClassification:
+    | 'excellent'
+    | 'good'
+    | 'inaccuracy'
+    | 'mistake'
+    | 'blunder'
+}
+
 export interface CompletedDrill {
   selection: OpeningSelection
   finalNode: GameNode
@@ -62,15 +98,29 @@ export interface CompletedDrill {
   goodMoves: string[]
   finalEvaluation: number
   completedAt: Date
+  // Enhanced analysis data
+  moveAnalyses?: MoveAnalysis[]
+  accuracyPercentage?: number
+  averageEvaluationLoss?: number
 }
 
 export interface DrillPerformanceData {
   drill: CompletedDrill
-  evaluationChart: Array<{ move: number; evaluation: number }>
+  evaluationChart: EvaluationPoint[]
   accuracy: number
   blunderCount: number
   goodMoveCount: number
+  inaccuracyCount: number
+  mistakeCount: number
+  excellentMoveCount: number
   feedback: string[]
+  // Enhanced feedback data
+  moveAnalyses: MoveAnalysis[]
+  ratingComparison: RatingComparison[]
+  bestPlayerMoves: MoveAnalysis[]
+  worstPlayerMoves: MoveAnalysis[]
+  averageEvaluationLoss: number
+  openingKnowledge: number // 0-100 score for opening theory knowledge
 }
 
 export interface OverallPerformanceData {

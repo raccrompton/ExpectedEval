@@ -3,7 +3,7 @@ import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { useState, useEffect, useContext, useCallback, useMemo } from 'react'
 import { Chess, PieceSymbol } from 'chess.ts'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
 
@@ -657,6 +657,30 @@ const OpeningsPage: NextPage = () => {
       >
         {isMobile ? mobileLayout() : desktopLayout()}
       </TreeControllerContext.Provider>
+
+      {/* Analysis Loading Overlay */}
+      <AnimatePresence>
+        {controller.isAnalyzingDrill && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          >
+            <div className="flex flex-col items-center gap-4 rounded-lg bg-background-1 p-8 shadow-2xl">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-human-4 border-t-transparent"></div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold">
+                  Analyzing Your Performance
+                </h3>
+                <p className="text-sm text-secondary">
+                  Running deep analysis with Stockfish and Maia...
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Performance Modal */}
       <AnimatePresence>
