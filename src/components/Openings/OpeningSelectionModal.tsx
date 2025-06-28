@@ -22,6 +22,8 @@ const MAIA_VERSIONS = [
   { id: 'maia_kdd_1900', name: 'Maia 1900' },
 ]
 
+type MobileTab = 'browse' | 'preview' | 'selected'
+
 interface Props {
   openings: Opening[]
   initialSelections?: OpeningSelection[]
@@ -47,6 +49,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   const [targetMoveNumber, setTargetMoveNumber] = useState(10)
   const [drillCount, setDrillCount] = useState(5)
   const [searchTerm, setSearchTerm] = useState('')
+  const [activeTab, setActiveTab] = useState<MobileTab>('browse')
 
   const previewFen = useMemo(() => {
     return previewVariation ? previewVariation.fen : previewOpening.fen
@@ -90,6 +93,10 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     }
 
     setSelections([...selections, newSelection])
+    // Switch to selected tab on mobile after adding
+    if (window.innerWidth < 768) {
+      setActiveTab('selected')
+    }
   }
 
   const removeSelection = (selectionId: string) => {
@@ -115,6 +122,10 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     // Also update the preview to show what was just added
     setPreviewOpening(opening)
     setPreviewVariation(variation)
+    // Switch to selected tab on mobile after adding
+    if (window.innerWidth < 768) {
+      setActiveTab('selected')
+    }
   }
 
   // Helper function to generate drill sequence
@@ -156,13 +167,464 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     }
   }
 
+  // Mobile Tab Navigation Component
+  const TabNavigation = () => (
+    <div className="flex w-full border-b border-white/10 md:hidden">
+      <button
+        onClick={() => setActiveTab('browse')}
+        className={`flex-1 py-3 text-sm font-medium transition-colors ${
+          activeTab === 'browse'
+            ? 'border-b-2 border-human-4 text-primary'
+            : 'text-secondary hover:text-primary'
+        }`}
+      >
+        Browse
+      </button>
+      <button
+        onClick={() => setActiveTab('preview')}
+        className={`flex-1 py-3 text-sm font-medium transition-colors ${
+          activeTab === 'preview'
+            ? 'border-b-2 border-human-4 text-primary'
+            : 'text-secondary hover:text-primary'
+        }`}
+      >
+        Preview
+      </button>
+      <button
+        onClick={() => setActiveTab('selected')}
+        className={`flex-1 py-3 text-sm font-medium transition-colors ${
+          activeTab === 'selected'
+            ? 'border-b-2 border-human-4 text-primary'
+            : 'text-secondary hover:text-primary'
+        }`}
+      >
+        Selected ({selections.length})
+      </button>
+    </div>
+  )
+
+  // Left Panel - Opening Selection
+  const BrowsePanel = () => (
+    <div
+      className={`flex w-full flex-col overflow-y-scroll ${activeTab !== 'browse' ? 'hidden md:flex' : 'flex'} md:border-r md:border-white/10`}
+    >
+      <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
+        <h2 className="text-xl font-bold">Select Openings</h2>
+        <p className="text-xs text-secondary">
+          Click the + button to quickly add an opening with current settings
+        </p>
+      </div>
+
+      {/* Mobile header */}
+      <div className="flex h-16 flex-col justify-center gap-1 border-b border-white/10 p-4 md:hidden">
+        <h2 className="text-lg font-bold">Select Openings</h2>
+        <p className="text-xs text-secondary">Choose openings to practice</p>
+      </div>
+
+      {/* Search Bar */}
+      <div className="border-b border-white/10 p-4">
+        <div className="relative">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-secondary">
+            search
+          </span>
+          <input
+            type="text"
+            placeholder="Search openings..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded bg-background-2 py-2 pl-10 pr-4 text-sm text-primary placeholder-secondary focus:outline-none focus:ring-1 focus:ring-human-4"
+          />
+        </div>
+      </div>
+
+      <div
+        className="red-scrollbar flex flex-1 flex-col overflow-y-auto"
+        style={{ userSelect: 'none' }}
+      >
+        {filteredOpenings.map((opening) => (
+          <div key={opening.id} className="flex flex-col">
+            <div
+              className={`group mb-1 transition-colors ${
+                previewOpening.id === opening.id && !previewVariation
+                  ? 'bg-human-2/20'
+                  : 'hover:bg-human-2/10'
+              }`}
+            >
+              <div className="flex items-center">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className="flex-1 cursor-pointer p-4"
+                  onClick={() => {
+                    setPreviewOpening(opening)
+                    setPreviewVariation(null)
+                    if (window.innerWidth < 768) {
+                      setActiveTab('preview')
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setPreviewOpening(opening)
+                      setPreviewVariation(null)
+                      if (window.innerWidth < 768) {
+                        setActiveTab('preview')
+                      }
+                    }
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">{opening.name}</h3>
+                      <p className="text-sm text-secondary">
+                        {opening.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    addQuickSelection(opening, null)
+                  }}
+                  disabled={isDuplicateSelection(opening, null)}
+                  className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
+                  title={
+                    isDuplicateSelection(opening, null)
+                      ? 'Already added with current settings'
+                      : 'Add opening with current settings'
+                  }
+                >
+                  <span className="material-symbols-outlined text-base">
+                    add
+                  </span>
+                </button>
+              </div>
+            </div>
+            {opening.variations.map((variation) => (
+              <div
+                key={variation.id}
+                className={`group transition-colors ${
+                  previewOpening.id === opening.id &&
+                  previewVariation?.id === variation.id
+                    ? 'bg-human-2/20'
+                    : 'hover:bg-human-2/10'
+                }`}
+              >
+                <div className="flex items-center">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="flex-1 cursor-pointer px-6 py-1"
+                    onClick={() => {
+                      setPreviewOpening(opening)
+                      setPreviewVariation(variation)
+                      if (window.innerWidth < 768) {
+                        setActiveTab('preview')
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setPreviewOpening(opening)
+                        setPreviewVariation(variation)
+                        if (window.innerWidth < 768) {
+                          setActiveTab('preview')
+                        }
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-secondary">{variation.name}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      addQuickSelection(opening, variation)
+                    }}
+                    disabled={isDuplicateSelection(opening, variation)}
+                    className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
+                    title={
+                      isDuplicateSelection(opening, variation)
+                        ? 'Already added with current settings'
+                        : 'Add variation with current settings'
+                    }
+                  >
+                    <span className="material-symbols-outlined text-base">
+                      add
+                    </span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  // Center Panel - Preview
+  const PreviewPanel = () => (
+    <div
+      className={`flex w-full flex-col ${activeTab !== 'preview' ? 'hidden md:flex' : 'flex'}`}
+    >
+      <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
+        <h2 className="text-xl font-bold">{previewOpening.name}</h2>
+        <p className="text-xs text-secondary">
+          {previewVariation && `${previewVariation.name} →`} Configure your
+          drill settings
+        </p>
+      </div>
+
+      {/* Mobile header */}
+      <div className="flex h-16 flex-col justify-center gap-1 border-b border-white/10 p-4 md:hidden">
+        <h2 className="text-lg font-bold">{previewOpening.name}</h2>
+        <p className="text-xs text-secondary">
+          {previewVariation && `${previewVariation.name} →`} Configure settings
+        </p>
+      </div>
+
+      <div className="flex flex-1 items-center justify-center p-4">
+        <div className="aspect-square w-full max-w-[280px] md:max-w-[300px]">
+          <Chessground
+            contained
+            config={{
+              viewOnly: true,
+              fen: previewFen,
+              coordinates: true,
+              animation: { enabled: true, duration: 200 },
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Selection Controls */}
+      <div className="flex flex-col gap-4 border-t border-white/10 p-4">
+        {/* Color Selection */}
+        <div>
+          <p className="mb-2 text-sm font-medium">Play as:</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSelectedColor('white')}
+              className={`flex items-center gap-2 rounded px-3 py-2 transition-colors ${
+                selectedColor === 'white'
+                  ? 'bg-human-4 text-white'
+                  : 'bg-background-2 hover:bg-background-3'
+              }`}
+            >
+              <div className="relative h-5 w-5">
+                <Image
+                  src="/assets/pieces/white king.svg"
+                  fill={true}
+                  alt="white king"
+                />
+              </div>
+              White
+            </button>
+            <button
+              onClick={() => setSelectedColor('black')}
+              className={`flex items-center gap-2 rounded px-3 py-2 transition-colors ${
+                selectedColor === 'black'
+                  ? 'bg-human-4 text-white'
+                  : 'bg-background-2 hover:bg-background-3'
+              }`}
+            >
+              <div className="relative h-5 w-5">
+                <Image
+                  src="/assets/pieces/black king.svg"
+                  fill={true}
+                  alt="black king"
+                />
+              </div>
+              Black
+            </button>
+          </div>
+        </div>
+
+        {/* Maia Version Selection */}
+        <div>
+          <p className="mb-2 text-sm font-medium">Opponent:</p>
+          <select
+            value={selectedMaiaVersion.id}
+            onChange={(e) => {
+              const version = MAIA_VERSIONS.find((v) => v.id === e.target.value)
+              if (version) {
+                setSelectedMaiaVersion(version)
+              }
+            }}
+            className="w-full rounded bg-background-2 p-2 text-sm focus:outline-none"
+          >
+            {MAIA_VERSIONS.map((version) => (
+              <option key={version.id} value={version.id}>
+                {version.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Move Count Configuration */}
+        <div>
+          <p className="mb-2 text-sm font-medium">
+            Target Move Count: {targetMoveNumber}
+          </p>
+          <input
+            type="range"
+            min="5"
+            max="30"
+            value={targetMoveNumber}
+            onChange={(e) =>
+              setTargetMoveNumber(parseInt(e.target.value) || 10)
+            }
+            className="w-full accent-human-4"
+          />
+          <div className="mt-1 flex justify-between text-xs text-secondary">
+            <span>5</span>
+            <span>30</span>
+          </div>
+          <p className="mt-1 text-xs text-secondary">
+            How many moves you want to play in this opening
+          </p>
+        </div>
+
+        <button
+          onClick={addSelection}
+          disabled={isDuplicateSelection(previewOpening, previewVariation)}
+          className="w-full rounded bg-human-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isDuplicateSelection(previewOpening, previewVariation)
+            ? 'Already Added with Same Settings'
+            : 'Add to Drill'}
+        </button>
+      </div>
+    </div>
+  )
+
+  // Right Panel - Selected Openings
+  const SelectedPanel = () => (
+    <div
+      className={`flex w-full flex-col overflow-y-scroll ${activeTab !== 'selected' ? 'hidden md:flex' : 'flex'} md:border-l md:border-white/10`}
+    >
+      <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
+        <h2 className="text-xl font-bold">
+          Selected Openings ({selections.length})
+        </h2>
+        <p className="text-xs text-secondary">Click to remove an opening</p>
+      </div>
+
+      {/* Mobile header */}
+      <div className="flex h-16 flex-col justify-center gap-1 border-b border-white/10 p-4 md:hidden">
+        <h2 className="text-lg font-bold">Selected ({selections.length})</h2>
+        <p className="text-xs text-secondary">Tap to remove</p>
+      </div>
+
+      <div className="red-scrollbar flex flex-1 flex-col items-center justify-start overflow-y-auto">
+        {selections.length === 0 ? (
+          <p className="my-auto max-w-xs px-4 text-center text-secondary">
+            No openings selected yet. Choose openings from the Browse tab to
+            start drilling.
+          </p>
+        ) : (
+          <div className="flex w-full flex-col">
+            {selections.map((selection) => (
+              <div
+                tabIndex={0}
+                role="button"
+                key={selection.id}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    removeSelection(selection.id)
+                  }
+                }}
+                onClick={() => removeSelection(selection.id)}
+                className="group flex cursor-pointer items-center justify-between border-b border-white/5 p-4 transition-colors hover:bg-human-2/10"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-5 w-5 flex-shrink-0">
+                      <Image
+                        src={
+                          selection.playerColor === 'white'
+                            ? '/assets/pieces/white king.svg'
+                            : '/assets/pieces/black king.svg'
+                        }
+                        fill={true}
+                        alt={`${selection.playerColor} king`}
+                      />
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-sm font-medium text-primary">
+                        {selection.opening.name}
+                      </span>
+                      <div className="flex items-center gap-1 text-xs text-secondary">
+                        {selection.variation && (
+                          <span className="truncate">
+                            {selection.variation.name} •
+                          </span>
+                        )}
+                        <span>
+                          v. Maia{' '}
+                          {selection.maiaVersion.replace('maia_kdd_', '')} •
+                        </span>
+                        <span>{selection.targetMoveNumber} moves</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button className="ml-2 text-secondary transition-colors group-hover:text-human-4">
+                  <span className="material-symbols-outlined text-sm">
+                    close
+                  </span>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-white/10 p-4">
+        {/* Drill Count Configuration */}
+        <div className="mb-4">
+          <p className="mb-2 text-sm font-medium">
+            Number of Drills: {drillCount}
+          </p>
+          <input
+            type="range"
+            min="1"
+            max="50"
+            value={drillCount}
+            onChange={(e) => setDrillCount(parseInt(e.target.value) || 5)}
+            className="w-full accent-human-4"
+          />
+          <div className="mt-1 flex justify-between text-xs text-secondary">
+            <span>1</span>
+            <span>50</span>
+          </div>
+          <p className="mt-1 text-xs text-secondary">
+            {drillCount <= selections.length
+              ? `You'll play ${drillCount} of your selected openings`
+              : selections.length > 0
+                ? `Each opening played at least once, with ${drillCount - selections.length} repeats`
+                : 'Total number of opening drills to complete'}
+          </p>
+        </div>
+
+        <button
+          onClick={handleStartDrilling}
+          disabled={selections.length === 0}
+          className="w-full rounded bg-human-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Start Drilling ({drillCount} drill{drillCount !== 1 ? 's' : ''})
+        </button>
+      </div>
+    </div>
+  )
+
   return (
     <ModalContainer dismiss={onClose}>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="relative flex h-[90vh] max-h-[900px] w-[98vw] max-w-[1400px] flex-col items-start justify-start overflow-hidden rounded-lg bg-background-1 shadow-2xl"
+        className="relative flex h-[90vh] max-h-[900px] w-[98vw] max-w-[1400px] flex-col items-start justify-start overflow-hidden rounded-lg bg-background-1 shadow-2xl md:h-[90vh]"
       >
         {/* Close Button - Top Right of Modal */}
         <button
@@ -174,395 +636,23 @@ export const OpeningSelectionModal: React.FC<Props> = ({
 
         {/* Header Section */}
         <div className="flex w-full flex-col gap-1 border-b border-white/10 p-4">
-          <h1 className="text-2xl font-bold text-primary">Opening Drills</h1>
-          <p className="text-sm text-secondary">
+          <h1 className="text-xl font-bold text-primary md:text-2xl">
+            Opening Drills
+          </h1>
+          <p className="text-xs text-secondary md:text-sm">
             Practice openings against Maia. Select openings to drill, choose
             your color and opponent strength.
           </p>
         </div>
 
-        {/* Main Content - Three Panel Layout */}
-        <div className="grid grid-cols-3 overflow-y-auto">
-          {/* Left Panel - Opening Selection */}
-          <div className="flex w-full flex-col overflow-y-scroll border-r border-white/10">
-            <div className="flex h-20 flex-col justify-center gap-1 border-b border-white/10 p-4">
-              <h2 className="text-xl font-bold">Select Openings</h2>
-              <p className="text-xs text-secondary">
-                Click the + button to quickly add an opening with current
-                settings
-              </p>
-            </div>
+        {/* Mobile Tab Navigation */}
+        <TabNavigation />
 
-            {/* Search Bar */}
-            <div className="border-b border-white/10 p-4">
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-secondary">
-                  search
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search openings..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded bg-background-2 py-2 pl-10 pr-4 text-sm text-primary placeholder-secondary focus:outline-none focus:ring-1 focus:ring-human-4"
-                />
-              </div>
-            </div>
-
-            <div
-              className="red-scrollbar flex flex-1 flex-col overflow-y-auto"
-              style={{ userSelect: 'none' }}
-            >
-              {filteredOpenings.map((opening) => (
-                <div key={opening.id} className="flex flex-col">
-                  <div
-                    className={`group mb-1 transition-colors ${
-                      previewOpening.id === opening.id && !previewVariation
-                        ? 'bg-human-2/20'
-                        : 'hover:bg-human-2/10'
-                    }`}
-                  >
-                    <div className="flex items-center">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        className="flex-1 cursor-pointer p-4"
-                        onClick={() => {
-                          setPreviewOpening(opening)
-                          setPreviewVariation(null)
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            setPreviewOpening(opening)
-                            setPreviewVariation(null)
-                          }
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-medium">{opening.name}</h3>
-                            <p className="text-sm text-secondary">
-                              {opening.description}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          addQuickSelection(opening, null)
-                        }}
-                        disabled={isDuplicateSelection(opening, null)}
-                        className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
-                        title={
-                          isDuplicateSelection(opening, null)
-                            ? 'Already added with current settings'
-                            : 'Add opening with current settings'
-                        }
-                      >
-                        <span className="material-symbols-outlined text-base">
-                          add
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                  {opening.variations.map((variation) => (
-                    <div
-                      key={variation.id}
-                      className={`group transition-colors ${
-                        previewOpening.id === opening.id &&
-                        previewVariation?.id === variation.id
-                          ? 'bg-human-2/20'
-                          : 'hover:bg-human-2/10'
-                      }`}
-                    >
-                      <div className="flex items-center">
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          className="flex-1 cursor-pointer px-6 py-1"
-                          onClick={() => {
-                            setPreviewOpening(opening)
-                            setPreviewVariation(variation)
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              setPreviewOpening(opening)
-                              setPreviewVariation(variation)
-                            }
-                          }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm text-secondary">
-                              {variation.name}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            addQuickSelection(opening, variation)
-                          }}
-                          disabled={isDuplicateSelection(opening, variation)}
-                          className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
-                          title={
-                            isDuplicateSelection(opening, variation)
-                              ? 'Already added with current settings'
-                              : 'Add variation with current settings'
-                          }
-                        >
-                          <span className="material-symbols-outlined text-base">
-                            add
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Center Panel - Preview */}
-          <div className="flex w-full flex-col">
-            <div className="flex h-20 flex-col justify-center gap-1 border-b border-white/10 p-4">
-              <h2 className="text-xl font-bold">{previewOpening.name}</h2>
-              <p className="text-xs text-secondary">
-                {previewVariation && `${previewVariation.name} →`} Configure
-                your drill settings
-              </p>
-            </div>
-
-            <div className="flex flex-1 items-center justify-center p-4">
-              <div className="aspect-square w-full max-w-[300px]">
-                <Chessground
-                  contained
-                  config={{
-                    viewOnly: true,
-                    fen: previewFen,
-                    coordinates: true,
-                    animation: { enabled: true, duration: 200 },
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Selection Controls */}
-            <div className="flex flex-col gap-4 border-t border-white/10 p-4">
-              {/* Color Selection */}
-              <div>
-                <p className="mb-2 text-sm font-medium">Play as:</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setSelectedColor('white')}
-                    className={`flex items-center gap-2 rounded px-3 py-2 transition-colors ${
-                      selectedColor === 'white'
-                        ? 'bg-human-4 text-white'
-                        : 'bg-background-2 hover:bg-background-3'
-                    }`}
-                  >
-                    <div className="relative h-5 w-5">
-                      <Image
-                        src="/assets/pieces/white king.svg"
-                        fill={true}
-                        alt="white king"
-                      />
-                    </div>
-                    White
-                  </button>
-                  <button
-                    onClick={() => setSelectedColor('black')}
-                    className={`flex items-center gap-2 rounded px-3 py-2 transition-colors ${
-                      selectedColor === 'black'
-                        ? 'bg-human-4 text-white'
-                        : 'bg-background-2 hover:bg-background-3'
-                    }`}
-                  >
-                    <div className="relative h-5 w-5">
-                      <Image
-                        src="/assets/pieces/black king.svg"
-                        fill={true}
-                        alt="black king"
-                      />
-                    </div>
-                    Black
-                  </button>
-                </div>
-              </div>
-
-              {/* Maia Version Selection */}
-              <div>
-                <p className="mb-2 text-sm font-medium">Opponent:</p>
-                <select
-                  value={selectedMaiaVersion.id}
-                  onChange={(e) => {
-                    const version = MAIA_VERSIONS.find(
-                      (v) => v.id === e.target.value,
-                    )
-                    if (version) {
-                      setSelectedMaiaVersion(version)
-                    }
-                  }}
-                  className="w-full rounded bg-background-2 p-2 text-sm focus:outline-none"
-                >
-                  {MAIA_VERSIONS.map((version) => (
-                    <option key={version.id} value={version.id}>
-                      {version.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Move Count Configuration */}
-              <div>
-                <p className="mb-2 text-sm font-medium">
-                  Target Move Count: {targetMoveNumber}
-                </p>
-                <input
-                  type="range"
-                  min="5"
-                  max="30"
-                  value={targetMoveNumber}
-                  onChange={(e) =>
-                    setTargetMoveNumber(parseInt(e.target.value) || 10)
-                  }
-                  className="w-full accent-human-4"
-                />
-                <div className="mt-1 flex justify-between text-xs text-secondary">
-                  <span>5</span>
-                  <span>30</span>
-                </div>
-                <p className="mt-1 text-xs text-secondary">
-                  How many moves you want to play in this opening
-                </p>
-              </div>
-
-              <button
-                onClick={addSelection}
-                disabled={isDuplicateSelection(
-                  previewOpening,
-                  previewVariation,
-                )}
-                className="w-full rounded bg-human-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isDuplicateSelection(previewOpening, previewVariation)
-                  ? 'Already Added with Same Settings'
-                  : 'Add to Drill'}
-              </button>
-            </div>
-          </div>
-
-          {/* Right Panel - Selected Openings */}
-          <div className="flex w-full flex-col overflow-y-scroll border-l border-white/10">
-            <div className="flex h-20 flex-col justify-center gap-1 border-b border-white/10 p-4">
-              <h2 className="text-xl font-bold">
-                Selected Openings ({selections.length})
-              </h2>
-              <p className="text-xs text-secondary">
-                Click to remove an opening
-              </p>
-            </div>
-            <div className="red-scrollbar flex flex-1 flex-col items-center justify-start overflow-y-auto">
-              {selections.length === 0 ? (
-                <p className="my-auto max-w-xs text-center text-secondary">
-                  No openings selected yet. Choose openings from the left to
-                  start drilling.
-                </p>
-              ) : (
-                <div className="flex w-full flex-col">
-                  {selections.map((selection) => (
-                    <div
-                      tabIndex={0}
-                      role="button"
-                      key={selection.id}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          removeSelection(selection.id)
-                        }
-                      }}
-                      onClick={() => removeSelection(selection.id)}
-                      className="group flex cursor-pointer items-center justify-between border-b border-white/5 p-4 transition-colors hover:bg-human-2/10"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-3">
-                          <div className="relative h-5 w-5 flex-shrink-0">
-                            <Image
-                              src={
-                                selection.playerColor === 'white'
-                                  ? '/assets/pieces/white king.svg'
-                                  : '/assets/pieces/black king.svg'
-                              }
-                              fill={true}
-                              alt={`${selection.playerColor} king`}
-                            />
-                          </div>
-                          <div className="flex min-w-0 flex-1 flex-col">
-                            <span className="truncate text-sm font-medium text-primary">
-                              {selection.opening.name}
-                            </span>
-                            <div className="flex items-center gap-1 text-xs text-secondary">
-                              {selection.variation && (
-                                <span className="truncate">
-                                  {selection.variation.name} •
-                                </span>
-                              )}
-                              <span>
-                                v. Maia{' '}
-                                {selection.maiaVersion.replace('maia_kdd_', '')}{' '}
-                                •
-                              </span>
-                              <span>{selection.targetMoveNumber} moves</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <button className="ml-2 text-secondary transition-colors group-hover:text-human-4">
-                        <span className="material-symbols-outlined text-sm">
-                          close
-                        </span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="border-t border-white/10 p-4">
-              {/* Drill Count Configuration */}
-              <div className="mb-4">
-                <p className="mb-2 text-sm font-medium">
-                  Number of Drills: {drillCount}
-                </p>
-                <input
-                  type="range"
-                  min="1"
-                  max="50"
-                  value={drillCount}
-                  onChange={(e) => setDrillCount(parseInt(e.target.value) || 5)}
-                  className="w-full accent-human-4"
-                />
-                <div className="mt-1 flex justify-between text-xs text-secondary">
-                  <span>1</span>
-                  <span>50</span>
-                </div>
-                <p className="mt-1 text-xs text-secondary">
-                  {drillCount <= selections.length
-                    ? `You'll play ${drillCount} of your selected openings`
-                    : selections.length > 0
-                      ? `Each opening played at least once, with ${drillCount - selections.length} repeats`
-                      : 'Total number of opening drills to complete'}
-                </p>
-              </div>
-
-              <button
-                onClick={handleStartDrilling}
-                disabled={selections.length === 0}
-                className="w-full rounded bg-human-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Start Drilling ({drillCount} drill{drillCount !== 1 ? 's' : ''})
-              </button>
-            </div>
-          </div>
+        {/* Main Content - Responsive Layout */}
+        <div className="grid w-full flex-1 grid-cols-1 overflow-y-auto md:grid-cols-3">
+          <BrowsePanel />
+          <PreviewPanel />
+          <SelectedPanel />
         </div>
       </motion.div>
     </ModalContainer>
