@@ -200,7 +200,7 @@ function MovesList({
       winrate_vec?: { [key: string]: number }
       winrate_loss_vec?: { [key: string]: number }
     }
-  }
+  } | null
 }) {
   const [tooltipData, setTooltipData] = useState<{
     move: string
@@ -326,7 +326,7 @@ function Meter({
       winrate_vec?: { [key: string]: number }
       winrate_loss_vec?: { [key: string]: number }
     }
-  }
+  } | null
 }) {
   const [tooltipData, setTooltipData] = useState<{
     move: string
