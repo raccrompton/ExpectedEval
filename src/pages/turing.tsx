@@ -3,7 +3,6 @@ import { NextPage } from 'next/types'
 import { useCallback, useContext, useEffect } from 'react'
 
 import {
-  ThemeContext,
   ModalContext,
   WindowSizeContext,
   TuringControllerContext,
@@ -54,7 +53,7 @@ interface Props {
 
 const Turing: React.FC<Props> = (props: Props) => {
   const { game, stats } = props
-  const { theme } = useContext(ThemeContext)
+
   const { isMobile } = useContext(WindowSizeContext)
 
   const controller = useContext(TuringControllerContext)
@@ -71,7 +70,7 @@ const Turing: React.FC<Props> = (props: Props) => {
   const Info = (
     <>
       <div className="flex w-full items-center justify-between text-secondary">
-        <p>{theme == 'dark' ? '●' : '○'} Unknown</p>
+        <p>● Unknown</p>
         <p>
           {game.termination.winner === 'white' ? (
             <span className="text-engine-3">1</span>
@@ -83,7 +82,7 @@ const Turing: React.FC<Props> = (props: Props) => {
         </p>
       </div>
       <div className="flex w-full items-center justify-between text-secondary">
-        <p>{theme == 'light' ? '●' : '○'} Unknown</p>
+        <p>○ Unknown</p>
         <p>
           {game.termination.winner === 'black' ? (
             <span className="text-engine-3">1</span>
