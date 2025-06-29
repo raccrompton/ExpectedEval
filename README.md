@@ -1,13 +1,17 @@
-<div align="center" style="margin-bottom: 3rem;">
-  <img src="public/maia-no-bg.png" width="64" alt="Maia Chess Logo">
-  <h1><a href="https://www.maiachess.com">Maia Chess</a></h1>
-  <i>A human-like chess engine</i>
-</div>
-
-This repository contains the source code for the [Maia Chess Platform](https://www.maiachess.com), a modern web application designed for chess training and analysis. It leverages the Maia chess engine, developed by the University of Toronto's Computational Social Science Lab, to provide human-like move predictions and insights. The platform is built with Next.js, TypeScript, and Tailwind CSS.
-
-Join our Discord server for discussions, questions, and to connect with the community:
-[Maia Chess Community on Discord](https://discord.gg/hHb6gqFpxZ)
+<p align="center">
+  <p align="center">
+   <img width="150" src="public/maia-no-bg.png" alt="Logo">
+  </p>
+	<h1 align="center"><b>Maia Chess</b></h1>
+	<p align="center">
+		A human-like chess engine.
+    <br />
+    <a href="https://www.maiachess.com"><strong>maiachess.com »</strong></a>
+    <br />
+    <br />
+  </p>
+</p>
+This repository contains the source code for the [Maia Chess Platform](https://www.maiachess.com), a modern web application designed for chess training and analysis. It leverages the Maia chess engine, developed by the University of Toronto's Computational Social Science Lab, to provide human-like move predictions and insights. The platform is built with Next.js, TypeScript, and Tailwind CSS. Join our [Discord server](https://discord.gg/hHb6gqFpxZ) for discussions, questions, and to connect with the community.
 
 ## Getting Started
 
