@@ -100,21 +100,21 @@ const TrainPage: NextPage = () => {
     setPreviousGameResults(previousGameResults.concat([{ ...game }]))
   }, [trainingGames, previousGameResults, router])
 
-  useEffect(() => {
-    if (currentIndex == trainingGames.length - 1) {
-      // For the current puzzle, only set to 'default' if it hasn't been completed yet
-      const currentPuzzleResult = previousGameResults[currentIndex]
-      if (currentPuzzleResult?.result !== undefined) {
-        // Puzzle was completed - preserve the correct status
-        setStatus(currentPuzzleResult.result ? 'correct' : 'forfeit')
-      } else {
-        // Puzzle not completed yet - set to default
-        setStatus('default')
-      }
-    } else {
-      setStatus('archived')
-    }
-  }, [currentIndex, previousGameResults])
+  // useEffect(() => {
+  //   if (currentIndex == trainingGames.length - 1) {
+  //     // For the current puzzle, only set to 'default' if it hasn't been completed yet
+  //     const currentPuzzleResult = previousGameResults[currentIndex]
+  //     if (currentPuzzleResult?.result !== undefined) {
+  //       // Puzzle was completed - preserve the correct status
+  //       setStatus(currentPuzzleResult.result ? 'correct' : 'forfeit')
+  //     } else {
+  //       // Puzzle not completed yet - set to default
+  //       setStatus('default')
+  //     }
+  //   } else {
+  //     setStatus('archived')
+  //   }
+  // }, [currentIndex, previousGameResults])
 
   const logGuess = useCallback(
     async (
