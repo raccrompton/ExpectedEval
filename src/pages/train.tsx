@@ -262,7 +262,8 @@ const Train: React.FC<Props> = ({
     [string, string] | null
   >(null)
 
-  const showAnalysis = status === 'correct' || status === 'forfeit'
+  const showAnalysis =
+    status === 'correct' || status === 'forfeit' || status === 'archived'
 
   const currentPlayer = useMemo(() => {
     const currentNode = showAnalysis
@@ -270,12 +271,6 @@ const Train: React.FC<Props> = ({
       : controller.currentNode
     return getCurrentPlayer(currentNode)
   }, [showAnalysis, analysisController.currentNode, controller.currentNode])
-
-  useEffect(() => {
-    if (controller.currentNode.fen === controller.puzzleStartingNode.fen) {
-      setStatus('default')
-    }
-  }, [controller.currentNode])
 
   useEffect(() => {
     if (showAnalysis && !analysisSyncedRef.current) {
