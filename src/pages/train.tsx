@@ -116,7 +116,9 @@ const TrainPage: NextPage = () => {
       setStatus: Dispatch<SetStateAction<Status>>,
       rating: number,
     ) => {
-      if (currentIndex != trainingGames.length - 1) {
+      const puzzleIdx = currentIndex
+
+      if (puzzleIdx != trainingGames.length - 1) {
         return // No logging for past puzzles
       }
 
@@ -135,18 +137,18 @@ const TrainPage: NextPage = () => {
       if (status === 'forfeit') {
         setPreviousGameResults((prev) => {
           return prev.map((game, index) => {
-            return index == currentIndex
+            return index === puzzleIdx
               ? {
                   ...game,
                   result: false,
-                  ratingDiff: response.puzzle_elo - rating,
+                  ratingDiff: game.ratingDiff ?? response.puzzle_elo - rating,
                 }
               : game
           })
         })
 
         // If the user forfeits, update their stats
-        if (userGuesses.length == 0) {
+        if (userGuesses.length === 0) {
           updateRating(response.puzzle_elo)
           incrementStats(1, 0)
         }
@@ -167,7 +169,7 @@ const TrainPage: NextPage = () => {
         if (newGuesses.length && response.correct_moves) {
           setPreviousGameResults((prev) => {
             return prev.map((game, index) => {
-              return index == currentIndex
+              return index === puzzleIdx
                 ? {
                     ...game,
                     result,
