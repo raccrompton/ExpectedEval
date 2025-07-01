@@ -102,11 +102,19 @@ const TrainPage: NextPage = () => {
 
   useEffect(() => {
     if (currentIndex == trainingGames.length - 1) {
-      setStatus('default')
+      // For the current puzzle, only set to 'default' if it hasn't been completed yet
+      const currentPuzzleResult = previousGameResults[currentIndex]
+      if (currentPuzzleResult?.result !== undefined) {
+        // Puzzle was completed - preserve the correct status
+        setStatus(currentPuzzleResult.result ? 'correct' : 'forfeit')
+      } else {
+        // Puzzle not completed yet - set to default
+        setStatus('default')
+      }
     } else {
       setStatus('archived')
     }
-  }, [currentIndex])
+  }, [currentIndex, previousGameResults])
 
   const logGuess = useCallback(
     async (
