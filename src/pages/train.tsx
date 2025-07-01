@@ -192,6 +192,7 @@ const TrainPage: NextPage = () => {
   if (trainingGames.length && trainingGames[currentIndex])
     return (
       <Train
+        key={trainingGames[currentIndex].id}
         status={status}
         setStatus={setStatus}
         trainingGame={trainingGames[currentIndex]}
