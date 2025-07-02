@@ -288,7 +288,7 @@ const PreviewPanel: React.FC<{
   isDuplicateSelection,
 }) => (
   <div
-    className={`flex w-full flex-col ${activeTab !== 'preview' ? 'hidden md:flex' : 'flex'}`}
+    className={`flex w-full flex-col overflow-hidden ${activeTab !== 'preview' ? 'hidden md:flex' : 'flex'}`}
   >
     <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
       <h2 className="text-xl font-bold">{previewOpening.name}</h2>
@@ -306,106 +306,112 @@ const PreviewPanel: React.FC<{
       </p>
     </div>
 
-    <div className="flex flex-1 items-center justify-center p-4">
-      <div className="aspect-square w-full max-w-[280px] md:max-w-[300px]">
-        <Chessground
-          contained
-          config={{
-            viewOnly: true,
-            fen: previewFen,
-            coordinates: true,
-            animation: { enabled: true, duration: 200 },
-          }}
-        />
+    {/* Compact content area - no scrolling */}
+    <div className="flex flex-1 flex-col overflow-hidden">
+      {/* Compact chessboard section */}
+      <div className="flex items-center justify-center p-2 md:p-3">
+        <div className="aspect-square w-full max-w-[180px] md:max-w-[200px]">
+          <Chessground
+            contained
+            config={{
+              viewOnly: true,
+              fen: previewFen,
+              coordinates: true,
+              animation: { enabled: true, duration: 200 },
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Compact configuration options */}
+      <div className="flex flex-col gap-2 p-2 md:gap-3 md:p-3">
+        {/* Color Selection */}
+        <div>
+          <p className="mb-1 text-xs font-medium md:text-sm">Play as:</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSelectedColor('white')}
+              className={`flex items-center gap-2 rounded px-2 py-1 text-xs transition-colors md:px-3 md:py-2 md:text-sm ${
+                selectedColor === 'white'
+                  ? 'bg-human-4 text-white'
+                  : 'bg-background-2 hover:bg-background-3'
+              }`}
+            >
+              <div className="relative h-4 w-4 md:h-5 md:w-5">
+                <Image
+                  src="/assets/pieces/white king.svg"
+                  fill={true}
+                  alt="white king"
+                />
+              </div>
+              White
+            </button>
+            <button
+              onClick={() => setSelectedColor('black')}
+              className={`flex items-center gap-2 rounded px-2 py-1 text-xs transition-colors md:px-3 md:py-2 md:text-sm ${
+                selectedColor === 'black'
+                  ? 'bg-human-4 text-white'
+                  : 'bg-background-2 hover:bg-background-3'
+              }`}
+            >
+              <div className="relative h-4 w-4 md:h-5 md:w-5">
+                <Image
+                  src="/assets/pieces/black king.svg"
+                  fill={true}
+                  alt="black king"
+                />
+              </div>
+              Black
+            </button>
+          </div>
+        </div>
+
+        {/* Maia Version Selection */}
+        <div>
+          <p className="mb-1 text-xs font-medium md:text-sm">Opponent:</p>
+          <select
+            value={selectedMaiaVersion.id}
+            onChange={(e) => {
+              const version = MAIA_VERSIONS.find((v) => v.id === e.target.value)
+              if (version) {
+                setSelectedMaiaVersion(version)
+              }
+            }}
+            className="w-full rounded bg-background-2 p-2 text-xs focus:outline-none md:text-sm"
+          >
+            {MAIA_VERSIONS.map((version) => (
+              <option key={version.id} value={version.id}>
+                {version.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Move Count Configuration */}
+        <div>
+          <p className="mb-1 text-xs font-medium md:text-sm">
+            Target Move Count: {targetMoveNumber}
+          </p>
+          <input
+            type="range"
+            min="5"
+            max="30"
+            value={targetMoveNumber}
+            onChange={(e) =>
+              setTargetMoveNumber(parseInt(e.target.value) || 10)
+            }
+            className="w-full accent-human-4"
+          />
+          <div className="mt-1 flex justify-between text-xs text-secondary">
+            <span>5</span>
+            <span>30</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    {/* Selection Controls */}
-    <div className="flex flex-col gap-4 border-t border-white/10 p-4">
-      {/* Color Selection */}
-      <div>
-        <p className="mb-2 text-sm font-medium">Play as:</p>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setSelectedColor('white')}
-            className={`flex items-center gap-2 rounded px-3 py-2 transition-colors ${
-              selectedColor === 'white'
-                ? 'bg-human-4 text-white'
-                : 'bg-background-2 hover:bg-background-3'
-            }`}
-          >
-            <div className="relative h-5 w-5">
-              <Image
-                src="/assets/pieces/white king.svg"
-                fill={true}
-                alt="white king"
-              />
-            </div>
-            White
-          </button>
-          <button
-            onClick={() => setSelectedColor('black')}
-            className={`flex items-center gap-2 rounded px-3 py-2 transition-colors ${
-              selectedColor === 'black'
-                ? 'bg-human-4 text-white'
-                : 'bg-background-2 hover:bg-background-3'
-            }`}
-          >
-            <div className="relative h-5 w-5">
-              <Image
-                src="/assets/pieces/black king.svg"
-                fill={true}
-                alt="black king"
-              />
-            </div>
-            Black
-          </button>
-        </div>
-      </div>
-
-      {/* Maia Version Selection */}
-      <div>
-        <p className="mb-2 text-sm font-medium">Opponent:</p>
-        <select
-          value={selectedMaiaVersion.id}
-          onChange={(e) => {
-            const version = MAIA_VERSIONS.find((v) => v.id === e.target.value)
-            if (version) {
-              setSelectedMaiaVersion(version)
-            }
-          }}
-          className="w-full rounded bg-background-2 p-2 text-sm focus:outline-none"
-        >
-          {MAIA_VERSIONS.map((version) => (
-            <option key={version.id} value={version.id}>
-              {version.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Move Count Configuration */}
-      <div>
-        <p className="mb-2 text-sm font-medium">
-          Target Move Count: {targetMoveNumber}
-        </p>
-        <input
-          type="range"
-          min="5"
-          max="30"
-          value={targetMoveNumber}
-          onChange={(e) => setTargetMoveNumber(parseInt(e.target.value) || 10)}
-          className="w-full accent-human-4"
-        />
-        <div className="mt-1 flex justify-between text-xs text-secondary">
-          <span>5</span>
-          <span>30</span>
-        </div>
-        <p className="mt-1 text-xs text-secondary">
-          How many moves you want to play in this opening
-        </p>
-      </div>
-
+    {/* Fixed button section - always visible */}
+    <div className="flex-shrink-0 border-t border-white/10 bg-background-1 p-3 md:p-4">
       <button
         onClick={addSelection}
         disabled={isDuplicateSelection(previewOpening, previewVariation)}
@@ -435,7 +441,7 @@ const SelectedPanel: React.FC<{
   handleStartDrilling,
 }) => (
   <div
-    className={`flex w-full flex-col overflow-y-scroll ${activeTab !== 'selected' ? 'hidden md:flex' : 'flex'} md:border-l md:border-white/10`}
+    className={`flex w-full flex-col overflow-hidden ${activeTab !== 'selected' ? 'hidden md:flex' : 'flex'} md:border-l md:border-white/10`}
   >
     <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
       <h2 className="text-xl font-bold">
@@ -450,72 +456,80 @@ const SelectedPanel: React.FC<{
       <p className="text-xs text-secondary">Tap to remove</p>
     </div>
 
-    <div className="red-scrollbar flex flex-1 flex-col items-center justify-start overflow-y-auto">
+    {/* Compact selections list - with constrained scrolling */}
+    <div className="flex flex-1 flex-col overflow-hidden">
       {selections.length === 0 ? (
-        <p className="my-auto max-w-xs px-4 text-center text-secondary">
-          No openings selected yet. Choose openings from the Browse tab to start
-          drilling.
-        </p>
+        <div className="flex flex-1 items-center justify-center">
+          <p className="max-w-xs px-4 text-center text-xs text-secondary md:text-sm">
+            No openings selected yet. Choose openings from the Browse tab to
+            start drilling.
+          </p>
+        </div>
       ) : (
-        <div className="flex w-full flex-col">
-          {selections.map((selection) => (
-            <div
-              tabIndex={0}
-              role="button"
-              key={selection.id}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  removeSelection(selection.id)
-                }
-              }}
-              onClick={() => removeSelection(selection.id)}
-              className="group flex cursor-pointer items-center justify-between border-b border-white/5 p-4 transition-colors hover:bg-human-2/10"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-3">
-                  <div className="relative h-5 w-5 flex-shrink-0">
-                    <Image
-                      src={
-                        selection.playerColor === 'white'
-                          ? '/assets/pieces/white king.svg'
-                          : '/assets/pieces/black king.svg'
-                      }
-                      fill={true}
-                      alt={`${selection.playerColor} king`}
-                    />
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-sm font-medium text-primary">
-                      {selection.opening.name}
-                    </span>
-                    <div className="flex items-center gap-1 text-xs text-secondary">
-                      {selection.variation && (
-                        <span className="truncate">
-                          {selection.variation.name} •
-                        </span>
-                      )}
-                      <span>
-                        v. Maia {selection.maiaVersion.replace('maia_kdd_', '')}{' '}
-                        •
+        <div className="red-scrollbar flex-1 overflow-y-auto">
+          <div className="flex w-full flex-col">
+            {selections.map((selection) => (
+              <div
+                tabIndex={0}
+                role="button"
+                key={selection.id}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    removeSelection(selection.id)
+                  }
+                }}
+                onClick={() => removeSelection(selection.id)}
+                className="group flex cursor-pointer items-center justify-between border-b border-white/5 p-3 transition-colors hover:bg-human-2/10 md:p-4"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-4 w-4 flex-shrink-0 md:h-5 md:w-5">
+                      <Image
+                        src={
+                          selection.playerColor === 'white'
+                            ? '/assets/pieces/white king.svg'
+                            : '/assets/pieces/black king.svg'
+                        }
+                        fill={true}
+                        alt={`${selection.playerColor} king`}
+                      />
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-xs font-medium text-primary md:text-sm">
+                        {selection.opening.name}
                       </span>
-                      <span>{selection.targetMoveNumber} moves</span>
+                      <div className="flex items-center gap-1 text-xs text-secondary">
+                        {selection.variation && (
+                          <span className="truncate">
+                            {selection.variation.name} •
+                          </span>
+                        )}
+                        <span>
+                          v. Maia{' '}
+                          {selection.maiaVersion.replace('maia_kdd_', '')} •
+                        </span>
+                        <span>{selection.targetMoveNumber} moves</span>
+                      </div>
                     </div>
                   </div>
                 </div>
+                <button className="ml-2 text-secondary transition-colors group-hover:text-human-4">
+                  <span className="material-symbols-outlined text-sm">
+                    close
+                  </span>
+                </button>
               </div>
-              <button className="ml-2 text-secondary transition-colors group-hover:text-human-4">
-                <span className="material-symbols-outlined text-sm">close</span>
-              </button>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
 
-    <div className="border-t border-white/10 p-4">
+    {/* Fixed button section - always visible */}
+    <div className="flex-shrink-0 border-t border-white/10 bg-background-1 p-3 md:p-4">
       {/* Drill Count Configuration */}
-      <div className="mb-4">
-        <p className="mb-2 text-sm font-medium">
+      <div className="mb-3 md:mb-4">
+        <p className="mb-1 text-xs font-medium md:mb-2 md:text-sm">
           Number of Drills: {drillCount}
         </p>
         <input
@@ -721,7 +735,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
         />
 
         {/* Main Content - Responsive Layout */}
-        <div className="grid w-full flex-1 grid-cols-1 overflow-y-auto md:grid-cols-3">
+        <div className="grid w-full flex-1 grid-cols-1 overflow-hidden md:grid-cols-3">
           <BrowsePanel
             activeTab={activeTab}
             filteredOpenings={filteredOpenings}
