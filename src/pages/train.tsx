@@ -907,7 +907,7 @@ const Train: React.FC<Props> = ({
 
               {/* Smaller screens (below xl): MoveMap full width */}
               <div className="flex h-[calc((85vh)*0.35)] w-full xl:hidden">
-                <div className="h-full w-full">
+                <div className="relative h-full w-full">
                   <MoveMap
                     moveMap={
                       showAnalysis
@@ -923,27 +923,28 @@ const Train: React.FC<Props> = ({
                       showAnalysis ? setHoverArrow : mockSetHoverArrow
                     }
                   />
+                  {!showAnalysis && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                      <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                        <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                          lock
+                        </span>
+                        <p className="font-medium text-primary">
+                          Analysis Locked
+                        </p>
+                        <p className="text-sm text-secondary">
+                          Complete the puzzle to unlock analysis
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {!showAnalysis && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
-                  <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
-                    <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
-                      lock
-                    </span>
-                    <p className="font-medium text-primary">Analysis Locked</p>
-                    <p className="text-sm text-secondary">
-                      Complete the puzzle to unlock analysis
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Smaller screens (below xl): MovesByRating full width */}
             <div className="flex h-[calc((85vh)*0.35)] w-full rounded bg-background-1/60 xl:hidden">
-              <div className="h-full w-full">
+              <div className="relative h-full w-full">
                 <MovesByRating
                   moves={
                     showAnalysis
@@ -956,6 +957,21 @@ const Train: React.FC<Props> = ({
                       : mockAnalysisData.colorSanMapping
                   }
                 />
+                {!showAnalysis && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                    <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                      <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                        lock
+                      </span>
+                      <p className="font-medium text-primary">
+                        Analysis Locked
+                      </p>
+                      <p className="text-sm text-secondary">
+                        Complete the puzzle to unlock analysis
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

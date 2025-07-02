@@ -165,7 +165,7 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
       <div className="hidden xl:flex xl:h-full xl:flex-col xl:gap-2">
         <div className="flex h-[calc((55vh+4.5rem)/2)] gap-2">
           {/* Combined Highlight + MovesByRating container */}
-          <div className="flex h-full w-full overflow-hidden rounded border-[0.5px] border-white/40">
+          <div className="relative flex h-full w-full overflow-hidden rounded border-[0.5px] border-white/40">
             <div className="flex h-full w-auto min-w-[40%] max-w-[40%] border-r-[0.5px] border-white/40">
               <div className="relative w-full">
                 <Highlight
@@ -195,21 +195,6 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
                       : 'Analysis is disabled. Enable analysis to see detailed move evaluations and recommendations.'
                   }
                 />
-                {!analysisEnabled && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
-                    <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
-                      <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
-                        lock
-                      </span>
-                      <p className="font-medium text-primary">
-                        Analysis Disabled
-                      </p>
-                      <p className="text-sm text-secondary">
-                        Enable analysis to see move evaluations
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
             <div className="flex h-full w-full bg-background-1">
@@ -222,9 +207,22 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
                 }
               />
             </div>
+            {!analysisEnabled && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                  <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                    lock
+                  </span>
+                  <p className="font-medium text-primary">Analysis Disabled</p>
+                  <p className="text-sm text-secondary">
+                    Enable analysis to see move evaluations
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-        <div className="flex h-[calc((55vh+4.5rem)/2)] flex-row gap-2">
+        <div className="relative flex h-[calc((55vh+4.5rem)/2)] flex-row gap-2">
           <div className="flex h-full w-full flex-col">
             <MoveMap
               moveMap={analysisEnabled ? analysisController.moveMap : undefined}
@@ -248,13 +246,26 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
               analysisEnabled ? analysisController.colorSanMapping : {}
             }
           />
+          {!analysisEnabled && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+              <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                  lock
+                </span>
+                <p className="font-medium text-primary">Analysis Disabled</p>
+                <p className="text-sm text-secondary">
+                  Enable analysis to see position evaluation
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Smaller screens (below xl): 3-row stacked layout */}
-      <div className="flex h-[calc(85vh-3.25rem)] flex-col gap-2 xl:hidden">
+      <div className="flex h-full flex-col gap-2 xl:hidden">
         {/* Row 1: Combined Highlight + BlunderMeter container */}
-        <div className="flex h-[calc(((85vh)-3.25rem)*0.3)] overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1">
+        <div className="relative flex h-[calc(((85vh)-3.25rem)*0.3)] overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1">
           <div className="flex h-full w-full border-r-[0.5px] border-white/40">
             <div className="relative w-full">
               <Highlight
@@ -284,21 +295,6 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
                     : 'Analysis is disabled. Enable analysis to see detailed move evaluations and recommendations.'
                 }
               />
-              {!analysisEnabled && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
-                  <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
-                    <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
-                      lock
-                    </span>
-                    <p className="font-medium text-primary">
-                      Analysis Disabled
-                    </p>
-                    <p className="text-sm text-secondary">
-                      Enable analysis to see move evaluations
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
           <div className="flex h-full w-auto min-w-[40%] max-w-[40%] bg-background-1 p-3">
@@ -318,10 +314,23 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
               />
             </div>
           </div>
+          {!analysisEnabled && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+              <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                  lock
+                </span>
+                <p className="font-medium text-primary">Analysis Disabled</p>
+                <p className="text-sm text-secondary">
+                  Enable analysis to see move evaluations
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Row 2: MoveMap */}
-        <div className="flex h-[calc(((85vh)-3.25rem)*0.35)] w-full">
+        <div className="relative flex h-[calc(((85vh)-3.25rem)*0.35)] w-full">
           <div className="h-full w-full">
             <MoveMap
               moveMap={analysisEnabled ? analysisController.moveMap : undefined}
@@ -333,10 +342,23 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
               }
             />
           </div>
+          {!analysisEnabled && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+              <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                  lock
+                </span>
+                <p className="font-medium text-primary">Analysis Disabled</p>
+                <p className="text-sm text-secondary">
+                  Enable analysis to see position evaluation
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Row 3: MovesByRating */}
-        <div className="flex h-[calc(((85vh)-3.25rem)*0.35)] w-full rounded bg-background-1/60">
+        <div className="relative flex h-[calc(((85vh)-3.25rem)*0.35)] w-full rounded bg-background-1/60">
           <div className="h-full w-full">
             <MovesByRating
               moves={
@@ -347,6 +369,19 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
               }
             />
           </div>
+          {!analysisEnabled && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+              <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                  lock
+                </span>
+                <p className="font-medium text-primary">Analysis Disabled</p>
+                <p className="text-sm text-secondary">
+                  Enable analysis to see move evaluations
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
