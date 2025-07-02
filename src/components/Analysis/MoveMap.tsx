@@ -51,7 +51,7 @@ export const MoveMap: React.FC<Props> = ({
   colorSanMapping,
   setHoverArrow,
 }: Props) => {
-  const { isMobile } = useContext(WindowSizeContext)
+  const { isMobile, width } = useContext(WindowSizeContext)
   const [hoveredMove, setHoveredMove] = useState<string | null>(null)
   const [hoveredMoveData, setHoveredMoveData] = useState<MoveMapEntry | null>(
     null,
@@ -60,6 +60,39 @@ export const MoveMap: React.FC<Props> = ({
     x: number
     y: number
   } | null>(null)
+
+  // Responsive font sizing based on screen width
+  const getAxisLabelFontSize = () => {
+    if (width < 640) return 10 // Very small screens
+    if (width < 768) return 11 // Small screens
+    if (width < 1024) return 12 // Medium screens
+    if (width < 1280) return 13 // Large screens
+    return 14 // Extra large screens
+  }
+
+  const getTickFontSize = () => {
+    if (width < 640) return 8 // Very small screens
+    if (width < 768) return 9 // Small screens
+    if (width < 1024) return 9 // Medium screens
+    if (width < 1280) return 10 // Large screens
+    return 11 // Extra large screens
+  }
+
+  const getDirectionalLabelFontSize = () => {
+    if (width < 640) return 9 // Very small screens
+    if (width < 768) return 10 // Small screens
+    if (width < 1024) return 10 // Medium screens
+    if (width < 1280) return 11 // Large screens
+    return 12 // Extra large screens
+  }
+
+  const getYAxisLabelFontSize = () => {
+    if (width < 640) return 10 // Very small screens
+    if (width < 768) return 11 // Small screens
+    if (width < 1024) return 12 // Medium screens
+    if (width < 1280) return 13 // Large screens
+    return 14 // Extra large screens
+  }
 
   const onMouseEnter = (
     move: string,
@@ -117,10 +150,10 @@ export const MoveMap: React.FC<Props> = ({
 
   return (
     <div
-      className="flex h-64 max-h-full flex-col overflow-hidden bg-background-1/60 md:h-full md:rounded"
+      className="flex h-64 max-h-full w-full flex-col overflow-hidden bg-background-1/60 md:h-full md:rounded"
       onMouseLeave={onContainerMouseLeave}
     >
-      <p className="p-3 text-primary md:text-lg">Move Map</p>
+      <h2 className="p-3 text-sm text-primary xl:text-base">Move Map</h2>
       <div className="relative flex h-full w-full flex-col">
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ left: 0, top: 5, right: 30, bottom: 20 }}>
@@ -133,7 +166,7 @@ export const MoveMap: React.FC<Props> = ({
                 value: 'SF Loss',
                 fill: '#76ADDD',
                 position: 'insideBottom',
-                fontSize: isMobile ? 14 : 18,
+                fontSize: getAxisLabelFontSize(),
                 fontWeight: 600,
                 offset: -8,
                 dx: isMobile ? -6 : -12,
@@ -141,7 +174,7 @@ export const MoveMap: React.FC<Props> = ({
               tickCount={5}
               tickLine={false}
               tickMargin={0}
-              tick={{ fill: 'white', fontSize: 11 }}
+              tick={{ fill: 'white', fontSize: getTickFontSize() }}
               domain={[-4, 0]}
               ticks={[-4, -3, -2, -1, 0]}
             >
@@ -149,7 +182,7 @@ export const MoveMap: React.FC<Props> = ({
                 value="← Blunders"
                 position="insideBottomLeft"
                 fill="#5A9DD7"
-                fontSize={12}
+                fontSize={getDirectionalLabelFontSize()}
                 fontWeight={500}
                 dy={10}
                 dx={isMobile ? -40 : -18}
@@ -157,7 +190,7 @@ export const MoveMap: React.FC<Props> = ({
               <Label
                 value="Best Moves →"
                 position="insideBottomRight"
-                fontSize={12}
+                fontSize={getDirectionalLabelFontSize()}
                 fill="#5A9DD7"
                 fontWeight={500}
                 dy={10}
@@ -173,7 +206,7 @@ export const MoveMap: React.FC<Props> = ({
                 fill: '#FE7F6D',
                 position: 'insideLeft',
                 angle: -90,
-                fontSize: isMobile ? 14 : 16,
+                fontSize: getYAxisLabelFontSize(),
                 fontWeight: 600,
                 dx: isMobile ? 5 : 10,
                 dy: isMobile ? 20 : 32,
@@ -181,7 +214,7 @@ export const MoveMap: React.FC<Props> = ({
               tickCount={4}
               tick={{
                 fill: 'white',
-                fontSize: 11,
+                fontSize: getTickFontSize(),
               }}
               tickMargin={0}
               tickLine={false}
@@ -192,7 +225,7 @@ export const MoveMap: React.FC<Props> = ({
                 value="← Unlikely"
                 dx={10}
                 angle={-90}
-                fontSize={12}
+                fontSize={getDirectionalLabelFontSize()}
                 fontWeight={500}
                 dy={isMobile ? 100 : 140}
                 position="insideLeft"
@@ -202,7 +235,7 @@ export const MoveMap: React.FC<Props> = ({
                 value="Likely →"
                 fill="#BF5F52"
                 position="insideLeft"
-                fontSize={12}
+                fontSize={getDirectionalLabelFontSize()}
                 dx={10}
                 angle={-90}
                 fontWeight={500}
