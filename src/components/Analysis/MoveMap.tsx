@@ -94,6 +94,25 @@ export const MoveMap: React.FC<Props> = ({
     return 14 // Extra large screens
   }
 
+  // Responsive dy values for Y-axis labels
+  const getMainLabelDy = () => {
+    if (width < 640) return 20 // Mobile - keep original value
+    if (width < 1280) return 20 // Small desktop screens - reduce offset
+    return 32 // Large screens - original value
+  }
+
+  const getUnlikelyLabelDy = () => {
+    if (width < 640) return 100 // Mobile - keep original value
+    if (width < 1280) return 110 // Small desktop screens - reduce offset
+    return 130 // Large screens - original value
+  }
+
+  const getLikelyLabelDy = () => {
+    if (width < 640) return -30 // Mobile - keep original value
+    if (width < 1280) return -30 // Small desktop screens - reduce offset
+    return -48 // Large screens - original value
+  }
+
   const onMouseEnter = (
     move: string,
     moveData: MoveMapEntry,
@@ -209,7 +228,7 @@ export const MoveMap: React.FC<Props> = ({
                 fontSize: getYAxisLabelFontSize(),
                 fontWeight: 600,
                 dx: isMobile ? 5 : 10,
-                dy: isMobile ? 20 : 32,
+                dy: getMainLabelDy(),
               }}
               tickCount={4}
               tick={{
@@ -227,7 +246,7 @@ export const MoveMap: React.FC<Props> = ({
                 angle={-90}
                 fontSize={getDirectionalLabelFontSize()}
                 fontWeight={500}
-                dy={isMobile ? 100 : 140}
+                dy={getUnlikelyLabelDy()}
                 position="insideLeft"
                 fill="#BF5F52"
               />
@@ -239,7 +258,7 @@ export const MoveMap: React.FC<Props> = ({
                 dx={10}
                 angle={-90}
                 fontWeight={500}
-                dy={isMobile ? -30 : -56}
+                dy={getLikelyLabelDy()}
               />
             </YAxis>
             {moveMap?.map((entry, index) => {
