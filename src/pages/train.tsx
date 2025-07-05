@@ -887,6 +887,7 @@ const Train: React.FC<Props> = ({
                     setHoverArrow={
                       showAnalysis ? setHoverArrow : mockSetHoverArrow
                     }
+                    makeMove={showAnalysis ? makeMove : mockMakeMove}
                   />
                 </div>
                 <BlunderMeter
@@ -922,6 +923,7 @@ const Train: React.FC<Props> = ({
                     setHoverArrow={
                       showAnalysis ? setHoverArrow : mockSetHoverArrow
                     }
+                    makeMove={showAnalysis ? makeMove : mockMakeMove}
                   />
                   {!showAnalysis && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
@@ -1178,6 +1180,7 @@ const Train: React.FC<Props> = ({
                   setHoverArrow={
                     showAnalysis ? setHoverArrow : mockSetHoverArrow
                   }
+                  makeMove={showAnalysis ? makeMove : mockMakeMove}
                 />
                 {!showAnalysis && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
