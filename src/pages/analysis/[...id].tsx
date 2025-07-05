@@ -728,6 +728,7 @@ const Analysis: React.FC<Props> = ({
                   moveMap={controller.moveMap}
                   colorSanMapping={controller.colorSanMapping}
                   setHoverArrow={setHoverArrow}
+                  makeMove={makeMove}
                 />
               </div>
               <BlunderMeter
@@ -781,6 +782,7 @@ const Analysis: React.FC<Props> = ({
                   moveMap={controller.moveMap}
                   colorSanMapping={controller.colorSanMapping}
                   setHoverArrow={setHoverArrow}
+                  makeMove={makeMove}
                 />
               </div>
             </div>
@@ -943,6 +945,7 @@ const Analysis: React.FC<Props> = ({
                 moveMap={controller.moveMap}
                 colorSanMapping={controller.colorSanMapping}
                 setHoverArrow={setHoverArrow}
+                makeMove={makeMove}
               />
             </div>
             <ConfigurableScreens

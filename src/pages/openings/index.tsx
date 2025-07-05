@@ -347,6 +347,48 @@ const OpeningsPage: NextPage = () => {
     // No special handling needed for opening drills
   }, [])
 
+  // Make move function for analysis components
+  const makeMove = useCallback(
+    async (move: string) => {
+      if (
+        !controller.analysisEnabled ||
+        !analysisController.currentNode ||
+        !analyzedGame?.tree
+      )
+        return
+
+      const chess = new Chess(analysisController.currentNode.fen)
+      const moveAttempt = chess.move({
+        from: move.slice(0, 2),
+        to: move.slice(2, 4),
+        promotion: move[4] ? (move[4] as PieceSymbol) : undefined,
+      })
+
+      if (moveAttempt) {
+        const newFen = chess.fen()
+        const moveString =
+          moveAttempt.from +
+          moveAttempt.to +
+          (moveAttempt.promotion ? moveAttempt.promotion : '')
+        const san = moveAttempt.san
+
+        if (analysisController.currentNode.mainChild?.move === moveString) {
+          analysisController.goToNode(analysisController.currentNode.mainChild)
+        } else {
+          const newVariation = analyzedGame.tree.addVariation(
+            analysisController.currentNode,
+            newFen,
+            moveString,
+            san,
+            analysisController.currentMaiaModel,
+          )
+          analysisController.goToNode(newVariation)
+        }
+      }
+    },
+    [controller.analysisEnabled, analysisController, analyzedGame],
+  )
+
   // Show download modal if Maia model needs to be downloaded
   if (
     analysisController.maiaStatus === 'no-cache' ||
@@ -542,6 +584,7 @@ const OpeningsPage: NextPage = () => {
             analysisController={analysisController}
             hover={hover}
             setHoverArrow={setHoverArrow}
+            makeMove={makeMove}
           />
         </div>
       </div>
