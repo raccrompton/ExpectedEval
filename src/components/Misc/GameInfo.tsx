@@ -76,10 +76,11 @@ export const GameInfo: React.FC<Props> = ({
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              // For analysis page, always use tour if available
-              if (type === 'analysis' && tourConfigs[type]) {
+              // Check if page type has a tour configuration
+              if (tourConfigs[type as keyof typeof tourConfigs]) {
+                const tourConfig = tourConfigs[type as keyof typeof tourConfigs]
                 // Force restart the tour even if completed
-                startTour(tourConfigs[type].id, tourConfigs[type].steps, true)
+                startTour(tourConfig.id, tourConfig.steps, true)
               } else {
                 setInstructionsModalProps({ instructionsType: type })
               }

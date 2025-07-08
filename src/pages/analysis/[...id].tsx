@@ -94,7 +94,7 @@ const AnalysisPage: NextPage = () => {
         startTour(tourConfigs.analysis.id, tourConfigs.analysis.steps, false)
       }
     }
-  }, [openedModals.analysis, analyzedGame, initialTourCheck, startTour])
+  }, [openedModals.analysis, analyzedGame, initialTourCheck])
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
 
   const getAndSetTournamentGame = useCallback(
