@@ -1,11 +1,10 @@
-import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react'
+import React, { useMemo, useCallback, useEffect, useRef } from 'react'
 import { Highlight, MoveMap, BlunderMeter, MovesByRating } from '../Analysis'
 import { GameNode } from 'src/types'
 import { GameTree } from 'src/types/base/tree'
-import { Chess, PieceSymbol } from 'chess.ts'
-import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
 import toast from 'react-hot-toast'
+import { useAnalysisController } from 'src/hooks/useAnalysisController'
 
 interface Props {
   currentNode: GameNode | null
@@ -14,7 +13,7 @@ interface Props {
   onToggleAnalysis: () => void
   playerColor: 'white' | 'black'
   maiaVersion: string
-  analysisController: any // Analysis controller passed from parent
+  analysisController: ReturnType<typeof useAnalysisController>
   hover: (move?: string) => void
   setHoverArrow: React.Dispatch<React.SetStateAction<DrawShape | null>>
   makeMove: (move: string) => void

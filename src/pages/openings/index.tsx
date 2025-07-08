@@ -499,7 +499,7 @@ const OpeningsPage: NextPage = () => {
             <PlayerInfo name={topPlayer.name} color={topPlayer.color} />
             <div className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]">
               <GameBoard
-                currentNode={controller.currentNode!}
+                currentNode={controller.currentNode}
                 orientation={controller.orientation}
                 availableMoves={controller.moves}
                 onPlayerMakeMove={onPlayerMakeMove}
@@ -508,7 +508,7 @@ const OpeningsPage: NextPage = () => {
               />
               {promotionFromTo && (
                 <PromotionOverlay
-                  player={getCurrentPlayer(controller.currentNode!)}
+                  player={getCurrentPlayer(controller.currentNode)}
                   file={promotionFromTo[1].slice(0, 1)}
                   onPlayerSelectPromotion={onPlayerSelectPromotion}
                 />
@@ -602,7 +602,7 @@ const OpeningsPage: NextPage = () => {
         <PlayerInfo name={topPlayer.name} color={topPlayer.color} />
         <div className="relative flex aspect-square h-[100vw] w-screen">
           <GameBoard
-            currentNode={controller.currentNode!}
+            currentNode={controller.currentNode}
             orientation={controller.orientation}
             availableMoves={controller.moves}
             onPlayerMakeMove={onPlayerMakeMove}
@@ -611,7 +611,7 @@ const OpeningsPage: NextPage = () => {
           />
           {promotionFromTo && (
             <PromotionOverlay
-              player={getCurrentPlayer(controller.currentNode!)}
+              player={getCurrentPlayer(controller.currentNode)}
               file={promotionFromTo[1].slice(0, 1)}
               onPlayerSelectPromotion={onPlayerSelectPromotion}
             />

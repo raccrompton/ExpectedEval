@@ -75,12 +75,12 @@ export const useEngineAnalysis = (
       // Add retry logic for Maia initialization
       let retries = 0
       const maxRetries = 30 // 3 seconds with 100ms intervals
-      
+
       while (retries < maxRetries && maiaStatus !== 'ready') {
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise((resolve) => setTimeout(resolve, 100))
         retries++
       }
-      
+
       if (maiaStatus !== 'ready') {
         console.warn('Maia not ready after waiting, skipping analysis')
         return
@@ -150,12 +150,12 @@ export const useEngineAnalysis = (
       // Wait up to 3 seconds for Stockfish to be ready
       let retries = 0
       const maxRetries = 30 // 3 seconds with 100ms intervals
-      
+
       while (retries < maxRetries && !isStockfishReady()) {
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise((resolve) => setTimeout(resolve, 100))
         retries++
       }
-      
+
       if (!isStockfishReady()) {
         console.warn('Stockfish not ready after waiting, skipping analysis')
         return

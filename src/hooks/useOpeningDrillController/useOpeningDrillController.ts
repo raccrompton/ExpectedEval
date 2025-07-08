@@ -739,7 +739,8 @@ export const useOpeningDrillController = (
 
           // Check if drill is complete after this move (only if not in continue analyzing mode)
           if (
-            updatedGame.playerMoveCount >= currentDrill!.targetMoveNumber &&
+            currentDrill &&
+            updatedGame.playerMoveCount >= currentDrill.targetMoveNumber &&
             !continueAnalyzingMode
           ) {
             // Delay completion to allow for Maia's response if it's Maia's turn
