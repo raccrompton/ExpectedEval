@@ -675,6 +675,7 @@ const Analysis: React.FC<Props> = ({
               }
               color={controller.orientation === 'white' ? 'white' : 'black'}
               termination={analyzedGame.termination.winner}
+              showArrowLegend={true}
             />
           </div>
           <ConfigurableScreens

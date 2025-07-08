@@ -514,7 +514,11 @@ const OpeningsPage: NextPage = () => {
                 />
               )}
             </div>
-            <PlayerInfo name={bottomPlayer.name} color={bottomPlayer.color} />
+            <PlayerInfo
+              name={bottomPlayer.name}
+              color={bottomPlayer.color}
+              showArrowLegend={controller.analysisEnabled}
+            />
           </div>
 
           {/* Drill progress with next drill button */}
@@ -613,7 +617,11 @@ const OpeningsPage: NextPage = () => {
             />
           )}
         </div>
-        <PlayerInfo name={bottomPlayer.name} color={bottomPlayer.color} />
+        <PlayerInfo
+          name={bottomPlayer.name}
+          color={bottomPlayer.color}
+          showArrowLegend={controller.analysisEnabled}
+        />
       </div>
 
       <div className="flex h-auto w-full flex-col gap-1">
