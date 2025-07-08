@@ -1,7 +1,8 @@
 import { useContext } from 'react'
 
-import { ModalContext } from 'src/contexts'
+import { ModalContext, useTour } from 'src/contexts'
 import { InstructionsType } from 'src/components'
+import { tourConfigs } from 'src/config/tours'
 
 interface Props {
   icon: string
@@ -27,6 +28,7 @@ export const GameInfo: React.FC<Props> = ({
   onGameListClick,
 }: Props) => {
   const { setInstructionsModalProps } = useContext(ModalContext)
+  const { startTour, hasCompletedTour } = useTour()
 
   return (
     <div className="flex w-full flex-col items-start justify-start gap-1 overflow-hidden bg-background-1 p-3 md:rounded">
@@ -69,9 +71,18 @@ export const GameInfo: React.FC<Props> = ({
             </button>
           )}
           <button
+            type="button"
             className="material-symbols-outlined duration-200 hover:text-human-3"
-            onClick={() => {
-              setInstructionsModalProps({ instructionsType: type })
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              // For analysis page, always use tour if available
+              if (type === 'analysis' && tourConfigs[type]) {
+                // Force restart the tour even if completed
+                startTour(tourConfigs[type].id, tourConfigs[type].steps, true)
+              } else {
+                setInstructionsModalProps({ instructionsType: type })
+              }
             }}
           >
             help

@@ -170,6 +170,7 @@ export const MoveMap: React.FC<Props> = ({
 
   return (
     <div
+      id="analysis-move-map"
       className="flex h-64 max-h-full w-full flex-col overflow-hidden bg-background-1/60 md:h-full md:rounded"
       onMouseLeave={onContainerMouseLeave}
     >
