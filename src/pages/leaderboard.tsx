@@ -103,6 +103,13 @@ const Leaderboard: React.FC = () => {
             <LeaderboardColumn key={index} {...column} />
           ))}
         </div>
+        <div className="my-2 w-full">
+          <p className="text-xs text-secondary">
+            <span className="font-medium">Note:</span> Each leaderboard column
+            only features players who have played atleast one game of the
+            corresponding type within the last 7 days.
+          </p>
+        </div>
       </div>
     </LeaderboardProvider>
   )
