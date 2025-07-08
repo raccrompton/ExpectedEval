@@ -1,10 +1,23 @@
-import { useState, useEffect, useRef } from 'react'
 import { MoveTooltip } from './MoveTooltip'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MaiaEvaluation, StockfishEvaluation, ColorSanMapping } from 'src/types'
 
+export const MAIA_MODELS = [
+  'maia_kdd_1100',
+  'maia_kdd_1200',
+  'maia_kdd_1300',
+  'maia_kdd_1400',
+  'maia_kdd_1500',
+  'maia_kdd_1600',
+  'maia_kdd_1700',
+  'maia_kdd_1800',
+  'maia_kdd_1900',
+]
+
 interface Props {
   currentMaiaModel: string
+  setCurrentMaiaModel: (model: string) => void
   moveEvaluation: {
     maia?: MaiaEvaluation
     stockfish?: StockfishEvaluation
@@ -32,6 +45,7 @@ export const Highlight: React.FC<Props> = ({
   colorSanMapping,
   recommendations,
   currentMaiaModel,
+  setCurrentMaiaModel,
   boardDescription,
 }: Props) => {
   // Tooltip state
@@ -115,10 +129,25 @@ export const Highlight: React.FC<Props> = ({
     <div className="flex h-full w-full flex-col border-white/40 bg-background-1">
       <div className="grid grid-cols-2 border-b border-white/20">
         <div className="flex flex-col items-center justify-start gap-0.5 border-r border-white/20 bg-human-3/5 xl:gap-1">
-          <div className="flex w-full flex-col border-b border-white/5 py-2">
-            <p className="whitespace-nowrap text-center text-human-1 md:text-[10px] lg:text-xs">
-              Maia {currentMaiaModel.slice(-4)}
-            </p>
+          <div className="relative flex w-full flex-col border-b border-white/5">
+            <select
+              value={currentMaiaModel}
+              onChange={(e) => setCurrentMaiaModel(e.target.value)}
+              className="cursor-pointer appearance-none bg-transparent py-2 text-center font-semibold text-human-1 outline-none transition-colors duration-200 hover:text-human-1/80 md:text-[10px] lg:text-xs"
+            >
+              {MAIA_MODELS.map((model) => (
+                <option
+                  value={model}
+                  key={model}
+                  className="bg-background-1 text-human-1"
+                >
+                  Maia {model.slice(-4)}
+                </option>
+              ))}
+            </select>
+            <span className="material-symbols-outlined pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-sm text-human-1/60">
+              keyboard_arrow_down
+            </span>
           </div>
           <div className="flex w-full flex-col items-center justify-start border-b border-white/5 px-2 py-1 md:py-0.5 lg:py-1">
             <p className="whitespace-nowrap text-xs text-human-2 md:text-[10px] lg:text-xs">
@@ -130,15 +159,23 @@ export const Highlight: React.FC<Props> = ({
                 : '...'}
             </p>
           </div>
-          <div className="grid grid-rows-2 items-center justify-center p-1.5 xl:p-2">
+          <div className="flex w-full flex-col items-center justify-center px-3 py-1.5 xl:py-2">
             <p className="mb-1 whitespace-nowrap text-xs font-semibold text-human-2 md:text-[10px] lg:text-xs">
               Human Moves
             </p>
+            <div className="flex w-full cursor-pointer items-center justify-between">
+              <p className="text-left font-mono text-[10px] text-secondary/50">
+                move
+              </p>
+              <p className="w-[32px] text-right font-mono text-[10px] text-secondary/50">
+                prob
+              </p>
+            </div>
             {recommendations.maia?.slice(0, 4).map(({ move, prob }, index) => {
               return (
                 <button
                   key={index}
-                  className="grid cursor-pointer grid-cols-2 gap-1.5 hover:underline xl:gap-2 2xl:gap-3"
+                  className="flex w-full cursor-pointer items-center justify-between hover:underline"
                   style={{
                     color: colorSanMapping[move]?.color ?? '#fff',
                   }}
@@ -146,11 +183,11 @@ export const Highlight: React.FC<Props> = ({
                   onMouseEnter={(e) => handleMouseEnter(move, 'maia', e, prob)}
                   onClick={() => makeMove(move)}
                 >
-                  <p className="text-right font-mono text-[10px] xl:text-xs">
-                    {(Math.round(prob * 1000) / 10).toFixed(1)}%
-                  </p>
                   <p className="text-left font-mono text-[10px] xl:text-xs">
                     {colorSanMapping[move]?.san ?? move}
+                  </p>
+                  <p className="text-right font-mono text-[10px] xl:text-xs">
+                    {(Math.round(prob * 1000) / 10).toFixed(1)}%
                   </p>
                 </button>
               )
@@ -159,7 +196,7 @@ export const Highlight: React.FC<Props> = ({
         </div>
         <div className="flex flex-col items-center justify-start gap-0.5 bg-engine-3/5 xl:gap-1">
           <div className="flex w-full flex-col border-b border-white/5 py-2">
-            <p className="whitespace-nowrap text-center text-engine-1 md:text-[10px] lg:text-xs">
+            <p className="whitespace-nowrap text-center font-semibold text-engine-1 md:text-[10px] lg:text-xs">
               Stockfish{' '}
               {moveEvaluation?.stockfish?.depth
                 ? ` (D${moveEvaluation.stockfish?.depth})`
@@ -176,17 +213,25 @@ export const Highlight: React.FC<Props> = ({
                 : '...'}
             </p>
           </div>
-          <div className="grid grid-rows-2 flex-col items-center justify-center p-1.5 xl:p-2">
+          <div className="flex w-full flex-col items-center justify-center px-3 py-1.5 xl:py-2">
             <p className="mb-1 whitespace-nowrap text-xs font-semibold text-engine-2 md:text-[10px] lg:text-xs">
               Engine Moves
             </p>
+            <div className="flex w-full cursor-pointer items-center justify-between">
+              <p className="text-left font-mono text-[10px] text-secondary/50">
+                move
+              </p>
+              <p className="w-[32px] text-right font-mono text-[10px] text-secondary/50">
+                eval
+              </p>
+            </div>
             {recommendations.stockfish
               ?.slice(0, 4)
               .map(({ move, cp, winrate, winrate_loss }, index) => {
                 return (
                   <button
                     key={index}
-                    className="grid cursor-pointer grid-cols-2 gap-1.5 hover:underline xl:gap-2 2xl:gap-3"
+                    className="flex w-full cursor-pointer items-center justify-between hover:underline"
                     style={{
                       color: colorSanMapping[move]?.color ?? '#fff',
                     }}
@@ -204,12 +249,12 @@ export const Highlight: React.FC<Props> = ({
                     }
                     onClick={() => makeMove(move)}
                   >
+                    <p className="text-left font-mono text-[10px] xl:text-xs">
+                      {colorSanMapping[move]?.san ?? move}
+                    </p>
                     <p className="w-[32px] text-right font-mono text-[10px] xl:w-[36px] xl:text-xs 2xl:w-[42px]">
                       {cp > 0 ? '+' : null}
                       {`${(cp / 100).toFixed(2)}`}
-                    </p>
-                    <p className="text-left font-mono text-[10px] xl:text-xs">
-                      {colorSanMapping[move]?.san ?? move}
                     </p>
                   </button>
                 )
@@ -217,7 +262,7 @@ export const Highlight: React.FC<Props> = ({
           </div>
         </div>
       </div>
-      <div className="flex flex-col items-start justify-start gap-0.5 bg-background-1/80 p-2 text-sm xl:gap-1 xl:p-3">
+      <div className="flex flex-col items-start justify-start bg-background-1/80 p-2 text-sm">
         <AnimatePresence mode="wait">
           {boardDescription ? (
             <motion.div
@@ -225,7 +270,7 @@ export const Highlight: React.FC<Props> = ({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.1 }}
+              transition={{ duration: 0.075 }}
               className="w-full"
             >
               <p className="w-full whitespace-normal break-words text-[10px] leading-tight text-secondary xl:text-xs xl:leading-tight">

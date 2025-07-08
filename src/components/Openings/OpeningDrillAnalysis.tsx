@@ -136,6 +136,7 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
             <div className="flex h-full w-auto min-w-[40%] max-w-[40%] border-r-[0.5px] border-white/40">
               <div className="relative w-full">
                 <Highlight
+                  setCurrentMaiaModel={analysisController.setCurrentMaiaModel}
                   hover={analysisEnabled ? hover : mockHover}
                   makeMove={analysisEnabled ? makeMove : mockMakeMove}
                   currentMaiaModel={analysisController.currentMaiaModel}
@@ -237,6 +238,7 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
           <div className="flex h-full w-full border-r-[0.5px] border-white/40">
             <div className="relative w-full">
               <Highlight
+                setCurrentMaiaModel={analysisController.setCurrentMaiaModel}
                 hover={analysisEnabled ? hover : mockHover}
                 makeMove={analysisEnabled ? makeMove : mockMakeMove}
                 currentMaiaModel={analysisController.currentMaiaModel}

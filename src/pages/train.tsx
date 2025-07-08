@@ -732,6 +732,11 @@ const Train: React.FC<Props> = ({
                   <div className="flex h-full w-auto min-w-[40%] max-w-[40%] border-r-[0.5px] border-white/40">
                     <div className="relative w-full">
                       <Highlight
+                        setCurrentMaiaModel={
+                          showAnalysis
+                            ? analysisController.setCurrentMaiaModel
+                            : () => void 0
+                        }
                         hover={showAnalysis ? hover : mockHover}
                         makeMove={showAnalysis ? makeMove : mockMakeMove}
                         currentMaiaModel={
@@ -801,6 +806,11 @@ const Train: React.FC<Props> = ({
               <div className="flex h-[calc((85vh)*0.3)] overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1 xl:hidden">
                 <div className="flex h-full w-full border-r-[0.5px] border-white/40">
                   <Highlight
+                    setCurrentMaiaModel={
+                      showAnalysis
+                        ? analysisController.setCurrentMaiaModel
+                        : () => void 0
+                    }
                     hover={showAnalysis ? hover : mockHover}
                     makeMove={showAnalysis ? makeMove : mockMakeMove}
                     currentMaiaModel={
@@ -1120,6 +1130,11 @@ const Train: React.FC<Props> = ({
 
               <div className="relative">
                 <Highlight
+                  setCurrentMaiaModel={
+                    showAnalysis
+                      ? analysisController.setCurrentMaiaModel
+                      : () => void 0
+                  }
                   hover={showAnalysis ? hover : mockHover}
                   makeMove={showAnalysis ? makeMove : mockMakeMove}
                   currentMaiaModel={

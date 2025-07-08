@@ -28,23 +28,22 @@ import {
   WindowSizeContext,
   TreeControllerContext,
 } from 'src/contexts'
-import {
-  Loading,
-  MoveMap,
-  GameInfo,
-  Highlight,
-  BlunderMeter,
-  MovesByRating,
-  AnalysisGameList,
-  GameBoard,
-  DownloadModelModal,
-  AuthenticatedWrapper,
-  MovesContainer,
-  BoardController,
-  PromotionOverlay,
-  CustomAnalysisModal,
-  PlayerInfo,
-} from 'src/components'
+import { Loading } from 'src/components/Core/Loading'
+import { AuthenticatedWrapper } from 'src/components/Core/AuthenticatedWrapper'
+import { PlayerInfo } from 'src/components/Core/PlayerInfo'
+import { MoveMap } from 'src/components/Analysis/MoveMap'
+import { Highlight } from 'src/components/Analysis/Highlight'
+import { BlunderMeter } from 'src/components/Analysis/BlunderMeter'
+import { MovesByRating } from 'src/components/Analysis/MovesByRating'
+import { AnalysisGameList } from 'src/components/Analysis/AnalysisGameList'
+import { DownloadModelModal } from 'src/components/Analysis/DownloadModelModal'
+import { CustomAnalysisModal } from 'src/components/Analysis/CustomAnalysisModal'
+import { ConfigurableScreens } from 'src/components/Analysis/ConfigurableScreens'
+import { GameBoard } from 'src/components/Board/GameBoard'
+import { MovesContainer } from 'src/components/Board/MovesContainer'
+import { BoardController } from 'src/components/Board/BoardController'
+import { PromotionOverlay } from 'src/components/Board/PromotionOverlay'
+import { GameInfo } from 'src/components/Misc/GameInfo'
 import Head from 'next/head'
 import toast from 'react-hot-toast'
 import type { NextPage } from 'next'
@@ -54,7 +53,6 @@ import { Chess, PieceSymbol } from 'chess.ts'
 import { AnimatePresence } from 'framer-motion'
 import { useAnalysisController } from 'src/hooks'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
-import { ConfigurableScreens } from 'src/components/Analysis/ConfigurableScreens'
 
 const MAIA_MODELS = [
   'maia_kdd_1100',
@@ -703,6 +701,7 @@ const Analysis: React.FC<Props> = ({
                     hover={hover}
                     makeMove={makeMove}
                     currentMaiaModel={controller.currentMaiaModel}
+                    setCurrentMaiaModel={controller.setCurrentMaiaModel}
                     recommendations={controller.moveRecommendations}
                     moveEvaluation={
                       controller.moveEvaluation as {
@@ -750,6 +749,7 @@ const Analysis: React.FC<Props> = ({
                   hover={hover}
                   makeMove={makeMove}
                   currentMaiaModel={controller.currentMaiaModel}
+                  setCurrentMaiaModel={controller.setCurrentMaiaModel}
                   recommendations={controller.moveRecommendations}
                   moveEvaluation={
                     controller.moveEvaluation as {
@@ -927,6 +927,7 @@ const Analysis: React.FC<Props> = ({
                 hover={hover}
                 makeMove={makeMove}
                 currentMaiaModel={controller.currentMaiaModel}
+                setCurrentMaiaModel={controller.setCurrentMaiaModel}
                 recommendations={controller.moveRecommendations}
                 moveEvaluation={
                   controller.moveEvaluation as {
