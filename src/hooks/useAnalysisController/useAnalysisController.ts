@@ -31,7 +31,11 @@ export const useAnalysisController = (
     downloadModel: downloadMaia,
   } = useMaiaEngine()
 
-  const { streamEvaluations, stopEvaluation, isReady: isStockfishReady } = useStockfishEngine()
+  const {
+    streamEvaluations,
+    stopEvaluation,
+    isReady: isStockfishReady,
+  } = useStockfishEngine()
   const [currentMove, setCurrentMove] = useState<[string, string] | null>()
   const [currentMaiaModel, setCurrentMaiaModel] = useLocalStorage(
     'currentMaiaModel',
@@ -45,7 +49,7 @@ export const useAnalysisController = (
   }, [currentMaiaModel, setCurrentMaiaModel])
 
   useEngineAnalysis(
-    controller.currentNode || null,
+    controller.currentNode,
     inProgressAnalyses,
     maiaStatus,
     maia,

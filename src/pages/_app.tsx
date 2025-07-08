@@ -12,6 +12,7 @@ import {
   ThemeContextProvider,
   WindowSizeContextProvider,
   AnalysisListContextProvider,
+  TourProvider,
 } from 'src/providers'
 import 'src/styles/tailwind.css'
 import 'react-tooltip/dist/react-tooltip.css'
@@ -34,6 +35,7 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
         WindowSizeContextProvider,
         AuthContextProvider,
         ModalContextProvider,
+        TourProvider,
         ...(isAnalysisPage ? [AnalysisListContextProvider] : []),
       ]}
     >
