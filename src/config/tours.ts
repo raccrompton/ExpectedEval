@@ -51,10 +51,82 @@ export const analysisTourSteps: TourStep[] = [
   },
 ]
 
+export const trainTourSteps: TourStep[] = [
+  {
+    id: 'train-overview',
+    title: 'Welcome to Training',
+    description:
+      'This is the training page where you solve chess puzzles to improve your tactical skills. Each puzzle presents a position where you need to find the best move. The puzzles are rated, and your performance affects your puzzle rating. Try to solve each puzzle by making the correct moves on the board.',
+    targetId: 'train-page',
+    placement: 'right',
+  },
+  {
+    id: 'train-analysis',
+    title: 'Give Up & Analyze',
+    description:
+      'If you get stuck on a puzzle, you can give up to reveal the solution and unlock detailed analysis. Once you give up or solve the puzzle, you get access to the same powerful analysis tools from the analysis page - including Maia move predictions, Stockfish evaluations, move maps, and blunder meters. This helps you understand why certain moves are correct and learn from the position.',
+    targetId: 'analysis',
+    placement: 'left',
+  },
+]
+
+export const turingTourSteps: TourStep[] = [
+  {
+    id: 'turing-overview',
+    title: 'Welcome to Bot or Not',
+    description:
+      'This is the "Bot or Not" challenge - a Turing test for chess! You\'ll be shown real chess games and your task is to determine whether each player (white or black) was human or an AI. Study the moves, look for patterns, and use your chess intuition to distinguish between human and computer play styles.',
+    targetId: 'turing-page',
+    placement: 'right',
+  },
+  {
+    id: 'turing-submission',
+    title: 'Make Your Guess',
+    description:
+      "After analyzing the game, use this panel to submit your verdict. Click the toggle buttons to select whether you think White and Black were human or AI players. You can also provide reasoning for your choices in the text area. Your accuracy in identifying bots vs humans will be tracked and you'll earn points for correct guesses.",
+    targetId: 'turing-submission',
+    placement: 'left',
+  },
+]
+
+export const playTourSteps: TourStep[] = [
+  {
+    id: 'play-overview',
+    title: 'Welcome to Play vs Maia',
+    description:
+      "You're now playing against Maia, the human-like chess AI! Unlike traditional engines that play perfectly, Maia has been trained to play like humans at different rating levels. This means you'll face more realistic and instructive games that help you improve. The Maia version you're playing against mimics the playing style of players at that specific rating level.",
+    targetId: 'play-page',
+    placement: 'right',
+  },
+  {
+    id: 'play-controls',
+    title: 'Game Controls',
+    description:
+      "Use these controls to manage your game. You can resign if you're in a losing position, or start a new game when this one finishes. The clock shows remaining time for both players (if time controls are enabled). After the game ends, you can analyze it on the analysis page or play again with the same or different settings.",
+    targetId: 'play-controls',
+    placement: 'left',
+  },
+]
+
 export const tourConfigs = {
   analysis: {
     id: 'analysis',
     name: 'Analysis Page Tour',
     steps: analysisTourSteps,
+  },
+  train: {
+    id: 'train',
+    name: 'Training Page Tour',
+    steps: trainTourSteps,
+  },
+  turing: {
+    id: 'turing',
+    name: 'Bot or Not Tour',
+    steps: turingTourSteps,
+  },
+  play: {
+    id: 'play',
+    name: 'Play vs Maia Tour',
+    steps: playTourSteps,
   },
 }

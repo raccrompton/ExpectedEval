@@ -70,16 +70,17 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
   const startTour = useCallback(
     (tourId: string, steps: TourStep[], forceRestart = false) => {
       if (typeof window === 'undefined') return
-      const completedTours = JSON.parse(
-        localStorage.getItem('maia-completed-tours') || '[]',
-      )
-
-      // If not forcing restart and tour is completed, don't start
-      if (!forceRestart && completedTours.includes(tourId)) {
-        return
-      }
 
       setTourState((prevState) => {
+        const completedTours = JSON.parse(
+          localStorage.getItem('maia-completed-tours') || '[]',
+        )
+
+        // If not forcing restart and tour is completed, don't start
+        if (!forceRestart && completedTours.includes(tourId)) {
+          return prevState
+        }
+
         // If tour is already active and we're not forcing restart, don't restart
         if (prevState.isActive && !forceRestart) {
           return prevState
