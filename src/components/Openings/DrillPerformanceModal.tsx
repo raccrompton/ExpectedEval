@@ -418,7 +418,16 @@ const AnimatedGameReplay: React.FC<{
 }
 
 // Custom dot component for move quality indicators
-const CustomDot: React.FC<any> = (props) => {
+const CustomDot: React.FC<{
+  cx?: number
+  cy?: number
+  payload?: {
+    isPlayerMove: boolean
+    classification: string
+    isCurrentMove: boolean
+  }
+  index?: number
+}> = (props) => {
   const { cx, cy, payload, index } = props
   if (!payload) return null
 
@@ -468,7 +477,18 @@ const CustomDot: React.FC<any> = (props) => {
 }
 
 // Custom tooltip component
-const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
+const CustomTooltip: React.FC<{
+  active?: boolean
+  payload?: Array<{
+    payload: {
+      san?: string
+      evaluation: number
+      classification?: string
+      isPlayerMove: boolean
+    }
+  }>
+  label?: string
+}> = ({ active, payload, label }) => {
   if (!active || !payload || !payload[0]) return null
 
   const data = payload[0].payload
