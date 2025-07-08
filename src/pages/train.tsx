@@ -944,9 +944,7 @@ const Train: React.FC<Props> = ({
                     <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
                       lock
                     </span>
-                    <p className="font-medium text-primary">
-                      Analysis Locked
-                    </p>
+                    <p className="font-medium text-primary">Analysis Locked</p>
                     <p className="text-sm text-secondary">
                       Complete the puzzle to unlock analysis
                     </p>
