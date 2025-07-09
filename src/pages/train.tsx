@@ -67,9 +67,7 @@ const statsLoader = async () => {
 
 const TrainPage: NextPage = () => {
   const router = useRouter()
-  const { openedModals, setInstructionsModalProps: setInstructionsModalProps } =
-    useContext(ModalContext)
-  const { startTour, hasCompletedTour } = useTour()
+  const { startTour } = useTour()
 
   const [trainingGames, setTrainingGames] = useState<TrainingGame[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -82,19 +80,12 @@ const TrainPage: NextPage = () => {
   const [initialTourCheck, setInitialTourCheck] = useState(false)
 
   useEffect(() => {
-    if (!openedModals.train) {
-      setInstructionsModalProps({ instructionsType: 'train' })
-    }
-    return () => setInstructionsModalProps(undefined)
-  }, [setInstructionsModalProps, openedModals.train])
-
-  useEffect(() => {
-    if (!openedModals.train && !initialTourCheck) {
+    if (!initialTourCheck) {
       setInitialTourCheck(true)
       // Always attempt to start the tour - the tour context will handle completion checking
       startTour(tourConfigs.train.id, tourConfigs.train.steps, false)
     }
-  }, [openedModals.train, initialTourCheck, startTour])
+  }, [initialTourCheck, startTour])
 
   const getNewGame = useCallback(async () => {
     let game

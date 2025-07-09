@@ -1,7 +1,5 @@
-import { useContext } from 'react'
-
-import { ModalContext, useTour } from 'src/contexts'
-import { InstructionsType } from 'src/components'
+import { useTour } from 'src/contexts'
+import { InstructionsType } from 'src/types'
 import { tourConfigs } from 'src/config/tours'
 
 interface Props {
@@ -27,7 +25,6 @@ export const GameInfo: React.FC<Props> = ({
   showGameListButton,
   onGameListClick,
 }: Props) => {
-  const { setInstructionsModalProps } = useContext(ModalContext)
   const { startTour } = useTour()
 
   return (
@@ -79,7 +76,7 @@ export const GameInfo: React.FC<Props> = ({
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              // Map page types to tour configs
+
               const tourTypeMap: { [key: string]: keyof typeof tourConfigs } = {
                 againstMaia: 'play',
                 handAndBrain: 'handBrain',
@@ -89,14 +86,9 @@ export const GameInfo: React.FC<Props> = ({
               }
 
               const tourType = tourTypeMap[type]
-
-              // Check if page type has a tour configuration
               if (tourType && tourConfigs[tourType]) {
                 const tourConfig = tourConfigs[tourType]
-                // Force restart the tour even if completed
                 startTour(tourConfig.id, tourConfig.steps, true)
-              } else {
-                setInstructionsModalProps({ instructionsType: type })
               }
             }}
           >

@@ -69,9 +69,7 @@ const MAIA_MODELS = [
 ]
 
 const AnalysisPage: NextPage = () => {
-  const { openedModals, setInstructionsModalProps: setInstructionsModalProps } =
-    useContext(ModalContext)
-  const { startTour, hasCompletedTour } = useTour()
+  const { startTour } = useTour()
 
   const router = useRouter()
   const { id } = router.query
@@ -82,12 +80,12 @@ const AnalysisPage: NextPage = () => {
   const [initialTourCheck, setInitialTourCheck] = useState(false)
 
   useEffect(() => {
-    if (!openedModals.analysis && !initialTourCheck) {
+    if (!initialTourCheck) {
       setInitialTourCheck(true)
       // Always attempt to start the tour - the tour context will handle completion checking
       startTour(tourConfigs.analysis.id, tourConfigs.analysis.steps, false)
     }
-  }, [openedModals.analysis, initialTourCheck, startTour])
+  }, [initialTourCheck, startTour])
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
 
   const getAndSetTournamentGame = useCallback(
