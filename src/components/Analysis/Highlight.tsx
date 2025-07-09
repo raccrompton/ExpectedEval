@@ -126,7 +126,10 @@ export const Highlight: React.FC<Props> = ({
   }, [boardDescription])
 
   return (
-    <div className="flex h-full w-full flex-col border-white/40 bg-background-1">
+    <div
+      id="analysis-highlight"
+      className="flex h-full w-full flex-col border-white/40 bg-background-1"
+    >
       <div className="grid grid-cols-2 border-b border-white/20">
         <div className="flex flex-col items-center justify-start gap-0.5 border-r border-white/20 bg-human-3/5 xl:gap-1">
           <div className="relative flex w-full flex-col border-b border-white/5">
