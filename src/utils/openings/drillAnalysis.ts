@@ -339,11 +339,12 @@ export async function analyzeDrillPerformance(
 
       if (!nextNode.move || !nextNode.san) continue
 
-      const chess = new Chess(currentGameNode.fen)
+      // Use the position after the move to determine who made the move
+      const chess = new Chess(nextNode.fen)
       const isPlayerMove =
         drillGame.selection.playerColor === 'white'
-          ? chess.turn() === 'w'
-          : chess.turn() === 'b'
+          ? chess.turn() === 'b' // If Black is to move, White just moved
+          : chess.turn() === 'w' // If White is to move, Black just moved
 
       // Get or calculate Stockfish evaluation for this position
       let evaluation: StockfishEvaluation | null =
@@ -382,11 +383,17 @@ export async function analyzeDrillPerformance(
           console.warn('Failed to get Maia best move:', error)
         }
 
+        // Extract move number from FEN string
+        const getMoveNumberFromFen = (fen: string): number => {
+          const fenParts = fen.split(' ')
+          return parseInt(fenParts[5]) || 1 // 6th part is the full move number
+        }
+
         const moveAnalysis: MoveAnalysis = {
           move: playedMove,
           san: nextNode.san,
-          fen: currentGameNode.fen,
-          moveNumber: Math.floor(i / 2) + 1,
+          fen: nextNode.fen, // Use position after the move for UI helpers
+          moveNumber: getMoveNumberFromFen(nextNode.fen),
           isPlayerMove,
           evaluation: playedMoveEval,
           classification: classifyMove(evaluationLoss),

@@ -27,6 +27,25 @@ interface Props {
   isLastDrill: boolean
 }
 
+// Helper function to extract move number from FEN string
+const getMoveNumberFromFen = (fen: string): number => {
+  const fenParts = fen.split(' ')
+  return parseInt(fenParts[5]) || 1 // 6th part is the full move number
+}
+
+// Helper function to determine if a move is white's or black's based on FEN
+// Note: this tells us who is TO MOVE in this position, not who just moved
+const isWhiteToMove = (fen: string): boolean => {
+  const fenParts = fen.split(' ')
+  return fenParts[1] === 'w' // 2nd part is active color
+}
+
+// Helper function to determine if a move was played by white or black
+// This is the inverse of who is to move after the move
+const isMoveByWhite = (fen: string): boolean => {
+  return !isWhiteToMove(fen) // If white is to move, then black just moved
+}
+
 // Component for animated game replay
 const AnimatedGameReplay: React.FC<{
   moveAnalyses: MoveAnalysis[]
@@ -202,20 +221,59 @@ const AnimatedGameReplay: React.FC<{
     return '' // Normal moves get no classification
   }
 
-  // Helper function to pair moves for display
+  // Helper function to pair moves for display with proper chess notation
   const pairMoves = (moves: MoveAnalysis[]) => {
     const pairs: Array<{
-      white?: MoveAnalysis & { index: number }
-      black?: MoveAnalysis & { index: number }
+      white?: MoveAnalysis & {
+        index: number
+        displayMoveNumber: number
+        isWhiteMove: boolean
+      }
+      black?: MoveAnalysis & {
+        index: number
+        displayMoveNumber: number
+        isWhiteMove: boolean
+      }
+      moveNumber: number
     }> = []
 
-    for (let i = 0; i < moves.length; i += 2) {
-      const white = moves[i] ? { ...moves[i], index: i } : undefined
-      const black = moves[i + 1] ? { ...moves[i + 1], index: i + 1 } : undefined
-      pairs.push({ white, black })
-    }
+    if (moves.length === 0) return pairs
 
-    return pairs
+    let currentMoveNumber = getMoveNumberFromFen(moves[0].fen)
+    for (let i = 0; i < moves.length; i++) {
+      const move = moves[i]
+      const isWhite = isMoveByWhite(move.fen)
+      // For white's move, increment move number
+      if (isWhite) {
+        currentMoveNumber = getMoveNumberFromFen(move.fen)
+        let pair = pairs.find((p) => p.moveNumber === currentMoveNumber)
+        if (!pair) {
+          pair = { moveNumber: currentMoveNumber }
+          pairs.push(pair)
+        }
+        pair.white = {
+          ...move,
+          index: i,
+          displayMoveNumber: currentMoveNumber,
+          isWhiteMove: true,
+        }
+      } else {
+        // For black's move, use the same move number as the previous white move
+        let pair = pairs.find((p) => p.moveNumber === currentMoveNumber)
+        if (!pair) {
+          pair = { moveNumber: currentMoveNumber }
+          pairs.push(pair)
+        }
+        pair.black = {
+          ...move,
+          index: i,
+          displayMoveNumber: currentMoveNumber,
+          isWhiteMove: false,
+        }
+      }
+    }
+    // Sort pairs by move number to ensure proper chronological order
+    return pairs.sort((a, b) => a.moveNumber - b.moveNumber)
   }
 
   // Get arrows for optimal moves from the current position (before next move is played)
@@ -329,10 +387,10 @@ const AnimatedGameReplay: React.FC<{
         <div className="red-scrollbar flex-1 overflow-y-auto">
           <div className="grid auto-rows-min grid-cols-5 whitespace-nowrap rounded-none bg-background-1/60">
             {pairMoves(moveAnalyses).map((pair, index) => (
-              <React.Fragment key={index}>
+              <React.Fragment key={pair.moveNumber}>
                 {/* Move number */}
                 <span className="flex h-7 items-center justify-center bg-background-2 text-sm text-secondary">
-                  {index + 1}
+                  {pair.moveNumber}
                 </span>
 
                 {/* White's move */}
@@ -490,16 +548,21 @@ const CustomTooltip: React.FC<{
       evaluation: number
       classification?: string
       isPlayerMove: boolean
+      moveNumber: number
     }
   }>
   label?: string
-}> = ({ active, payload, label }) => {
+  moveAnalyses: MoveAnalysis[]
+}> = ({ active, payload, label, moveAnalyses }) => {
   if (!active || !payload || !payload[0]) return null
 
   const data = payload[0].payload
-  const plyNumber = parseInt(label as string)
-  const moveNumber = Math.ceil(plyNumber / 2)
-  const isWhiteMove = plyNumber % 2 === 1
+  const moveNumber = data.moveNumber
+
+  // Determine if this was a white or black move
+  // We need to look at the corresponding move analysis to get the FEN
+  const moveAnalysis = moveAnalyses.find((m) => m.san === data.san)
+  const isWhiteMove = moveAnalysis ? isMoveByWhite(moveAnalysis.fen) : true
   const moveNotation = isWhiteMove ? `${moveNumber}.` : `...${moveNumber}.`
 
   const formatEvaluation = (evaluation: number) => {
@@ -608,27 +671,26 @@ const EvaluationChart: React.FC<{
     return '' // Normal moves get no classification
   }
 
-  // Transform data for Recharts with proper area handling at zero crossings
+  // Generate move numbers for chartData: increment only after Black's move
+  let moveNumber = getMoveNumberFromFen(moveAnalyses[0]?.fen || '1 w - - 0 1')
   const chartData = evaluationChart.map((point, index) => {
-    // Find corresponding move analysis to get SAN notation and proper classification
     const moveAnalysis = moveAnalyses[index]
-
-    // Use dynamic classification based on winrate loss
+    const isWhite = moveAnalysis ? isMoveByWhite(moveAnalysis.fen) : true
+    if (isWhite && index !== 0) {
+      moveNumber++
+    }
     const dynamicClassification = moveAnalysis
       ? classifyMove(moveAnalysis, index)
       : ''
-
     return {
-      moveNumber: index + 1,
+      moveNumber: isWhite ? moveNumber : `...${moveNumber}`,
       evaluation: point.evaluation,
       isPlayerMove: point.isPlayerMove,
-      classification: dynamicClassification, // Use dynamic classification
+      classification: dynamicClassification,
       isCurrentMove: index === currentMoveIndex,
       san: moveAnalysis?.san || '',
-      // Areas extend from zero line to evaluation (no gaps)
       whiteAdvantage: point.evaluation > 0 ? point.evaluation : 0,
       blackAdvantage: point.evaluation < 0 ? point.evaluation : 0,
-      // Add zero baseline for proper area rendering
       zero: 0,
     }
   })
@@ -664,9 +726,13 @@ const EvaluationChart: React.FC<{
             data={chartData}
             margin={{ top: 15, right: 20, left: -20, bottom: 20 }}
             onMouseMove={(data) => {
-              if (data && data.activeLabel && onHoverMove) {
-                const moveIndex = parseInt(data.activeLabel as string) - 1
-                onHoverMove(moveIndex)
+              if (
+                data &&
+                data.activeTooltipIndex !== undefined &&
+                onHoverMove
+              ) {
+                // Use the chartData index directly, which matches moveAnalyses index
+                onHoverMove(data.activeTooltipIndex)
               }
             }}
           >
@@ -678,8 +744,9 @@ const EvaluationChart: React.FC<{
               dataKey="moveNumber"
               stroke="#9ca3af"
               fontSize={11}
+              tickFormatter={(value) => value}
               label={{
-                value: 'Ply Number',
+                value: 'Move Number',
                 position: 'insideBottom',
                 style: {
                   textAnchor: 'middle',
@@ -705,7 +772,7 @@ const EvaluationChart: React.FC<{
                 },
               }}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip moveAnalyses={moveAnalyses} />} />
 
             {/* White advantage area (positive evaluations only) */}
             <Area
@@ -976,17 +1043,63 @@ export const DrillPerformanceModal: React.FC<Props> = ({
 
   const { drill, evaluationChart, moveAnalyses } = performanceData
 
+  // Filter out pre-loaded opening moves - only show moves after the opening sequence
+  const filteredMoveAnalyses = useMemo(() => {
+    // Find the index of the first actual gameplay move (first player move)
+    const firstPlayerMoveIndex = moveAnalyses.findIndex(
+      (move) => move.isPlayerMove,
+    )
+
+    if (firstPlayerMoveIndex === -1) {
+      // No player moves found, return empty array
+      return []
+    }
+
+    // Include the position before the first player move if it exists
+    // This ensures we can see the evaluation change from the first move
+    const startIndex = Math.max(0, firstPlayerMoveIndex - 1)
+
+    // Return all moves starting from before the first player move, but preserve original indices
+    return moveAnalyses.slice(startIndex).map((move, index) => ({
+      ...move,
+      originalIndex: startIndex + index, // Track original index for board navigation
+    }))
+  }, [moveAnalyses])
+
+  // Store the first player move index for offset calculations
+  const firstPlayerMoveIndex = useMemo(() => {
+    const originalFirstPlayerIndex = moveAnalyses.findIndex(
+      (move) => move.isPlayerMove,
+    )
+    // Account for the fact that we now start one move earlier
+    return Math.max(0, originalFirstPlayerIndex - 1)
+  }, [moveAnalyses])
+
+  // Filter evaluation chart to match the filtered moves
+  const filteredEvaluationChart = useMemo(() => {
+    const firstPlayerMoveIndex = moveAnalyses.findIndex(
+      (move) => move.isPlayerMove,
+    )
+    if (firstPlayerMoveIndex === -1) {
+      return []
+    }
+    // Start one move earlier to include the position before the first player move
+    const startIndex = Math.max(0, firstPlayerMoveIndex - 1)
+    return evaluationChart.slice(startIndex)
+  }, [evaluationChart, moveAnalyses])
+
   // Handle hover on chart - update board position only if not clicked
-  const handleChartHover = (moveIndex: number) => {
+  const handleChartHover = (filteredIndex: number) => {
     if (!isClicked) {
-      setHoveredMoveIndex(moveIndex)
+      setCurrentMoveIndex(filteredIndex)
+      setHoveredMoveIndex(filteredIndex)
     }
   }
 
   // Handle click on move list - update both board position and chart highlighting
-  const handleMoveClick = (moveIndex: number) => {
-    setCurrentMoveIndex(moveIndex)
-    setHoveredMoveIndex(moveIndex)
+  const handleMoveClick = (filteredIndex: number) => {
+    setCurrentMoveIndex(filteredIndex)
+    setHoveredMoveIndex(filteredIndex)
     setIsClicked(true)
 
     setTimeout(() => {
@@ -1014,7 +1127,8 @@ export const DrillPerformanceModal: React.FC<Props> = ({
                 {drill.selection.variation &&
                   ` - ${drill.selection.variation.name}`}
                 {' • '}
-                Analyzed {moveAnalyses.filter((m) => m.isPlayerMove).length} of
+                Analyzed{' '}
+                {filteredMoveAnalyses.filter((m) => m.isPlayerMove).length} of
                 your moves
                 {' • '}
                 Playing as{' '}
@@ -1035,11 +1149,11 @@ export const DrillPerformanceModal: React.FC<Props> = ({
           {/* Left Panel - Animated Game Replay */}
           <div className="flex w-1/3 flex-col border-r border-white/10">
             <AnimatedGameReplay
-              moveAnalyses={moveAnalyses}
+              moveAnalyses={filteredMoveAnalyses}
               openingFen={openingFen}
               playerColor={drill.selection.playerColor}
               onMoveIndexChange={setCurrentMoveIndex}
-              externalMoveIndex={hoveredMoveIndex ?? undefined}
+              externalMoveIndex={currentMoveIndex}
               onMoveClick={handleMoveClick}
             />
           </div>
@@ -1047,8 +1161,8 @@ export const DrillPerformanceModal: React.FC<Props> = ({
           {/* Center Panel - Evaluation Chart */}
           <div className="red-scrollbar flex w-1/3 flex-col gap-3 overflow-y-auto border-r border-white/10 p-4">
             <EvaluationChart
-              evaluationChart={evaluationChart}
-              moveAnalyses={moveAnalyses}
+              evaluationChart={filteredEvaluationChart}
+              moveAnalyses={filteredMoveAnalyses}
               currentMoveIndex={hoveredMoveIndex ?? currentMoveIndex}
               onHoverMove={handleChartHover}
               playerColor={drill.selection.playerColor}
@@ -1058,8 +1172,8 @@ export const DrillPerformanceModal: React.FC<Props> = ({
           {/* Right Panel - Key Moments Analysis */}
           <div className="red-scrollbar flex w-1/3 flex-col gap-3 overflow-y-auto p-4">
             <KeyMomentsAnalysis
-              moveAnalyses={moveAnalyses}
-              evaluationChart={evaluationChart}
+              moveAnalyses={filteredMoveAnalyses}
+              evaluationChart={filteredEvaluationChart}
               playerColor={drill.selection.playerColor}
             />
           </div>
