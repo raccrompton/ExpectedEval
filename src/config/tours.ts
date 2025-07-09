@@ -127,6 +127,49 @@ export const handBrainTourSteps: TourStep[] = [
   },
 ]
 
+export const openingDrillTourSteps: TourStep[] = [
+  {
+    id: 'opening-drill-overview',
+    title: 'Welcome to Opening Drills',
+    description:
+      'Opening drills help you practice and master chess openings by playing specific opening sequences against Maia. This training mode allows you to select openings you want to improve at, configure difficulty settings, and practice them repeatedly until they become second nature. You can track your progress and analyze your performance after each drill.',
+    targetId: 'opening-drill-modal',
+    placement: 'bottom',
+  },
+  {
+    id: 'opening-drill-selection',
+    title: 'Select Openings',
+    description:
+      'Browse and select the openings you want to practice. You can search for specific openings or variations, and quickly add them to your drill list using the + button. Each opening shows its starting position and available variations. Choose the openings that align with your repertoire or areas you want to improve.',
+    targetId: 'opening-drill-browse',
+    placement: 'right',
+  },
+  {
+    id: 'opening-drill-configuration',
+    title: 'Configure Drill Settings',
+    description:
+      'Customize your drill experience by selecting your color (white or black), choosing the Maia opponent strength, and setting the target number of moves to play in each opening. The preview board shows the starting position, and you can adjust these settings to match your training goals and skill level.',
+    targetId: 'opening-drill-preview',
+    placement: 'left',
+  },
+  {
+    id: 'opening-drill-start',
+    title: 'Start Drilling',
+    description:
+      'Review your selected openings and choose how many drills to complete. You can adjust the number of drills - if you select more drills than openings, some will be repeated randomly. Click "Start Drilling" to begin your training session with the configured settings.',
+    targetId: 'opening-drill-selected',
+    placement: 'left',
+  },
+  {
+    id: 'opening-drill-gameplay',
+    title: 'Drill Experience',
+    description:
+      "During drilling, you'll play through your selected openings against Maia until reaching the target move count. After each drill, you can analyze your performance, see how the Stockfish evaluation changed throughout the game, and learn from your insights. This helps you understand the opening principles and improve your play.",
+    targetId: 'opening-drill-modal',
+    placement: 'bottom',
+  },
+]
+
 export const tourConfigs = {
   analysis: {
     id: 'analysis',
@@ -152,5 +195,10 @@ export const tourConfigs = {
     id: 'handBrain',
     name: 'Hand and Brain Tour',
     steps: handBrainTourSteps,
+  },
+  openingDrill: {
+    id: 'openingDrill',
+    name: 'Opening Drill Tour',
+    steps: openingDrillTourSteps,
   },
 }
