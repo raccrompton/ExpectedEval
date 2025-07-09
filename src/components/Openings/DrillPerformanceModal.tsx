@@ -458,11 +458,16 @@ const CustomDot: React.FC<{
       radius = 3
   }
 
-  const strokeColor =
-    classification === 'excellent' || classification === 'blunder'
+  if (isCurrentMove) {
+    radius = Math.max(radius + 2, 6)
+  }
+
+  const strokeColor = isCurrentMove
+    ? '#ffffff'
+    : classification === 'excellent' || classification === 'blunder'
       ? '#ffffff'
       : '#1f2937'
-  const strokeWidth = 0.5
+  const strokeWidth = isCurrentMove ? 2 : 0.5
 
   return (
     <Dot
@@ -967,17 +972,26 @@ export const DrillPerformanceModal: React.FC<Props> = ({
 }) => {
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1)
   const [hoveredMoveIndex, setHoveredMoveIndex] = useState<number | null>(null)
+  const [isClicked, setIsClicked] = useState(false)
 
   const { drill, evaluationChart, moveAnalyses } = performanceData
 
-  // Handle hover on chart - update board position
+  // Handle hover on chart - update board position only if not clicked
   const handleChartHover = (moveIndex: number) => {
-    setHoveredMoveIndex(moveIndex)
+    if (!isClicked) {
+      setHoveredMoveIndex(moveIndex)
+    }
   }
 
-  // Handle click on move list
+  // Handle click on move list - update both board position and chart highlighting
   const handleMoveClick = (moveIndex: number) => {
     setCurrentMoveIndex(moveIndex)
+    setHoveredMoveIndex(moveIndex)
+    setIsClicked(true)
+
+    setTimeout(() => {
+      setIsClicked(false)
+    }, 500)
   }
 
   // Get opening FEN from the drill
@@ -1035,7 +1049,7 @@ export const DrillPerformanceModal: React.FC<Props> = ({
             <EvaluationChart
               evaluationChart={evaluationChart}
               moveAnalyses={moveAnalyses}
-              currentMoveIndex={currentMoveIndex}
+              currentMoveIndex={hoveredMoveIndex ?? currentMoveIndex}
               onHoverMove={handleChartHover}
               playerColor={drill.selection.playerColor}
             />
