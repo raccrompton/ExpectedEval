@@ -17,7 +17,7 @@ export const useBoardDescription = (
       !moveEvaluation?.maia ||
       moveEvaluation.stockfish.depth < 12
     ) {
-      return ''
+      return { segments: [] }
     }
 
     const fen = currentNode.fen

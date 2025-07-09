@@ -4,6 +4,10 @@ import { Chess, PieceSymbol } from 'chess.ts'
 type StockfishEvals = Record<string, number>
 type MaiaEvals = Record<string, number[]>
 
+type DescriptionSegment =
+  | { type: 'text'; content: string }
+  | { type: 'move'; san: string; uci: string }
+
 /* ---------------- phrase banks ---------------- */
 
 const pick = <T>(a: T[]) => a[Math.floor(Math.random() * a.length)]
@@ -53,7 +57,7 @@ const TEMPT_WORD = ['tempting', 'enticing', 'natural-looking']
 
 /* ---------------- constants & helpers ---------------- */
 
-const EPS = 0.08 // “good move” window
+const EPS = 0.08 // "good move" window
 const BLUNDER_GAP = 0.1 // win-rate drop that defines a blunder
 
 const winRate = (p: number) => 1 / (1 + Math.exp(-(p - 1) / 0.8))
@@ -70,7 +74,7 @@ export function describePosition(
   sf: StockfishEvals,
   maia: MaiaEvals,
   whiteToMove: boolean,
-): string {
+): { segments: DescriptionSegment[] } {
   /* ---------- board ---------- */
   const chess = new Chess(fen)
   const legal = new Set<string>()
@@ -79,7 +83,10 @@ export function describePosition(
     .forEach((m) => legal.add(m.from + m.to + (m.promotion ?? '')))
 
   const moves = Object.keys(sf).filter((m) => legal.has(m))
-  if (!moves.length) return 'No legal moves available.'
+  if (!moves.length)
+    return {
+      segments: [{ type: 'text', content: 'No legal moves available.' }],
+    }
 
   if (!whiteToMove) {
     sf = Object.fromEntries(Object.entries(sf).map(([m, v]) => [m, -v]))
@@ -130,12 +137,13 @@ export function describePosition(
       Math.abs(wOpt - w2) <= EPS / 2 && Math.abs(dOpt - d2) <= EPS / 2
   }
 
-  const listWithOpt = sortedGood.slice(0, 3).map(uciToSan).join(', ')
-  const listWithoutOpt = sortedGood
+  const goodMovesList = sortedGood
+    .slice(0, 3)
+    .map((uci) => ({ san: uciToSan(uci), uci }))
+  const goodMovesWithoutOpt = sortedGood
     .filter((m) => m !== opt)
     .slice(0, 3)
-    .map(uciToSan)
-    .join(', ')
+    .map((uci) => ({ san: uciToSan(uci), uci }))
 
   /* ---------- outcome wording ---------- */
   const avgGood = sortedGood.reduce((s, m) => s + seval[m], 0) / nGood
@@ -242,15 +250,25 @@ export function describePosition(
   const prefix = setT === 2 && !bestHarder ? ', however' : ''
   const temptW = pick(TEMPT_WORD)
 
-  let tail = ''
+  let tailSegments: DescriptionSegment[] = []
   if (blunderMove && treach) {
-    tail = ` ${pick(CAREFUL)}${prefix}, this position is highly treacherous! It is easy to go astray with ${temptW} blunders like ${uciToSan(
-      blunderMove,
-    )}.`
+    tailSegments = [
+      {
+        type: 'text',
+        content: ` ${pick(CAREFUL)}${prefix}, this position is highly treacherous! It is easy to go astray with ${temptW} blunders like `,
+      },
+      { type: 'move', san: uciToSan(blunderMove), uci: blunderMove },
+      { type: 'text', content: '.' },
+    ]
   } else if (blunderMove) {
-    tail = ` ${pick(CAREFUL)}${prefix}! There is a ${temptW} blunder in this position: ${uciToSan(
-      blunderMove,
-    )}.`
+    tailSegments = [
+      {
+        type: 'text',
+        content: ` ${pick(CAREFUL)}${prefix}! There is a ${temptW} blunder in this position: `,
+      },
+      { type: 'move', san: uciToSan(blunderMove), uci: blunderMove },
+      { type: 'text', content: '.' },
+    ]
   } else {
     const showTempt = setT < 2 || (setT === 2 && temptLv > 4)
     if (showTempt) {
@@ -261,22 +279,73 @@ export function describePosition(
           Object.entries(aggProb)
             .filter(([m]) => !good.includes(m))
             .sort((a, b) => b[1] - a[1])[0]?.[0] ?? ''
-      const temptSan = temptUci ? uciToSan(temptUci) : ''
+
       const intro = pick(TEMPTING_INTRO)
-      tail = temptSan
-        ? ` ${intro}${prefix} are also ${temptW} alternatives, such as ${temptSan}.`
-        : ` ${intro}${prefix} are also ${temptW} alternatives.`
+      if (temptUci) {
+        tailSegments = [
+          {
+            type: 'text',
+            content: ` ${intro}${prefix} are also ${temptW} alternatives, such as `,
+          },
+          { type: 'move', san: uciToSan(temptUci), uci: temptUci },
+          { type: 'text', content: '.' },
+        ]
+      } else {
+        tailSegments = [
+          {
+            type: 'text',
+            content: ` ${intro}${prefix} are also ${temptW} alternatives.`,
+          },
+        ]
+      }
     }
   }
 
   /* ---------- assemble ---------- */
-  const moveList = bestHarder ? listWithoutOpt : listWithOpt
-  const result =
-    nGood === 1
-      ? `There ${verb} ${abundance} (${moveList}) ${outcome}, and ${pron} ${phrSet}.${tail}`
-      : bestHarder
-        ? `There ${verb} ${abundance} (${moveList}) ${outcome}, and ${pron} ${phrSet}, but the best move (${bestMoveSan}) is ${phrBest}.${tail}`
-        : `There ${verb} ${abundance} (${moveList}) ${outcome}, and ${pron} ${phrSet}.${tail}`
+  const segments: DescriptionSegment[] = []
 
-  return result
+  // Helper function to create move list segments
+  const createMoveListSegments = (moveList: { san: string; uci: string }[]) => {
+    const moveSegments: DescriptionSegment[] = []
+    moveList.forEach((move, index) => {
+      moveSegments.push({ type: 'move', san: move.san, uci: move.uci })
+      if (index < moveList.length - 1) {
+        moveSegments.push({ type: 'text', content: ', ' })
+      }
+    })
+    return moveSegments
+  }
+
+  // Main description
+  const moveList = bestHarder ? goodMovesWithoutOpt : goodMovesList
+
+  if (nGood === 1) {
+    segments.push(
+      { type: 'text', content: `There ${verb} ${abundance} (` },
+      ...createMoveListSegments(moveList),
+      { type: 'text', content: `) ${outcome}, and ${pron} ${phrSet}.` },
+    )
+  } else if (bestHarder) {
+    segments.push(
+      { type: 'text', content: `There ${verb} ${abundance} (` },
+      ...createMoveListSegments(moveList),
+      {
+        type: 'text',
+        content: `) ${outcome}, and ${pron} ${phrSet}, but the best move (`,
+      },
+      { type: 'move', san: bestMoveSan, uci: opt },
+      { type: 'text', content: `) is ${phrBest}.` },
+    )
+  } else {
+    segments.push(
+      { type: 'text', content: `There ${verb} ${abundance} (` },
+      ...createMoveListSegments(moveList),
+      { type: 'text', content: `) ${outcome}, and ${pron} ${phrSet}.` },
+    )
+  }
+
+  // Add tail segments
+  segments.push(...tailSegments)
+
+  return { segments }
 }
