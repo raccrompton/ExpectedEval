@@ -172,14 +172,14 @@ export const useOpeningDrillController = (
         controller.setCurrentNode(currentDrillGame.tree.getRoot())
       }
     }
-  }, [currentDrillGame?.id, controller])
+  }, [currentDrillGame?.id])
 
   // Set board orientation based on player color
   useEffect(() => {
     if (currentDrill?.playerColor) {
       controller.setOrientation(currentDrill.playerColor)
     }
-  }, [currentDrill?.playerColor, controller])
+  }, [currentDrill?.playerColor])
 
   // Determine if it's the player's turn
   const isPlayerTurn = useMemo(() => {

@@ -336,8 +336,10 @@ const Analysis: React.FC<Props> = ({
   const controller = useAnalysisController(analyzedGame)
 
   useEffect(() => {
-    controller.setCurrentNode(analyzedGame.tree?.getRoot())
-  }, [analyzedGame, controller])
+    if (analyzedGame.tree) {
+      controller.setCurrentNode(analyzedGame.tree.getRoot())
+    }
+  }, [analyzedGame])
 
   useEffect(() => {
     setHoverArrow(null)
