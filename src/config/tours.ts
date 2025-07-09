@@ -108,6 +108,25 @@ export const playTourSteps: TourStep[] = [
   },
 ]
 
+export const handBrainTourSteps: TourStep[] = [
+  {
+    id: 'handbrain-overview',
+    title: 'Welcome to Hand and Brain',
+    description:
+      "Hand and Brain is a collaborative chess format where you team up with Maia! If you're playing as Hand, you make the actual moves on the board while your Maia partner (Brain) selects which pieces to move. If you're playing as Brain, you choose which pieces should be moved and your Maia partner (Hand) executes the specific moves. This creates a unique partnership between human intuition and AI assistance.",
+    targetId: 'play-page',
+    placement: 'right',
+  },
+  {
+    id: 'handbrain-controls',
+    title: 'Hand and Brain Controls',
+    description:
+      "These controls are specific to Hand and Brain gameplay. As Brain, you'll select piece types using the buttons, and your Maia partner will make the moves. As Hand, you'll see which pieces your Maia partner wants you to move, and you'll execute the specific moves on the board. You can resign if needed or start a new game when this one finishes.",
+    targetId: 'play-controls',
+    placement: 'left',
+  },
+]
+
 export const tourConfigs = {
   analysis: {
     id: 'analysis',
@@ -128,5 +147,10 @@ export const tourConfigs = {
     id: 'play',
     name: 'Play vs Maia Tour',
     steps: playTourSteps,
+  },
+  handBrain: {
+    id: 'handBrain',
+    name: 'Hand and Brain Tour',
+    steps: handBrainTourSteps,
   },
 }
