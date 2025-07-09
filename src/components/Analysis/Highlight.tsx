@@ -1,7 +1,12 @@
 import { MoveTooltip } from './MoveTooltip'
+import { InteractiveDescription } from './InteractiveDescription'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MaiaEvaluation, StockfishEvaluation, ColorSanMapping } from 'src/types'
+
+type DescriptionSegment =
+  | { type: 'text'; content: string }
+  | { type: 'move'; san: string; uci: string }
 
 export const MAIA_MODELS = [
   'maia_kdd_1100',
@@ -35,7 +40,7 @@ interface Props {
   }
   hover: (move?: string) => void
   makeMove: (move: string) => void
-  boardDescription: string
+  boardDescription: { segments: DescriptionSegment[] }
 }
 
 export const Highlight: React.FC<Props> = ({
@@ -113,17 +118,17 @@ export const Highlight: React.FC<Props> = ({
   }
 
   // Track whether description exists (not its content)
-  const hasDescriptionRef = useRef(!!boardDescription)
+  const hasDescriptionRef = useRef(boardDescription.segments.length > 0)
   const [animationKey, setAnimationKey] = useState(0)
 
   useEffect(() => {
-    const descriptionNowExists = !!boardDescription
+    const descriptionNowExists = boardDescription.segments.length > 0
     // Only trigger animation when presence changes (exists vs doesn't exist)
     if (hasDescriptionRef.current !== descriptionNowExists) {
       hasDescriptionRef.current = descriptionNowExists
       setAnimationKey((prev) => prev + 1)
     }
-  }, [boardDescription])
+  }, [boardDescription.segments.length])
 
   return (
     <div
@@ -267,7 +272,7 @@ export const Highlight: React.FC<Props> = ({
       </div>
       <div className="flex flex-col items-start justify-start bg-background-1/80 p-2 text-sm">
         <AnimatePresence mode="wait">
-          {boardDescription ? (
+          {boardDescription.segments.length > 0 ? (
             <motion.div
               key={animationKey}
               initial={{ opacity: 0, y: 10 }}
@@ -276,9 +281,13 @@ export const Highlight: React.FC<Props> = ({
               transition={{ duration: 0.075 }}
               className="w-full"
             >
-              <p className="w-full whitespace-normal break-words text-[10px] leading-tight text-secondary xl:text-xs xl:leading-tight">
-                {boardDescription}
-              </p>
+              <InteractiveDescription
+                description={boardDescription}
+                colorSanMapping={colorSanMapping}
+                moveEvaluation={moveEvaluation}
+                hover={hover}
+                makeMove={makeMove}
+              />
             </motion.div>
           ) : null}
         </AnimatePresence>
