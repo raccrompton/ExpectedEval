@@ -84,17 +84,10 @@ const AnalysisPage: NextPage = () => {
   useEffect(() => {
     if (!openedModals.analysis && !initialTourCheck) {
       setInitialTourCheck(true)
-      // Check if user has completed the tour on initial load only
-      const completedTours =
-        typeof window !== 'undefined'
-          ? JSON.parse(localStorage.getItem('maia-completed-tours') || '[]')
-          : []
-
-      if (!completedTours.includes('analysis')) {
-        startTour(tourConfigs.analysis.id, tourConfigs.analysis.steps, false)
-      }
+      // Always attempt to start the tour - the tour context will handle completion checking
+      startTour(tourConfigs.analysis.id, tourConfigs.analysis.steps, false)
     }
-  }, [openedModals.analysis, initialTourCheck])
+  }, [openedModals.analysis, initialTourCheck, startTour])
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
 
   const getAndSetTournamentGame = useCallback(

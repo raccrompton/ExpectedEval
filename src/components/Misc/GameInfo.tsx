@@ -28,7 +28,7 @@ export const GameInfo: React.FC<Props> = ({
   onGameListClick,
 }: Props) => {
   const { setInstructionsModalProps } = useContext(ModalContext)
-  const { startTour, hasCompletedTour } = useTour()
+  const { startTour } = useTour()
 
   return (
     <div className="flex w-full flex-col items-start justify-start gap-1 overflow-hidden bg-background-1 p-3 md:rounded">

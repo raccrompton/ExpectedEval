@@ -43,18 +43,10 @@ const TuringPage: NextPage = () => {
   useEffect(() => {
     if (!openedModals.turing && !initialTourCheck) {
       setInitialTourCheck(true)
-      // Check if user has completed the tour on initial load only
-      if (typeof window !== 'undefined') {
-        const completedTours = JSON.parse(
-          localStorage.getItem('maia-completed-tours') || '[]',
-        )
-
-        if (!completedTours.includes('turing')) {
-          startTour(tourConfigs.turing.id, tourConfigs.turing.steps, false)
-        }
-      }
+      // Always attempt to start the tour - the tour context will handle completion checking
+      startTour(tourConfigs.turing.id, tourConfigs.turing.steps, false)
     }
-  }, [openedModals.turing, initialTourCheck])
+  }, [openedModals.turing, initialTourCheck, startTour])
 
   return (
     <TuringControllerContext.Provider value={controller}>
