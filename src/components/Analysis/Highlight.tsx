@@ -118,17 +118,17 @@ export const Highlight: React.FC<Props> = ({
   }
 
   // Track whether description exists (not its content)
-  const hasDescriptionRef = useRef(boardDescription.segments.length > 0)
+  const hasDescriptionRef = useRef(boardDescription?.segments?.length > 0)
   const [animationKey, setAnimationKey] = useState(0)
 
   useEffect(() => {
-    const descriptionNowExists = boardDescription.segments.length > 0
+    const descriptionNowExists = boardDescription?.segments?.length > 0
     // Only trigger animation when presence changes (exists vs doesn't exist)
     if (hasDescriptionRef.current !== descriptionNowExists) {
       hasDescriptionRef.current = descriptionNowExists
       setAnimationKey((prev) => prev + 1)
     }
-  }, [boardDescription.segments.length])
+  }, [boardDescription?.segments?.length])
 
   return (
     <div
@@ -272,7 +272,7 @@ export const Highlight: React.FC<Props> = ({
       </div>
       <div className="flex flex-col items-start justify-start bg-background-1/80 p-2 text-sm">
         <AnimatePresence mode="wait">
-          {boardDescription.segments.length > 0 ? (
+          {boardDescription?.segments?.length > 0 ? (
             <motion.div
               key={animationKey}
               initial={{ opacity: 0, y: 10 }}

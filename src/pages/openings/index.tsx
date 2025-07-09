@@ -725,7 +725,7 @@ const OpeningsPage: NextPage = () => {
                   Analyzing Your Performance
                 </h3>
                 <p className="text-sm text-secondary">
-                  Running deep analysis with Stockfish and Maia...
+                  Running analysis with Stockfish and Maia...
                 </p>
               </div>
             </div>
