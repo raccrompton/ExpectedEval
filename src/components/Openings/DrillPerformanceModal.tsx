@@ -325,7 +325,7 @@ const AnimatedGameReplay: React.FC<{
   return (
     <div className="flex h-full flex-col">
       {/* Game Replay Section with padding */}
-      <div className="p-4">
+      <div className="relative p-4">
         <div>
           <h3 className="mb-1 text-lg font-semibold">Game Replay</h3>
           <p className="mb-3 text-sm text-secondary">
@@ -333,8 +333,22 @@ const AnimatedGameReplay: React.FC<{
           </p>
         </div>
 
+        {/* Move Quality Display - Fixed position in top-right */}
+        {currentMoveQuality && currentMoveQuality !== 'good' && (
+          <div className="absolute right-4 top-4 z-10 flex rounded border border-white/20 bg-background-1/95 px-2 py-1 shadow-lg">
+            <div
+              className={`font-mono text-sm font-bold ${getQualityColor(currentMoveQuality)}`}
+            >
+              {getQualitySymbol(currentMoveQuality)}
+            </div>
+            <div className="ml-2 text-sm capitalize text-secondary">
+              {currentMoveQuality}
+            </div>
+          </div>
+        )}
+
         {/* Chess Board */}
-        <div className="relative mx-auto aspect-square w-full max-w-[280px]">
+        <div className="mx-auto aspect-square w-full max-w-[280px]">
           <Chessground
             contained
             config={{
@@ -365,20 +379,6 @@ const AnimatedGameReplay: React.FC<{
               },
             }}
           />
-
-          {/* Move Quality Overlay */}
-          {currentMoveQuality && (
-            <div className="absolute right-2 top-2 z-50 rounded border border-white/20 bg-background-1/95 px-2 py-1 shadow-lg">
-              <div
-                className={`font-mono text-sm font-bold ${getQualityColor(currentMoveQuality)}`}
-              >
-                {getQualitySymbol(currentMoveQuality)}
-              </div>
-              <div className="text-xs capitalize text-secondary">
-                {currentMoveQuality}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -563,7 +563,7 @@ const CustomTooltip: React.FC<{
   // We need to look at the corresponding move analysis to get the FEN
   const moveAnalysis = moveAnalyses.find((m) => m.san === data.san)
   const isWhiteMove = moveAnalysis ? isMoveByWhite(moveAnalysis.fen) : true
-  const moveNotation = isWhiteMove ? `${moveNumber}.` : `...${moveNumber}.`
+  const moveNotation = `${moveNumber}.`
 
   const formatEvaluation = (evaluation: number) => {
     if (Math.abs(evaluation) >= 1000) {
@@ -624,7 +624,7 @@ const EvaluationChart: React.FC<{
     )
   }
 
-  // Classify move based on evaluationLoss (same logic as in AnimatedGameReplay)
+  // Classify move based on winrate loss (using proper winrate calculation)
   const classifyMove = (analysis: MoveAnalysis, moveIndex: number): string => {
     // Need evaluation before and after the move to calculate winrate change
     if (moveIndex === 0) return '' // Can't calculate for first move
@@ -840,30 +840,41 @@ const KeyMomentsAnalysis: React.FC<{
   evaluationChart: DrillPerformanceData['evaluationChart']
   playerColor: 'white' | 'black'
 }> = ({ moveAnalyses, evaluationChart, playerColor }) => {
-  // Classify move based on winrate loss (same logic as other components)
+  // Classify move based on winrate loss (using proper winrate calculation)
   const classifyMove = (analysis: MoveAnalysis, moveIndex: number): string => {
-    if (moveIndex === 0) return ''
+    // Need evaluation before and after the move to calculate winrate change
+    if (moveIndex === 0) return '' // Can't calculate for first move
 
     const currentEval = analysis.evaluation
     const previousEval = moveAnalyses[moveIndex - 1]?.evaluation
 
     if (currentEval === undefined || previousEval === undefined) return ''
 
+    // Convert evaluations to winrates (assuming evaluations are already in centipawns)
     const currentWinrate = cpToWinrate(currentEval)
     const previousWinrate = cpToWinrate(previousEval)
 
-    if (!analysis.isPlayerMove) return ''
-
+    // Calculate winrate change from player's perspective
     let winrateChange: number
-    if (playerColor === 'white') {
-      winrateChange = currentWinrate - previousWinrate
+
+    if (analysis.isPlayerMove) {
+      // For player moves, we need to consider which color they're playing
+      if (playerColor === 'white') {
+        // Higher evaluation is better for white
+        winrateChange = currentWinrate - previousWinrate
+      } else {
+        // Lower evaluation is better for black
+        winrateChange = previousWinrate - currentWinrate
+      }
     } else {
-      winrateChange = previousWinrate - currentWinrate
+      // For opponent (Maia) moves, we don't classify them
+      return ''
     }
 
-    const BLUNDER_THRESHOLD = 0.1
-    const INACCURACY_THRESHOLD = 0.05
-    const EXCELLENT_THRESHOLD = 0.08
+    // Use more reasonable thresholds - excellent moves should be rare
+    const BLUNDER_THRESHOLD = 0.1 // 10% winrate drop - significant mistake
+    const INACCURACY_THRESHOLD = 0.05 // 5% winrate drop - noticeable error
+    const EXCELLENT_THRESHOLD = 0.08 // 8% winrate gain - very good move
 
     if (winrateChange <= -BLUNDER_THRESHOLD) {
       return 'blunder'
@@ -873,16 +884,61 @@ const KeyMomentsAnalysis: React.FC<{
       return 'excellent'
     }
 
-    return ''
+    return '' // Normal moves get no classification
+  }
+
+  // Helper function to get proper move number for a given move analysis index
+  const getMoveNumberForIndex = (
+    index: number,
+  ): { moveNumber: number; isWhiteMove: boolean } => {
+    if (index < 0 || index >= moveAnalyses.length)
+      return { moveNumber: 1, isWhiteMove: true }
+
+    const moveAnalysis = moveAnalyses[index]
+    if (!moveAnalysis) return { moveNumber: 1, isWhiteMove: true }
+
+    // Use the same logic as the moves container
+    const isWhiteMove = isMoveByWhite(moveAnalysis.fen)
+
+    let moveNumber = 1 // Default fallback
+    if (isWhiteMove) {
+      // For white moves, get the move number from the FEN (which represents position after the move)
+      moveNumber = getMoveNumberFromFen(moveAnalysis.fen)
+    } else {
+      // For black moves, we need to find the previous white move's move number
+      // Look backwards to find the most recent white move
+      let currentIndex = index - 1
+      let foundPreviousWhite = false
+      while (currentIndex >= 0) {
+        const prevMove = moveAnalyses[currentIndex]
+        if (isMoveByWhite(prevMove.fen)) {
+          // Found the previous white move, use its move number
+          moveNumber = getMoveNumberFromFen(prevMove.fen)
+          foundPreviousWhite = true
+          break
+        }
+        currentIndex--
+      }
+      // If no previous white move found, use the current move's FEN but subtract 1
+      if (!foundPreviousWhite) {
+        moveNumber = getMoveNumberFromFen(moveAnalysis.fen) - 1
+      }
+    }
+
+    return { moveNumber, isWhiteMove }
   }
 
   // Find engine agreement moments (where user matched Stockfish exactly)
   const engineAgreements = moveAnalyses
-    .map((analysis, index) => ({
-      ...analysis,
-      index,
-      plyNumber: index + 1,
-    }))
+    .map((analysis, index) => {
+      const moveInfo = getMoveNumberForIndex(index)
+      return {
+        ...analysis,
+        index,
+        moveNumber: moveInfo.moveNumber,
+        isWhiteMove: moveInfo.isWhiteMove,
+      }
+    })
     .filter(
       (analysis) =>
         analysis.isPlayerMove &&
@@ -899,9 +955,11 @@ const KeyMomentsAnalysis: React.FC<{
         point.evaluation - evaluationChart[index - 1].evaluation,
       )
       const moveAnalysis = moveAnalyses[index]
+      const moveInfo = getMoveNumberForIndex(index)
       return {
         index,
-        plyNumber: index + 1,
+        moveNumber: moveInfo.moveNumber,
+        isWhiteMove: moveInfo.isWhiteMove,
         evalChange,
         moveAnalysis,
         isPlayerMove: point.isPlayerMove,
@@ -947,7 +1005,10 @@ const KeyMomentsAnalysis: React.FC<{
               >
                 <div>
                   <span className="text-base font-medium">
-                    {agreement.plyNumber}. {agreement.san}
+                    {agreement.isWhiteMove
+                      ? `${agreement.moveNumber}.`
+                      : `...${agreement.moveNumber}.`}{' '}
+                    {agreement.san}
                   </span>
                   <p className="text-sm text-secondary">
                     {agreement.classification === 'excellent' && (
@@ -968,9 +1029,7 @@ const KeyMomentsAnalysis: React.FC<{
       {/* Critical Moments Section */}
       {criticalMoments.length > 0 && (
         <div>
-          <h3 className="mb-1 text-lg font-semibold text-human-3">
-            Critical Decisions
-          </h3>
+          <h3 className="mb-1 text-lg font-semibold">Critical Decisions</h3>
           <p className="mb-3 text-sm text-secondary">
             Key moments that shifted the evaluation
           </p>
@@ -982,29 +1041,38 @@ const KeyMomentsAnalysis: React.FC<{
               >
                 <div>
                   <span className="text-base font-medium">
-                    {moment.plyNumber}. {moment.moveAnalysis?.san}
+                    {moment.isWhiteMove
+                      ? `${moment.moveNumber}.`
+                      : `...${moment.moveNumber}.`}{' '}
+                    {moment.moveAnalysis?.san}
+                    <span className="ml-2">
+                      {(() => {
+                        const dynamicClassification = moment.moveAnalysis
+                          ? classifyMove(moment.moveAnalysis, moment.index)
+                          : ''
+
+                        if (dynamicClassification === 'blunder') {
+                          return (
+                            <span className="font-bold text-red-400">?? </span>
+                          )
+                        } else if (dynamicClassification === 'excellent') {
+                          return (
+                            <span className="font-bold text-green-400">
+                              !!{' '}
+                            </span>
+                          )
+                        } else if (dynamicClassification === 'inaccuracy') {
+                          return (
+                            <span className="font-bold text-yellow-400">
+                              ?!{' '}
+                            </span>
+                          )
+                        }
+                        return null
+                      })()}
+                    </span>
                   </span>
                   <p className="text-sm text-secondary">
-                    {(() => {
-                      const dynamicClassification = moment.moveAnalysis
-                        ? classifyMove(moment.moveAnalysis, moment.index)
-                        : ''
-
-                      if (dynamicClassification === 'blunder') {
-                        return (
-                          <span className="font-bold text-red-400">?? </span>
-                        )
-                      } else if (dynamicClassification === 'excellent') {
-                        return (
-                          <span className="font-bold text-green-400">!! </span>
-                        )
-                      } else if (dynamicClassification === 'inaccuracy') {
-                        return (
-                          <span className="font-bold text-yellow-400">?! </span>
-                        )
-                      }
-                      return null
-                    })()}
                     Evaluation swing: {(moment.evalChange / 100).toFixed(1)}
                   </p>
                 </div>
