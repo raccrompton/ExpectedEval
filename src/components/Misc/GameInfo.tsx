@@ -79,6 +79,7 @@ export const GameInfo: React.FC<Props> = ({
               // Map page types to tour configs
               const tourTypeMap: { [key: string]: keyof typeof tourConfigs } = {
                 againstMaia: 'play',
+                handAndBrain: 'handBrain',
                 analysis: 'analysis',
                 train: 'train',
                 turing: 'turing',
