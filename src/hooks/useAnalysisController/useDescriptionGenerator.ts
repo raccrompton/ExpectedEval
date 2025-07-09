@@ -69,6 +69,7 @@ export function describePosition(
   fen: string,
   sf: StockfishEvals,
   maia: MaiaEvals,
+  whiteToMove: boolean,
 ): string {
   /* ---------- board ---------- */
   const chess = new Chess(fen)
@@ -79,6 +80,10 @@ export function describePosition(
 
   const moves = Object.keys(sf).filter((m) => legal.has(m))
   if (!moves.length) return 'No legal moves available.'
+
+  if (!whiteToMove) {
+    sf = Object.fromEntries(Object.entries(sf).map(([m, v]) => [m, -v]))
+  }
 
   /* ---------- evals (side-to-move) ---------- */
   const seval: Record<string, number> = {}
@@ -266,9 +271,12 @@ export function describePosition(
 
   /* ---------- assemble ---------- */
   const moveList = bestHarder ? listWithoutOpt : listWithOpt
-  return nGood === 1
-    ? `There ${verb} ${abundance} (${moveList}) ${outcome}, and ${pron} ${phrSet}.${tail}`
-    : bestHarder
-      ? `There ${verb} ${abundance} (${moveList}) ${outcome}, and ${pron} ${phrSet}, but the best move (${bestMoveSan}) is ${phrBest}.${tail}`
-      : `There ${verb} ${abundance} (${moveList}) ${outcome}, and ${pron} ${phrSet}.${tail}`
+  const result =
+    nGood === 1
+      ? `There ${verb} ${abundance} (${moveList}) ${outcome}, and ${pron} ${phrSet}.${tail}`
+      : bestHarder
+        ? `There ${verb} ${abundance} (${moveList}) ${outcome}, and ${pron} ${phrSet}, but the best move (${bestMoveSan}) is ${phrBest}.${tail}`
+        : `There ${verb} ${abundance} (${moveList}) ${outcome}, and ${pron} ${phrSet}.${tail}`
+
+  return result
 }

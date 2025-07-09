@@ -112,8 +112,6 @@ export const useAnalysisController = (
   const boardDescription = useBoardDescription(
     controller.currentNode || null,
     moveEvaluation,
-    blunderMeter,
-    colorSanMapping,
   )
 
   const move = useMemo(() => {
