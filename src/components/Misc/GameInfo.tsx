@@ -72,7 +72,7 @@ export const GameInfo: React.FC<Props> = ({
           )}
           <button
             type="button"
-            className="material-symbols-outlined duration-200 hover:text-human-3"
+            className="material-symbols-outlined duration-200 hover:text-human-3 focus:outline-none"
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
