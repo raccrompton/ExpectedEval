@@ -76,9 +76,19 @@ export const GameInfo: React.FC<Props> = ({
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
+              // Map page types to tour configs
+              const tourTypeMap: { [key: string]: keyof typeof tourConfigs } = {
+                againstMaia: 'play',
+                analysis: 'analysis',
+                train: 'train',
+                turing: 'turing',
+              }
+
+              const tourType = tourTypeMap[type]
+
               // Check if page type has a tour configuration
-              if (tourConfigs[type as keyof typeof tourConfigs]) {
-                const tourConfig = tourConfigs[type as keyof typeof tourConfigs]
+              if (tourType && tourConfigs[tourType]) {
+                const tourConfig = tourConfigs[tourType]
                 // Force restart the tour even if completed
                 startTour(tourConfig.id, tourConfig.steps, true)
               } else {

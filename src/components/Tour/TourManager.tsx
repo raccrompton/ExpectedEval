@@ -200,128 +200,130 @@ export const TourManager: React.FC = () => {
   }
 
   return createPortal(
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[9998]"
-        style={{
-          background: 'rgba(0, 0, 0, 0.5)',
-          WebkitClipPath: `polygon(0% 0%, 0% 100%, ${targetPosition.left - 4}px 100%, ${targetPosition.left - 4}px ${targetPosition.top - 4}px, ${targetPosition.left + targetPosition.width + 4}px ${targetPosition.top - 4}px, ${targetPosition.left + targetPosition.width + 4}px ${targetPosition.top + targetPosition.height + 4}px, ${targetPosition.left - 4}px ${targetPosition.top + targetPosition.height + 4}px, ${targetPosition.left - 4}px 100%, 100% 100%, 100% 0%)`,
-          clipPath: `polygon(0% 0%, 0% 100%, ${targetPosition.left - 4}px 100%, ${targetPosition.left - 4}px ${targetPosition.top - 4}px, ${targetPosition.left + targetPosition.width + 4}px ${targetPosition.top - 4}px, ${targetPosition.left + targetPosition.width + 4}px ${targetPosition.top + targetPosition.height + 4}px, ${targetPosition.left - 4}px ${targetPosition.top + targetPosition.height + 4}px, ${targetPosition.left - 4}px 100%, 100% 100%, 100% 0%)`,
-        }}
-        onClick={skipTour}
-      />
+    <div className="theme-dark">
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[9998]"
+          style={{
+            background: 'rgba(0, 0, 0, 0.5)',
+            WebkitClipPath: `polygon(0% 0%, 0% 100%, ${targetPosition.left - 4}px 100%, ${targetPosition.left - 4}px ${targetPosition.top - 4}px, ${targetPosition.left + targetPosition.width + 4}px ${targetPosition.top - 4}px, ${targetPosition.left + targetPosition.width + 4}px ${targetPosition.top + targetPosition.height + 4}px, ${targetPosition.left - 4}px ${targetPosition.top + targetPosition.height + 4}px, ${targetPosition.left - 4}px 100%, 100% 100%, 100% 0%)`,
+            clipPath: `polygon(0% 0%, 0% 100%, ${targetPosition.left - 4}px 100%, ${targetPosition.left - 4}px ${targetPosition.top - 4}px, ${targetPosition.left + targetPosition.width + 4}px ${targetPosition.top - 4}px, ${targetPosition.left + targetPosition.width + 4}px ${targetPosition.top + targetPosition.height + 4}px, ${targetPosition.left - 4}px ${targetPosition.top + targetPosition.height + 4}px, ${targetPosition.left - 4}px 100%, 100% 100%, 100% 0%)`,
+          }}
+          onClick={skipTour}
+        />
 
-      {/* Highlight border */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.8 }}
-        transition={{ duration: 0.3 }}
-        className="pointer-events-none absolute z-[9999] rounded-lg border-2 border-human-4 bg-transparent"
-        style={{
-          top: targetPosition.top - 4,
-          left: targetPosition.left - 4,
-          width: targetPosition.width + 8,
-          height: targetPosition.height + 8,
-        }}
-      />
+        {/* Highlight border */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          transition={{ duration: 0.3 }}
+          className="pointer-events-none absolute z-[9999] rounded-lg border-2 border-human-4 bg-transparent"
+          style={{
+            top: targetPosition.top - 4,
+            left: targetPosition.left - 4,
+            width: targetPosition.width + 8,
+            height: targetPosition.height + 8,
+          }}
+        />
 
-      {/* Tour tooltip */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 20 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="absolute z-[10000] w-80 rounded-lg bg-background-1 shadow-xl"
-        style={{
-          top: tooltipPosition.top,
-          left: tooltipPosition.left,
-        }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-human-4">
-              <span className="text-sm font-bold text-white">
-                {tourState.currentStep + 1}
-              </span>
-            </div>
-            <h3 className="text-lg font-semibold text-primary">
-              {currentStep.title}
-            </h3>
-          </div>
-          <button
-            onClick={skipTour}
-            className="text-secondary hover:text-primary"
-            title="Skip tour"
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-4">
-          <p className="text-sm leading-relaxed text-secondary">
-            {currentStep.description}
-          </p>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-white/10 p-4">
-          <div className="flex items-center gap-1">
-            {tourState.steps.map((_, index) => (
-              <div
-                key={index}
-                className={`h-2 w-2 rounded-full ${
-                  index === tourState.currentStep
-                    ? 'bg-human-4'
-                    : index < tourState.currentStep
-                      ? 'bg-human-4/60'
-                      : 'bg-white/20'
-                }`}
-              />
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrev}
-              disabled={tourState.currentStep === 0}
-              className="flex items-center gap-1 rounded bg-background-2 px-3 py-1 text-sm text-secondary transition-colors hover:bg-background-3 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <span className="material-symbols-outlined text-sm">
-                arrow_back
-              </span>
-              Previous
-            </button>
-
-            <button
-              onClick={handleNext}
-              className="flex items-center gap-1 rounded bg-human-4 px-3 py-1 text-sm text-white transition-colors hover:bg-human-4/80"
-            >
-              {tourState.currentStep === tourState.steps.length - 1
-                ? 'Finish'
-                : 'Next'}
-              {tourState.currentStep < tourState.steps.length - 1 && (
-                <span className="material-symbols-outlined text-sm">
-                  arrow_forward
+        {/* Tour tooltip */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="absolute z-[10000] w-80 rounded-lg bg-background-1 shadow-xl"
+          style={{
+            top: tooltipPosition.top,
+            left: tooltipPosition.left,
+          }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-white/10 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-human-4">
+                <span className="text-sm font-bold text-white">
+                  {tourState.currentStep + 1}
                 </span>
-              )}
+              </div>
+              <h3 className="text-lg font-semibold text-primary">
+                {currentStep.title}
+              </h3>
+            </div>
+            <button
+              onClick={skipTour}
+              className="text-secondary hover:text-primary"
+              title="Skip tour"
+            >
+              <span className="material-symbols-outlined">close</span>
             </button>
           </div>
-        </div>
 
-        {/* Keyboard hints */}
-        <div className="border-t border-white/10 px-4 py-2">
-          <p className="text-xs text-secondary">
-            Use arrow keys to navigate • Press Escape to skip
-          </p>
-        </div>
-      </motion.div>
-    </AnimatePresence>,
+          {/* Content */}
+          <div className="p-4">
+            <p className="text-sm leading-relaxed text-secondary">
+              {currentStep.description}
+            </p>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between border-t border-white/10 p-4">
+            <div className="flex items-center gap-1">
+              {tourState.steps.map((_, index) => (
+                <div
+                  key={index}
+                  className={`h-2 w-2 rounded-full ${
+                    index === tourState.currentStep
+                      ? 'bg-human-4'
+                      : index < tourState.currentStep
+                        ? 'bg-human-4/60'
+                        : 'bg-white/20'
+                  }`}
+                />
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrev}
+                disabled={tourState.currentStep === 0}
+                className="flex items-center gap-1 rounded bg-background-2 px-3 py-1 text-sm text-secondary transition-colors hover:bg-background-3 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  arrow_back
+                </span>
+                Previous
+              </button>
+
+              <button
+                onClick={handleNext}
+                className="flex items-center gap-1 rounded bg-human-4 px-3 py-1 text-sm text-white transition-colors hover:bg-human-4/80"
+              >
+                {tourState.currentStep === tourState.steps.length - 1
+                  ? 'Finish'
+                  : 'Next'}
+                {tourState.currentStep < tourState.steps.length - 1 && (
+                  <span className="material-symbols-outlined text-sm">
+                    arrow_forward
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Keyboard hints */}
+          <div className="border-t border-white/10 px-4 py-2">
+            <p className="text-xs text-secondary">
+              Use arrow keys to navigate • Press Escape to skip
+            </p>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>,
     portalRoot,
   )
 }
