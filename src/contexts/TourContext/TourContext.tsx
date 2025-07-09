@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  memo,
 } from 'react'
 import { tourConfigs } from 'src/config/tours'
 
@@ -50,177 +51,206 @@ interface TourProviderProps {
   children: React.ReactNode
 }
 
-export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
-  const [tourState, setTourState] = useState<TourState>(() => {
-    // Initialize completedTours from localStorage only once
-    const completedTours =
-      typeof window !== 'undefined'
-        ? JSON.parse(localStorage.getItem('maia-completed-tours') || '[]')
-        : []
+export const TourProvider: React.FC<TourProviderProps> = memo(
+  ({ children }) => {
+    const [tourState, setTourState] = useState<TourState>(() => {
+      // Initialize completedTours from localStorage only once
+      const completedTours =
+        typeof window !== 'undefined'
+          ? JSON.parse(localStorage.getItem('maia-completed-tours') || '[]')
+          : []
 
-    return {
-      isActive: false,
-      currentStep: 0,
-      steps: [],
-      completedTours,
-      currentTourId: undefined,
-    }
-  })
+      return {
+        isActive: false,
+        currentStep: 0,
+        steps: [],
+        completedTours,
+        currentTourId: undefined,
+      }
+    })
 
-  const startTour = useCallback(
-    (tourId: string, steps: TourStep[], forceRestart = false) => {
-      if (typeof window === 'undefined') return
+    // Prevent unnecessary re-renders by adding a ref to track if we're already starting a tour
+    const isStartingTour = React.useRef(false)
 
-      setTourState((prevState) => {
-        const completedTours = JSON.parse(
-          localStorage.getItem('maia-completed-tours') || '[]',
-        )
+    const startTour = useCallback(
+      (tourId: string, steps: TourStep[], forceRestart = false) => {
+        if (typeof window === 'undefined') return
 
-        // If not forcing restart and tour is completed, don't start
-        if (!forceRestart && completedTours.includes(tourId)) {
-          return prevState
+        // Prevent concurrent tour starts
+        if (isStartingTour.current && !forceRestart) {
+          return
         }
 
-        // If tour is already active and we're not forcing restart, don't restart
-        if (prevState.isActive && !forceRestart) {
-          return prevState
+        setTourState((prevState) => {
+          const completedTours = JSON.parse(
+            localStorage.getItem('maia-completed-tours') || '[]',
+          )
+
+          // If not forcing restart and tour is completed, don't start
+          if (!forceRestart && completedTours.includes(tourId)) {
+            return prevState
+          }
+
+          // If tour is already active and we're not forcing restart, don't restart
+          if (prevState.isActive && !forceRestart) {
+            return prevState
+          }
+
+          // Don't start tour if it's already this tour and active
+          if (
+            prevState.isActive &&
+            prevState.currentTourId === tourId &&
+            !forceRestart
+          ) {
+            return prevState
+          }
+
+          isStartingTour.current = true
+          // Reset the flag after a brief delay to allow the state to update
+          setTimeout(() => {
+            isStartingTour.current = false
+          }, 100)
+
+          return {
+            isActive: true,
+            currentStep: 0,
+            steps,
+            completedTours: prevState.completedTours, // Use existing state, don't overwrite from localStorage
+            currentTourId: tourId,
+          }
+        })
+      },
+      [],
+    )
+
+    const nextStep = useCallback(() => {
+      setTourState((prev) => {
+        if (prev.currentStep < prev.steps.length - 1) {
+          return {
+            ...prev,
+            currentStep: prev.currentStep + 1,
+          }
+        }
+        return prev
+      })
+    }, [])
+
+    const prevStep = useCallback(() => {
+      setTourState((prev) => {
+        if (prev.currentStep > 0) {
+          return {
+            ...prev,
+            currentStep: prev.currentStep - 1,
+          }
+        }
+        return prev
+      })
+    }, [])
+
+    const endTour = useCallback(() => {
+      setTourState((prev) => {
+        // Mark tour as completed - use the properly tracked tour ID
+        const currentTourId = prev.currentTourId || 'analysis' // fallback for safety
+        const completedTours = [...prev.completedTours, currentTourId]
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(
+            'maia-completed-tours',
+            JSON.stringify(completedTours),
+          )
         }
 
         return {
-          isActive: true,
+          ...prev,
+          isActive: false,
           currentStep: 0,
-          steps,
-          completedTours: prevState.completedTours, // Use existing state, don't overwrite from localStorage
-          currentTourId: tourId,
+          steps: [],
+          completedTours,
+          currentTourId: undefined,
         }
       })
-    },
-    [],
-  )
+    }, [])
 
-  const nextStep = useCallback(() => {
-    setTourState((prev) => {
-      if (prev.currentStep < prev.steps.length - 1) {
+    const skipTour = useCallback(() => {
+      setTourState((prev) => {
+        // Mark tour as completed when skipped - use the properly tracked tour ID
+        const currentTourId = prev.currentTourId || 'analysis' // fallback for safety
+        const completedTours = [...prev.completedTours, currentTourId]
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(
+            'maia-completed-tours',
+            JSON.stringify(completedTours),
+          )
+        }
+
         return {
           ...prev,
-          currentStep: prev.currentStep + 1,
+          isActive: false,
+          currentStep: 0,
+          steps: [],
+          completedTours,
+          currentTourId: undefined,
         }
-      }
-      return prev
-    })
-  }, [])
+      })
+    }, [])
 
-  const prevStep = useCallback(() => {
-    setTourState((prev) => {
-      if (prev.currentStep > 0) {
-        return {
-          ...prev,
-          currentStep: prev.currentStep - 1,
-        }
-      }
-      return prev
-    })
-  }, [])
-
-  const endTour = useCallback(() => {
-    setTourState((prev) => {
-      // Mark tour as completed - use the properly tracked tour ID
-      const currentTourId = prev.currentTourId || 'analysis' // fallback for safety
-      const completedTours = [...prev.completedTours, currentTourId]
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(
-          'maia-completed-tours',
-          JSON.stringify(completedTours),
+    const isStepActive = useCallback(
+      (stepId: string) => {
+        return (
+          tourState.isActive &&
+          tourState.steps[tourState.currentStep]?.id === stepId
         )
+      },
+      [tourState.isActive, tourState.currentStep, tourState.steps],
+    )
+
+    const getCurrentStep = useCallback(() => {
+      if (
+        !tourState.isActive ||
+        tourState.currentStep >= tourState.steps.length
+      ) {
+        return null
       }
+      return tourState.steps[tourState.currentStep]
+    }, [tourState.isActive, tourState.currentStep, tourState.steps])
 
-      return {
-        ...prev,
-        isActive: false,
-        currentStep: 0,
-        steps: [],
-        completedTours,
-        currentTourId: undefined,
-      }
-    })
-  }, [])
+    const hasCompletedTour = useCallback(
+      (tourId: string) => {
+        return tourState.completedTours.includes(tourId)
+      },
+      [tourState.completedTours],
+    )
 
-  const skipTour = useCallback(() => {
-    setTourState((prev) => {
-      // Mark tour as completed when skipped - use the properly tracked tour ID
-      const currentTourId = prev.currentTourId || 'analysis' // fallback for safety
-      const completedTours = [...prev.completedTours, currentTourId]
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(
-          'maia-completed-tours',
-          JSON.stringify(completedTours),
-        )
-      }
+    const contextValue: TourContextType = useMemo(
+      () => ({
+        tourState,
+        startTour,
+        nextStep,
+        prevStep,
+        endTour,
+        skipTour,
+        isStepActive,
+        getCurrentStep,
+        hasCompletedTour,
+      }),
+      [
+        tourState,
+        startTour,
+        nextStep,
+        prevStep,
+        endTour,
+        skipTour,
+        isStepActive,
+        getCurrentStep,
+        hasCompletedTour,
+      ],
+    )
 
-      return {
-        ...prev,
-        isActive: false,
-        currentStep: 0,
-        steps: [],
-        completedTours,
-        currentTourId: undefined,
-      }
-    })
-  }, [])
+    return (
+      <TourContext.Provider value={contextValue}>
+        {children}
+      </TourContext.Provider>
+    )
+  },
+)
 
-  const isStepActive = useCallback(
-    (stepId: string) => {
-      return (
-        tourState.isActive &&
-        tourState.steps[tourState.currentStep]?.id === stepId
-      )
-    },
-    [tourState.isActive, tourState.currentStep, tourState.steps],
-  )
-
-  const getCurrentStep = useCallback(() => {
-    if (
-      !tourState.isActive ||
-      tourState.currentStep >= tourState.steps.length
-    ) {
-      return null
-    }
-    return tourState.steps[tourState.currentStep]
-  }, [tourState.isActive, tourState.currentStep, tourState.steps])
-
-  const hasCompletedTour = useCallback(
-    (tourId: string) => {
-      return tourState.completedTours.includes(tourId)
-    },
-    [tourState.completedTours],
-  )
-
-  const contextValue: TourContextType = useMemo(
-    () => ({
-      tourState,
-      startTour,
-      nextStep,
-      prevStep,
-      endTour,
-      skipTour,
-      isStepActive,
-      getCurrentStep,
-      hasCompletedTour,
-    }),
-    [
-      tourState,
-      startTour,
-      nextStep,
-      prevStep,
-      endTour,
-      skipTour,
-      isStepActive,
-      getCurrentStep,
-      hasCompletedTour,
-    ],
-  )
-
-  return (
-    <TourContext.Provider value={contextValue}>{children}</TourContext.Provider>
-  )
-}
+TourProvider.displayName = 'TourProvider'

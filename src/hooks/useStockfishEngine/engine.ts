@@ -9,7 +9,7 @@ class Engine {
   private moves: string[]
   private isEvaluating: boolean
   private stockfish: StockfishWeb | null = null
-  private isReady: boolean = false
+  private isReady = false
 
   private store: {
     [key: string]: StockfishEvaluation
@@ -34,18 +34,20 @@ class Engine {
 
     this.onMessage = this.onMessage.bind(this)
 
-    setupStockfish().then((stockfish: StockfishWeb) => {
-      this.stockfish = stockfish
-      stockfish.uci('uci')
-      stockfish.uci('isready')
-      stockfish.uci('setoption name MultiPV value 100')
-      stockfish.onError = this.onError
-      stockfish.listen = this.onMessage
-      this.isReady = true
-    }).catch((error) => {
-      console.error('Failed to initialize Stockfish:', error)
-      this.isReady = false
-    })
+    setupStockfish()
+      .then((stockfish: StockfishWeb) => {
+        this.stockfish = stockfish
+        stockfish.uci('uci')
+        stockfish.uci('isready')
+        stockfish.uci('setoption name MultiPV value 100')
+        stockfish.onError = this.onError
+        stockfish.listen = this.onMessage
+        this.isReady = true
+      })
+      .catch((error) => {
+        console.error('Failed to initialize Stockfish:', error)
+        this.isReady = false
+      })
   }
 
   get ready(): boolean {

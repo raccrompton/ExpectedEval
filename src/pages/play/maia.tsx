@@ -118,7 +118,7 @@ const PlayMaiaPage: NextPage = () => {
   )
 
   useEffect(() => {
-    if (!openedModals.againstMaia && id && !initialTourCheck) {
+    if (!openedModals.againstMaia && !initialTourCheck) {
       setInitialTourCheck(true)
       // Check if user has completed the tour on initial load only
       if (typeof window !== 'undefined') {
@@ -131,7 +131,7 @@ const PlayMaiaPage: NextPage = () => {
         }
       }
     }
-  }, [openedModals.againstMaia, id, initialTourCheck])
+  }, [openedModals.againstMaia, initialTourCheck])
 
   useEffect(() => {
     let canceled = false
