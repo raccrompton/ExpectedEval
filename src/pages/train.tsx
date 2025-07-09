@@ -91,18 +91,10 @@ const TrainPage: NextPage = () => {
   useEffect(() => {
     if (!openedModals.train && !initialTourCheck) {
       setInitialTourCheck(true)
-      // Check if user has completed the tour on initial load only
-      if (typeof window !== 'undefined') {
-        const completedTours = JSON.parse(
-          localStorage.getItem('maia-completed-tours') || '[]',
-        )
-
-        if (!completedTours.includes('train')) {
-          startTour(tourConfigs.train.id, tourConfigs.train.steps, false)
-        }
-      }
+      // Always attempt to start the tour - the tour context will handle completion checking
+      startTour(tourConfigs.train.id, tourConfigs.train.steps, false)
     }
-  }, [openedModals.train, initialTourCheck])
+  }, [openedModals.train, initialTourCheck, startTour])
 
   const getNewGame = useCallback(async () => {
     let game
