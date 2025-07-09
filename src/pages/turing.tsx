@@ -41,7 +41,7 @@ const TuringPage: NextPage = () => {
   const hasGame = !!controller.game // Create stable boolean reference
 
   useEffect(() => {
-    if (!openedModals.turing && hasGame && !initialTourCheck) {
+    if (!openedModals.turing && !initialTourCheck) {
       setInitialTourCheck(true)
       // Check if user has completed the tour on initial load only
       if (typeof window !== 'undefined') {
@@ -54,7 +54,7 @@ const TuringPage: NextPage = () => {
         }
       }
     }
-  }, [openedModals.turing, hasGame, initialTourCheck]) // Removed startTour, use stable hasGame
+  }, [openedModals.turing, initialTourCheck])
 
   return (
     <TuringControllerContext.Provider value={controller}>

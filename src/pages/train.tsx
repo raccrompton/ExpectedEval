@@ -89,7 +89,7 @@ const TrainPage: NextPage = () => {
   }, [setInstructionsModalProps, openedModals.train])
 
   useEffect(() => {
-    if (!openedModals.train && trainingGames.length > 0 && !initialTourCheck) {
+    if (!openedModals.train && !initialTourCheck) {
       setInitialTourCheck(true)
       // Check if user has completed the tour on initial load only
       if (typeof window !== 'undefined') {
@@ -102,7 +102,7 @@ const TrainPage: NextPage = () => {
         }
       }
     }
-  }, [openedModals.train, trainingGames.length, initialTourCheck])
+  }, [openedModals.train, initialTourCheck])
 
   const getNewGame = useCallback(async () => {
     let game

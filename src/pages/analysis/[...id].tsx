@@ -82,7 +82,7 @@ const AnalysisPage: NextPage = () => {
   const [initialTourCheck, setInitialTourCheck] = useState(false)
 
   useEffect(() => {
-    if (!openedModals.analysis && analyzedGame && !initialTourCheck) {
+    if (!openedModals.analysis && !initialTourCheck) {
       setInitialTourCheck(true)
       // Check if user has completed the tour on initial load only
       const completedTours =
@@ -94,7 +94,7 @@ const AnalysisPage: NextPage = () => {
         startTour(tourConfigs.analysis.id, tourConfigs.analysis.steps, false)
       }
     }
-  }, [openedModals.analysis, analyzedGame, initialTourCheck])
+  }, [openedModals.analysis, initialTourCheck])
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
 
   const getAndSetTournamentGame = useCallback(
