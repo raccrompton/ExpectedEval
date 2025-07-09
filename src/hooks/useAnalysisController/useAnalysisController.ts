@@ -49,7 +49,7 @@ export const useAnalysisController = (
   }, [currentMaiaModel, setCurrentMaiaModel])
 
   useEngineAnalysis(
-    controller.currentNode || null,
+    controller.currentNode,
     inProgressAnalyses,
     maiaStatus,
     maia,

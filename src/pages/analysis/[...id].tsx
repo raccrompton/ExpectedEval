@@ -27,6 +27,7 @@ import {
   ModalContext,
   WindowSizeContext,
   TreeControllerContext,
+  useTour,
 } from 'src/contexts'
 import { Loading } from 'src/components/Core/Loading'
 import { AuthenticatedWrapper } from 'src/components/Core/AuthenticatedWrapper'
@@ -52,6 +53,7 @@ import type { Key } from 'chessground/types'
 import { Chess, PieceSymbol } from 'chess.ts'
 import { AnimatePresence } from 'framer-motion'
 import { useAnalysisController } from 'src/hooks'
+import { tourConfigs } from 'src/config/tours'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
 
 const MAIA_MODELS = [
@@ -69,21 +71,30 @@ const MAIA_MODELS = [
 const AnalysisPage: NextPage = () => {
   const { openedModals, setInstructionsModalProps: setInstructionsModalProps } =
     useContext(ModalContext)
+  const { startTour, hasCompletedTour } = useTour()
 
   const router = useRouter()
-
-  useEffect(() => {
-    if (!openedModals.analysis) {
-      setInstructionsModalProps({ instructionsType: 'analysis' })
-    }
-    return () => setInstructionsModalProps(undefined)
-  }, [setInstructionsModalProps, openedModals.analysis])
-
   const { id } = router.query
 
   const [analyzedGame, setAnalyzedGame] = useState<AnalyzedGame | undefined>(
     undefined,
   )
+  const [initialTourCheck, setInitialTourCheck] = useState(false)
+
+  useEffect(() => {
+    if (!openedModals.analysis && !initialTourCheck) {
+      setInitialTourCheck(true)
+      // Check if user has completed the tour on initial load only
+      const completedTours =
+        typeof window !== 'undefined'
+          ? JSON.parse(localStorage.getItem('maia-completed-tours') || '[]')
+          : []
+
+      if (!completedTours.includes('analysis')) {
+        startTour(tourConfigs.analysis.id, tourConfigs.analysis.steps, false)
+      }
+    }
+  }, [openedModals.analysis, initialTourCheck])
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
 
   const getAndSetTournamentGame = useCallback(
@@ -326,7 +337,7 @@ const Analysis: React.FC<Props> = ({
 
   useEffect(() => {
     controller.setCurrentNode(analyzedGame.tree?.getRoot())
-  }, [analyzedGame])
+  }, [analyzedGame, controller])
 
   useEffect(() => {
     setHoverArrow(null)

@@ -45,7 +45,7 @@ import { useAnalysisController } from 'src/hooks/useAnalysisController'
 import { AllStats, useStats } from 'src/hooks/useStats'
 import { TrainingGame, Status } from 'src/types/training'
 import { MaiaEvaluation, StockfishEvaluation } from 'src/types'
-import { ModalContext, WindowSizeContext } from 'src/contexts'
+import { ModalContext, WindowSizeContext, useTour } from 'src/contexts'
 import { TrainingControllerContext } from 'src/contexts/TrainingControllerContext'
 import {
   convertTrainingGameToAnalyzedGame,
@@ -54,6 +54,7 @@ import {
   requiresPromotion,
 } from 'src/utils/train/utils'
 import { mockAnalysisData } from 'src/hooks/useAnalysisController/mockData'
+import { tourConfigs } from 'src/config/tours'
 
 const statsLoader = async () => {
   const stats = await getTrainingPlayerStats()
@@ -68,13 +69,7 @@ const TrainPage: NextPage = () => {
   const router = useRouter()
   const { openedModals, setInstructionsModalProps: setInstructionsModalProps } =
     useContext(ModalContext)
-
-  useEffect(() => {
-    if (!openedModals.train) {
-      setInstructionsModalProps({ instructionsType: 'train' })
-    }
-    return () => setInstructionsModalProps(undefined)
-  }, [setInstructionsModalProps, openedModals.train])
+  const { startTour, hasCompletedTour } = useTour()
 
   const [trainingGames, setTrainingGames] = useState<TrainingGame[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -84,6 +79,30 @@ const TrainPage: NextPage = () => {
   const [previousGameResults, setPreviousGameResults] = useState<
     (TrainingGame & { result?: boolean; ratingDiff?: number })[]
   >([])
+  const [initialTourCheck, setInitialTourCheck] = useState(false)
+
+  useEffect(() => {
+    if (!openedModals.train) {
+      setInstructionsModalProps({ instructionsType: 'train' })
+    }
+    return () => setInstructionsModalProps(undefined)
+  }, [setInstructionsModalProps, openedModals.train])
+
+  useEffect(() => {
+    if (!openedModals.train && !initialTourCheck) {
+      setInitialTourCheck(true)
+      // Check if user has completed the tour on initial load only
+      if (typeof window !== 'undefined') {
+        const completedTours = JSON.parse(
+          localStorage.getItem('maia-completed-tours') || '[]',
+        )
+
+        if (!completedTours.includes('train')) {
+          startTour(tourConfigs.train.id, tourConfigs.train.steps, false)
+        }
+      }
+    }
+  }, [openedModals.train, initialTourCheck])
 
   const getNewGame = useCallback(async () => {
     let game
@@ -635,7 +654,10 @@ const Train: React.FC<Props> = ({
           </div>
 
           <div className="flex h-[85vh] w-[45vh] flex-col gap-2 2xl:w-[55vh]">
-            <div className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]">
+            <div
+              id="train-page"
+              className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]"
+            >
               <GameBoard
                 game={trainingGame}
                 currentNode={
@@ -1013,7 +1035,10 @@ const Train: React.FC<Props> = ({
               </p>
             </GameInfo>
           </div>
-          <div className="relative flex aspect-square h-[100vw] w-screen">
+          <div
+            id="train-page"
+            className="relative flex aspect-square h-[100vw] w-screen"
+          >
             <GameBoard
               game={trainingGame}
               currentNode={
