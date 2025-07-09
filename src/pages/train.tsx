@@ -1130,7 +1130,10 @@ const Train: React.FC<Props> = ({
             </div>
             <StatsDisplay stats={stats} />
             <ContinueAgainstMaia launchContinue={launchContinue} />
-            <div className="flex w-full flex-col gap-1 overflow-hidden">
+            <div
+              id="analysis"
+              className="flex w-full flex-col gap-1 overflow-hidden"
+            >
               <div className="relative">
                 <BlunderMeter
                   hover={showAnalysis ? hover : mockHover}

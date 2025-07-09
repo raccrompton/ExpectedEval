@@ -881,7 +881,7 @@ const Analysis: React.FC<Props> = ({
             >
               <NestedGameInfo />
             </GameInfo>
-            <div className="relative flex h-[100vw] w-screen">
+            <div id="analysis" className="relative flex h-[100vw] w-screen">
               <GameBoard
                 game={analyzedGame}
                 availableMoves={controller.moves}

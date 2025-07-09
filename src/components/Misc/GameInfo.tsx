@@ -31,7 +31,10 @@ export const GameInfo: React.FC<Props> = ({
   const { startTour } = useTour()
 
   return (
-    <div className="flex w-full flex-col items-start justify-start gap-1 overflow-hidden bg-background-1 p-3 md:rounded">
+    <div
+      id="analysis-game-list"
+      className="flex w-full flex-col items-start justify-start gap-1 overflow-hidden bg-background-1 p-3 md:rounded"
+    >
       <div className="flex w-full items-center justify-between">
         <div className="flex items-center justify-start gap-1.5">
           <span className="material-symbols-outlined text-xl">{icon}</span>
