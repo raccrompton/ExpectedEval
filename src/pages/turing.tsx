@@ -25,28 +25,18 @@ import { useTuringController } from 'src/hooks/useTuringController/useTuringCont
 import { tourConfigs } from 'src/config/tours'
 
 const TuringPage: NextPage = () => {
-  const { openedModals, setInstructionsModalProps: setInstructionsModalProps } =
-    useContext(ModalContext)
-  const { startTour, hasCompletedTour } = useTour()
+  const { startTour } = useTour()
   const [initialTourCheck, setInitialTourCheck] = useState(false)
 
-  useEffect(() => {
-    if (!openedModals.turing) {
-      setInstructionsModalProps({ instructionsType: 'turing' })
-    }
-    return () => setInstructionsModalProps(undefined)
-  }, [setInstructionsModalProps, openedModals.turing])
-
   const controller = useTuringController()
-  const hasGame = !!controller.game // Create stable boolean reference
 
   useEffect(() => {
-    if (!openedModals.turing && !initialTourCheck) {
+    if (!initialTourCheck) {
       setInitialTourCheck(true)
       // Always attempt to start the tour - the tour context will handle completion checking
       startTour(tourConfigs.turing.id, tourConfigs.turing.steps, false)
     }
-  }, [openedModals.turing, initialTourCheck, startTour])
+  }, [initialTourCheck, startTour])
 
   return (
     <TuringControllerContext.Provider value={controller}>
