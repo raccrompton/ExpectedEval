@@ -69,14 +69,14 @@ export const TuringLog: React.FC = () => {
                       {game.result?.bot === 'white'
                         ? 'White was the bot'
                         : game.result?.bot === 'black'
-                        ? 'Black was the bot'
-                        : game.termination.winner === 'white'
-                        ? 'White wins'
-                        : game.termination.winner === 'black'
-                        ? 'Black wins'
-                        : game.termination.winner === 'none'
-                        ? 'Draw'
-                        : 'Game in progress'}
+                          ? 'Black was the bot'
+                          : game.termination.winner === 'white'
+                            ? 'White wins'
+                            : game.termination.winner === 'black'
+                              ? 'Black wins'
+                              : game.termination.winner === 'none'
+                                ? 'Draw'
+                                : 'Game in progress'}
                     </p>
                     {game.result?.ratingDiff !== undefined && (
                       <div className="flex items-center">
