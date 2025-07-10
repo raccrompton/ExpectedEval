@@ -19,7 +19,7 @@ const BlogPost = ({ post }: BlogPostProps) => {
   }
 
   return (
-    <div className="flex h-full max-w-[80ch] flex-col items-center justify-center gap-5 py-[10%] md:py-[2%]">
+    <div className="flex h-full flex-col items-center justify-center gap-5 py-[10%] md:py-[2%]">
       <Head>
         <title>{post.title} – Maia Chess</title>
         <meta name="description" content={post.excerpt} />
@@ -59,7 +59,7 @@ const BlogPost = ({ post }: BlogPostProps) => {
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={`https://maiachess.com/blog/${post.id}`} />
       </Head>
-      <div className="flex max-w-[90%] flex-col items-center justify-center overflow-x-hidden">
+      <div className="flex max-w-[90%] flex-col items-center justify-center overflow-x-hidden md:max-w-[80ch]">
         <div className="mb-8 flex w-full flex-col gap-2">
           <Link href="/blog">
             <p className="hover:opacity-75">← Go back</p>
