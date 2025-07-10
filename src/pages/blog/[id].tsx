@@ -28,7 +28,7 @@ const BlogPost = ({ post }: BlogPostProps) => {
         />
       </Head>
       <div className="flex w-full flex-col items-center justify-start overflow-x-hidden">
-        <div className="flex flex-col gap-2 md:w-8/12">
+        <div className="mb-8 flex flex-col gap-2 md:w-8/12">
           <Link href="/blog">
             <p className="hover:opacity-75">← Go back</p>
           </Link>
@@ -77,26 +77,10 @@ const BlogPost = ({ post }: BlogPostProps) => {
             ))}
           </div>
         </div>
-        <div className="markdown-content w-full leading-relaxed md:w-8/12">
+        <div className="prose-xl prose-invert w-full leading-relaxed prose-headings:mb-2 prose-ul:list-inside prose-ul:list-disc prose-li:text-sm prose-hr:my-8 prose-hr:opacity-20 md:w-8/12">
           <Markdown>{post.content}</Markdown>
         </div>
       </div>
-      <style>{`
-        .markdown-content h1,
-        .markdown-content h2,
-        .markdown-content h3,
-        .markdown-content h4,
-        .markdown-content h5,
-        .markdown-content h6 {
-            margin-top: 0.8em;
-            margin-bottom: 0.1em;
-        }
-
-        .markdown-content p {
-            margin-top: 0.5em;
-            margin-bottom: 0.5em;
-        }
-      `}</style>
     </div>
   )
 }
