@@ -816,7 +816,7 @@ const Train: React.FC<Props> = ({
               </div>
 
               {/* Smaller screens (below xl): Combined Highlight + BlunderMeter container */}
-              <div className="flex h-[calc((85vh)*0.3)] overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1 xl:hidden">
+              <div className="flex h-[calc((85vh)*0.4)] overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1 xl:hidden">
                 <div className="flex h-full w-full border-r-[0.5px] border-white/40">
                   <Highlight
                     setCurrentMaiaModel={
@@ -938,7 +938,7 @@ const Train: React.FC<Props> = ({
               </div>
 
               {/* Smaller screens (below xl): MoveMap full width */}
-              <div className="flex h-[calc((85vh)*0.35)] w-full xl:hidden">
+              <div className="flex h-[calc((85vh)*0.3)] w-full xl:hidden">
                 <div className="h-full w-full">
                   <MoveMap
                     moveMap={
@@ -975,7 +975,7 @@ const Train: React.FC<Props> = ({
             </div>
 
             {/* Smaller screens (below xl): MovesByRating full width */}
-            <div className="flex h-[calc((85vh)*0.35)] w-full rounded bg-background-1/60 xl:hidden">
+            <div className="flex h-[calc((85vh)*0.3)] w-full rounded bg-background-1/60 xl:hidden">
               <div className="relative h-full w-full">
                 <MovesByRating
                   moves={
