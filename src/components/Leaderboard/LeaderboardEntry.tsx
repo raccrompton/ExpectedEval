@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { PlayerStats } from 'src/types'
 import { getPlayerStats } from 'src/api'
+import { useLeaderboardContext } from './LeaderboardContext'
 
 interface Props {
   index: number
@@ -20,8 +21,12 @@ export const LeaderboardEntry = ({
   elo,
 }: Props) => {
   const [hover, setHover] = useState(false)
-  const [popup, setPopup] = useState(false)
   const [stats, setStats] = useState<PlayerStats | null>(null)
+  const shouldShowPopupRef = useRef(false)
+  const { activePopup, setActivePopup } = useLeaderboardContext()
+
+  const entryKey = `${typeId}-${display_name}-${index}`
+  const isPopupVisible = activePopup === entryKey
 
   let ratingKey:
     | 'regularRating'
@@ -88,32 +93,42 @@ export const LeaderboardEntry = ({
       break
   }
 
-  useEffect(() => {
-    let timer: NodeJS.Timeout
-    if (hover) {
-      timer = setTimeout(() => {
-        fetchStats()
-      }, 300)
-    } else {
-      setPopup(false)
-    }
-
-    return () => clearTimeout(timer)
-  }, [hover])
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const playerStats = await getPlayerStats(display_name)
       setStats(playerStats)
-      setPopup(true)
+      // Only show popup if we're still supposed to (user still hovering)
+      if (shouldShowPopupRef.current && hover) {
+        setActivePopup(entryKey)
+      }
     } catch (error) {
       console.error(error)
     }
-  }
+  }, [display_name, hover, entryKey, setActivePopup])
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout
+    if (hover) {
+      shouldShowPopupRef.current = true
+      timer = setTimeout(() => {
+        fetchStats()
+      }, 500)
+    } else {
+      shouldShowPopupRef.current = false
+      setActivePopup(null)
+    }
+
+    return () => {
+      clearTimeout(timer)
+      if (!hover) {
+        shouldShowPopupRef.current = false
+      }
+    }
+  }, [hover, setActivePopup, entryKey, fetchStats])
 
   return (
     <div
-      className={`relative flex w-full items-center justify-between px-6 py-2 ${index % 2 === 0 ? 'bg-background-1/90' : 'bg-background-1/50'}`}
+      className={`relative flex w-full items-center justify-between px-4 py-1.5 ${index % 2 === 0 ? 'bg-opacity-0' : 'bg-white bg-opacity-[0.015]'}`}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -129,20 +144,20 @@ export const LeaderboardEntry = ({
         </Link>
       </div>
       <p>{elo}</p>
-      {popup && stats && (
-        <div className="absolute left-0 top-[100%] z-20 flex w-full max-w-[26rem] flex-col overflow-hidden rounded border border-white/10 bg-background-1">
-          <div className="flex w-full justify-between bg-backdrop/50 px-4 py-2">
+      {isPopupVisible && stats && (
+        <div className="absolute left-0 top-[100%] z-20 flex w-full max-w-[26rem] flex-col overflow-hidden rounded-lg border-2 border-white/20 bg-background-1 outline outline-1 outline-white/5 backdrop-blur-sm">
+          <div className="flex w-full justify-between border-b border-white/10 bg-gradient-to-r from-background-2/80 to-background-2/60 px-4 py-2">
             <p>
               <span className="font-bold">{display_name}</span>&apos;s {type}{' '}
               Statistics
             </p>
             <Link href={`/profile/${display_name}`}>
-              <i className="material-symbols-outlined select-none text-lg text-primary hover:text-human-1">
+              <i className="material-symbols-outlined select-none text-lg text-primary transition-colors hover:text-human-1">
                 open_in_new
               </i>
             </Link>
           </div>
-          <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center justify-between bg-gradient-to-b from-background-1 to-background-1/95 px-4 py-3">
             <div className="flex flex-col items-center justify-center gap-0.5 text-human-1">
               <p className="text-sm xl:text-base">Rating</p>
               <b className="text-3xl xl:text-3xl">{stats[ratingKey]}</b>
