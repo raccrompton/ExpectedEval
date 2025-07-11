@@ -189,26 +189,21 @@ async function createRatingPrediction(
     throw error
   }
 
-  // Calculate weighted average rating prediction using log likelihood
-  const weightedSum = ratingDistribution.reduce(
-    (sum, item) => sum + item.rating * item.likelihoodProbability,
-    0,
+  // Find the rating level with the highest log likelihood (most likely level)
+  const mostLikelyRating = ratingDistribution.reduce((best, current) =>
+    current.logLikelihood > best.logLikelihood ? current : best,
   )
-  const totalWeight = ratingDistribution.reduce(
-    (sum, item) => sum + item.likelihoodProbability,
-    0,
-  )
-  const predictedRating = Math.round(weightedSum / totalWeight)
+  const predictedRating = mostLikelyRating.rating
 
-  // Calculate standard deviation (uncertainty) using likelihood probabilities
-  const variance =
-    ratingDistribution.reduce(
-      (sum, item) =>
-        sum +
-        item.likelihoodProbability * Math.pow(item.rating - predictedRating, 2),
-      0,
-    ) / totalWeight
-  const standardDeviation = Math.sqrt(variance)
+  // Calculate standard deviation (uncertainty) based on spread of likelihood probabilities
+  // This gives a sense of how confident we are in the prediction
+  const weightedVariance = ratingDistribution.reduce(
+    (sum, item) =>
+      sum +
+      item.likelihoodProbability * Math.pow(item.rating - predictedRating, 2),
+    0,
+  )
+  const standardDeviation = Math.sqrt(weightedVariance)
 
   return {
     predictedRating,
