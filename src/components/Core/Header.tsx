@@ -21,7 +21,10 @@ export const Header: React.FC = () => {
 
   const startGame = useCallback(
     (playType: PlayType) => {
-      if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      if (
+        typeof document !== 'undefined' &&
+        document.activeElement instanceof HTMLElement
+      ) {
         document.activeElement.blur()
       }
       setPlaySetupModalProps({ playType: playType })

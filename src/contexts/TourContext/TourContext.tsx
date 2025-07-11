@@ -73,9 +73,9 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
   useEffect(() => {
     if (isClient) {
       const completedTours = JSON.parse(
-        localStorage.getItem('maia-completed-tours') || '[]'
+        localStorage.getItem('maia-completed-tours') || '[]',
       )
-      console.log('Tour system ready, completed tours:', completedTours)
+
       setTourState((prev) => ({
         ...prev,
         completedTours,
@@ -96,7 +96,16 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     isLastStep,
     index,
     size,
-  }: any) => {
+  }: {
+    step: { content: unknown }
+    tooltipProps: React.HTMLAttributes<HTMLDivElement>
+    primaryProps: React.ButtonHTMLAttributes<HTMLButtonElement>
+    backProps: React.ButtonHTMLAttributes<HTMLButtonElement>
+    closeProps: React.ButtonHTMLAttributes<HTMLButtonElement>
+    isLastStep: boolean
+    index: number
+    size: number
+  }) => {
     // step.content contains our TourStep object with title and description
     const tourStep = step.content as TourStep
 
@@ -189,7 +198,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
   const convertToJoyrideSteps = useCallback((steps: TourStep[]): Step[] => {
     return steps.map((step) => ({
       target: `#${step.targetId}`,
-      content: step as any, // Custom tooltip component handles this
+      content: step as unknown as React.ReactNode, // Custom tooltip component handles this
       placement: step.placement || 'bottom',
       disableBeacon: true,
       hideCloseButton: true,
@@ -199,37 +208,36 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
   }, [])
 
   // Helper function to actually start the tour
-  const doStartTour = useCallback((tourId: string, steps: TourStep[]) => {
-    setTourState((prevState) => {
-      const stateCompletedTours = prevState.completedTours
-      const localStorageCompletedTours = isClient
-        ? JSON.parse(localStorage.getItem('maia-completed-tours') || '[]')
-        : []
+  const doStartTour = useCallback(
+    (tourId: string, steps: TourStep[]) => {
+      setTourState((prevState) => {
+        const stateCompletedTours = prevState.completedTours
+        const localStorageCompletedTours = isClient
+          ? JSON.parse(localStorage.getItem('maia-completed-tours') || '[]')
+          : []
 
-      const allCompletedTours = [
-        ...new Set([...stateCompletedTours, ...localStorageCompletedTours]),
-      ]
+        const allCompletedTours = [
+          ...new Set([...stateCompletedTours, ...localStorageCompletedTours]),
+        ]
 
-      console.log('Starting tour:', { tourId, steps: steps.length, completedTours: allCompletedTours })
-      return {
-        isActive: true,
-        currentStep: 0,
-        steps,
-        completedTours: allCompletedTours,
-        currentTourId: tourId,
-        ready: prevState.ready,
-      }
-    })
-  }, [isClient])
+        return {
+          isActive: true,
+          currentStep: 0,
+          steps,
+          completedTours: allCompletedTours,
+          currentTourId: tourId,
+          ready: prevState.ready,
+        }
+      })
+    },
+    [isClient],
+  )
 
   const startTour = useCallback(
     (tourId: string, steps: TourStep[], forceRestart = false) => {
-      console.log('startTour called:', { tourId, forceRestart, isClient, ready: tourState.ready })
-      
       // For force restart (manual starts), only check if client is ready
       // For automatic starts, check both client and tour ready state
       if (!isClient || (!forceRestart && !tourState.ready)) {
-        console.log('startTour blocked:', { isClient, ready: tourState.ready, forceRestart })
         return
       }
 
@@ -242,15 +250,13 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
         const allCompletedTours = [
           ...new Set([...stateCompletedTours, ...localStorageCompletedTours]),
         ]
-        
+
         if (allCompletedTours.includes(tourId)) {
-          console.log('Tour already completed, skipping:', tourId)
           return
         }
-        
+
         // Check if tour is already active
         if (tourState.isActive && tourState.currentTourId === tourId) {
-          console.log('Tour already active, skipping:', tourId)
           return
         }
       }
@@ -260,7 +266,6 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
         const firstTargetId = steps[0].targetId
         const targetElement = document.getElementById(firstTargetId)
         if (!targetElement) {
-          console.log('Target element not found, delaying tour start:', firstTargetId)
           // Retry with multiple attempts to handle loading states
           let attempts = 0
           const maxAttempts = 5
@@ -268,11 +273,9 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
             attempts++
             const retryElement = document.getElementById(firstTargetId)
             if (retryElement) {
-              console.log(`Retrying tour start after ${attempts} attempts`)
               clearInterval(retryInterval)
               doStartTour(tourId, steps)
             } else if (attempts >= maxAttempts) {
-              console.log(`Target element still not found after ${maxAttempts} attempts, skipping tour`)
               clearInterval(retryInterval)
             }
           }, 1000)
@@ -283,7 +286,14 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
       // Start the tour immediately
       doStartTour(tourId, steps)
     },
-    [isClient, tourState.ready, tourState.completedTours, tourState.isActive, tourState.currentTourId, doStartTour],
+    [
+      isClient,
+      tourState.ready,
+      tourState.completedTours,
+      tourState.isActive,
+      tourState.currentTourId,
+      doStartTour,
+    ],
   )
 
   const nextStep = useCallback(() => {
@@ -389,20 +399,49 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     [tourState.completedTours],
   )
 
+  // Helper function for mobile scrolling
+  const scrollToTooltipOnMobile = useCallback(() => {
+    const isMobile = window.innerWidth < 768
+    if (isMobile) {
+      setTimeout(() => {
+        const tooltip = document.querySelector(
+          '[data-testid="react-joyride-tooltip"], .react-joyride__tooltip',
+        )
+        if (tooltip) {
+          const rect = tooltip.getBoundingClientRect()
+          const scrollTop = window.pageYOffset + rect.top - 20
+
+          window.scrollTo({
+            top: scrollTop,
+            behavior: 'smooth',
+          })
+        }
+      }, 100)
+    }
+  }, [])
+
   // Custom handlers for navigation
   const handleNext = useCallback(() => {
     if (tourState.currentStep < tourState.steps.length - 1) {
       nextStep()
+      scrollToTooltipOnMobile()
     } else {
       endTour()
     }
-  }, [tourState.currentStep, tourState.steps.length, nextStep, endTour])
+  }, [
+    tourState.currentStep,
+    tourState.steps.length,
+    nextStep,
+    endTour,
+    scrollToTooltipOnMobile,
+  ])
 
   const handlePrevious = useCallback(() => {
     if (tourState.currentStep > 0) {
       prevStep()
+      scrollToTooltipOnMobile()
     }
-  }, [tourState.currentStep, prevStep])
+  }, [tourState.currentStep, prevStep, scrollToTooltipOnMobile])
 
   const handleClose = useCallback(() => {
     skipTour()
@@ -442,14 +481,32 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
 
   // Handle Joyride callback
   const handleJoyrideCallback = useCallback(
-    (data: any) => {
+    (data: {
+      status: string
+      type: string
+      action?: string
+      index?: number
+    }) => {
       const { status, type, action, index } = data
+
+      // Handle mobile scrolling when a step becomes active
+      if (
+        type === 'step:after' &&
+        (action === 'next' || action === 'prev' || action === 'start')
+      ) {
+        scrollToTooltipOnMobile()
+      }
+
+      // Also handle initial tour start
+      if (type === 'tour:start') {
+        scrollToTooltipOnMobile()
+      }
 
       if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
         endTour()
       }
     },
-    [endTour],
+    [endTour, scrollToTooltipOnMobile],
   )
 
   const contextValue: TourContextType = useMemo(

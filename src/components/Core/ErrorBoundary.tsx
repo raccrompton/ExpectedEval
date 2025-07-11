@@ -46,7 +46,9 @@ export class ErrorBoundary extends Component<Props, State> {
               className="flex items-center justify-center rounded bg-human-3 px-8 py-2 transition duration-200 hover:bg-human-4"
               onClick={() => this.setState({ hasError: false })}
             >
-              <span className="text-lg text-primary">Click here to go home</span>
+              <span className="text-lg text-primary">
+                Click here to go home
+              </span>
             </Link>
           </div>
         )
@@ -72,7 +74,9 @@ export class ErrorBoundary extends Component<Props, State> {
               className="flex items-center justify-center rounded bg-human-3 px-8 py-2 transition duration-200 hover:bg-human-4"
               onClick={() => this.setState({ hasError: false })}
             >
-              <span className="text-lg text-primary">Click here to go home</span>
+              <span className="text-lg text-primary">
+                Click here to go home
+              </span>
             </Link>
           </div>
           <div className="mt-4 flex flex-col justify-center">
