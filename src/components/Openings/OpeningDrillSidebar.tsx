@@ -89,8 +89,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
           <div className="flex justify-between text-xs">
             <span className="text-secondary">Drill Progress</span>
             <span className="font-medium text-human-4">
-              {Math.min(completedDrills.length + 1, totalDrills)} of{' '}
-              {totalDrills}
+              {currentDrillIndex + 1} of {totalDrills}
             </span>
           </div>
           <div className="h-2 w-full rounded bg-background-2">
@@ -100,7 +99,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
                 width: `${
                   totalDrills > 0
                     ? Math.min(
-                        (completedDrills.length / totalDrills) * 100,
+                        ((currentDrillIndex + 1) / totalDrills) * 100,
                         100,
                       )
                     : 0
