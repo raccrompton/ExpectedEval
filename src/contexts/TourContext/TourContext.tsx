@@ -93,7 +93,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     const checkModal = () => {
       const modal = document.querySelector('[data-testid="download-modal"]')
       const modalVisible = !!modal
-      
+
       if (isDownloadModalVisible && !modalVisible) {
         // Modal just became hidden, add a short delay
         setModalJustHidden(true)
@@ -101,7 +101,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
           setModalJustHidden(false)
         }, 500)
       }
-      
+
       setIsDownloadModalVisible(modalVisible)
     }
 
@@ -112,7 +112,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     const observer = new MutationObserver(checkModal)
     observer.observe(document.body, {
       childList: true,
-      subtree: true
+      subtree: true,
     })
 
     return () => observer.disconnect()
@@ -267,7 +267,6 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     [isClient],
   )
 
-
   const startTour = useCallback(
     (tourId: string, steps: TourStep[], forceRestart = false) => {
       // For force restart (manual starts), only check if client is ready
@@ -295,7 +294,6 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
           return
         }
       }
-
 
       // For automatic starts, check if target elements exist
       if (!forceRestart && steps.length > 0) {

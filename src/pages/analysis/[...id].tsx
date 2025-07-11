@@ -333,7 +333,6 @@ const Analysis: React.FC<Props> = ({
     }
   }, [analyzedGame])
 
-
   useEffect(() => {
     setHoverArrow(null)
   }, [controller.currentNode])
