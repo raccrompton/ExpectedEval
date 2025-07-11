@@ -69,7 +69,7 @@ const MAIA_MODELS = [
 ]
 
 const AnalysisPage: NextPage = () => {
-  const { startTour } = useTour()
+  const { startTour, tourState } = useTour()
 
   const router = useRouter()
   const { id } = router.query
@@ -80,12 +80,13 @@ const AnalysisPage: NextPage = () => {
   const [initialTourCheck, setInitialTourCheck] = useState(false)
 
   useEffect(() => {
-    if (!initialTourCheck) {
+    // Wait for tour system to be ready before starting tour
+    if (!initialTourCheck && tourState.ready) {
       setInitialTourCheck(true)
       // Always attempt to start the tour - the tour context will handle completion checking
       startTour(tourConfigs.analysis.id, tourConfigs.analysis.steps, false)
     }
-  }, [initialTourCheck, startTour])
+  }, [initialTourCheck, startTour, tourState.ready])
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
 
   const getAndSetTournamentGame = useCallback(

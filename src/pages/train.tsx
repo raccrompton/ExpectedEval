@@ -67,7 +67,7 @@ const statsLoader = async () => {
 
 const TrainPage: NextPage = () => {
   const router = useRouter()
-  const { startTour } = useTour()
+  const { startTour, tourState } = useTour()
 
   const [trainingGames, setTrainingGames] = useState<TrainingGame[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -80,12 +80,12 @@ const TrainPage: NextPage = () => {
   const [initialTourCheck, setInitialTourCheck] = useState(false)
 
   useEffect(() => {
-    if (!initialTourCheck) {
+    if (!initialTourCheck && tourState.ready) {
       setInitialTourCheck(true)
       // Always attempt to start the tour - the tour context will handle completion checking
       startTour(tourConfigs.train.id, tourConfigs.train.steps, false)
     }
-  }, [initialTourCheck, startTour])
+  }, [initialTourCheck, startTour, tourState.ready])
 
   const getNewGame = useCallback(async () => {
     let game
