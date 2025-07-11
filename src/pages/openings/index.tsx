@@ -455,6 +455,7 @@ const OpeningsPage: NextPage = () => {
               onResetCurrentDrill={controller.resetCurrentDrill}
               onChangeSelections={handleChangeSelections}
               onLoadCompletedDrill={controller.loadCompletedDrill}
+              drillSequence={controller.drillSequence}
             />
           </div>
 
