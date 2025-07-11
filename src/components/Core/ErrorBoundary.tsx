@@ -37,8 +37,10 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.state.isUnauthorized) {
         return (
           <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-backdrop">
-            <h2 className="text-3xl font-bold">Unauthorized Access</h2>
-            <p>
+            <h2 className="text-3xl font-bold text-primary">
+              Unauthorized Access
+            </h2>
+            <p className="text-primary">
               You do not have permission to view this content. Please log in.
             </p>
             <Link
