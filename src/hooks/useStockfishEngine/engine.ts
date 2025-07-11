@@ -107,11 +107,13 @@ class Engine {
 
   private sendMessage(message: string) {
     if (this.stockfish) {
+      console.warn(message)
       this.stockfish.uci(message)
     }
   }
 
   private onMessage(msg: string) {
+    console.log(msg)
     const matches = [
       ...msg.matchAll(
         /info depth (\d+) seldepth (\d+) multipv (\d+) score (?:cp (-?\d+)|mate (-?\d+)).+ pv ((?:\S+\s*)+)/g,
