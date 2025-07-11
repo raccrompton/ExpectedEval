@@ -123,15 +123,6 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
           ) : (
             <div className="flex flex-col">
               {completedDrills.map((completedDrill, index) => {
-                const accuracy =
-                  completedDrill.totalMoves > 0
-                    ? Math.round(
-                        (completedDrill.goodMoves.length /
-                          completedDrill.totalMoves) *
-                          100,
-                      )
-                    : 0
-
                 // Check if this drill is currently loaded
                 const isCurrentlyLoaded =
                   currentDrill &&
@@ -191,29 +182,10 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
                         </div>
                       </div>
                       <div className="text-right">
-                        <div
-                          className={`text-xs font-bold ${
-                            accuracy >= 80
-                              ? 'text-green-400'
-                              : accuracy >= 60
-                                ? 'text-yellow-400'
-                                : 'text-red-400'
-                          }`}
-                        >
-                          {accuracy}%
-                        </div>
                         <div className="text-xs text-secondary">
                           {completedDrill.totalMoves} moves
                         </div>
                       </div>
-                    </div>
-                    <div className="mt-1 flex gap-4 text-xs">
-                      <span className="text-green-400">
-                        ✓ {completedDrill.goodMoves.length}
-                      </span>
-                      <span className="text-red-400">
-                        ✗ {completedDrill.blunders.length}
-                      </span>
                     </div>
                   </button>
                 )
