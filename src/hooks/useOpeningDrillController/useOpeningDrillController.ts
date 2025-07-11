@@ -231,19 +231,39 @@ export const useOpeningDrillController = (
 
   // Initialize drilling session from configuration
   useEffect(() => {
+    console.log('⚙️ Configuration initialization effect triggered')
+    console.log('📋 drillSequence.length:', configuration.drillSequence.length)
+    console.log('📊 remainingDrills.length:', remainingDrills.length)
+    console.log('🏁 allDrillsCompleted:', allDrillsCompleted)
+    console.log('📝 drillSequence:', configuration.drillSequence)
+
     if (
       configuration.drillSequence.length > 0 &&
       remainingDrills.length === 0 &&
       !allDrillsCompleted
     ) {
+      console.log('🚀 Initializing drill session!')
       setRemainingDrills(configuration.drillSequence)
       setCurrentDrill(configuration.drillSequence[0])
       setCurrentDrillIndex(0)
     }
   }, [configuration.drillSequence, remainingDrills.length, allDrillsCompleted])
 
+  // Debug effect to track currentDrill changes
+  useEffect(() => {
+    console.log('🔍 currentDrill changed:', {
+      id: currentDrill?.id,
+      name: currentDrill?.opening.name,
+      playerColor: currentDrill?.playerColor,
+    })
+  }, [currentDrill])
+
   // Initialize current drill game when drill changes
   useEffect(() => {
+    console.log('🎮 Drill initialization effect triggered')
+    console.log('🎯 currentDrill:', currentDrill?.opening.name)
+    console.log('🏁 allDrillsCompleted:', allDrillsCompleted)
+
     if (!currentDrill || allDrillsCompleted) return
 
     const startingFen =
@@ -254,7 +274,9 @@ export const useOpeningDrillController = (
     const pgn = currentDrill.variation
       ? currentDrill.variation.pgn
       : currentDrill.opening.pgn
+    console.log('📝 PGN:', pgn)
     const endNode = parsePgnToTree(pgn, gameTree)
+    console.log('🏁 Opening end node FEN:', endNode?.fen)
 
     const drillGame: OpeningDrillGame = {
       id: currentDrill.id,
@@ -271,10 +293,14 @@ export const useOpeningDrillController = (
       playerMoveCount: 0,
     }
 
+    console.log('🎮 Created drill game:', drillGame)
+    console.log('👤 Player color:', currentDrill.playerColor)
+    console.log('🎯 Who to play:', drillGame.toPlay)
+
     setCurrentDrillGame(drillGame)
     setWaitingForMaiaResponse(false)
     setContinueAnalyzingMode(false) // Reset continue analyzing mode for new drill
-  }, [currentDrill, allDrillsCompleted])
+  }, [currentDrill?.id, allDrillsCompleted])
 
   // Use the current drill game's tree, or create a default one
   const gameTree = currentDrillGame?.tree || new GameTree(new Chess().fen())
@@ -489,6 +515,11 @@ export const useOpeningDrillController = (
 
   // Move to next drill
   const moveToNextDrill = useCallback(() => {
+    console.log('🚀 moveToNextDrill called')
+    console.log('📊 Current drill index:', currentDrillIndex)
+    console.log('📋 Drill sequence length:', configuration.drillSequence.length)
+    console.log('📝 Drill sequence:', configuration.drillSequence)
+
     setShowPerformanceModal(false)
     setCurrentPerformanceData(null)
     setContinueAnalyzingMode(false) // Reset continue analyzing mode for next drill
@@ -497,12 +528,38 @@ export const useOpeningDrillController = (
     setRemainingDrills((prev) => prev.slice(1))
 
     const nextIndex = currentDrillIndex + 1
+    console.log('➡️ Next index will be:', nextIndex)
 
     // Check if there are more drills to complete
     if (nextIndex < configuration.drillSequence.length) {
-      setCurrentDrill(configuration.drillSequence[nextIndex])
+      console.log(
+        '✅ Moving to next drill:',
+        configuration.drillSequence[nextIndex],
+      )
+
+      const nextDrill = configuration.drillSequence[nextIndex]
+      console.log(
+        '🔍 Current drill before change:',
+        currentDrill?.id,
+        currentDrill?.opening.name,
+      )
+      console.log(
+        '🔄 Setting currentDrill to:',
+        nextDrill.id,
+        nextDrill.opening.name,
+      )
+      console.log('🤔 Are they the same object?', currentDrill === nextDrill)
+      console.log(
+        '🤔 Are their IDs the same?',
+        currentDrill?.id === nextDrill.id,
+      )
+
+      setCurrentDrill(nextDrill)
       setCurrentDrillIndex(nextIndex)
+
+      console.log('📊 State updates called - waiting for effects...')
     } else {
+      console.log('🏁 All drills completed - showing final modal')
       // All drills completed - show final modal
       setAllDrillsCompleted(true)
       setShowFinalModal(true)
@@ -1043,6 +1100,19 @@ export const useOpeningDrillController = (
 
   // Handle initial Maia move if needed
   useEffect(() => {
+    console.log('🤖 Maia first move effect triggered')
+    console.log('📊 currentDrillGame:', !!currentDrillGame)
+    console.log('🎯 controller.currentNode:', !!controller.currentNode)
+    console.log('👤 isPlayerTurn:', isPlayerTurn)
+    console.log('📝 moves.length:', currentDrillGame?.moves.length)
+    console.log('🏁 openingEndNode:', !!currentDrillGame?.openingEndNode)
+    console.log(
+      '🎯 currentNode === openingEndNode:',
+      controller.currentNode === currentDrillGame?.openingEndNode,
+    )
+    console.log('✅ isDrillComplete:', isDrillComplete)
+    console.log('🔍 continueAnalyzingMode:', continueAnalyzingMode)
+
     if (
       currentDrillGame &&
       controller.currentNode &&
@@ -1053,6 +1123,7 @@ export const useOpeningDrillController = (
       !isDrillComplete &&
       !continueAnalyzingMode // Don't trigger when in analysis mode (like when loading completed drills)
     ) {
+      console.log('🚀 Triggering Maia first move!')
       // It's Maia's turn to move first from the opening position
       setWaitingForMaiaResponse(true)
       setTimeout(() => {

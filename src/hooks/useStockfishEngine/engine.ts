@@ -113,7 +113,6 @@ class Engine {
   }
 
   private onMessage(msg: string) {
-    console.log(msg)
     const matches = [
       ...msg.matchAll(
         /info depth (\d+) seldepth (\d+) multipv (\d+) score (?:cp (-?\d+)|mate (-?\d+)).+ pv ((?:\S+\s*)+)/g,
