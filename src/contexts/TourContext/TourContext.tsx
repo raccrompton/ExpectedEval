@@ -198,6 +198,30 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     }))
   }, [])
 
+  // Helper function to actually start the tour
+  const doStartTour = useCallback((tourId: string, steps: TourStep[]) => {
+    setTourState((prevState) => {
+      const stateCompletedTours = prevState.completedTours
+      const localStorageCompletedTours = isClient
+        ? JSON.parse(localStorage.getItem('maia-completed-tours') || '[]')
+        : []
+
+      const allCompletedTours = [
+        ...new Set([...stateCompletedTours, ...localStorageCompletedTours]),
+      ]
+
+      console.log('Starting tour:', { tourId, steps: steps.length, completedTours: allCompletedTours })
+      return {
+        isActive: true,
+        currentStep: 0,
+        steps,
+        completedTours: allCompletedTours,
+        currentTourId: tourId,
+        ready: prevState.ready,
+      }
+    })
+  }, [isClient])
+
   const startTour = useCallback(
     (tourId: string, steps: TourStep[], forceRestart = false) => {
       console.log('startTour called:', { tourId, forceRestart, isClient, ready: tourState.ready })
@@ -209,47 +233,57 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
         return
       }
 
-      setTourState((prevState) => {
-        const stateCompletedTours = prevState.completedTours
+      // Check if tour is already completed (for non-forced starts)
+      if (!forceRestart) {
+        const stateCompletedTours = tourState.completedTours
         const localStorageCompletedTours = isClient
           ? JSON.parse(localStorage.getItem('maia-completed-tours') || '[]')
           : []
-
         const allCompletedTours = [
           ...new Set([...stateCompletedTours, ...localStorageCompletedTours]),
         ]
-
-        // If not forcing restart and tour is completed, don't start
-        if (!forceRestart && allCompletedTours.includes(tourId)) {
-          return prevState
+        
+        if (allCompletedTours.includes(tourId)) {
+          console.log('Tour already completed, skipping:', tourId)
+          return
         }
-
-        // If tour is already active and we're not forcing restart, don't restart
-        if (prevState.isActive && !forceRestart) {
-          return prevState
+        
+        // Check if tour is already active
+        if (tourState.isActive && tourState.currentTourId === tourId) {
+          console.log('Tour already active, skipping:', tourId)
+          return
         }
+      }
 
-        // Don't start tour if it's already this tour and active
-        if (
-          prevState.isActive &&
-          prevState.currentTourId === tourId &&
-          !forceRestart
-        ) {
-          return prevState
+      // For automatic starts, check if target elements exist
+      if (!forceRestart && steps.length > 0) {
+        const firstTargetId = steps[0].targetId
+        const targetElement = document.getElementById(firstTargetId)
+        if (!targetElement) {
+          console.log('Target element not found, delaying tour start:', firstTargetId)
+          // Retry with multiple attempts to handle loading states
+          let attempts = 0
+          const maxAttempts = 5
+          const retryInterval = setInterval(() => {
+            attempts++
+            const retryElement = document.getElementById(firstTargetId)
+            if (retryElement) {
+              console.log(`Retrying tour start after ${attempts} attempts`)
+              clearInterval(retryInterval)
+              doStartTour(tourId, steps)
+            } else if (attempts >= maxAttempts) {
+              console.log(`Target element still not found after ${maxAttempts} attempts, skipping tour`)
+              clearInterval(retryInterval)
+            }
+          }, 1000)
+          return
         }
+      }
 
-        console.log('Starting tour:', { tourId, steps: steps.length, completedTours: allCompletedTours })
-        return {
-          isActive: true,
-          currentStep: 0,
-          steps,
-          completedTours: allCompletedTours,
-          currentTourId: tourId,
-          ready: prevState.ready,
-        }
-      })
+      // Start the tour immediately
+      doStartTour(tourId, steps)
     },
-    [isClient, tourState.ready],
+    [isClient, tourState.ready, tourState.completedTours, tourState.isActive, tourState.currentTourId, doStartTour],
   )
 
   const nextStep = useCallback(() => {
