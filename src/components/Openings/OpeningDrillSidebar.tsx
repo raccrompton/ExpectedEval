@@ -140,6 +140,9 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
                 const statusInfo = getStatusInfo()
                 const drillNumber = index + 1
 
+                const shouldHide =
+                  !isCurrentDrill && !isCompleted && index > currentDrillIndex
+
                 return (
                   <button
                     key={drill.id}
@@ -165,33 +168,39 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
                             {statusInfo.label}
                           </span>
                         </div>
-                        <p className="text-xs text-primary">
-                          {drill.opening.name}
-                        </p>
-                        {drill.variation && (
-                          <p className="text-xs text-secondary">
-                            {drill.variation.name}
-                          </p>
+                        {!shouldHide && (
+                          <>
+                            <p className="text-xs text-primary">
+                              {drill.opening.name}
+                            </p>
+                            {drill.variation && (
+                              <p className="text-xs text-secondary">
+                                {drill.variation.name}
+                              </p>
+                            )}
+                          </>
                         )}
-                        <div className="mt-1 flex items-center gap-2 text-xs">
-                          <div className="relative h-3 w-3">
-                            <Image
-                              src={
-                                drill.playerColor === 'white'
-                                  ? '/assets/pieces/white king.svg'
-                                  : '/assets/pieces/black king.svg'
-                              }
-                              fill={true}
-                              alt={`${drill.playerColor} king`}
-                            />
+                        {!shouldHide && (
+                          <div className="mt-1 flex items-center gap-2 text-xs">
+                            <div className="relative h-3 w-3">
+                              <Image
+                                src={
+                                  drill.playerColor === 'white'
+                                    ? '/assets/pieces/white king.svg'
+                                    : '/assets/pieces/black king.svg'
+                                }
+                                fill={true}
+                                alt={`${drill.playerColor} king`}
+                              />
+                            </div>
+                            <span className="text-secondary">
+                              vs Maia {drill.maiaVersion.replace('maia_kdd_', '')}
+                            </span>
+                            <span className="text-secondary">
+                              • {drill.targetMoveNumber} moves
+                            </span>
                           </div>
-                          <span className="text-secondary">
-                            vs Maia {drill.maiaVersion.replace('maia_kdd_', '')}
-                          </span>
-                          <span className="text-secondary">
-                            • {drill.targetMoveNumber} moves
-                          </span>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </button>
