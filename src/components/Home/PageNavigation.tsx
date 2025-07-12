@@ -10,7 +10,7 @@ export const PageNavigation = () => {
     >
       <NavLink href="#play-section" label="Play" />
       <NavLink href="#analysis-section" label="Analysis" />
-      <NavLink href="#train-section" label="Train" />
+      <NavLink href="#train-section" label="Puzzles" />
       <NavLink href="#more-features" label="Features" />
       <NavLink href="#main_info" label="Project" />
       <NavLink href="#team_info" label="Team" />
