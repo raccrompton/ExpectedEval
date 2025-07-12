@@ -103,22 +103,6 @@ const TrainPage: NextPage = () => {
     setPreviousGameResults(previousGameResults.concat([{ ...game }]))
   }, [trainingGames, previousGameResults, router])
 
-  // useEffect(() => {
-  //   if (currentIndex == trainingGames.length - 1) {
-  //     // For the current puzzle, only set to 'default' if it hasn't been completed yet
-  //     const currentPuzzleResult = previousGameResults[currentIndex]
-  //     if (currentPuzzleResult?.result !== undefined) {
-  //       // Puzzle was completed - preserve the correct status
-  //       setStatus(currentPuzzleResult.result ? 'correct' : 'forfeit')
-  //     } else {
-  //       // Puzzle not completed yet - set to default
-  //       setStatus('default')
-  //     }
-  //   } else {
-  //     setStatus('archived')
-  //   }
-  // }, [currentIndex, previousGameResults])
-
   const logGuess = useCallback(
     async (
       gameId: string,
@@ -615,7 +599,7 @@ const Train: React.FC<Props> = ({
       <div className="flex h-full w-full flex-col items-center py-4 md:py-10">
         <div className="flex h-full w-[90%] flex-row gap-4">
           <div className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72">
-            <GameInfo title="Training" icon="target" type="train">
+            <GameInfo title="Puzzles" icon="target" type="train">
               <p className="text-secondary">
                 Puzzle{' '}
                 <span className="text-secondary/60">#{trainingGame.id}</span>
