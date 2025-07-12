@@ -597,86 +597,174 @@ const OpeningsPage: NextPage = () => {
   )
 
   const mobileLayout = () => (
-    <div className="flex h-[85vh] w-full flex-col gap-1">
-      {/* Mobile board and controls */}
-      <div className="flex w-full flex-col">
-        <PlayerInfo name={topPlayer.name} color={topPlayer.color} />
-        <div className="relative flex aspect-square h-[100vw] w-screen">
-          <GameBoard
-            currentNode={controller.currentNode}
-            orientation={controller.orientation}
-            availableMoves={controller.moves}
-            onPlayerMakeMove={onPlayerMakeMove}
-            onSelectSquare={onSelectSquare}
-            shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
-          />
-          {promotionFromTo && (
-            <PromotionOverlay
-              player={getCurrentPlayer(controller.currentNode)}
-              file={promotionFromTo[1].slice(0, 1)}
-              onPlayerSelectPromotion={onPlayerSelectPromotion}
-            />
+    <div className="flex h-full flex-1 flex-col justify-center gap-1">
+      <div className="flex h-full flex-col items-start justify-start gap-1">
+        {/* Current Drill Info Header */}
+        <div className="flex w-full flex-col bg-background-1 p-3">
+          <h3 className="mb-2 text-base font-bold text-primary">
+            Current Drill
+          </h3>
+          {controller.currentDrill ? (
+            <div className="space-y-1">
+              <div>
+                <p className="text-sm font-medium text-primary">
+                  {controller.currentDrill.opening.name}
+                </p>
+                {controller.currentDrill.variation && (
+                  <p className="text-xs text-secondary">
+                    {controller.currentDrill.variation.name}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-xs text-secondary">
+                <span>
+                  vs Maia{' '}
+                  {controller.currentDrill.maiaVersion.replace('maia_kdd_', '')}
+                </span>
+                <span>•</span>
+                <span>{controller.currentDrill.targetMoveNumber} moves</span>
+                <span>•</span>
+                <span>
+                  Drill {controller.currentDrillIndex + 1} of{' '}
+                  {controller.totalDrills}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-secondary">No drill selected</p>
           )}
         </div>
-        <PlayerInfo
-          name={bottomPlayer.name}
-          color={bottomPlayer.color}
-          showArrowLegend={controller.analysisEnabled}
-        />
-      </div>
 
-      <div className="flex h-auto w-full flex-col gap-1">
-        <BoardController
-          orientation={controller.orientation}
-          setOrientation={noOpSetOrientation}
-          currentNode={controller.currentNode}
-          plyCount={controller.plyCount}
-          goToNode={controller.goToNode}
-          goToNextNode={controller.goToNextNode}
-          goToPreviousNode={customGoToPreviousNode}
-          goToRootNode={customGoToRootNode}
-          gameTree={controller.gameTree}
-          disableFlip={true}
-          disablePrevious={controller.isAtOpeningEnd}
-        />
+        {/* Board Section */}
+        <div className="flex w-full flex-col">
+          <PlayerInfo name={topPlayer.name} color={topPlayer.color} />
+          <div className="relative flex aspect-square h-[100vw] w-screen">
+            <GameBoard
+              currentNode={controller.currentNode}
+              orientation={controller.orientation}
+              availableMoves={controller.moves}
+              onPlayerMakeMove={onPlayerMakeMove}
+              onSelectSquare={onSelectSquare}
+              shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
+            />
+            {promotionFromTo && (
+              <PromotionOverlay
+                player={getCurrentPlayer(controller.currentNode)}
+                file={promotionFromTo[1].slice(0, 1)}
+                onPlayerSelectPromotion={onPlayerSelectPromotion}
+              />
+            )}
+          </div>
+          <PlayerInfo
+            name={bottomPlayer.name}
+            color={bottomPlayer.color}
+            showArrowLegend={controller.analysisEnabled}
+          />
+        </div>
 
-        {/* Mobile drill controls */}
-        <div className="flex gap-2 p-2">
-          <button
-            onClick={handleChangeSelections}
-            className="flex-1 rounded bg-background-2 py-2 text-sm"
-          >
-            Change Openings
-          </button>
-          {controller.remainingDrills.length > 1 &&
-            !controller.areAllDrillsCompleted && (
+        {/* Controls and Content Below Board */}
+        <div className="flex w-full flex-col gap-1">
+          {/* Board Controller */}
+          <div className="flex-none">
+            <BoardController
+              orientation={controller.orientation}
+              setOrientation={noOpSetOrientation}
+              currentNode={controller.currentNode}
+              plyCount={controller.plyCount}
+              goToNode={controller.goToNode}
+              goToNextNode={controller.goToNextNode}
+              goToPreviousNode={customGoToPreviousNode}
+              goToRootNode={customGoToRootNode}
+              gameTree={controller.gameTree}
+              disableFlip={true}
+              disablePrevious={controller.isAtOpeningEnd}
+            />
+          </div>
+
+          {/* Drill Progress */}
+          {controller.currentDrillGame && controller.currentDrill && (
+            <div className="flex w-full items-center gap-3 rounded bg-background-1 p-3">
+              <div className="flex-1">
+                <div className="mb-1 flex justify-between text-xs">
+                  <span className="text-secondary">Move Progress</span>
+                  <span className="font-medium text-primary">
+                    {controller.currentDrillGame.playerMoveCount}/
+                    {controller.currentDrill.targetMoveNumber}
+                  </span>
+                </div>
+                <div className="h-2 w-full rounded bg-background-3">
+                  <div
+                    className="h-full rounded bg-human-3 transition-all duration-300"
+                    style={{
+                      width: `${
+                        controller.currentDrill.targetMoveNumber > 0
+                          ? (controller.currentDrillGame.playerMoveCount /
+                              controller.currentDrill.targetMoveNumber) *
+                            100
+                          : 0
+                      }%`,
+                      maxWidth: '100%',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex justify-center px-2">
+            {controller.remainingDrills.length > 1 &&
+              !controller.areAllDrillsCompleted && (
+                <button
+                  onClick={controller.moveToNextDrill}
+                  className="rounded bg-human-4 px-6 py-2 text-sm font-medium"
+                >
+                  Next Drill
+                </button>
+              )}
+            {controller.areAllDrillsCompleted && (
               <button
-                onClick={controller.moveToNextDrill}
-                className="rounded bg-human-4 px-4 py-2 text-sm font-medium"
+                onClick={controller.showSummary}
+                className="rounded bg-human-3 px-6 py-2 text-sm font-medium"
               >
-                Next
+                View Summary
               </button>
             )}
-          {controller.areAllDrillsCompleted && (
-            <button
-              onClick={controller.showSummary}
-              className="rounded bg-human-3 px-4 py-2 text-sm font-medium"
-            >
-              Summary
-            </button>
-          )}
-        </div>
+          </div>
 
-        {/* Mobile progress */}
-        <div className="bg-background-2 p-2 text-center text-sm">
-          <div>
-            Remaining: {controller.remainingDrills.length} |{' '}
-            {controller.currentDrillGame && controller.currentDrill && (
-              <>
-                Progress: {controller.currentDrillGame.playerMoveCount}/
-                {controller.currentDrill.targetMoveNumber}
-              </>
-            )}
+          {/* Moves Container */}
+          {controller.currentDrillGame && (
+            <div className="relative bottom-0 h-48 max-h-48 flex-1 overflow-auto overflow-y-hidden">
+              <MovesContainer
+                game={{
+                  id: controller.currentDrillGame.id,
+                  tree: controller.gameTree,
+                  moves: movesForContainer,
+                }}
+                type="analysis"
+                showAnnotations={false}
+              />
+            </div>
+          )}
+
+          {/* Analysis Components Stacked */}
+          <div className="flex w-full flex-col gap-1 overflow-hidden">
+            <OpeningDrillAnalysis
+              currentNode={controller.currentNode}
+              gameTree={controller.gameTree}
+              analysisEnabled={controller.analysisEnabled}
+              onToggleAnalysis={() =>
+                controller.setAnalysisEnabled(!controller.analysisEnabled)
+              }
+              playerColor={controller.currentDrill?.playerColor || 'white'}
+              maiaVersion={
+                controller.currentDrill?.maiaVersion || 'maia_kdd_1500'
+              }
+              analysisController={analysisController}
+              hover={hover}
+              setHoverArrow={setHoverArrow}
+              makeMove={makeMove}
+            />
           </div>
         </div>
       </div>
