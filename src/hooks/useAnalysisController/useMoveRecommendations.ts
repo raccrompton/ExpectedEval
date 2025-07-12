@@ -41,6 +41,7 @@ export const useMoveRecommendations = (
 
     if (moveEvaluation?.stockfish) {
       const cp_vec = moveEvaluation.stockfish.cp_vec
+      const cp_relative_vec = moveEvaluation.stockfish.cp_relative_vec || {}
       const winrate_vec = moveEvaluation.stockfish.winrate_vec || {}
       const winrate_loss_vec = moveEvaluation.stockfish.winrate_loss_vec || {}
 
@@ -49,6 +50,7 @@ export const useMoveRecommendations = (
         cp,
         winrate: winrate_vec[move] || 0,
         winrate_loss: winrate_loss_vec[move] || 0,
+        cp_relative: cp_relative_vec[move] || 0,
       }))
 
       result.stockfish = stockfish
@@ -124,22 +126,22 @@ export const useMoveRecommendations = (
       // Get Stockfish evaluation (default to worst possible if not evaluated)
       const cp =
         moveEvaluation.stockfish.cp_relative_vec[move] !== undefined
-          ? Math.max(-4, moveEvaluation.stockfish.cp_relative_vec[move] / 100)
-          : -4 // Worst possible Stockfish evaluation
+          ? Math.max(-3, moveEvaluation.stockfish.cp_relative_vec[move] / 100)
+          : -3 // Cap at -3 to avoid extreme values
 
       // Get Maia probability (default to 0 if not in policy)
       const prob = (moveEvaluation.maia.policy[move] || 0) * 100
 
       // Calculate opacity based on position quality
       // Moves in bottom-left (worse SF, less likely Maia) should be more transparent
-      // Normalize values: cp ranges from -4 to 0, prob ranges from 0 to ~100
-      const normalizedCp = (cp + 4) / 4 // 0 to 1 (0 = worst, 1 = best)
+      // Normalize values: cp ranges from -3 to 0, prob ranges from 0 to ~100
+      const normalizedCp = (cp + 3) / 3 // 0 to 1 (0 = worst, 1 = best)
       const normalizedProb = Math.min(prob / 50, 1) // 0 to 1 (capped at 50% for normalization)
 
-      // Combine both factors for opacity (minimum 0.2 for visibility, maximum 1.0)
+      // Combine both factors for opacity (minimum 0.2 for visibility, maximum 0.75)
       const opacity = Math.max(
-        0.2,
-        Math.min(1.0, (normalizedCp + normalizedProb) / 2),
+        0.6,
+        Math.min(0.9, (normalizedCp + normalizedProb) / 2),
       )
 
       // Calculate importance score for sorting (higher = more important)
@@ -162,11 +164,10 @@ export const useMoveRecommendations = (
         opacity,
         importance,
         size,
-        // Additional data for tooltip
         rawCp,
         winrate,
         rawMaiaProb,
-        relativeCp: cp,
+        relativeCp: moveEvaluation.stockfish.cp_relative_vec[move],
       })
     }
 

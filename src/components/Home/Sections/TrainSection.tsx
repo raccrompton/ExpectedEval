@@ -364,10 +364,10 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
           <div className="flex flex-wrap gap-4">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
               <Link
-                href="/train"
+                href="/puzzles"
                 className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white transition duration-200 hover:bg-opacity-90"
               >
-                Start Training
+                Start Puzzles
               </Link>
             </motion.div>
           </div>

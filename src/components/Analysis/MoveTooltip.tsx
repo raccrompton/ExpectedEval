@@ -7,7 +7,7 @@ interface MoveTooltipProps {
   maiaProb?: number
   stockfishCp?: number
   stockfishWinrate?: number
-  stockfishLoss?: number
+  stockfishCpRelative?: number
   position?: { x: number; y: number }
   isVisible?: boolean
 }
@@ -18,7 +18,7 @@ export const MoveTooltip: React.FC<MoveTooltipProps> = ({
   maiaProb,
   stockfishCp,
   stockfishWinrate,
-  stockfishLoss,
+  stockfishCpRelative,
   position,
   isVisible = true,
 }) => {
@@ -73,14 +73,11 @@ export const MoveTooltip: React.FC<MoveTooltipProps> = ({
           </div>
         )}
 
-        {/* Stockfish Loss */}
-        {stockfishLoss !== undefined && (
+        {/* Stockfish CP Relative */}
+        {stockfishCpRelative !== undefined && (
           <div className="flex w-full items-center justify-between gap-2 font-mono">
-            <span className="font-medium text-engine-2">SF Loss:</span>
-            <span>
-              {stockfishLoss > 0 ? '+' : ''}
-              {stockfishLoss.toFixed(2)}
-            </span>
+            <span className="font-medium text-engine-2">SF Eval Loss:</span>
+            <span>{(stockfishCpRelative / 100).toFixed(2)}</span>
           </div>
         )}
       </div>

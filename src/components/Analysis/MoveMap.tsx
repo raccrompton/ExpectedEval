@@ -162,7 +162,7 @@ export const MoveMap: React.FC<Props> = ({
         maiaProb={hoveredMoveData.rawMaiaProb}
         stockfishCp={hoveredMoveData.rawCp}
         stockfishWinrate={hoveredMoveData.winrate}
-        stockfishLoss={hoveredMoveData.relativeCp}
+        stockfishCpRelative={hoveredMoveData.relativeCp}
         position={mousePosition}
       />
     )
@@ -196,8 +196,8 @@ export const MoveMap: React.FC<Props> = ({
               tickLine={false}
               tickMargin={0}
               tick={{ fill: 'white', fontSize: getTickFontSize() }}
-              domain={[-4, 0]}
-              ticks={[-4, -3, -2, -1, 0]}
+              domain={[-3, 0]}
+              ticks={[-3, -2, -1, 0]}
             >
               <Label
                 value="← Blunders"
