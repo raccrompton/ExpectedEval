@@ -112,7 +112,6 @@ class Engine {
 
   private sendMessage(message: string) {
     if (this.stockfish) {
-      console.warn(message)
       this.stockfish.uci(message)
     }
   }

@@ -34,7 +34,7 @@ interface Props {
       move: string
       cp: number
       winrate?: number
-      winrate_loss?: number
+      cp_relative?: number
     }[]
     isBlackTurn?: boolean
   }
@@ -53,13 +53,12 @@ export const Highlight: React.FC<Props> = ({
   setCurrentMaiaModel,
   boardDescription,
 }: Props) => {
-  // Tooltip state
   const [tooltipData, setTooltipData] = useState<{
     move: string
     maiaProb?: number
     stockfishCp?: number
     stockfishWinrate?: number
-    stockfishLoss?: number
+    stockfishCpRelative?: number
     position: { x: number; y: number }
   } | null>(null)
 
@@ -78,7 +77,7 @@ export const Highlight: React.FC<Props> = ({
     prob?: number,
     cp?: number,
     winrate?: number,
-    winrateLoss?: number,
+    cpRelative?: number,
   ) => {
     hover(move)
 
@@ -91,23 +90,23 @@ export const Highlight: React.FC<Props> = ({
       source === 'stockfish'
         ? winrate
         : (matchingMove as { winrate?: number })?.winrate
-    const stockfishLoss =
+    const stockfishCpRelative =
       source === 'stockfish'
-        ? winrateLoss
-        : (matchingMove as { winrate_loss?: number })?.winrate_loss
+        ? cpRelative
+        : (matchingMove as { cp_relative?: number })?.cp_relative
 
-    // Get Stockfish loss from the move evaluation if not provided
-    const actualStockfishLoss =
-      stockfishLoss !== undefined
-        ? stockfishLoss
-        : moveEvaluation?.stockfish?.winrate_loss_vec?.[move]
+    // Get Stockfish cp relative from the move evaluation if not provided
+    const actualStockfishCpRelative =
+      stockfishCpRelative !== undefined
+        ? stockfishCpRelative
+        : moveEvaluation?.stockfish?.cp_relative_vec?.[move]
 
     setTooltipData({
       move,
       maiaProb,
       stockfishCp,
       stockfishWinrate,
-      stockfishLoss: actualStockfishLoss,
+      stockfishCpRelative: actualStockfishCpRelative,
       position: { x: event.clientX, y: event.clientY },
     })
   }
@@ -207,7 +206,7 @@ export const Highlight: React.FC<Props> = ({
             <p className="whitespace-nowrap text-center font-semibold text-engine-1 md:text-[10px] lg:text-xs">
               Stockfish 17{' '}
               {moveEvaluation?.stockfish?.depth
-                ? ` (D${moveEvaluation.stockfish?.depth})`
+                ? ` (d${moveEvaluation.stockfish?.depth})`
                 : ''}
             </p>
           </div>
@@ -235,7 +234,7 @@ export const Highlight: React.FC<Props> = ({
             </div>
             {recommendations.stockfish
               ?.slice(0, 4)
-              .map(({ move, cp, winrate, winrate_loss }, index) => {
+              .map(({ move, cp, winrate, cp_relative }, index) => {
                 return (
                   <button
                     key={index}
@@ -252,7 +251,7 @@ export const Highlight: React.FC<Props> = ({
                         undefined,
                         cp,
                         winrate,
-                        winrate_loss,
+                        cp_relative,
                       )
                     }
                     onClick={() => makeMove(move)}
@@ -301,7 +300,7 @@ export const Highlight: React.FC<Props> = ({
           maiaProb={tooltipData.maiaProb}
           stockfishCp={tooltipData.stockfishCp}
           stockfishWinrate={tooltipData.stockfishWinrate}
-          stockfishLoss={tooltipData.stockfishLoss}
+          stockfishCpRelative={tooltipData.stockfishCpRelative}
           position={tooltipData.position}
         />
       )}
