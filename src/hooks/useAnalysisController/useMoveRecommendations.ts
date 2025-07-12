@@ -41,6 +41,7 @@ export const useMoveRecommendations = (
 
     if (moveEvaluation?.stockfish) {
       const cp_vec = moveEvaluation.stockfish.cp_vec
+      const cp_relative_vec = moveEvaluation.stockfish.cp_relative_vec || {}
       const winrate_vec = moveEvaluation.stockfish.winrate_vec || {}
       const winrate_loss_vec = moveEvaluation.stockfish.winrate_loss_vec || {}
 
@@ -49,6 +50,7 @@ export const useMoveRecommendations = (
         cp,
         winrate: winrate_vec[move] || 0,
         winrate_loss: winrate_loss_vec[move] || 0,
+        cp_relative: cp_relative_vec[move] || 0,
       }))
 
       result.stockfish = stockfish
@@ -162,11 +164,10 @@ export const useMoveRecommendations = (
         opacity,
         importance,
         size,
-        // Additional data for tooltip
         rawCp,
         winrate,
         rawMaiaProb,
-        relativeCp: cp,
+        relativeCp: moveEvaluation.stockfish.cp_relative_vec[move],
       })
     }
 
