@@ -68,12 +68,14 @@ export const getGameMove = async (
                   piece: piece || '',
                   initial_clock: initial_clock.toString(),
                   current_clock: current_clock.toString(),
+                  maia_version: 'maia2rapid',
                 }
               : {
                   maia_name: maiaVersion,
                   piece: piece || '',
                   initial_clock: initial_clock.toString(),
                   current_clock: current_clock.toString(),
+                  maia_version: 'maia2rapid',
                 }
             : fen
               ? {
@@ -81,11 +83,13 @@ export const getGameMove = async (
                   maia_name: maiaVersion,
                   initial_clock: initial_clock.toString(),
                   current_clock: current_clock.toString(),
+                  maia_version: 'maia2rapid',
                 }
               : {
                   maia_name: maiaVersion,
                   initial_clock: initial_clock.toString(),
                   current_clock: current_clock.toString(),
+                  maia_version: 'maia2rapid',
                 },
         ),
     ),
