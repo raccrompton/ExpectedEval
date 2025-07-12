@@ -842,6 +842,393 @@ const EvaluationChart: React.FC<{
   )
 }
 
+// Desktop layout component
+const DesktopLayout: React.FC<{
+  drill: DrillPerformanceData['drill']
+  filteredMoveAnalyses: (MoveAnalysis & { originalIndex: number })[]
+  filteredEvaluationChart: DrillPerformanceData['evaluationChart']
+  currentMoveIndex: number
+  hoveredMoveIndex: number | null
+  handleMoveClick: (index: number) => void
+  handleChartHover: (index: number) => void
+  setCurrentMoveIndex: (index: number) => void
+  openingFen: string
+  performanceData: DrillPerformanceData
+  onContinueAnalyzing: () => void
+  onNextDrill: () => void
+  isLastDrill: boolean
+}> = ({
+  drill,
+  filteredMoveAnalyses,
+  filteredEvaluationChart,
+  currentMoveIndex,
+  hoveredMoveIndex,
+  handleMoveClick,
+  handleChartHover,
+  setCurrentMoveIndex,
+  openingFen,
+  performanceData,
+  onContinueAnalyzing,
+  onNextDrill,
+  isLastDrill,
+}) => (
+  <div className="relative flex h-[90vh] max-h-[800px] w-[95vw] max-w-[1200px] flex-col overflow-hidden rounded-lg bg-background-1 shadow-2xl">
+    {/* Header */}
+    <div className="flex items-center justify-between border-b border-white/10 p-4">
+      <div>
+        <h2 className="text-xl font-bold text-primary">
+          Opening Analysis Complete
+        </h2>
+        <div className="mt-1">
+          <p className="text-base font-medium text-secondary">
+            {drill.selection.opening.name}
+            {drill.selection.variation &&
+              ` - ${drill.selection.variation.name}`}
+            {' • '}
+            Analyzed {
+              filteredMoveAnalyses.filter((m) => m.isPlayerMove).length
+            }{' '}
+            of your moves
+            {' • '}
+            Playing as{' '}
+            {drill.selection.playerColor === 'white' ? 'White' : 'Black'}
+          </p>
+        </div>
+      </div>
+      <button
+        onClick={onContinueAnalyzing}
+        className="text-secondary hover:text-primary"
+      >
+        <span className="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    {/* Content */}
+    <div className="flex flex-1 overflow-hidden">
+      {/* Left Panel - Animated Game Replay */}
+      <div className="flex w-1/3 flex-col border-r border-white/10">
+        <AnimatedGameReplay
+          moveAnalyses={filteredMoveAnalyses}
+          openingFen={openingFen}
+          playerColor={drill.selection.playerColor}
+          onMoveIndexChange={setCurrentMoveIndex}
+          externalMoveIndex={currentMoveIndex}
+          onMoveClick={handleMoveClick}
+        />
+      </div>
+
+      {/* Center Panel - Evaluation Chart & Critical Decisions */}
+      <div className="red-scrollbar flex w-1/3 flex-col overflow-y-auto border-r border-white/10">
+        <EvaluationChart
+          evaluationChart={filteredEvaluationChart}
+          moveAnalyses={filteredMoveAnalyses}
+          currentMoveIndex={hoveredMoveIndex ?? currentMoveIndex}
+          onHoverMove={handleChartHover}
+          playerColor={drill.selection.playerColor}
+        />
+
+        {/* Critical Decisions Section */}
+        {(() => {
+          // Define helper function first
+          const getMoveNumberForIndex = (
+            index: number,
+          ): { moveNumber: number; isWhiteMove: boolean } => {
+            if (index < 0 || index >= filteredMoveAnalyses.length)
+              return { moveNumber: 1, isWhiteMove: true }
+
+            const moveAnalysis = filteredMoveAnalyses[index]
+            if (!moveAnalysis) return { moveNumber: 1, isWhiteMove: true }
+
+            const isWhiteMove = isMoveByWhite(moveAnalysis.fen)
+            let moveNumber = 1
+            if (isWhiteMove) {
+              moveNumber = getMoveNumberFromFen(moveAnalysis.fen)
+            } else {
+              let currentIndex = index - 1
+              while (currentIndex >= 0) {
+                const prevMove = filteredMoveAnalyses[currentIndex]
+                if (isMoveByWhite(prevMove.fen)) {
+                  moveNumber = getMoveNumberFromFen(prevMove.fen)
+                  break
+                }
+                currentIndex--
+              }
+            }
+            return { moveNumber, isWhiteMove }
+          }
+
+          // Calculate critical moments for this column
+          const criticalMoments = filteredEvaluationChart
+            .map((point, index) => {
+              if (index === 0) return null
+              const currentEval = point.evaluation
+              const previousEval = filteredEvaluationChart[index - 1].evaluation
+
+              // Convert evaluations to win rates and calculate change
+              const currentWinrate = cpToWinrate(currentEval)
+              const previousWinrate = cpToWinrate(previousEval)
+              const winrateChange = Math.abs(currentWinrate - previousWinrate)
+
+              const moveAnalysis = filteredMoveAnalyses[index]
+              const moveInfo = getMoveNumberForIndex(index)
+              return {
+                index,
+                moveNumber: moveInfo.moveNumber,
+                isWhiteMove: moveInfo.isWhiteMove,
+                winrateChange,
+                moveAnalysis,
+                isPlayerMove: point.isPlayerMove,
+                evaluation: point.evaluation,
+                previousEvaluation: previousEval,
+              }
+            })
+            .filter(
+              (moment): moment is NonNullable<typeof moment> =>
+                moment !== null &&
+                moment.isPlayerMove &&
+                moment.winrateChange > 0.05, // 5% win rate change threshold
+            )
+            .sort((a, b) => a.index - b.index)
+            .slice(0, 3) // Show top 3
+
+          const formatEvaluation = (evaluation: number) => {
+            if (Math.abs(evaluation) >= 1000) {
+              return evaluation > 0 ? '+M' : '-M'
+            }
+            return evaluation > 0
+              ? `+${(evaluation / 100).toFixed(1)}`
+              : `${(evaluation / 100).toFixed(1)}`
+          }
+
+          return criticalMoments.length > 0 ? (
+            <div className="flex w-full flex-col gap-1 border-t border-white/10">
+              <div className="flex flex-col px-3 pt-3">
+                <h3 className="text-lg font-semibold">Critical Decisions</h3>
+                <p className="text-xs text-secondary">
+                  Key moments that shifted the evaluation
+                </p>
+              </div>
+              <div className="flex flex-col">
+                {criticalMoments.map((moment) => (
+                  <div
+                    key={moment.index}
+                    role="button"
+                    tabIndex={0}
+                    className="flex cursor-pointer items-center justify-between border-b border-white/10 px-3 py-2 transition-colors last:border-b-0 hover:bg-background-2"
+                    onClick={() => handleMoveClick(moment.index)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleMoveClick(moment.index)
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium">
+                        {moment.isWhiteMove
+                          ? `${moment.moveNumber}.`
+                          : `...${moment.moveNumber}.`}{' '}
+                        {moment.moveAnalysis?.san}
+                      </span>
+                      <span className="text-xs text-secondary">
+                        Swing: {(moment.winrateChange * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-secondary">
+                        {formatEvaluation(moment.previousEvaluation)}
+                      </span>
+                      <span className="text-secondary">→</span>
+                      <span
+                        className={
+                          moment.evaluation > moment.previousEvaluation
+                            ? 'text-green-400'
+                            : 'text-red-400'
+                        }
+                      >
+                        {formatEvaluation(moment.evaluation)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null
+        })()}
+      </div>
+
+      {/* Right Panel - Maia Rating Insights & Key Moments Analysis */}
+      <div className="red-scrollbar flex w-1/3 flex-col gap-3 overflow-y-auto p-4">
+        <MaiaRatingInsights
+          ratingPrediction={performanceData.ratingPrediction}
+        />
+      </div>
+    </div>
+
+    {/* Action Buttons */}
+    <div className="flex gap-3 border-t border-white/10 p-4">
+      <button
+        onClick={onContinueAnalyzing}
+        className="flex-1 rounded bg-background-2 py-2 font-medium transition-colors hover:bg-background-3"
+      >
+        Continue Analyzing
+      </button>
+      <button
+        onClick={onNextDrill}
+        className="flex-1 rounded bg-human-4 py-2 font-medium transition-colors hover:bg-human-4/80"
+      >
+        {isLastDrill ? 'View Summary' : 'Next Drill'}
+      </button>
+    </div>
+  </div>
+)
+
+// Mobile layout component with tabs
+const MobileLayout: React.FC<{
+  drill: DrillPerformanceData['drill']
+  filteredMoveAnalyses: (MoveAnalysis & { originalIndex: number })[]
+  filteredEvaluationChart: DrillPerformanceData['evaluationChart']
+  currentMoveIndex: number
+  hoveredMoveIndex: number | null
+  handleMoveClick: (index: number) => void
+  handleChartHover: (index: number) => void
+  setCurrentMoveIndex: (index: number) => void
+  openingFen: string
+  performanceData: DrillPerformanceData
+  onContinueAnalyzing: () => void
+  onNextDrill: () => void
+  isLastDrill: boolean
+  activeTab: 'replay' | 'analysis' | 'insights'
+  setActiveTab: (tab: 'replay' | 'analysis' | 'insights') => void
+}> = ({
+  drill,
+  filteredMoveAnalyses,
+  filteredEvaluationChart,
+  currentMoveIndex,
+  hoveredMoveIndex,
+  handleMoveClick,
+  handleChartHover,
+  setCurrentMoveIndex,
+  openingFen,
+  performanceData,
+  onContinueAnalyzing,
+  onNextDrill,
+  isLastDrill,
+  activeTab,
+  setActiveTab,
+}) => (
+  <div className="relative flex h-[95vh] w-[95vw] flex-col overflow-hidden rounded-lg bg-background-1 shadow-2xl">
+    {/* Header */}
+    <div className="flex items-center justify-between border-b border-white/10 p-4">
+      <div className="min-w-0 flex-1">
+        <h2 className="text-lg font-bold text-primary">Analysis Complete</h2>
+        <div className="mt-1">
+          <p className="text-sm font-medium text-secondary">
+            {drill.selection.opening.name}
+            {drill.selection.variation &&
+              ` - ${drill.selection.variation.name}`}
+          </p>
+          <p className="text-xs text-secondary">
+            {filteredMoveAnalyses.filter((m) => m.isPlayerMove).length} moves
+            analyzed •{' '}
+            {drill.selection.playerColor === 'white' ? 'White' : 'Black'}
+          </p>
+        </div>
+      </div>
+      <button
+        onClick={onContinueAnalyzing}
+        className="text-secondary hover:text-primary"
+      >
+        <span className="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    {/* Mobile Tab Navigation */}
+    <div className="flex w-full border-b border-white/10 bg-background-1">
+      <button
+        onClick={() => setActiveTab('replay')}
+        className={`flex-1 py-3 text-sm font-medium transition-colors ${
+          activeTab === 'replay'
+            ? 'border-b-2 border-human-4 bg-background-2 text-primary'
+            : 'text-secondary hover:text-primary'
+        }`}
+      >
+        Replay
+      </button>
+      <button
+        onClick={() => setActiveTab('analysis')}
+        className={`flex-1 py-3 text-sm font-medium transition-colors ${
+          activeTab === 'analysis'
+            ? 'border-b-2 border-human-4 bg-background-2 text-primary'
+            : 'text-secondary hover:text-primary'
+        }`}
+      >
+        Chart
+      </button>
+      <button
+        onClick={() => setActiveTab('insights')}
+        className={`flex-1 py-3 text-sm font-medium transition-colors ${
+          activeTab === 'insights'
+            ? 'border-b-2 border-human-4 bg-background-2 text-primary'
+            : 'text-secondary hover:text-primary'
+        }`}
+      >
+        Insights
+      </button>
+    </div>
+
+    {/* Tab Content */}
+    <div className="flex-1 overflow-hidden">
+      {activeTab === 'replay' && (
+        <AnimatedGameReplay
+          moveAnalyses={filteredMoveAnalyses}
+          openingFen={openingFen}
+          playerColor={drill.selection.playerColor}
+          onMoveIndexChange={setCurrentMoveIndex}
+          externalMoveIndex={currentMoveIndex}
+          onMoveClick={handleMoveClick}
+        />
+      )}
+
+      {activeTab === 'analysis' && (
+        <div className="red-scrollbar h-full overflow-y-auto">
+          <EvaluationChart
+            evaluationChart={filteredEvaluationChart}
+            moveAnalyses={filteredMoveAnalyses}
+            currentMoveIndex={hoveredMoveIndex ?? currentMoveIndex}
+            onHoverMove={handleChartHover}
+            playerColor={drill.selection.playerColor}
+          />
+        </div>
+      )}
+
+      {activeTab === 'insights' && (
+        <div className="red-scrollbar h-full overflow-y-auto p-4">
+          <MaiaRatingInsights
+            ratingPrediction={performanceData.ratingPrediction}
+          />
+        </div>
+      )}
+    </div>
+
+    {/* Action Buttons */}
+    <div className="flex gap-3 border-t border-white/10 p-4">
+      <button
+        onClick={onContinueAnalyzing}
+        className="flex-1 rounded bg-background-2 py-2 font-medium transition-colors hover:bg-background-3"
+      >
+        Continue
+      </button>
+      <button
+        onClick={onNextDrill}
+        className="flex-1 rounded bg-human-4 py-2 font-medium transition-colors hover:bg-human-4/80"
+      >
+        {isLastDrill ? 'Summary' : 'Next'}
+      </button>
+    </div>
+  </div>
+)
+
 export const DrillPerformanceModal: React.FC<Props> = ({
   performanceData,
   onContinueAnalyzing,
@@ -904,15 +1291,18 @@ export const DrillPerformanceModal: React.FC<Props> = ({
   }, [evaluationChart, moveAnalyses])
 
   // Handle hover on chart - update board position only if not clicked
-  const handleChartHover = (filteredIndex: number) => {
-    if (!isClicked) {
-      setCurrentMoveIndex(filteredIndex)
-      setHoveredMoveIndex(filteredIndex)
-    }
-  }
+  const handleChartHover = useCallback(
+    (filteredIndex: number) => {
+      if (!isClicked) {
+        setCurrentMoveIndex(filteredIndex)
+        setHoveredMoveIndex(filteredIndex)
+      }
+    },
+    [isClicked],
+  )
 
   // Handle click on move list - update both board position and chart highlighting
-  const handleMoveClick = (filteredIndex: number) => {
+  const handleMoveClick = useCallback((filteredIndex: number) => {
     setCurrentMoveIndex(filteredIndex)
     setHoveredMoveIndex(filteredIndex)
     setIsClicked(true)
@@ -920,343 +1310,50 @@ export const DrillPerformanceModal: React.FC<Props> = ({
     setTimeout(() => {
       setIsClicked(false)
     }, 500)
-  }
+  }, [])
 
   // Get opening FEN from the drill
   const openingFen = drill.selection.variation
     ? drill.selection.variation.fen
     : drill.selection.opening.fen
 
-  // Desktop layout component
-  const DesktopLayout = () => (
-    <div className="relative flex h-[90vh] max-h-[800px] w-[95vw] max-w-[1200px] flex-col overflow-hidden rounded-lg bg-background-1 shadow-2xl">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/10 p-4">
-        <div>
-          <h2 className="text-xl font-bold text-primary">
-            Opening Analysis Complete
-          </h2>
-          <div className="mt-1">
-            <p className="text-base font-medium text-secondary">
-              {drill.selection.opening.name}
-              {drill.selection.variation &&
-                ` - ${drill.selection.variation.name}`}
-              {' • '}
-              Analyzed{' '}
-              {filteredMoveAnalyses.filter((m) => m.isPlayerMove).length} of
-              your moves
-              {' • '}
-              Playing as{' '}
-              {drill.selection.playerColor === 'white' ? 'White' : 'Black'}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={onContinueAnalyzing}
-          className="text-secondary hover:text-primary"
-        >
-          <span className="material-symbols-outlined">close</span>
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Panel - Animated Game Replay */}
-        <div className="flex w-1/3 flex-col border-r border-white/10">
-          <AnimatedGameReplay
-            moveAnalyses={filteredMoveAnalyses}
-            openingFen={openingFen}
-            playerColor={drill.selection.playerColor}
-            onMoveIndexChange={setCurrentMoveIndex}
-            externalMoveIndex={currentMoveIndex}
-            onMoveClick={handleMoveClick}
-          />
-        </div>
-
-        {/* Center Panel - Evaluation Chart & Critical Decisions */}
-        <div className="red-scrollbar flex w-1/3 flex-col overflow-y-auto border-r border-white/10">
-          <EvaluationChart
-            evaluationChart={filteredEvaluationChart}
-            moveAnalyses={filteredMoveAnalyses}
-            currentMoveIndex={hoveredMoveIndex ?? currentMoveIndex}
-            onHoverMove={handleChartHover}
-            playerColor={drill.selection.playerColor}
-          />
-
-          {/* Critical Decisions Section */}
-          {(() => {
-            // Define helper function first
-            const getMoveNumberForIndex = (
-              index: number,
-            ): { moveNumber: number; isWhiteMove: boolean } => {
-              if (index < 0 || index >= filteredMoveAnalyses.length)
-                return { moveNumber: 1, isWhiteMove: true }
-
-              const moveAnalysis = filteredMoveAnalyses[index]
-              if (!moveAnalysis) return { moveNumber: 1, isWhiteMove: true }
-
-              const isWhiteMove = isMoveByWhite(moveAnalysis.fen)
-              let moveNumber = 1
-              if (isWhiteMove) {
-                moveNumber = getMoveNumberFromFen(moveAnalysis.fen)
-              } else {
-                let currentIndex = index - 1
-                while (currentIndex >= 0) {
-                  const prevMove = filteredMoveAnalyses[currentIndex]
-                  if (isMoveByWhite(prevMove.fen)) {
-                    moveNumber = getMoveNumberFromFen(prevMove.fen)
-                    break
-                  }
-                  currentIndex--
-                }
-              }
-              return { moveNumber, isWhiteMove }
-            }
-
-            // Calculate critical moments for this column
-            const criticalMoments = filteredEvaluationChart
-              .map((point, index) => {
-                if (index === 0) return null
-                const currentEval = point.evaluation
-                const previousEval =
-                  filteredEvaluationChart[index - 1].evaluation
-
-                // Convert evaluations to win rates and calculate change
-                const currentWinrate = cpToWinrate(currentEval)
-                const previousWinrate = cpToWinrate(previousEval)
-                const winrateChange = Math.abs(currentWinrate - previousWinrate)
-
-                const moveAnalysis = filteredMoveAnalyses[index]
-                const moveInfo = getMoveNumberForIndex(index)
-                return {
-                  index,
-                  moveNumber: moveInfo.moveNumber,
-                  isWhiteMove: moveInfo.isWhiteMove,
-                  winrateChange,
-                  moveAnalysis,
-                  isPlayerMove: point.isPlayerMove,
-                  evaluation: point.evaluation,
-                  previousEvaluation: previousEval,
-                }
-              })
-              .filter(
-                (moment): moment is NonNullable<typeof moment> =>
-                  moment !== null &&
-                  moment.isPlayerMove &&
-                  moment.winrateChange > 0.05, // 5% win rate change threshold
-              )
-              .sort((a, b) => a.index - b.index)
-              .slice(0, 3) // Show top 3
-
-            const formatEvaluation = (evaluation: number) => {
-              if (Math.abs(evaluation) >= 1000) {
-                return evaluation > 0 ? '+M' : '-M'
-              }
-              return evaluation > 0
-                ? `+${(evaluation / 100).toFixed(1)}`
-                : `${(evaluation / 100).toFixed(1)}`
-            }
-
-            return criticalMoments.length > 0 ? (
-              <div className="flex w-full flex-col gap-1 border-t border-white/10">
-                <div className="flex flex-col px-3 pt-3">
-                  <h3 className="text-lg font-semibold">Critical Decisions</h3>
-                  <p className="text-xs text-secondary">
-                    Key moments that shifted the evaluation
-                  </p>
-                </div>
-                <div className="flex flex-col">
-                  {criticalMoments.map((moment) => (
-                    <div
-                      key={moment.index}
-                      role="button"
-                      tabIndex={0}
-                      className="flex cursor-pointer items-center justify-between border-b border-white/10 px-3 py-2 transition-colors last:border-b-0 hover:bg-background-2"
-                      onClick={() => handleMoveClick(moment.index)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          handleMoveClick(moment.index)
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium">
-                          {moment.isWhiteMove
-                            ? `${moment.moveNumber}.`
-                            : `...${moment.moveNumber}.`}{' '}
-                          {moment.moveAnalysis?.san}
-                        </span>
-                        <span className="text-xs text-secondary">
-                          Swing: {(moment.winrateChange * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-secondary">
-                          {formatEvaluation(moment.previousEvaluation)}
-                        </span>
-                        <span className="text-secondary">→</span>
-                        <span
-                          className={
-                            moment.evaluation > moment.previousEvaluation
-                              ? 'text-green-400'
-                              : 'text-red-400'
-                          }
-                        >
-                          {formatEvaluation(moment.evaluation)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null
-          })()}
-        </div>
-
-        {/* Right Panel - Maia Rating Insights & Key Moments Analysis */}
-        <div className="red-scrollbar flex w-1/3 flex-col gap-3 overflow-y-auto p-4">
-          <MaiaRatingInsights
-            ratingPrediction={performanceData.ratingPrediction}
-          />
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-3 border-t border-white/10 p-4">
-        <button
-          onClick={onContinueAnalyzing}
-          className="flex-1 rounded bg-background-2 py-2 font-medium transition-colors hover:bg-background-3"
-        >
-          Continue Analyzing
-        </button>
-        <button
-          onClick={onNextDrill}
-          className="flex-1 rounded bg-human-4 py-2 font-medium transition-colors hover:bg-human-4/80"
-        >
-          {isLastDrill ? 'View Summary' : 'Next Drill'}
-        </button>
-      </div>
-    </div>
-  )
-
-  // Mobile layout component with tabs
-  const MobileLayout = () => (
-    <div className="relative flex h-[95vh] w-[95vw] flex-col overflow-hidden rounded-lg bg-background-1 shadow-2xl">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/10 p-4">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-bold text-primary">Analysis Complete</h2>
-          <div className="mt-1">
-            <p className="text-sm font-medium text-secondary">
-              {drill.selection.opening.name}
-              {drill.selection.variation &&
-                ` - ${drill.selection.variation.name}`}
-            </p>
-            <p className="text-xs text-secondary">
-              {filteredMoveAnalyses.filter((m) => m.isPlayerMove).length} moves
-              analyzed •{' '}
-              {drill.selection.playerColor === 'white' ? 'White' : 'Black'}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={onContinueAnalyzing}
-          className="text-secondary hover:text-primary"
-        >
-          <span className="material-symbols-outlined">close</span>
-        </button>
-      </div>
-
-      {/* Mobile Tab Navigation */}
-      <div className="flex w-full border-b border-white/10 bg-background-1">
-        <button
-          onClick={() => setActiveTab('replay')}
-          className={`flex-1 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'replay'
-              ? 'border-b-2 border-human-4 bg-background-2 text-primary'
-              : 'text-secondary hover:text-primary'
-          }`}
-        >
-          Replay
-        </button>
-        <button
-          onClick={() => setActiveTab('analysis')}
-          className={`flex-1 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'analysis'
-              ? 'border-b-2 border-human-4 bg-background-2 text-primary'
-              : 'text-secondary hover:text-primary'
-          }`}
-        >
-          Chart
-        </button>
-        <button
-          onClick={() => setActiveTab('insights')}
-          className={`flex-1 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'insights'
-              ? 'border-b-2 border-human-4 bg-background-2 text-primary'
-              : 'text-secondary hover:text-primary'
-          }`}
-        >
-          Insights
-        </button>
-      </div>
-
-      {/* Tab Content */}
-      <div className="flex-1 overflow-hidden">
-        {activeTab === 'replay' && (
-          <AnimatedGameReplay
-            moveAnalyses={filteredMoveAnalyses}
-            openingFen={openingFen}
-            playerColor={drill.selection.playerColor}
-            onMoveIndexChange={setCurrentMoveIndex}
-            externalMoveIndex={currentMoveIndex}
-            onMoveClick={handleMoveClick}
-          />
-        )}
-
-        {activeTab === 'analysis' && (
-          <div className="red-scrollbar h-full overflow-y-auto">
-            <EvaluationChart
-              evaluationChart={filteredEvaluationChart}
-              moveAnalyses={filteredMoveAnalyses}
-              currentMoveIndex={hoveredMoveIndex ?? currentMoveIndex}
-              onHoverMove={handleChartHover}
-              playerColor={drill.selection.playerColor}
-            />
-          </div>
-        )}
-
-        {activeTab === 'insights' && (
-          <div className="red-scrollbar h-full overflow-y-auto p-4">
-            <MaiaRatingInsights
-              ratingPrediction={performanceData.ratingPrediction}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-3 border-t border-white/10 p-4">
-        <button
-          onClick={onContinueAnalyzing}
-          className="flex-1 rounded bg-background-2 py-2 font-medium transition-colors hover:bg-background-3"
-        >
-          Continue
-        </button>
-        <button
-          onClick={onNextDrill}
-          className="flex-1 rounded bg-human-4 py-2 font-medium transition-colors hover:bg-human-4/80"
-        >
-          {isLastDrill ? 'Summary' : 'Next'}
-        </button>
-      </div>
-    </div>
-  )
-
   return (
     <ModalContainer dismiss={onContinueAnalyzing}>
-      {isMobile ? <MobileLayout /> : <DesktopLayout />}
+      {isMobile ? (
+        <MobileLayout
+          drill={drill}
+          filteredMoveAnalyses={filteredMoveAnalyses}
+          filteredEvaluationChart={filteredEvaluationChart}
+          currentMoveIndex={currentMoveIndex}
+          hoveredMoveIndex={hoveredMoveIndex}
+          handleMoveClick={handleMoveClick}
+          handleChartHover={handleChartHover}
+          setCurrentMoveIndex={setCurrentMoveIndex}
+          openingFen={openingFen}
+          performanceData={performanceData}
+          onContinueAnalyzing={onContinueAnalyzing}
+          onNextDrill={onNextDrill}
+          isLastDrill={isLastDrill}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
+      ) : (
+        <DesktopLayout
+          drill={drill}
+          filteredMoveAnalyses={filteredMoveAnalyses}
+          filteredEvaluationChart={filteredEvaluationChart}
+          currentMoveIndex={currentMoveIndex}
+          hoveredMoveIndex={hoveredMoveIndex}
+          handleMoveClick={handleMoveClick}
+          handleChartHover={handleChartHover}
+          setCurrentMoveIndex={setCurrentMoveIndex}
+          openingFen={openingFen}
+          performanceData={performanceData}
+          onContinueAnalyzing={onContinueAnalyzing}
+          onNextDrill={onNextDrill}
+          isLastDrill={isLastDrill}
+        />
+      )}
     </ModalContainer>
   )
 }
