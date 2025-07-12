@@ -62,9 +62,9 @@ export const analysisTourSteps: TourStep[] = [
 export const trainTourSteps: TourStep[] = [
   {
     id: 'train-overview',
-    title: 'Welcome to Training',
+    title: 'Welcome to Puzzles',
     description:
-      'This is the training page where you solve chess puzzles to improve your tactical skills. Each puzzle presents a position where you need to find the best move. The puzzles are rated, and your performance affects your puzzle rating. Try to solve each puzzle by making the correct moves on the board.',
+      'This is the puzzle page where you solve chess puzzles to improve your tactical skills. Each puzzle presents a position where you need to find the best move. The puzzles are rated, and your performance affects your puzzle rating. Try to solve each puzzle by making the correct moves on the board.',
     targetId: 'train-page',
     placement: 'right',
   },
