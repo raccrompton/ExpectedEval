@@ -194,7 +194,8 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
                               />
                             </div>
                             <span className="text-secondary">
-                              vs Maia {drill.maiaVersion.replace('maia_kdd_', '')}
+                              vs Maia{' '}
+                              {drill.maiaVersion.replace('maia_kdd_', '')}
                             </span>
                             <span className="text-secondary">
                               • {drill.targetMoveNumber} moves
