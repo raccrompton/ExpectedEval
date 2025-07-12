@@ -162,7 +162,7 @@ export const MoveMap: React.FC<Props> = ({
         maiaProb={hoveredMoveData.rawMaiaProb}
         stockfishCp={hoveredMoveData.rawCp}
         stockfishWinrate={hoveredMoveData.winrate}
-        stockfishLoss={hoveredMoveData.relativeCp}
+        stockfishCpRelative={hoveredMoveData.relativeCp}
         position={mousePosition}
       />
     )

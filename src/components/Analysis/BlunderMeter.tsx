@@ -1,7 +1,12 @@
 import React, { useContext, useState } from 'react'
 import { motion } from 'framer-motion'
 
-import { BlunderMeterResult, ColorSanMapping } from 'src/types'
+import {
+  BlunderMeterResult,
+  ColorSanMapping,
+  StockfishEvaluation,
+  MaiaEvaluation,
+} from 'src/types'
 import { WindowSizeContext } from 'src/contexts'
 import { MoveTooltip } from './MoveTooltip'
 
@@ -12,12 +17,8 @@ interface Props {
   makeMove: (move: string) => void
   showContainer?: boolean
   moveEvaluation?: {
-    maia?: { policy: { [key: string]: number } }
-    stockfish?: {
-      cp_vec: { [key: string]: number }
-      winrate_vec?: { [key: string]: number }
-      winrate_loss_vec?: { [key: string]: number }
-    }
+    maia?: MaiaEvaluation
+    stockfish?: StockfishEvaluation
   } | null
 }
 
@@ -206,12 +207,8 @@ function MovesList({
   makeMove: (move: string) => void
   colorSanMapping: ColorSanMapping
   moveEvaluation?: {
-    maia?: { policy: { [key: string]: number } }
-    stockfish?: {
-      cp_vec: { [key: string]: number }
-      winrate_vec?: { [key: string]: number }
-      winrate_loss_vec?: { [key: string]: number }
-    }
+    maia?: MaiaEvaluation
+    stockfish?: StockfishEvaluation
   } | null
 }) {
   const [tooltipData, setTooltipData] = useState<{
@@ -264,8 +261,8 @@ function MovesList({
           stockfishWinrate={
             moveEvaluation.stockfish?.winrate_vec?.[tooltipData.move]
           }
-          stockfishLoss={
-            moveEvaluation.stockfish?.winrate_loss_vec?.[tooltipData.move]
+          stockfishCpRelative={
+            moveEvaluation.stockfish?.cp_relative_vec?.[tooltipData.move]
           }
           position={tooltipData.position}
         />
@@ -332,12 +329,8 @@ function Meter({
   colorSanMapping: ColorSanMapping
   moves: { move: string; probability: number }[]
   moveEvaluation?: {
-    maia?: { policy: { [key: string]: number } }
-    stockfish?: {
-      cp_vec: { [key: string]: number }
-      winrate_vec?: { [key: string]: number }
-      winrate_loss_vec?: { [key: string]: number }
-    }
+    maia?: MaiaEvaluation
+    stockfish?: StockfishEvaluation
   } | null
 }) {
   const [tooltipData, setTooltipData] = useState<{
@@ -406,8 +399,8 @@ function Meter({
           stockfishWinrate={
             moveEvaluation.stockfish?.winrate_vec?.[tooltipData.move]
           }
-          stockfishLoss={
-            moveEvaluation.stockfish?.winrate_loss_vec?.[tooltipData.move]
+          stockfishCpRelative={
+            moveEvaluation.stockfish?.cp_relative_vec?.[tooltipData.move]
           }
           position={tooltipData.position}
         />
