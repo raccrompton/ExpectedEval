@@ -62,14 +62,14 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
               <span>•</span>
               <span>{currentDrill.targetMoveNumber} moves</span>
             </div>
-            <div className="mt-3 flex gap-2">
-              {/* <button
+            {/* <div className="mt-3 flex gap-2">
+            <button
                 onClick={onResetCurrentDrill}
                 className="w-full rounded bg-background-2 py-1 text-xs transition-colors hover:bg-background-3"
               >
                 Reset Drill
-              </button> */}
-              {onChangeSelections && (
+              </button>
+            {onChangeSelections && (
                 <button
                   onClick={onChangeSelections}
                   className="w-full rounded bg-background-2 py-1 text-xs transition-colors hover:bg-background-3"
@@ -77,7 +77,7 @@ export const OpeningDrillSidebar: React.FC<Props> = ({
                   Change
                 </button>
               )}
-            </div>
+            </div> */}
           </div>
         ) : (
           <p className="text-sm text-secondary">No drill selected</p>
