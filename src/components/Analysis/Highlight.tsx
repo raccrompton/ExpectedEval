@@ -2,7 +2,13 @@ import { MoveTooltip } from './MoveTooltip'
 import { InteractiveDescription } from './InteractiveDescription'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MaiaEvaluation, StockfishEvaluation, ColorSanMapping } from 'src/types'
+import {
+  MaiaEvaluation,
+  StockfishEvaluation,
+  ColorSanMapping,
+  GameNode,
+} from 'src/types'
+import { cpToWinrate } from 'src/utils/stockfish'
 
 type DescriptionSegment =
   | { type: 'text'; content: string }
@@ -41,6 +47,7 @@ interface Props {
   hover: (move?: string) => void
   makeMove: (move: string) => void
   boardDescription: { segments: DescriptionSegment[] }
+  currentNode?: GameNode
 }
 
 export const Highlight: React.FC<Props> = ({
@@ -52,6 +59,7 @@ export const Highlight: React.FC<Props> = ({
   currentMaiaModel,
   setCurrentMaiaModel,
   boardDescription,
+  currentNode,
 }: Props) => {
   // Tooltip state
   const [tooltipData, setTooltipData] = useState<{
@@ -121,6 +129,34 @@ export const Highlight: React.FC<Props> = ({
   const hasDescriptionRef = useRef(boardDescription?.segments?.length > 0)
   const [animationKey, setAnimationKey] = useState(0)
 
+  // Calculate if we're in the first 10 ply
+  const isInFirst10Ply = currentNode
+    ? (() => {
+        const moveNumber = currentNode.moveNumber
+        const turn = currentNode.turn
+        const plyFromStart = (moveNumber - 1) * 2 + (turn === 'b' ? 1 : 0)
+        return plyFromStart < 10
+      })()
+    : false
+
+  // Get the appropriate win rate
+  const getWhiteWinRate = () => {
+    if (
+      isInFirst10Ply &&
+      moveEvaluation?.stockfish?.model_optimal_cp !== undefined
+    ) {
+      // Use Stockfish win rate for first 10 ply
+      const stockfishWinRate = cpToWinrate(
+        moveEvaluation.stockfish.model_optimal_cp,
+      )
+      return `${Math.round(stockfishWinRate * 1000) / 10}%`
+    } else if (moveEvaluation?.maia) {
+      // Use Maia win rate for later positions
+      return `${Math.round(moveEvaluation.maia.value * 1000) / 10}%`
+    }
+    return '...'
+  }
+
   useEffect(() => {
     const descriptionNowExists = boardDescription?.segments?.length > 0
     // Only trigger animation when presence changes (exists vs doesn't exist)
@@ -162,9 +198,7 @@ export const Highlight: React.FC<Props> = ({
               White Win %
             </p>
             <p className="text-lg font-bold text-human-1 md:text-sm lg:text-lg">
-              {moveEvaluation?.maia
-                ? `${Math.round(moveEvaluation.maia?.value * 1000) / 10}%`
-                : '...'}
+              {getWhiteWinRate()}
             </p>
           </div>
           <div className="flex w-full flex-col items-center justify-center px-3 py-1.5 xl:py-2">
