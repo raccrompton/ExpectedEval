@@ -717,6 +717,7 @@ const Analysis: React.FC<Props> = ({
                     }
                     colorSanMapping={controller.colorSanMapping}
                     boardDescription={controller.boardDescription}
+                    currentNode={controller.currentNode}
                   />
                 </div>
                 <div className="flex h-full w-full bg-background-1">
@@ -765,6 +766,7 @@ const Analysis: React.FC<Props> = ({
                   }
                   colorSanMapping={controller.colorSanMapping}
                   boardDescription={controller.boardDescription}
+                  currentNode={controller.currentNode}
                 />
               </div>
               <div className="flex h-full w-auto min-w-[40%] max-w-[40%] bg-background-1 p-3">
@@ -943,6 +945,7 @@ const Analysis: React.FC<Props> = ({
                 }
                 colorSanMapping={controller.colorSanMapping}
                 boardDescription={controller.boardDescription}
+                currentNode={controller.currentNode}
               />
               <MovesByRating
                 moves={controller.movesByRating}

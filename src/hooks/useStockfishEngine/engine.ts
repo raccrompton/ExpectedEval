@@ -11,6 +11,7 @@ class Engine {
   private stockfish: StockfishWeb | null = null
   private isReady = false
   private nnueLoaded = false
+  private currentPositionId = ''
 
   private store: {
     [key: string]: StockfishEvaluation
@@ -65,6 +66,8 @@ class Engine {
         global.gc()
       }
 
+      // Stop any previous evaluation
+      this.stopEvaluation()
       this.store = {}
       this.legalMoveCount = legalMoveCount
       const board = new Chess(fen)
@@ -72,15 +75,12 @@ class Engine {
         .moves({ verbose: true })
         .map((x) => x.from + x.to + (x.promotion || ''))
       this.fen = fen
+      this.currentPositionId = fen + '_' + Date.now()
       this.isEvaluating = true
       this.evaluationGenerator = this.createEvaluationGenerator()
 
-      this.sendMessage('stop')
-      await this.waitForReady()
       this.sendMessage('ucinewgame')
-      await this.waitForReady()
       this.sendMessage(`position fen ${fen}`)
-      await this.waitForReady()
       this.sendMessage('go depth 18')
 
       while (this.isEvaluating) {
@@ -112,6 +112,7 @@ class Engine {
 
   private sendMessage(message: string) {
     if (this.stockfish) {
+      console.log(message)
       this.stockfish.uci(message)
     }
   }
@@ -120,28 +121,40 @@ class Engine {
     if (!this.stockfish) return
 
     return new Promise((resolve) => {
-      const originalListen = this.stockfish?.listen
-      if (!this.stockfish || !originalListen) {
+      if (!this.stockfish) {
         resolve()
         return
       }
 
-      this.stockfish.listen = (msg: string) => {
-        if (msg.includes('readyok')) {
+      let resolved = false
+      const originalListen = this.stockfish.listen
+
+      const tempListener = (msg: string) => {
+        if (msg.includes('readyok') && !resolved) {
+          resolved = true
           if (this.stockfish) {
             this.stockfish.listen = originalListen
           }
           resolve()
         } else {
+          // Forward all other messages to the original listener
           originalListen(msg)
         }
       }
 
+      this.stockfish.listen = tempListener
       this.stockfish.uci('isready')
     })
   }
 
   private onMessage(msg: string) {
+    console.log(msg)
+
+    // Only process evaluation messages if we're currently evaluating
+    if (!this.isEvaluating) {
+      return
+    }
+
     const matches = [
       ...msg.matchAll(
         /info depth (\d+) seldepth (\d+) multipv (\d+) score (?:cp (-?\d+)|mate (-?\d+)).+ pv ((?:\S+\s*)+)/g,
@@ -288,8 +301,10 @@ class Engine {
     this.isEvaluating = false
   }
   stopEvaluation() {
-    this.isEvaluating = false
-    this.sendMessage('stop')
+    if (this.isEvaluating) {
+      this.isEvaluating = false
+      this.sendMessage('stop')
+    }
   }
 }
 
