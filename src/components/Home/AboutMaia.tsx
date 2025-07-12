@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
 
@@ -11,6 +10,7 @@ import personKevin from './people/kevin.jpg'
 import personJoseph from './people/joseph.jpg'
 import personAshton from './people/ashton.jpeg'
 import personDmitriy from './people/dmitriy.jpg'
+import personArthur from './people/arthur.png'
 
 const teamMembers = [
   {
@@ -53,11 +53,12 @@ const teamMembers = [
     github: 'lilv98',
   },
   {
-    image: personIsaac,
-    name: 'Isaac Waller',
-    website: 'https://waller.is/',
-    institution: 'University of Toronto',
+    image: personKevin,
+    name: 'Kevin Thomas',
+    website: 'https://kevinjosethomas.com/',
+    institution: 'Burnaby South Secondary',
     role: 'Web Developer',
+    github: 'kevinjosethomas',
   },
   {
     image: personDmitriy,
@@ -68,12 +69,19 @@ const teamMembers = [
     github: 'prokopchukdim',
   },
   {
-    image: personKevin,
-    name: 'Kevin Thomas',
-    website: 'https://kevinjosethomas.com/',
-    institution: 'Burnaby South Secondary',
+    image: personArthur,
+    name: 'Arthur Soenarto',
+    website: 'https://artyang.me/',
+    institution: 'University of Toronto',
     role: 'Web Developer',
-    github: 'kevinjosethomas',
+    github: 'arthursoenarto',
+  },
+  {
+    image: personIsaac,
+    name: 'Isaac Waller',
+    website: 'https://waller.is/',
+    institution: 'University of Toronto',
+    role: 'Web Developer',
   },
 ]
 
@@ -299,11 +307,11 @@ export const AboutMaia = () => {
         className="relative overflow-hidden bg-background-1 py-16"
         ref={teamRef}
       >
-        <div className="relative z-10 mx-auto my-0 max-w-[1200px]">
+        <div className="relative z-10 mx-auto my-0 flex max-w-[1200px] flex-col items-center justify-center gap-8">
           <div className="m-auto box-border w-auto px-4 md:w-2/3">
             <h3 className="text-center text-xl font-bold uppercase">Team</h3>
           </div>
-          <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-x-2 gap-y-8 px-4 text-center sm:grid-cols-2 md:grid-cols-4 md:gap-y-12">
+          <div className="grid max-w-[1200px] grid-cols-3 gap-x-2 gap-y-8 px-4 text-center md:gap-y-12 lg:grid-cols-5 xl:gap-x-4 2xl:gap-x-8">
             {teamMembers.map((member, index) => (
               <TeamMember key={member.name} {...member} index={index} />
             ))}

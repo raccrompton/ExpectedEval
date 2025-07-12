@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { MoveTooltip } from './MoveTooltip'
-import { ColorSanMapping } from 'src/types'
+import { ColorSanMapping, MaiaEvaluation, StockfishEvaluation } from 'src/types'
 
 type DescriptionSegment =
   | { type: 'text'; content: string }
@@ -9,14 +9,10 @@ type DescriptionSegment =
 interface Props {
   description: { segments: DescriptionSegment[] }
   colorSanMapping: ColorSanMapping
-  moveEvaluation?: {
-    maia?: { policy: { [key: string]: number } }
-    stockfish?: {
-      cp_vec: { [key: string]: number }
-      winrate_vec?: { [key: string]: number }
-      winrate_loss_vec?: { [key: string]: number }
-    }
-  } | null
+  moveEvaluation: {
+    maia?: MaiaEvaluation
+    stockfish?: StockfishEvaluation
+  }
   hover: (move?: string) => void
   makeMove: (move: string) => void
 }
@@ -85,8 +81,8 @@ export const InteractiveDescription: React.FC<Props> = ({
           stockfishWinrate={
             moveEvaluation.stockfish?.winrate_vec?.[tooltipData.move]
           }
-          stockfishLoss={
-            moveEvaluation.stockfish?.winrate_loss_vec?.[tooltipData.move]
+          stockfishCpRelative={
+            moveEvaluation.stockfish?.cp_relative_vec[tooltipData.move]
           }
           position={tooltipData.position}
         />

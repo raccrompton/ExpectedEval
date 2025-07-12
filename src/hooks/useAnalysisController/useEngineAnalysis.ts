@@ -126,7 +126,13 @@ export const useEngineAnalysis = (
       }
     }
 
-    attemptMaiaAnalysis()
+    const timeoutId = setTimeout(() => {
+      attemptMaiaAnalysis()
+    }, 100)
+
+    return () => {
+      clearTimeout(timeoutId)
+    }
   }, [
     maiaStatus,
     currentNode,
@@ -145,19 +151,29 @@ export const useEngineAnalysis = (
     )
       return
 
+    let cancelled = false
+
+    // Delay Stockfish analysis to prevent rapid fire when moving quickly
+    const timeoutId = setTimeout(() => {
+      if (cancelled) return
+      attemptStockfishAnalysis()
+    }, 100)
+
     // Add retry logic for Stockfish initialization
     const attemptStockfishAnalysis = async () => {
       // Wait up to 3 seconds for Stockfish to be ready
       let retries = 0
       const maxRetries = 30 // 3 seconds with 100ms intervals
 
-      while (retries < maxRetries && !isStockfishReady()) {
+      while (retries < maxRetries && !isStockfishReady() && !cancelled) {
         await new Promise((resolve) => setTimeout(resolve, 100))
         retries++
       }
 
-      if (!isStockfishReady()) {
-        console.warn('Stockfish not ready after waiting, skipping analysis')
+      if (cancelled || !isStockfishReady()) {
+        if (!cancelled) {
+          console.warn('Stockfish not ready after waiting, skipping analysis')
+        }
         return
       }
 
@@ -166,24 +182,31 @@ export const useEngineAnalysis = (
         board.moves().length,
       )
 
-      if (evaluationStream) {
-        ;(async () => {
+      if (evaluationStream && !cancelled) {
+        const nodeForAnalysis = currentNode // Capture the node reference
+        try {
           for await (const evaluation of evaluationStream) {
-            if (!currentNode) {
-              stopEvaluation()
+            if (
+              cancelled ||
+              !nodeForAnalysis ||
+              nodeForAnalysis !== currentNode
+            ) {
               break
             }
-            currentNode.addStockfishAnalysis(evaluation, currentMaiaModel)
+            nodeForAnalysis.addStockfishAnalysis(evaluation, currentMaiaModel)
             setAnalysisState((state) => state + 1)
           }
-        })()
+        } catch (error) {
+          if (!cancelled) {
+            console.error('Stockfish evaluation error:', error)
+          }
+        }
       }
     }
 
-    attemptStockfishAnalysis()
-
     return () => {
-      stopEvaluation()
+      cancelled = true
+      clearTimeout(timeoutId)
     }
   }, [
     currentNode,

@@ -834,201 +834,6 @@ const EvaluationChart: React.FC<{
   )
 }
 
-// Component for key moments analysis
-const KeyMomentsAnalysis: React.FC<{
-  moveAnalyses: MoveAnalysis[]
-  evaluationChart: DrillPerformanceData['evaluationChart']
-  playerColor: 'white' | 'black'
-}> = ({ moveAnalyses, evaluationChart, playerColor }) => {
-  // Classify move based on winrate loss (using proper winrate calculation)
-  const classifyMove = (analysis: MoveAnalysis, moveIndex: number): string => {
-    // Need evaluation before and after the move to calculate winrate change
-    if (moveIndex === 0) return '' // Can't calculate for first move
-
-    const currentEval = analysis.evaluation
-    const previousEval = moveAnalyses[moveIndex - 1]?.evaluation
-
-    if (currentEval === undefined || previousEval === undefined) return ''
-
-    // Convert evaluations to winrates (assuming evaluations are already in centipawns)
-    const currentWinrate = cpToWinrate(currentEval)
-    const previousWinrate = cpToWinrate(previousEval)
-
-    // Calculate winrate change from player's perspective
-    let winrateChange: number
-
-    if (analysis.isPlayerMove) {
-      // For player moves, we need to consider which color they're playing
-      if (playerColor === 'white') {
-        // Higher evaluation is better for white
-        winrateChange = currentWinrate - previousWinrate
-      } else {
-        // Lower evaluation is better for black
-        winrateChange = previousWinrate - currentWinrate
-      }
-    } else {
-      // For opponent (Maia) moves, we don't classify them
-      return ''
-    }
-
-    // Use more reasonable thresholds - excellent moves should be rare
-    const BLUNDER_THRESHOLD = 0.1 // 10% winrate drop - significant mistake
-    const INACCURACY_THRESHOLD = 0.05 // 5% winrate drop - noticeable error
-    const EXCELLENT_THRESHOLD = 0.08 // 8% winrate gain - very good move
-
-    if (winrateChange <= -BLUNDER_THRESHOLD) {
-      return 'blunder'
-    } else if (winrateChange <= -INACCURACY_THRESHOLD) {
-      return 'inaccuracy'
-    } else if (winrateChange >= EXCELLENT_THRESHOLD) {
-      return 'excellent'
-    }
-
-    return '' // Normal moves get no classification
-  }
-
-  // Helper function to get proper move number for a given move analysis index
-  const getMoveNumberForIndex = (
-    index: number,
-  ): { moveNumber: number; isWhiteMove: boolean } => {
-    if (index < 0 || index >= moveAnalyses.length)
-      return { moveNumber: 1, isWhiteMove: true }
-
-    const moveAnalysis = moveAnalyses[index]
-    if (!moveAnalysis) return { moveNumber: 1, isWhiteMove: true }
-
-    // Use the same logic as the moves container
-    const isWhiteMove = isMoveByWhite(moveAnalysis.fen)
-
-    let moveNumber = 1 // Default fallback
-    if (isWhiteMove) {
-      // For white moves, get the move number from the FEN (which represents position after the move)
-      moveNumber = getMoveNumberFromFen(moveAnalysis.fen)
-    } else {
-      // For black moves, we need to find the previous white move's move number
-      // Look backwards to find the most recent white move
-      let currentIndex = index - 1
-      let foundPreviousWhite = false
-      while (currentIndex >= 0) {
-        const prevMove = moveAnalyses[currentIndex]
-        if (isMoveByWhite(prevMove.fen)) {
-          // Found the previous white move, use its move number
-          moveNumber = getMoveNumberFromFen(prevMove.fen)
-          foundPreviousWhite = true
-          break
-        }
-        currentIndex--
-      }
-      // If no previous white move found, use the current move's FEN but subtract 1
-      if (!foundPreviousWhite) {
-        moveNumber = getMoveNumberFromFen(moveAnalysis.fen) - 1
-      }
-    }
-
-    return { moveNumber, isWhiteMove }
-  }
-
-  // Find engine agreement moments (where user matched Stockfish exactly)
-  const engineAgreements = moveAnalyses
-    .map((analysis, index) => {
-      const moveInfo = getMoveNumberForIndex(index)
-      return {
-        ...analysis,
-        index,
-        moveNumber: moveInfo.moveNumber,
-        isWhiteMove: moveInfo.isWhiteMove,
-      }
-    })
-    .filter(
-      (analysis) =>
-        analysis.isPlayerMove &&
-        analysis.stockfishBestMove &&
-        analysis.san === analysis.stockfishBestMove,
-    )
-    .slice(0, 3) // Show top 3
-
-  // Find critical decision points (largest evaluation swings)
-  const criticalMoments = evaluationChart
-    .map((point, index) => {
-      if (index === 0) return null
-      const evalChange = Math.abs(
-        point.evaluation - evaluationChart[index - 1].evaluation,
-      )
-      const moveAnalysis = moveAnalyses[index]
-      const moveInfo = getMoveNumberForIndex(index)
-      return {
-        index,
-        moveNumber: moveInfo.moveNumber,
-        isWhiteMove: moveInfo.isWhiteMove,
-        evalChange,
-        moveAnalysis,
-        isPlayerMove: point.isPlayerMove,
-        evaluation: point.evaluation,
-        previousEvaluation: evaluationChart[index - 1].evaluation,
-      }
-    })
-    .filter(
-      (moment): moment is NonNullable<typeof moment> =>
-        moment !== null && moment.isPlayerMove && moment.evalChange > 50,
-    )
-    .sort((a, b) => b.evalChange - a.evalChange)
-    .slice(0, 3) // Show top 3
-
-  // Analyze patterns for insights
-  const playerMoves = moveAnalyses.filter((m) => m.isPlayerMove)
-
-  const formatEvaluation = (evaluation: number) => {
-    if (Math.abs(evaluation) >= 1000) {
-      return evaluation > 0 ? '+M' : '-M'
-    }
-    return evaluation > 0
-      ? `+${(evaluation / 100).toFixed(1)}`
-      : `${(evaluation / 100).toFixed(1)}`
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Engine Agreement Section */}
-      {engineAgreements.length > 0 && (
-        <div>
-          <h3 className="mb-1 text-lg font-semibold text-engine-4">
-            Engine Agreement
-          </h3>
-          <p className="mb-3 text-sm text-secondary">
-            Moves where you matched Stockfish exactly
-          </p>
-          <div className="space-y-3">
-            {engineAgreements.map((agreement) => (
-              <div
-                key={agreement.index}
-                className="flex items-center justify-between rounded border border-white/10 p-3"
-              >
-                <div>
-                  <span className="text-base font-medium">
-                    {agreement.isWhiteMove
-                      ? `${agreement.moveNumber}.`
-                      : `...${agreement.moveNumber}.`}{' '}
-                    {agreement.san}
-                  </span>
-                  <p className="text-sm text-secondary">
-                    {agreement.classification === 'excellent' && (
-                      <span className="font-bold text-green-400">!! </span>
-                    )}
-                    Perfect engine choice
-                  </p>
-                </div>
-                <div className="text-sm font-medium text-engine-4">
-                  {formatEvaluation(agreement.evaluation || 0)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 export const DrillPerformanceModal: React.FC<Props> = ({
   performanceData,
   onContinueAnalyzing,
@@ -1200,31 +1005,37 @@ export const DrillPerformanceModal: React.FC<Props> = ({
               const criticalMoments = filteredEvaluationChart
                 .map((point, index) => {
                   if (index === 0) return null
-                  const evalChange = Math.abs(
-                    point.evaluation -
-                      filteredEvaluationChart[index - 1].evaluation,
+                  const currentEval = point.evaluation
+                  const previousEval =
+                    filteredEvaluationChart[index - 1].evaluation
+
+                  // Convert evaluations to win rates and calculate change
+                  const currentWinrate = cpToWinrate(currentEval)
+                  const previousWinrate = cpToWinrate(previousEval)
+                  const winrateChange = Math.abs(
+                    currentWinrate - previousWinrate,
                   )
+
                   const moveAnalysis = filteredMoveAnalyses[index]
                   const moveInfo = getMoveNumberForIndex(index)
                   return {
                     index,
                     moveNumber: moveInfo.moveNumber,
                     isWhiteMove: moveInfo.isWhiteMove,
-                    evalChange,
+                    winrateChange,
                     moveAnalysis,
                     isPlayerMove: point.isPlayerMove,
                     evaluation: point.evaluation,
-                    previousEvaluation:
-                      filteredEvaluationChart[index - 1].evaluation,
+                    previousEvaluation: previousEval,
                   }
                 })
                 .filter(
                   (moment): moment is NonNullable<typeof moment> =>
                     moment !== null &&
                     moment.isPlayerMove &&
-                    moment.evalChange > 50,
+                    moment.winrateChange > 0.05, // 5% win rate change threshold
                 )
-                .sort((a, b) => b.evalChange - a.evalChange)
+                .sort((a, b) => a.index - b.index)
                 .slice(0, 3) // Show top 3
 
               const formatEvaluation = (evaluation: number) => {
@@ -1269,7 +1080,7 @@ export const DrillPerformanceModal: React.FC<Props> = ({
                             {moment.moveAnalysis?.san}
                           </span>
                           <span className="text-xs text-secondary">
-                            Swing: {(moment.evalChange / 100).toFixed(1)}
+                            Swing: {(moment.winrateChange * 100).toFixed(1)}%
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
@@ -1299,11 +1110,6 @@ export const DrillPerformanceModal: React.FC<Props> = ({
           <div className="red-scrollbar flex w-1/3 flex-col gap-3 overflow-y-auto p-4">
             <MaiaRatingInsights
               ratingPrediction={performanceData.ratingPrediction}
-            />
-            <KeyMomentsAnalysis
-              moveAnalyses={filteredMoveAnalyses}
-              evaluationChart={filteredEvaluationChart}
-              playerColor={drill.selection.playerColor}
             />
           </div>
         </div>

@@ -115,6 +115,19 @@ export const MovesContainer: React.FC<Props> = (props) => {
   } = props
   const { isMobile } = useContext(WindowSizeContext)
 
+  // Helper function to determine if move indicators should be shown
+  const shouldShowIndicators = (node: GameNode | null) => {
+    if (!node || !showAnnotations) return false
+
+    // Calculate ply from start: (moveNumber - 1) * 2 + (turn === 'b' ? 1 : 0)
+    const moveNumber = node.moveNumber
+    const turn = node.turn
+    const plyFromStart = (moveNumber - 1) * 2 + (turn === 'b' ? 1 : 0)
+
+    // Only show indicators after the first 6 ply (moves 1, 2, and 3)
+    return plyFromStart >= 6
+  }
+
   const baseController = useBaseTreeController(type)
 
   const mainLineNodes = useMemo(() => {
@@ -239,10 +252,10 @@ export const MovesContainer: React.FC<Props> = (props) => {
                   } ${highlightSet.has(pairIndex * 2 + 1) ? 'bg-human-3/80' : ''}`}
                 >
                   <span>{pair.whiteMove.san ?? pair.whiteMove.move}</span>
-                  {showAnnotations && pair.whiteMove.blunder && <BlunderIcon />}
-                  {showAnnotations && pair.whiteMove.unlikelyGoodMove && (
-                    <UnlikelyGoodMoveIcon />
-                  )}
+                  {shouldShowIndicators(pair.whiteMove) &&
+                    pair.whiteMove.blunder && <BlunderIcon />}
+                  {shouldShowIndicators(pair.whiteMove) &&
+                    pair.whiteMove.unlikelyGoodMove && <UnlikelyGoodMoveIcon />}
                 </div>
               )}
               {pair.blackMove && (
@@ -257,10 +270,10 @@ export const MovesContainer: React.FC<Props> = (props) => {
                   } ${highlightSet.has(pairIndex * 2 + 2) ? 'bg-human-3/80' : ''}`}
                 >
                   <span>{pair.blackMove.san ?? pair.blackMove.move}</span>
-                  {showAnnotations && pair.blackMove.blunder && <BlunderIcon />}
-                  {showAnnotations && pair.blackMove.unlikelyGoodMove && (
-                    <UnlikelyGoodMoveIcon />
-                  )}
+                  {shouldShowIndicators(pair.blackMove) &&
+                    pair.blackMove.blunder && <BlunderIcon />}
+                  {shouldShowIndicators(pair.blackMove) &&
+                    pair.blackMove.unlikelyGoodMove && <UnlikelyGoodMoveIcon />}
                 </div>
               )}
             </React.Fragment>
@@ -300,10 +313,11 @@ export const MovesContainer: React.FC<Props> = (props) => {
               className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${baseController.currentNode === whiteNode && 'bg-human-4/20'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
             >
               {whiteNode?.san ?? whiteNode?.move}
-              {showAnnotations && whiteNode?.blunder && <BlunderIcon />}
-              {showAnnotations && whiteNode?.unlikelyGoodMove && (
-                <UnlikelyGoodMoveIcon />
+              {shouldShowIndicators(whiteNode) && whiteNode?.blunder && (
+                <BlunderIcon />
               )}
+              {shouldShowIndicators(whiteNode) &&
+                whiteNode?.unlikelyGoodMove && <UnlikelyGoodMoveIcon />}
             </div>
             {showAnnotations && whiteNode?.getVariations().length ? (
               <FirstVariation
@@ -321,10 +335,11 @@ export const MovesContainer: React.FC<Props> = (props) => {
               className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${baseController.currentNode === blackNode && 'bg-human-4/20'} ${highlightSet.has(index * 2 + 2) && 'bg-human-3/80'}`}
             >
               {blackNode?.san ?? blackNode?.move}
-              {showAnnotations && blackNode?.blunder && <BlunderIcon />}
-              {showAnnotations && blackNode?.unlikelyGoodMove && (
-                <UnlikelyGoodMoveIcon />
+              {shouldShowIndicators(blackNode) && blackNode?.blunder && (
+                <BlunderIcon />
               )}
+              {shouldShowIndicators(blackNode) &&
+                blackNode?.unlikelyGoodMove && <UnlikelyGoodMoveIcon />}
             </div>
             {showAnnotations && blackNode?.getVariations().length ? (
               <FirstVariation
@@ -399,6 +414,14 @@ function VariationTree({
   level: number
 }) {
   const variations = node.getVariations()
+
+  // Helper function to determine if move indicators should be shown in variations
+  const shouldShowVariationIndicators = (node: GameNode) => {
+    const moveNumber = node.moveNumber
+    const turn = node.turn
+    const plyFromStart = (moveNumber - 1) * 2 + (turn === 'b' ? 1 : 0)
+    return plyFromStart >= 6
+  }
   return (
     <li className={`tree-li ${level === 0 ? 'no-tree-connector' : ''}`}>
       <span
@@ -412,7 +435,7 @@ function VariationTree({
         {node.moveNumber}. {node.turn === 'w' ? '...' : ''}
         {node.san}
         <span className="inline-flex items-center">
-          {node.blunder && (
+          {shouldShowVariationIndicators(node) && node.blunder && (
             <span
               className="ml-0.5 text-[8px] text-[#d73027]"
               data-tooltip-id="variation-blunder-tooltip"
@@ -420,7 +443,7 @@ function VariationTree({
               !
             </span>
           )}
-          {node.unlikelyGoodMove && (
+          {shouldShowVariationIndicators(node) && node.unlikelyGoodMove && (
             <span
               className="ml-0.5 text-[8px] text-[#2ca25f]"
               data-tooltip-id="variation-unlikely-tooltip"
@@ -484,6 +507,14 @@ function InlineChain({
   const chain: GameNode[] = []
   let current = node
 
+  // Helper function to determine if move indicators should be shown in inline chains
+  const shouldShowInlineIndicators = (node: GameNode) => {
+    const moveNumber = node.moveNumber
+    const turn = node.turn
+    const plyFromStart = (moveNumber - 1) * 2 + (turn === 'b' ? 1 : 0)
+    return plyFromStart >= 6
+  }
+
   while (current.getVariations().length === 1) {
     const child = current.getVariations()[0]
     chain.push(child)
@@ -506,7 +537,7 @@ function InlineChain({
               {child.moveNumber}. {child.turn === 'w' ? '...' : ''}
               {child.san}
               <span className="inline-flex items-center">
-                {child.blunder && (
+                {shouldShowInlineIndicators(child) && child.blunder && (
                   <span
                     className="ml-0.5 text-[8px] text-[#d73027]"
                     data-tooltip-id="inline-blunder-tooltip"
@@ -514,14 +545,15 @@ function InlineChain({
                     !
                   </span>
                 )}
-                {child.unlikelyGoodMove && (
-                  <span
-                    className="ml-0.5 text-[8px] text-[#2ca25f]"
-                    data-tooltip-id="inline-unlikely-tooltip"
-                  >
-                    !?
-                  </span>
-                )}
+                {shouldShowInlineIndicators(child) &&
+                  child.unlikelyGoodMove && (
+                    <span
+                      className="ml-0.5 text-[8px] text-[#2ca25f]"
+                      data-tooltip-id="inline-unlikely-tooltip"
+                    >
+                      !?
+                    </span>
+                  )}
               </span>
             </span>
           </Fragment>
