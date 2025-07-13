@@ -30,6 +30,16 @@ class Maia {
       const buffer = await this.getCachedModel(this.modelUrl, this.type)
       await this.initializeModel(buffer)
     } catch (e) {
+      console.error('Maia cache detection failed:', {
+        error: e,
+        modelUrl: this.modelUrl,
+        type: this.type,
+        userAgent: navigator.userAgent,
+        cacheAPISupported: 'caches' in window,
+        storageEstimate: navigator.storage
+          ? await navigator.storage.estimate()
+          : 'not supported',
+      })
       this.options.setStatus('no-cache')
     }
   }
