@@ -113,6 +113,10 @@ class Maia {
    * @returns A promise that resolves to an object containing the policy and value predictions.
    */
   async evaluate(board: string, eloSelf: number, eloOppo: number) {
+    if (!this.model) {
+      throw new Error('Maia model not initialized')
+    }
+
     const { boardInput, legalMoves, eloSelfCategory, eloOppoCategory } =
       preprocess(board, eloSelf, eloOppo)
 
@@ -156,6 +160,10 @@ class Maia {
     eloSelfs: number[],
     eloOppos: number[],
   ) {
+    if (!this.model) {
+      throw new Error('Maia model not initialized')
+    }
+
     const batchSize = boards.length
     const boardInputs = []
     const eloSelfCategories = []
