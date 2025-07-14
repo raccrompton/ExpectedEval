@@ -1,8 +1,7 @@
-import Image, { StaticImageData } from 'next/image'
 import { motion } from 'framer-motion'
 import { GithubIcon } from 'src/components/Icons/icons'
 interface TeamMemberProps {
-  image: StaticImageData
+  image: string
   name: string
   website?: string
   institution: string
@@ -32,10 +31,10 @@ export const TeamMember = ({
         ease: 'easeOut',
       }}
     >
-      <Image
+      <img
         src={image}
         className="h-32 w-32 rounded-full md:h-40 md:w-40"
-        alt={`Picture of ${name}`}
+        alt={name}
       />
       <div className="flex flex-col">
         {website ? (

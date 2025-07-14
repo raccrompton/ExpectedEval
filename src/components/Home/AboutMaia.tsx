@@ -1,20 +1,10 @@
 import { motion } from 'framer-motion'
-import { useInView } from 'react-intersection-observer'
-
-import personJon from './people/jon.jpg'
 import { TeamMember } from './TeamMember'
-import personSid from './people/sid.jpeg'
-import personReid from './people/reid.jpg'
-import personIsaac from './people/isaac.jpg'
-import personKevin from './people/kevin.jpg'
-import personJoseph from './people/joseph.jpg'
-import personAshton from './people/ashton.jpeg'
-import personDmitriy from './people/dmitriy.jpg'
-import personArthur from './people/arthur.png'
+import { useInView } from 'react-intersection-observer'
 
 const teamMembers = [
   {
-    image: personAshton,
+    image: '/assets/team/ashton.jpeg',
     name: 'Ashton Anderson',
     website: 'http://www.cs.toronto.edu/~ashton/',
     institution: 'University of Toronto',
@@ -22,7 +12,7 @@ const teamMembers = [
     github: 'ashtonanderson',
   },
   {
-    image: personReid,
+    image: '/assets/team/reid.jpg',
     name: 'Reid McIlroy-Young',
     website: 'https://reidmcy.com/',
     institution: 'University of Toronto',
@@ -30,14 +20,14 @@ const teamMembers = [
     github: 'reidmcy',
   },
   {
-    image: personJon,
+    image: '/assets/team/jon.jpg',
     name: 'Jon Kleinberg',
     website: 'https://www.cs.cornell.edu/home/kleinber/',
     institution: 'Cornell University',
     role: 'Collaborator',
   },
   {
-    image: personSid,
+    image: '/assets/team/sid.jpeg',
     name: 'Siddhartha Sen',
     website: 'http://sidsen.org/',
     institution: 'Microsoft Research',
@@ -45,7 +35,7 @@ const teamMembers = [
     github: 'sidsen',
   },
   {
-    image: personJoseph,
+    image: '/assets/team/joseph.jpg',
     name: 'Joseph Tang',
     website: 'https://lilv98.github.io/',
     institution: 'University of Toronto',
@@ -53,7 +43,7 @@ const teamMembers = [
     github: 'lilv98',
   },
   {
-    image: personKevin,
+    image: '/assets/team/kevin.jpg',
     name: 'Kevin Thomas',
     website: 'https://kevinjosethomas.com/',
     institution: 'Burnaby South Secondary',
@@ -61,7 +51,7 @@ const teamMembers = [
     github: 'kevinjosethomas',
   },
   {
-    image: personDmitriy,
+    image: '/assets/team/dmitriy.jpg',
     name: 'Dmitriy Prokopchuk',
     website: 'https://prokopchukdim.github.io/',
     institution: 'University of Toronto',
@@ -69,7 +59,7 @@ const teamMembers = [
     github: 'prokopchukdim',
   },
   {
-    image: personArthur,
+    image: '/assets/team/arthur.png',
     name: 'Arthur Soenarto',
     website: 'https://artyang.me/',
     institution: 'University of Toronto',
@@ -77,7 +67,7 @@ const teamMembers = [
     github: 'arthursoenarto',
   },
   {
-    image: personIsaac,
+    image: '/assets/team/isaac.jpg',
     name: 'Isaac Waller',
     website: 'https://waller.is/',
     institution: 'University of Toronto',
