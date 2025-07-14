@@ -2,7 +2,7 @@ import { Chess } from 'chess.ts'
 import StockfishWeb from 'lila-stockfish-web'
 
 import { StockfishEvaluation } from 'src/types'
-import { cpToWinrate } from 'src/utils/stockfish'
+import { cpToWinrate } from 'src/lib/stockfish'
 
 class Engine {
   private fen: string

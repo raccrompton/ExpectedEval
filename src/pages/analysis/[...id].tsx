@@ -29,9 +29,9 @@ import {
   TreeControllerContext,
   useTour,
 } from 'src/contexts'
-import { Loading } from 'src/components/Core/Loading'
-import { AuthenticatedWrapper } from 'src/components/Core/AuthenticatedWrapper'
-import { PlayerInfo } from 'src/components/Core/PlayerInfo'
+import { Loading } from 'src/components/Common/Loading'
+import { AuthenticatedWrapper } from 'src/components/Common/AuthenticatedWrapper'
+import { PlayerInfo } from 'src/components/Common/PlayerInfo'
 import { MoveMap } from 'src/components/Analysis/MoveMap'
 import { Highlight } from 'src/components/Analysis/Highlight'
 import { BlunderMeter } from 'src/components/Analysis/BlunderMeter'
@@ -44,14 +44,11 @@ import { GameBoard } from 'src/components/Board/GameBoard'
 import { MovesContainer } from 'src/components/Board/MovesContainer'
 import { BoardController } from 'src/components/Board/BoardController'
 import { PromotionOverlay } from 'src/components/Board/PromotionOverlay'
-import { GameInfo } from 'src/components/Misc/GameInfo'
+import { GameInfo } from 'src/components/Common/GameInfo'
 import Head from 'next/head'
 import toast from 'react-hot-toast'
 import type { NextPage } from 'next'
-import {
-  trackAnalysisGameLoaded,
-  trackMaiaModelChanged,
-} from 'src/utils/analytics'
+import { trackAnalysisGameLoaded } from 'src/lib/analytics'
 import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
 import { Chess, PieceSymbol } from 'chess.ts'
@@ -415,7 +412,7 @@ const Analysis: React.FC<Props> = ({
       analyzedGame.type === 'custom-pgn' ||
       analyzedGame.type === 'custom-fen'
     ) {
-      const { deleteCustomAnalysis } = await import('src/utils/customAnalysis')
+      const { deleteCustomAnalysis } = await import('src/lib/customAnalysis')
       deleteCustomAnalysis(analyzedGame.id)
       toast.success('Custom analysis deleted')
       router.push('/analysis')

@@ -1,13 +1,8 @@
 import Head from 'next/head'
 import { NextPage } from 'next/types'
 import { useCallback, useContext, useEffect, useState } from 'react'
+import { trackTuringGameStarted } from 'src/lib/analytics'
 import {
-  trackTuringGameStarted,
-  trackTuringMoveNavigated,
-} from 'src/utils/analytics'
-
-import {
-  ModalContext,
   WindowSizeContext,
   TuringControllerContext,
   useTour,

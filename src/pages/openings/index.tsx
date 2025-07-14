@@ -13,7 +13,7 @@ import {
   AuthContext,
 } from 'src/contexts'
 import { AnalyzedGame, DrillConfiguration } from 'src/types'
-import openings from 'src/utils/openings/openings.json'
+import openings from 'src/lib/openings/openings.json'
 import {
   OpeningSelectionModal,
   OpeningDrillSidebar,
@@ -33,7 +33,7 @@ import {
   getCurrentPlayer,
   getAvailableMovesArray,
   requiresPromotion,
-} from 'src/utils/train/utils'
+} from 'src/lib/train/utils'
 
 const OpeningsPage: NextPage = () => {
   const router = useRouter()
