@@ -123,6 +123,10 @@ export const useOpeningDrillController = (
   })
   const analysisCache = useRef<Map<string, CachedAnalysisResult>>(new Map()) // Cache analysis results by FEN
 
+  // Cache management constants
+  const MAX_CACHE_SIZE = 100 // Limit cache to prevent memory issues on mobile
+  const CACHE_CLEANUP_INTERVAL = 60000 // Clean old entries every minute
+
   // Add chess sound hook
   const { playSound } = useChessSound()
 
@@ -141,6 +145,32 @@ export const useOpeningDrillController = (
       setCurrentMaiaModel(MAIA_MODELS[0])
     }
   }, [currentMaiaModel, setCurrentMaiaModel])
+
+  // Cache management - cleanup old entries periodically
+  useEffect(() => {
+    const cleanupCache = () => {
+      const cache = analysisCache.current
+      if (cache.size > MAX_CACHE_SIZE) {
+        // Remove oldest entries (simple LRU-like cleanup)
+        const entries = Array.from(cache.entries())
+        entries
+          .sort((a, b) => a[1].timestamp - b[1].timestamp)
+          .slice(0, cache.size - MAX_CACHE_SIZE + 10) // Remove extra to avoid frequent cleanups
+          .forEach(([key]) => cache.delete(key))
+      }
+
+      // Remove entries older than 10 minutes to prevent stale analysis
+      const tenMinutesAgo = Date.now() - 600000
+      for (const [key, value] of cache.entries()) {
+        if (value.timestamp < tenMinutesAgo) {
+          cache.delete(key)
+        }
+      }
+    }
+
+    const intervalId = setInterval(cleanupCache, CACHE_CLEANUP_INTERVAL)
+    return () => clearInterval(intervalId)
+  }, [])
 
   // Initialize drilling session from configuration
   useEffect(() => {
@@ -1183,12 +1213,14 @@ export const useOpeningDrillController = (
     ) {
       // It's Maia's turn to move first from the opening position
       setWaitingForMaiaResponse(true)
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         const latestPosition = getLatestPosition()
         if (latestPosition) {
           makeMaiaMoveRef.current(latestPosition)
         }
       }, 1000)
+
+      return () => clearTimeout(timeoutId)
     }
   }, [
     currentDrillGame,
