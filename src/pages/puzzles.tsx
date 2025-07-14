@@ -59,7 +59,7 @@ import {
   requiresPromotion,
 } from 'src/lib/train/utils'
 import { mockAnalysisData } from 'src/hooks/useAnalysisController/mockData'
-import { tourConfigs } from 'src/config/tours'
+import { tourConfigs } from 'src/constants/tours'
 
 const statsLoader = async () => {
   const stats = await getTrainingPlayerStats()

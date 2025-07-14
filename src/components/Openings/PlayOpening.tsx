@@ -3,45 +3,7 @@ import { useRouter } from 'next/router'
 import { useState, useCallback } from 'react'
 
 import { Opening, OpeningVariation } from 'src/types'
-
-const MAIA_VERSIONS = [
-  {
-    id: 'maia_kdd_1100',
-    name: 'Maia 1100',
-  },
-  {
-    id: 'maia_kdd_1200',
-    name: 'Maia 1200',
-  },
-  {
-    id: 'maia_kdd_1300',
-    name: 'Maia 1300',
-  },
-  {
-    id: 'maia_kdd_1400',
-    name: 'Maia 1400',
-  },
-  {
-    id: 'maia_kdd_1500',
-    name: 'Maia 1500',
-  },
-  {
-    id: 'maia_kdd_1600',
-    name: 'Maia 1600',
-  },
-  {
-    id: 'maia_kdd_1700',
-    name: 'Maia 1700',
-  },
-  {
-    id: 'maia_kdd_1800',
-    name: 'Maia 1800',
-  },
-  {
-    id: 'maia_kdd_1900',
-    name: 'Maia 1900',
-  },
-]
+import { MAIA_MODELS_WITH_NAMES } from 'src/constants/common'
 
 const TIME_CONTROLS = [
   {
@@ -89,7 +51,7 @@ export const PlayOpening: React.FC<Props> = ({
   setOrientation,
 }: Props) => {
   const { push } = useRouter()
-  const [version, setVersion] = useState(MAIA_VERSIONS[0])
+  const [version, setVersion] = useState(MAIA_MODELS_WITH_NAMES[0])
   const [timeControl, setTimeControl] = useState(TIME_CONTROLS[0])
   const [maiaTimeControl, setMaiaTimeControl] = useState(MAIA_TIME_CONTROL[0])
   const [color, setColor] = useState<'white' | 'black' | 'random'>('random')
@@ -178,14 +140,16 @@ function VersionPicker({
         className="rounded-sm bg-human-4/60 p-2 text-sm focus:outline-none"
         onChange={(e) =>
           setVersion(
-            MAIA_VERSIONS.find((version) => version.id === e.target.value) as {
+            MAIA_MODELS_WITH_NAMES.find(
+              (version) => version.id === e.target.value,
+            ) as {
               id: string
               name: string
             },
           )
         }
       >
-        {MAIA_VERSIONS.map((version) => (
+        {MAIA_MODELS_WITH_NAMES.map((version) => (
           <option key={version.id} value={version.id} className="text-sm">
             {version.name}
           </option>

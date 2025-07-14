@@ -21,7 +21,7 @@ import {
 import { AllStats } from 'src/hooks/useStats'
 import { TuringGame } from 'src/types/turing'
 import { useTuringController } from 'src/hooks/useTuringController/useTuringController'
-import { tourConfigs } from 'src/config/tours'
+import { tourConfigs } from 'src/constants/tours'
 
 const TuringPage: NextPage = () => {
   const { startTour, tourState } = useTour()

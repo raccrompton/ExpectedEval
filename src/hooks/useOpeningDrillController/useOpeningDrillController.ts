@@ -20,9 +20,9 @@ import {
   OverallPerformanceData,
   DrillConfiguration,
 } from 'src/types/openings'
+import { MAIA_MODELS } from 'src/constants/common'
 import { analyzeDrillPerformance } from 'src/lib/openings/drillAnalysis'
 import { extractMaiaRating, createEngineWrapper } from 'src/lib/analysis'
-import { MAIA_MODELS } from '../useAnalysisController/constants'
 
 // Type for cached analysis results
 interface CachedAnalysisResult {

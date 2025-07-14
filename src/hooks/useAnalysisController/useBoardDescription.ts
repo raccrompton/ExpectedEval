@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
-import { GameNode, MaiaEvaluation, StockfishEvaluation } from 'src/types'
-import { MAIA_MODELS } from './constants'
+import { MAIA_MODELS } from 'src/constants/common'
 import { describePosition } from './useDescriptionGenerator'
+import { GameNode, MaiaEvaluation, StockfishEvaluation } from 'src/types'
 
 export const useBoardDescription = (
   currentNode: GameNode | null,

@@ -1,6 +1,6 @@
 import { useTour } from 'src/contexts'
 import { InstructionsType } from 'src/types'
-import { tourConfigs } from 'src/config/tours'
+import { tourConfigs } from 'src/constants/tours'
 
 interface Props {
   icon: string

@@ -9,22 +9,11 @@ import {
   GameNode,
 } from 'src/types'
 import { cpToWinrate } from 'src/lib/stockfish'
+import { MAIA_MODELS } from 'src/constants/common'
 
 type DescriptionSegment =
   | { type: 'text'; content: string }
   | { type: 'move'; san: string; uci: string }
-
-export const MAIA_MODELS = [
-  'maia_kdd_1100',
-  'maia_kdd_1200',
-  'maia_kdd_1300',
-  'maia_kdd_1400',
-  'maia_kdd_1500',
-  'maia_kdd_1600',
-  'maia_kdd_1700',
-  'maia_kdd_1800',
-  'maia_kdd_1900',
-]
 
 interface Props {
   currentMaiaModel: string

@@ -8,7 +8,7 @@ import {
   useLocalStorage,
 } from '..'
 import { AnalyzedGame } from 'src/types'
-import { MAIA_MODELS } from './constants'
+import { MAIA_MODELS } from 'src/constants/common'
 import { generateColorSanMapping, calculateBlunderMeter } from './utils'
 import { useEngineAnalysis } from './useEngineAnalysis'
 import { useMoveRecommendations } from './useMoveRecommendations'
