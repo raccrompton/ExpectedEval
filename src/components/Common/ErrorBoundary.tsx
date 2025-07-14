@@ -3,7 +3,7 @@ import { Component } from 'react'
 import Chessground from '@react-chess/chessground'
 import { Header } from './Header'
 import { Footer } from './Footer'
-import { trackErrorEncountered } from 'src/utils/analytics'
+import { trackErrorEncountered } from 'src/lib/analytics'
 
 interface Props {
   children: React.ReactNode
@@ -29,7 +29,6 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.log('Error caught in componentDidCatch:', error, errorInfo)
 
-    // Track error in PostHog
     try {
       const currentPage =
         typeof window !== 'undefined' ? window.location.pathname : 'unknown'

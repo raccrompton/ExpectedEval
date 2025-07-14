@@ -2,12 +2,11 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/router'
-import { useCallback, useContext, useEffect, useState } from 'react'
-
 import { PlayType } from 'src/types'
+import { useRouter } from 'next/router'
+import { DiscordIcon } from './Icons'
+import { useCallback, useContext, useEffect, useState } from 'react'
 import { AuthContext, ModalContext, WindowSizeContext } from 'src/contexts'
-import { DiscordIcon } from 'src/components/Icons/icons'
 
 export const Header: React.FC = () => {
   const [showMenu, setShowMenu] = useState(false)
@@ -98,6 +97,13 @@ export const Header: React.FC = () => {
                 >
                   Play Maia
                 </button>
+
+                <button
+                  onClick={() => startGame('handAndBrain')}
+                  className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
+                >
+                  Play Hand and Brain
+                </button>
                 <a
                   className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
                   href="https://lichess.org/@/maia1"
@@ -106,12 +112,6 @@ export const Header: React.FC = () => {
                 >
                   Play Maia on Lichess
                 </a>
-                <button
-                  onClick={() => startGame('handAndBrain')}
-                  className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
-                >
-                  Play Hand and Brain
-                </button>
               </div>
             </div>
           ) : (
@@ -237,6 +237,10 @@ export const Header: React.FC = () => {
                   <button onClick={() => startGame('againstMaia')}>
                     Play Maia
                   </button>
+
+                  <button onClick={() => startGame('handAndBrain')}>
+                    Play Hand and Brain
+                  </button>
                   <a
                     href="https://lichess.org/@/maia1"
                     target="_blank"
@@ -244,9 +248,6 @@ export const Header: React.FC = () => {
                   >
                     Play Maia on Lichess
                   </a>
-                  <button onClick={() => startGame('handAndBrain')}>
-                    Play Hand and Brain
-                  </button>
                 </div>
               </div>
             ) : (

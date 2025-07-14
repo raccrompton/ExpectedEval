@@ -11,7 +11,7 @@ import { motion } from 'framer-motion'
 import { Tournament } from 'src/components'
 import { AnalysisListContext } from 'src/contexts'
 import { getAnalysisGameList } from 'src/api'
-import { getCustomAnalysesAsWebGames } from 'src/utils/customAnalysis'
+import { getCustomAnalysesAsWebGames } from 'src/lib/customAnalysis'
 
 interface GameData {
   game_id: string

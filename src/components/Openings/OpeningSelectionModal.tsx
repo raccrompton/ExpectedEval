@@ -8,7 +8,7 @@ import {
   OpeningSelection,
   DrillConfiguration,
 } from 'src/types'
-import { ModalContainer } from '../Misc/ModalContainer'
+import { ModalContainer } from '../Common/ModalContainer'
 import { useTour } from 'src/contexts'
 import { tourConfigs } from 'src/config/tours'
 import { WindowSizeContext } from 'src/contexts/WindowSizeContext'
@@ -20,7 +20,7 @@ import {
   trackOpeningConfiguredAndAdded,
   trackOpeningRemovedFromSelection,
   trackDrillConfigurationCompleted,
-} from 'src/utils/analytics'
+} from 'src/lib/analytics'
 
 const MAIA_VERSIONS = [
   { id: 'maia_kdd_1100', name: 'Maia 1100' },

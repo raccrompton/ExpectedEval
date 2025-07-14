@@ -1,31 +1,29 @@
-import Image from 'next/image'
-
-import hand_icon from './assets/hand_icon.svg'
-import star_icon from './assets/star_icon.svg'
-import train_icon from './assets/train_icon.svg'
-import brain_icon from './assets/brain_icon.svg'
-import turing_icon from './assets/turing_icon.svg'
-import chessboard_icon from './assets/chessboard_icon.svg'
-import regular_play_icon from './assets/regular_play_icon.svg'
-
 export const RegularPlayIcon = () => (
-  <Image src={regular_play_icon} alt="Regular Play Icon" />
+  <img src="/assets/icons/regular_play_icon.svg" alt="Regular Play Icon" />
 )
 
-export const BrainIcon = () => <Image src={brain_icon} alt="Brain Icon" />
+export const BrainIcon = () => (
+  <img src="/assets/icons/brain_icon.svg" alt="Brain Icon" />
+)
 
 export const BotOrNotIcon = () => (
-  <Image src={turing_icon} alt="Bot-or-Not Icon" />
+  <img src="/assets/icons/turing_icon.svg" alt="Bot-or-Not Icon" />
 )
 
-export const TrainIcon = () => <Image src={train_icon} alt="Train Icon" />
+export const TrainIcon = () => (
+  <img src="/assets/icons/train_icon.svg" alt="Train Icon" />
+)
 
-export const HandIcon = () => <Image src={hand_icon} alt="Hand Icon" />
+export const HandIcon = () => (
+  <img src="/assets/icons/hand_icon.svg" alt="Hand Icon" />
+)
 
-export const StarIcon = () => <Image src={star_icon} alt="Star Icon" />
+export const StarIcon = () => (
+  <img src="/assets/icons/star_icon.svg" alt="Star Icon" />
+)
 
 export const ChessboardIcon = () => (
-  <Image src={chessboard_icon} alt="Chessboard Icon" />
+  <img src="/assets/icons/chessboard_icon.svg" alt="Chessboard Icon" />
 )
 
 export const GithubIcon = (

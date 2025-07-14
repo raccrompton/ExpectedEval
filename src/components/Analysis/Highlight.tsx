@@ -8,7 +8,7 @@ import {
   ColorSanMapping,
   GameNode,
 } from 'src/types'
-import { cpToWinrate } from 'src/utils/stockfish'
+import { cpToWinrate } from 'src/lib/stockfish'
 
 type DescriptionSegment =
   | { type: 'text'; content: string }

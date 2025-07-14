@@ -4,7 +4,7 @@ import { Fragment, useCallback, useContext, useEffect, useState } from 'react'
 import {
   trackHomepageFeatureClicked,
   trackLichessConnectionInitiated,
-} from 'src/utils/analytics'
+} from 'src/lib/analytics'
 
 import {
   BrainIcon,
@@ -13,11 +13,11 @@ import {
   ChessboardIcon,
   StarIcon,
   BotOrNotIcon,
-} from 'src/components/Icons/icons'
+} from 'src/components/Common/Icons'
 import { PlayType } from 'src/types'
 import { getGlobalStats } from 'src/api'
 import { AuthContext, ModalContext } from 'src/contexts'
-import { AnimatedNumber } from 'src/components/Misc/AnimatedNumber'
+import { AnimatedNumber } from 'src/components/Common/AnimatedNumber'
 
 interface Props {
   scrollHandler: () => void
