@@ -22,7 +22,7 @@ import {
 } from 'src/types/openings'
 import { MAIA_MODELS } from 'src/constants/common'
 import { analyzeDrillPerformance } from 'src/lib/openings/drillAnalysis'
-import { extractMaiaRating, createEngineWrapper } from 'src/lib/analysis'
+import { createEngineWrapper } from 'src/lib/analysis'
 
 // Type for cached analysis results
 interface CachedAnalysisResult {
@@ -87,96 +87,6 @@ const parsePgnToTree = (pgn: string, gameTree: GameTree): GameNode | null => {
   return currentNode
 }
 
-// Background analysis function to analyze positions as they're reached
-const analyzePositionInBackground = async (
-  fen: string,
-  engines: {
-    stockfish: {
-      streamEvaluations: (
-        fen: string,
-        moveCount: number,
-      ) => AsyncIterable<StockfishEvaluation> | null
-      isReady: () => boolean
-    }
-    maia: {
-      batchEvaluate: (
-        fens: string[],
-        ratingLevels: number[],
-        thresholds: number[],
-      ) => Promise<{ result: MaiaEvaluation[]; time: number }>
-      status: string
-      isReady: () => boolean
-    }
-  },
-  maiaRating: number,
-  analysisCache: React.RefObject<Map<string, CachedAnalysisResult>>,
-  analysisQueue: React.RefObject<Set<string>>,
-  setAnalysisProgress: React.Dispatch<React.SetStateAction<AnalysisProgress>>,
-  isPostDrillAnalysis: React.RefObject<boolean>,
-) => {
-  // Skip if already analyzed to sufficient depth or already queued
-  const cachedDepth = analysisCache.current?.get(fen)?.stockfish?.depth ?? 0
-
-  if (
-    (cachedDepth >= 12 && analysisCache.current?.has(fen)) ||
-    analysisQueue.current?.has(fen)
-  ) {
-    return
-  }
-
-  analysisQueue.current?.add(fen)
-
-  try {
-    const chess = new Chess(fen)
-    const moveCount = chess.moves().length
-
-    if (moveCount === 0) {
-      analysisQueue.current?.delete(fen)
-      return
-    }
-
-    // Only update progress if not in post-drill analysis mode
-    if (!isPostDrillAnalysis.current) {
-      setAnalysisProgress((prev) => ({
-        ...prev,
-        total: prev.total + 1,
-        currentMove: `Background analysis: ${chess.turn() === 'w' ? 'White' : 'Black'} to move`,
-      }))
-    }
-
-    // Use shared analysis utilities
-    const { analyzePosition } = await import('src/lib/analysis')
-
-    const analysisResult = await analyzePosition(
-      fen,
-      engines,
-      {
-        stockfishDepth: 15,
-        stockfishTimeout: 5000,
-        maiaRating,
-        maiaThreshold: 0.1,
-      },
-      analysisCache.current || undefined,
-    )
-
-    // Only update progress if not in post-drill analysis mode
-    if (!isPostDrillAnalysis.current) {
-      setAnalysisProgress((prev) => ({
-        ...prev,
-        completed: prev.completed + 1,
-        currentMove:
-          prev.completed + 1 >= prev.total
-            ? 'Background analysis complete!'
-            : null,
-      }))
-    }
-  } catch (error) {
-    console.error('Background analysis error:', error)
-  } finally {
-    analysisQueue.current?.delete(fen)
-  }
-}
-
 export const useOpeningDrillController = (
   configuration: DrillConfiguration,
 ) => {
@@ -205,15 +115,13 @@ export const useOpeningDrillController = (
   // Flag to track if player chose to continue analyzing past the target move count
   const [continueAnalyzingMode, setContinueAnalyzingMode] = useState(false)
 
-  // Background analysis state
+  // Analysis progress state
   const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgress>({
     total: 0,
     completed: 0,
     currentMove: null,
   })
-  const analysisQueue = useRef<Set<string>>(new Set()) // Track which positions are being analyzed
   const analysisCache = useRef<Map<string, CachedAnalysisResult>>(new Map()) // Cache analysis results by FEN
-  const isPostDrillAnalysis = useRef<boolean>(false) // Track if we're in post-drill analysis mode
 
   // Add chess sound hook
   const { playSound } = useChessSound()
@@ -251,7 +159,7 @@ export const useOpeningDrillController = (
   useEffect(() => {
     if (!currentDrill || allDrillsCompleted) return
 
-    // Reset background analysis progress for the new drill
+    // Reset analysis progress for the new drill
     setAnalysisProgress({ total: 0, completed: 0, currentMove: null })
 
     const startingFen =
@@ -472,7 +380,6 @@ export const useOpeningDrillController = (
 
       try {
         setIsAnalyzingDrill(true) // Show loading state
-        isPostDrillAnalysis.current = true // Signal that we're in post-drill analysis mode
         // Reset analysis progress for post-drill analysis
         setAnalysisProgress({
           total: 0,
@@ -509,7 +416,6 @@ export const useOpeningDrillController = (
         setShowPerformanceModal(true)
       } finally {
         setIsAnalyzingDrill(false) // Turn off loading state
-        isPostDrillAnalysis.current = false // Reset post-drill analysis flag
       }
     },
     [currentDrillGame, evaluateDrillPerformance],
@@ -522,7 +428,7 @@ export const useOpeningDrillController = (
     setContinueAnalyzingMode(false) // Reset continue analyzing mode for next drill
     setAnalysisEnabled(false) // Automatically disable analysis for new drill
 
-    // Reset background analysis progress for the new drill
+    // Reset analysis progress for the new drill
     setAnalysisProgress({ total: 0, completed: 0, currentMove: null })
 
     // Remove the completed drill from remaining drills
@@ -585,7 +491,6 @@ export const useOpeningDrillController = (
             // Re-analyze the completed drill
             try {
               setIsAnalyzingDrill(true)
-              isPostDrillAnalysis.current = true
               setAnalysisProgress({
                 total: 0,
                 completed: 0,
@@ -613,7 +518,6 @@ export const useOpeningDrillController = (
               console.error('Error analyzing drill performance:', error)
             } finally {
               setIsAnalyzingDrill(false)
-              isPostDrillAnalysis.current = false
             }
           }
         } else {
@@ -621,7 +525,6 @@ export const useOpeningDrillController = (
           const drillGame = drill as OpeningDrillGame
           try {
             setIsAnalyzingDrill(true)
-            isPostDrillAnalysis.current = true
             setAnalysisProgress({
               total: 0,
               completed: 0,
@@ -633,14 +536,12 @@ export const useOpeningDrillController = (
             console.error('Error analyzing drill performance:', error)
           } finally {
             setIsAnalyzingDrill(false)
-            isPostDrillAnalysis.current = false
           }
         }
       } else if (currentDrillGame) {
         // No specific drill provided, analyze current drill
         try {
           setIsAnalyzingDrill(true)
-          isPostDrillAnalysis.current = true
           setAnalysisProgress({
             total: 0,
             completed: 0,
@@ -652,7 +553,6 @@ export const useOpeningDrillController = (
           console.error('Error analyzing current drill performance:', error)
         } finally {
           setIsAnalyzingDrill(false)
-          isPostDrillAnalysis.current = false
         }
       }
 
@@ -687,7 +587,6 @@ export const useOpeningDrillController = (
 
     // Clear analysis cache and progress
     analysisCache.current.clear()
-    analysisQueue.current.clear()
     setAnalysisProgress({ total: 0, completed: 0, currentMove: null })
   }, [])
 
@@ -1075,26 +974,6 @@ export const useOpeningDrillController = (
           // Update completed drill if this is a loaded completed drill
           updateCompletedDrill(updatedGame)
 
-          // Trigger background analysis for the new position
-          if (maiaStatus === 'ready' && isStockfishReady()) {
-            const engines = createEngineWrapper(
-              { streamEvaluations, isReady: isStockfishReady },
-              maia,
-              () => maiaStatus,
-            )
-            const maiaRating = extractMaiaRating(currentMaiaModel)
-
-            analyzePositionInBackground(
-              newNode.fen,
-              engines,
-              maiaRating,
-              analysisCache,
-              analysisQueue,
-              setAnalysisProgress,
-              isPostDrillAnalysis,
-            )
-          }
-
           // Set flag to indicate we're waiting for Maia's response (after player move, it becomes Maia's turn)
           // But only if not in post-drill analysis mode
           if (!continueAnalyzingMode) {
@@ -1129,11 +1008,6 @@ export const useOpeningDrillController = (
       completeDrill,
       continueAnalyzingMode,
       updateCompletedDrill,
-      streamEvaluations,
-      maia,
-      isStockfishReady,
-      maiaStatus,
-      currentMaiaModel,
     ],
   )
 
@@ -1222,26 +1096,6 @@ export const useOpeningDrillController = (
             // Update completed drill if this is a loaded completed drill
             updateCompletedDrill(updatedGame)
 
-            // Trigger background analysis for the new position
-            if (maiaStatus === 'ready' && isStockfishReady()) {
-              const engines = createEngineWrapper(
-                { streamEvaluations, isReady: isStockfishReady },
-                maia,
-                () => maiaStatus,
-              )
-              const maiaRating = extractMaiaRating(currentMaiaModel)
-
-              analyzePositionInBackground(
-                newNode.fen,
-                engines,
-                maiaRating,
-                analysisCache,
-                analysisQueue,
-                setAnalysisProgress,
-                isPostDrillAnalysis,
-              )
-            }
-
             // Clear the waiting flag since Maia has responded
             setWaitingForMaiaResponse(false)
           }
@@ -1256,11 +1110,6 @@ export const useOpeningDrillController = (
       currentDrill,
       playSound,
       updateCompletedDrill,
-      streamEvaluations,
-      maia,
-      isStockfishReady,
-      maiaStatus,
-      currentMaiaModel,
     ],
   )
 
@@ -1354,7 +1203,7 @@ export const useOpeningDrillController = (
   const resetCurrentDrill = useCallback(() => {
     if (!currentDrill) return
 
-    // Reset background analysis progress for the restarted drill
+    // Reset analysis progress for the restarted drill
     setAnalysisProgress({ total: 0, completed: 0, currentMove: null })
 
     const startingFen =
