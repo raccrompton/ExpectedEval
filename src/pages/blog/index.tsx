@@ -1,8 +1,7 @@
 import Head from 'next/head'
 import Link from 'next/link'
-
 import { Post } from 'src/types'
-import { getSortedPostsData } from 'src/blog/posts'
+import { getSortedPostsData } from 'src/lib/blog/posts'
 
 export default function Blog({ posts }: { posts: Post[] }) {
   return (

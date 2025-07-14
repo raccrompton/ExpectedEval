@@ -8,9 +8,9 @@ import {
   OpeningSelection,
   DrillConfiguration,
 } from 'src/types'
-import { ModalContainer } from '../Misc/ModalContainer'
+import { ModalContainer } from '../Common/ModalContainer'
 import { useTour } from 'src/contexts'
-import { tourConfigs } from 'src/config/tours'
+import { tourConfigs } from 'src/constants/tours'
 import { WindowSizeContext } from 'src/contexts/WindowSizeContext'
 import {
   trackOpeningSelectionModalOpened,
@@ -20,19 +20,8 @@ import {
   trackOpeningConfiguredAndAdded,
   trackOpeningRemovedFromSelection,
   trackDrillConfigurationCompleted,
-} from 'src/utils/analytics'
-
-const MAIA_VERSIONS = [
-  { id: 'maia_kdd_1100', name: 'Maia 1100' },
-  { id: 'maia_kdd_1200', name: 'Maia 1200' },
-  { id: 'maia_kdd_1300', name: 'Maia 1300' },
-  { id: 'maia_kdd_1400', name: 'Maia 1400' },
-  { id: 'maia_kdd_1500', name: 'Maia 1500' },
-  { id: 'maia_kdd_1600', name: 'Maia 1600' },
-  { id: 'maia_kdd_1700', name: 'Maia 1700' },
-  { id: 'maia_kdd_1800', name: 'Maia 1800' },
-  { id: 'maia_kdd_1900', name: 'Maia 1900' },
-]
+} from 'src/lib/analytics'
+import { MAIA_MODELS_WITH_NAMES } from 'src/constants/common'
 
 type MobileTab = 'browse' | 'preview' | 'selected'
 
@@ -298,8 +287,8 @@ const PreviewPanel: React.FC<{
   previewFen: string
   selectedColor: 'white' | 'black'
   setSelectedColor: (color: 'white' | 'black') => void
-  selectedMaiaVersion: (typeof MAIA_VERSIONS)[0]
-  setSelectedMaiaVersion: (version: (typeof MAIA_VERSIONS)[0]) => void
+  selectedMaiaVersion: (typeof MAIA_MODELS_WITH_NAMES)[0]
+  setSelectedMaiaVersion: (version: (typeof MAIA_MODELS_WITH_NAMES)[0]) => void
   targetMoveNumber: number
   setTargetMoveNumber: (number: number) => void
   addSelection: () => void
@@ -407,14 +396,16 @@ const PreviewPanel: React.FC<{
           <select
             value={selectedMaiaVersion.id}
             onChange={(e) => {
-              const version = MAIA_VERSIONS.find((v) => v.id === e.target.value)
+              const version = MAIA_MODELS_WITH_NAMES.find(
+                (v) => v.id === e.target.value,
+              )
               if (version) {
                 setSelectedMaiaVersion(version)
               }
             }}
             className="w-full rounded bg-background-2 p-2 text-xs focus:outline-none md:text-sm"
           >
-            {MAIA_VERSIONS.map((version) => (
+            {MAIA_MODELS_WITH_NAMES.map((version) => (
               <option key={version.id} value={version.id}>
                 {version.name}
               </option>
@@ -613,7 +604,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   const [previewVariation, setPreviewVariation] =
     useState<OpeningVariation | null>(null)
   const [selectedMaiaVersion, setSelectedMaiaVersion] = useState(
-    MAIA_VERSIONS[4],
+    MAIA_MODELS_WITH_NAMES[4],
   )
   const [selectedColor, setSelectedColor] = useState<'white' | 'black'>('white')
   const [targetMoveNumber, setTargetMoveNumber] = useState(10)

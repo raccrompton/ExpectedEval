@@ -1,44 +1,14 @@
-import { PostHog } from 'posthog-js'
+import { PostHog } from 'posthog-node'
 
-let posthogInstance: PostHog | null = null
-
-export const initPostHog = (): PostHog | null => {
-  if (typeof window === 'undefined') return null
-
-  try {
-    if (!posthogInstance) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { default: posthog } = require('posthog-js')
-
-      const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
-      if (!apiKey) {
-        console.warn('PostHog API key not found')
-        return null
-      }
-
-      posthog.init(apiKey, {
-        api_host:
-          process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
-        capture_pageviews: true,
-        capture_pageleaves: true,
-        loaded: (_posthogLoaded: PostHog) => {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('PostHog loaded')
-          }
-        },
-      })
-
-      posthogInstance = posthog
-    }
-
-    return posthogInstance
-  } catch (error) {
-    console.error('Failed to initialize PostHog:', error)
-    return null
-  }
-}
-
-export const getPostHog = (): PostHog | null => {
-  if (typeof window === 'undefined') return null
-  return posthogInstance || initPostHog()
+// NOTE: This is a Node.js client for sending events from the server side to PostHog.
+export default function PostHogClient(): PostHog {
+  const posthogClient = new PostHog(
+    process.env.NEXT_PUBLIC_POSTHOG_KEY as string,
+    {
+      host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+      flushAt: 1,
+      flushInterval: 0,
+    },
+  )
+  return posthogClient
 }

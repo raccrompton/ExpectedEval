@@ -13,7 +13,6 @@ interface FooterSection {
 }
 
 export const Footer: React.FC = () => {
-  // Data for footer sections
   const footerSections: FooterSection[] = [
     {
       title: 'Research',

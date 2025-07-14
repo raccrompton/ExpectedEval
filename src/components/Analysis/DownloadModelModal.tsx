@@ -6,7 +6,7 @@ import {
   trackDownloadModelInitiated,
   trackDownloadModelCompleted,
   trackDownloadModelFailed,
-} from 'src/utils/analytics'
+} from 'src/lib/analytics'
 
 interface Props {
   progress: number

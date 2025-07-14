@@ -1,13 +1,9 @@
 import React, { useMemo, useContext } from 'react'
 import { motion } from 'framer-motion'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
-import { ModalContainer } from '../Misc'
 import { WindowSizeContext } from 'src/contexts'
-import {
-  OverallPerformanceData,
-  CompletedDrill,
-  MoveAnalysis,
-} from 'src/types/openings'
+import { ModalContainer } from 'src/components/Common'
+import { OverallPerformanceData, CompletedDrill } from 'src/types/openings'
 
 interface Props {
   performanceData: OverallPerformanceData

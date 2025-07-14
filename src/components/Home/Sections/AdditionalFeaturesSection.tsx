@@ -5,7 +5,7 @@ import { useInView } from 'react-intersection-observer'
 
 import { ModalContext } from 'src/contexts'
 import { PlayType } from 'src/types'
-import { StarIcon, BrainIcon, BotOrNotIcon } from 'src/components/Icons/icons'
+import { StarIcon, BrainIcon, BotOrNotIcon } from 'src/components/Common/Icons'
 
 const animationVariants = {
   container: {

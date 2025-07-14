@@ -35,6 +35,14 @@ h5 {
   margin: 0;
 }
 
+.material-symbols-filled {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 200,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
 .app-container {
   display: flex;
   flex-direction: column;

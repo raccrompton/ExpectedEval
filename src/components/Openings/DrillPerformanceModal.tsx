@@ -3,10 +3,8 @@ import React, {
   useState,
   useEffect,
   useCallback,
-  useRef,
   useContext,
 } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
 import { Chess } from 'chess.ts'
 import Chessground from '@react-chess/chessground'
 import type { Key } from 'chessground/types'
@@ -23,10 +21,8 @@ import {
   Dot,
   Tooltip,
 } from 'recharts'
-import { ModalContainer } from '../Misc'
+import { ModalContainer } from 'src/components'
 import { DrillPerformanceData, MoveAnalysis } from 'src/types/openings'
-import { GameNode } from 'src/types'
-import { cpToWinrate } from 'src/utils/stockfish'
 import { MaiaRatingInsights } from './MaiaRatingInsights'
 import { WindowSizeContext } from 'src/contexts'
 import {
@@ -35,7 +31,7 @@ import {
   BlunderIcon,
   MoveClassificationIcon,
 } from 'src/components/Common/MoveIcons'
-import { MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/moveClassification'
+import { MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/analysis'
 
 interface Props {
   performanceData: DrillPerformanceData

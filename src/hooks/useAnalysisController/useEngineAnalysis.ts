@@ -1,8 +1,8 @@
 import { Chess } from 'chess.ts'
 import { useEffect } from 'react'
 import { getBookMoves } from 'src/api'
+import { MAIA_MODELS } from 'src/constants/common'
 import { GameNode, MaiaEvaluation, StockfishEvaluation } from 'src/types'
-import { MAIA_MODELS } from './constants'
 
 type BatchEvaluateResult = {
   result: MaiaEvaluation[]

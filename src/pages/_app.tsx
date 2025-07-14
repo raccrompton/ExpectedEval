@@ -4,16 +4,14 @@ import Script from 'next/script'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 import type { AppProps } from 'next/app'
+import posthog from 'posthog-js'
 import { Open_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
-import posthog from 'posthog-js'
 import { PostHogProvider } from 'posthog-js/react'
-import { initPostHog } from 'src/lib/posthog'
 
 import {
   AuthContextProvider,
   ModalContextProvider,
-  ThemeContextProvider,
   WindowSizeContextProvider,
   AnalysisListContextProvider,
 } from 'src/providers'
@@ -38,19 +36,13 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
   const isAnalysisPage = router.pathname.startsWith('/analysis')
 
   useEffect(() => {
-    // Initialize our custom PostHog setup
-    initPostHog()
-
-    // Keep existing PostHog setup for compatibility
-    if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-      posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
-        api_host: '/ingest',
-        ui_host: 'https://us.posthog.com',
-        defaults: '2025-05-24',
-        capture_exceptions: true,
-        debug: false,
-      })
-    }
+    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
+      api_host: '/ingest',
+      ui_host: 'https://us.posthog.com',
+      defaults: '2025-05-24',
+      capture_exceptions: true,
+      debug: false,
+    })
   }, [])
 
   return (
@@ -59,7 +51,7 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
         <Compose
           components={[
             ErrorBoundary,
-            ThemeContextProvider,
+
             WindowSizeContextProvider,
             AuthContextProvider,
             ModalContextProvider,
@@ -70,7 +62,7 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
             <link rel="icon" type="image/png" href="/favicon.png" />
             <link
               rel="stylesheet"
-              href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&display=swap"
+              href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
             />
           </Head>
           <div className={`${OpenSans.className} app-container`}>

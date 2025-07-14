@@ -1,10 +1,12 @@
+'use server'
+
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 
 import { Post } from 'src/types'
 
-const postsDir = path.join(process.cwd(), 'src/blog/posts')
+const postsDir = path.join(process.cwd(), 'src/lib/blog/posts')
 
 export function getSortedPostsData() {
   const fileNames = fs.readdirSync(postsDir)
