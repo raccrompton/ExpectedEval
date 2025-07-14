@@ -1,4 +1,6 @@
-import { getPostHog } from 'src/lib/posthog'
+'use client'
+
+import posthog from 'posthog-js'
 
 type EventProperties = Record<string, unknown>
 
@@ -7,10 +9,7 @@ type EventProperties = Record<string, unknown>
  */
 const safeTrack = (eventName: string, properties?: EventProperties) => {
   try {
-    const posthog = getPostHog()
-    if (posthog) {
-      posthog.capture(eventName, properties)
-    }
+    posthog.capture(eventName, properties)
   } catch (error) {
     console.error(`Failed to track event ${eventName}:`, error)
   }
