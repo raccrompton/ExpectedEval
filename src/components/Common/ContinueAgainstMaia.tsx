@@ -1,4 +1,4 @@
-import { trackContinueAgainstMaiaClicked } from 'src/utils/analytics'
+import { trackContinueAgainstMaiaClicked } from 'src/lib/analytics'
 
 interface Props {
   launchContinue: () => void

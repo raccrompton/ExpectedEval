@@ -16,17 +16,5 @@ export const MOVE_CLASSIFICATION_THRESHOLDS = {
   MAIA_UNLIKELY_THRESHOLD: 0.1,
 } as const
 
-export const MAIA_MODELS = [
-  'maia_kdd_1100',
-  'maia_kdd_1200',
-  'maia_kdd_1300',
-  'maia_kdd_1400',
-  'maia_kdd_1500',
-  'maia_kdd_1600',
-  'maia_kdd_1700',
-  'maia_kdd_1800',
-  'maia_kdd_1900',
-]
-
 export const DEFAULT_MAIA_MODEL = 'maia_kdd_1500' as const
 export const MIN_STOCKFISH_DEPTH = 13 as const

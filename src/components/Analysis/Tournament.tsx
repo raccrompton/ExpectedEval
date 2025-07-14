@@ -1,11 +1,4 @@
 import { Dispatch, SetStateAction } from 'react'
-
-import {
-  PlusIcon,
-  MinusIcon,
-  CaretUpIcon,
-  CaretDownIcon,
-} from 'src/components/Icons/icons'
 import { AnalysisTournamentGame } from 'src/types'
 type Props = {
   id: string
@@ -57,12 +50,14 @@ export const Tournament = ({
         }
       >
         <div className="flex items-center gap-1">
-          <div className="w-4">{openIndex == index ? MinusIcon : PlusIcon}</div>
+          <span className="material-symbols-outlined w-6 text-left text-sm">
+            {openIndex == index ? 'remove' : 'add'}
+          </span>
           <div className="text-left text-sm">{title}</div>
         </div>
-        <div className="w-2">
-          {openIndex == index ? CaretUpIcon : CaretDownIcon}
-        </div>
+        <span className="material-symbols-outlined material-symbols-filled text-sm">
+          {openIndex == index ? 'arrow_drop_up' : 'arrow_drop_down'}
+        </span>
       </button>
       <div
         className={`flex w-full flex-col bg-background-1 ${openIndex === index ? 'block' : 'hidden'}`}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react'
 
 import { Color } from 'src/types'
-import { AuthContext, ThemeContext } from 'src/contexts'
+import { AuthContext } from 'src/contexts'
 import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
 
 interface Props {
@@ -12,7 +12,6 @@ interface Props {
 export const GameClock: React.FC<Props> = (
   props: React.PropsWithChildren<Props>,
 ) => {
-  const { theme } = useContext(ThemeContext)
   const { user } = useContext(AuthContext)
   const { player, toPlay, whiteClock, blackClock, lastMoveTime } = useContext(
     PlayControllerContext,
@@ -52,7 +51,7 @@ export const GameClock: React.FC<Props> = (
       className={`flex items-center justify-between bg-background-1 md:items-start md:justify-start ${active ? 'opacity-100' : 'opacity-50'} flex-row md:flex-col`}
     >
       <div className="px-4 py-2">
-        {(theme == 'dark') != (props.player == 'black') ? '●' : '○'}{' '}
+        {props.player == 'black' ? '●' : '○'}{' '}
         {player == props.player ? user?.displayName : 'Maia'}
       </div>
       <div className="inline-flex self-start px-4 py-2 md:text-3xl">

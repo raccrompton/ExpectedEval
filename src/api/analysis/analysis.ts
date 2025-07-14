@@ -11,7 +11,7 @@ import {
   AnalysisTournamentGame,
 } from 'src/types'
 import { buildUrl } from '../utils'
-import { cpToWinrate } from 'src/utils/stockfish'
+import { cpToWinrate } from 'src/lib/stockfish'
 import { AvailableMoves } from 'src/types/training'
 
 function buildGameTree(moves: any[], initialFen: string) {
@@ -462,7 +462,7 @@ export const getAnalyzedCustomPGN = async (
   pgn: string,
   name?: string,
 ): Promise<AnalyzedGame> => {
-  const { saveCustomAnalysis } = await import('src/utils/customAnalysis')
+  const { saveCustomAnalysis } = await import('src/lib/customAnalysis')
 
   const stored = saveCustomAnalysis('pgn', pgn, name)
 
@@ -517,7 +517,7 @@ export const getAnalyzedCustomFEN = async (
   fen: string,
   name?: string,
 ): Promise<AnalyzedGame> => {
-  const { saveCustomAnalysis } = await import('src/utils/customAnalysis')
+  const { saveCustomAnalysis } = await import('src/lib/customAnalysis')
 
   const stored = saveCustomAnalysis('fen', fen, name)
 
@@ -527,7 +527,7 @@ export const getAnalyzedCustomFEN = async (
 export const getAnalyzedCustomGame = async (
   id: string,
 ): Promise<AnalyzedGame> => {
-  const { getCustomAnalysisById } = await import('src/utils/customAnalysis')
+  const { getCustomAnalysisById } = await import('src/lib/customAnalysis')
 
   const stored = getCustomAnalysisById(id)
   if (!stored) {

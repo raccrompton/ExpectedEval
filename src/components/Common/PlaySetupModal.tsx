@@ -14,7 +14,6 @@ import {
 } from 'src/types'
 import { ModalContext } from 'src/contexts'
 import { ModalContainer } from './ModalContainer'
-import { CloseIcon } from 'src/components/Icons/icons'
 
 const maiaOptions = [
   'maia_kdd_1100',

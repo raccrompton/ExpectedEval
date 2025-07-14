@@ -27,8 +27,7 @@ import {
   trackPuzzleStarted,
   trackPuzzleMoveAttempted,
   trackPuzzleCompleted,
-  trackPuzzleAnalysisUnlocked,
-} from 'src/utils/analytics'
+} from 'src/lib/analytics'
 import {
   Loading,
   GameInfo,
@@ -58,9 +57,9 @@ import {
   getCurrentPlayer,
   getAvailableMovesArray,
   requiresPromotion,
-} from 'src/utils/train/utils'
+} from 'src/lib/train/utils'
 import { mockAnalysisData } from 'src/hooks/useAnalysisController/mockData'
-import { tourConfigs } from 'src/config/tours'
+import { tourConfigs } from 'src/constants/tours'
 
 const statsLoader = async () => {
   const stats = await getTrainingPlayerStats()

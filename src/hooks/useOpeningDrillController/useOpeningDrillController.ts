@@ -20,13 +20,9 @@ import {
   OverallPerformanceData,
   DrillConfiguration,
 } from 'src/types/openings'
-import { analyzeDrillPerformance } from 'src/utils/openings/drillAnalysis'
-import {
-  extractMaiaRating,
-  getCurrentMaiaModel,
-  createEngineWrapper,
-} from 'src/utils/analysis'
-import { MAIA_MODELS } from '../useAnalysisController/constants'
+import { MAIA_MODELS } from 'src/constants/common'
+import { analyzeDrillPerformance } from 'src/lib/openings/drillAnalysis'
+import { extractMaiaRating, createEngineWrapper } from 'src/lib/analysis'
 
 // Type for cached analysis results
 interface CachedAnalysisResult {
@@ -149,7 +145,7 @@ const analyzePositionInBackground = async (
     }
 
     // Use shared analysis utilities
-    const { analyzePosition } = await import('src/utils/analysis')
+    const { analyzePosition } = await import('src/lib/analysis')
 
     const analysisResult = await analyzePosition(
       fen,

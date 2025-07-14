@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Chess } from 'chess.ts'
+import { MAIA_MODELS } from 'src/constants/common'
 import { GameNode, MaiaEvaluation, StockfishEvaluation } from 'src/types'
-import { MAIA_MODELS } from './constants'
 
 export const useMoveRecommendations = (
   currentNode: GameNode | null,
