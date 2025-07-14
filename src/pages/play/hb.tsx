@@ -3,11 +3,9 @@ import { useRouter } from 'next/router'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { startGame } from 'src/api'
-import {
-  Loading,
-  GameplayInterface,
-  HandBrainPlayControls,
-} from 'src/components'
+import { Loading } from 'src/components/Common'
+import { GameplayInterface } from 'src/components/Board'
+import { HandBrainPlayControls } from 'src/components/Play'
 import { ModalContext, useTour } from 'src/contexts'
 import { Color, PlayGameConfig, TimeControl } from 'src/types'
 import { useHandBrainController } from 'src/hooks/usePlayController/useHandBrainController'

@@ -99,7 +99,7 @@ src/
 ├── providers/    # Wrappers for context providers
 ├── styles/       # Global styles and Tailwind CSS configuration
 ├── types/        # TypeScript type definitions, organized by feature
-└── utils/        # Utility functions and helpers
+└── lib/        # Utility functions and helpers
 ```
 
 #### Core Concepts and Interactions
