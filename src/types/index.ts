@@ -1,4 +1,3 @@
-export * from './theme'
 export * from './play'
 export * from './player'
 export * from './analysis'
