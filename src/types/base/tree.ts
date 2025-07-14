@@ -1,6 +1,6 @@
 import { Chess, Color } from 'chess.ts'
 import { StockfishEvaluation, MaiaEvaluation } from '..'
-import { MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/moveClassification'
+import { MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/analysis'
 
 interface NodeAnalysis {
   maia?: { [rating: string]: MaiaEvaluation }

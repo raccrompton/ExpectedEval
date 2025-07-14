@@ -31,7 +31,7 @@ import {
   BlunderIcon,
   MoveClassificationIcon,
 } from 'src/components/Common/MoveIcons'
-import { MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/moveClassification'
+import { MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/analysis'
 
 interface Props {
   performanceData: DrillPerformanceData

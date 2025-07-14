@@ -23,12 +23,7 @@ import {
   StockfishEvaluation,
   GameNode,
 } from 'src/types'
-import {
-  ModalContext,
-  WindowSizeContext,
-  TreeControllerContext,
-  useTour,
-} from 'src/contexts'
+import { WindowSizeContext, TreeControllerContext, useTour } from 'src/contexts'
 import { Loading } from 'src/components/Common/Loading'
 import { AuthenticatedWrapper } from 'src/components/Common/AuthenticatedWrapper'
 import { PlayerInfo } from 'src/components/Common/PlayerInfo'
@@ -54,20 +49,9 @@ import type { Key } from 'chessground/types'
 import { Chess, PieceSymbol } from 'chess.ts'
 import { AnimatePresence } from 'framer-motion'
 import { useAnalysisController } from 'src/hooks'
-import { tourConfigs } from 'src/config/tours'
+import { tourConfigs } from 'src/constants/tours'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
-
-const MAIA_MODELS = [
-  'maia_kdd_1100',
-  'maia_kdd_1200',
-  'maia_kdd_1300',
-  'maia_kdd_1400',
-  'maia_kdd_1500',
-  'maia_kdd_1600',
-  'maia_kdd_1700',
-  'maia_kdd_1800',
-  'maia_kdd_1900',
-]
+import { MAIA_MODELS } from 'src/constants/common'
 
 const AnalysisPage: NextPage = () => {
   const { startTour, tourState } = useTour()
