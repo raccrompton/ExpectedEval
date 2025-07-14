@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Chess } from 'chess.ts'
 import toast from 'react-hot-toast'
-import { ModalContainer } from '../Misc/ModalContainer'
+import { ModalContainer } from '../Common/ModalContainer'
 
 interface Props {
   onSubmit: (type: 'pgn' | 'fen', data: string, name?: string) => void

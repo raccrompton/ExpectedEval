@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { GithubIcon } from 'src/components/Icons/icons'
+import { GithubIcon } from 'src/components/Common/Icons'
 interface TeamMemberProps {
   image: string
   name: string
