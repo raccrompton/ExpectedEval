@@ -7,15 +7,12 @@ import {
 } from 'src/utils/analytics'
 
 import {
-  SunIcon,
-  UserIcon,
-  ArrowIcon,
-  BrainIcon, // Use BrainIcon for Hand & Brain
+  BrainIcon,
   TrainIcon,
   RegularPlayIcon,
   ChessboardIcon,
   StarIcon,
-  BotOrNotIcon, // The old BrainIcon
+  BotOrNotIcon,
 } from 'src/components/Icons/icons'
 import { PlayType } from 'src/types'
 import { getGlobalStats } from 'src/api'
@@ -267,7 +264,9 @@ function BetaBlurb() {
     <div className="mt-2 flex items-center justify-center md:mt-8">
       {user?.lichessId ? (
         <motion.div className="flex flex-row items-center gap-3 bg-engine-3 p-2 px-6 transition md:mt-0 md:rounded-full">
-          <div className="*:h-5 *:w-5">{SunIcon}</div>
+          <span className="material-symbols-outlined material-symbols-filled text-lg">
+            favorite
+          </span>
           <p>
             Thanks for testing the Maia Chess beta! Join our Discord{' '}
             <a
@@ -283,7 +282,9 @@ function BetaBlurb() {
         </motion.div>
       ) : (
         <motion.div className="flex flex-row items-center gap-3 bg-human-4 p-2 px-6 transition md:mt-0 md:rounded-full">
-          <div className="*:h-5 *:w-5">{SunIcon}</div>
+          <span className="material-symbols-outlined material-symbols-filled text-lg">
+            favorite
+          </span>
           <p>
             Maia Chess is in private beta. Sign up{' '}
             <a
