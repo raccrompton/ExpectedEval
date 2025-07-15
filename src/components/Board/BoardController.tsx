@@ -1,6 +1,6 @@
 import { useWindowSize } from 'src/hooks'
 import { GameNode, GameTree } from 'src/types'
-import { FlipIcon } from 'src/components/Icons/icons'
+import { FlipIcon } from 'src/components/Common/Icons'
 import { useCallback, useEffect, useMemo } from 'react'
 
 interface Props {

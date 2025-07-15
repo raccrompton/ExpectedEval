@@ -10,12 +10,8 @@ import {
   CompletedDrill,
   OpeningDrillGame,
 } from 'src/types/openings'
-import { cpToWinrate } from 'src/utils/stockfish'
-// Use shared analysis utilities
-import {
-  analyzePositionWithStockfish,
-  AnalysisEngines,
-} from 'src/utils/analysis'
+import { cpToWinrate } from 'src/lib/stockfish'
+import { analyzePositionWithStockfish, AnalysisEngines } from 'src/lib/analysis'
 
 // Minimum depth for analysis to be considered sufficient for the modal
 const MIN_STOCKFISH_ANALYSIS_DEPTH = 12

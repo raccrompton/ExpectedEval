@@ -6,7 +6,7 @@ import {
   TrainIcon,
   BotOrNotIcon,
   RegularPlayIcon,
-} from '../Icons/icons'
+} from '../Common/Icons'
 import { ProfileColumn } from 'src/components'
 import { PlayerStats } from 'src/types'
 

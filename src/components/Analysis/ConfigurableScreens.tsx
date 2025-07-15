@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import React, { useState } from 'react'
 import { ConfigureAnalysis } from 'src/components/Analysis/ConfigureAnalysis'
-import { ExportGame } from 'src/components/Misc/ExportGame'
+import { ExportGame } from 'src/components/Common/ExportGame'
 import { AnalyzedGame, GameNode } from 'src/types'
 
 interface Props {

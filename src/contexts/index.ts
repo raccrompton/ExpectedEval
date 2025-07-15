@@ -1,4 +1,3 @@
-export * from './ThemeContext'
 export * from './WindowSizeContext'
 export * from './ModalContext'
 export * from './TreeControllerContext'

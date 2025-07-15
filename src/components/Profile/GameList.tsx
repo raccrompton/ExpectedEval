@@ -4,7 +4,7 @@ import React, { useState, useEffect, useContext } from 'react'
 import { AuthContext } from 'src/contexts'
 import { AnalysisWebGame } from 'src/types'
 import { getLichessGames, getAnalysisGameList } from 'src/api'
-import { getCustomAnalysesAsWebGames } from 'src/utils/customAnalysis'
+import { getCustomAnalysesAsWebGames } from 'src/lib/customAnalysis'
 
 interface GameData {
   game_id: string

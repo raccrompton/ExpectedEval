@@ -8,7 +8,7 @@ import { Color, TimeControl, PlayGameConfig } from 'src/types'
 import { GameplayInterface } from 'src/components/Board/GameplayInterface'
 import { useVsMaiaPlayController } from 'src/hooks/usePlayController/useVsMaiaController'
 import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
-import { tourConfigs } from 'src/config/tours'
+import { tourConfigs } from 'src/constants/tours'
 
 interface Props {
   id: string

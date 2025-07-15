@@ -1,7 +1,7 @@
 import { Chess } from 'chess.ts'
-import { StockfishEvaluation, MaiaEvaluation } from 'src/types/analysis'
 import { getBookMoves } from 'src/api'
-import { MAIA_MODELS } from 'src/hooks/useAnalysisController/constants'
+import { MAIA_MODELS } from 'src/constants/common'
+import { StockfishEvaluation, MaiaEvaluation } from 'src/types/analysis'
 
 export interface AnalysisEngines {
   stockfish: {

@@ -9,8 +9,8 @@ import { useCallback, useContext } from 'react'
 
 import { DataNode } from 'src/types'
 import { Markdown } from 'src/components'
-import { computeColour } from 'src/utils/colours'
-import { ThemeContext, WindowSizeContext } from 'src/contexts'
+import { computeColour } from 'src/lib/colours'
+import { WindowSizeContext } from 'src/contexts'
 
 interface Props {
   data: ScatterPlotRawSerie<DataNode>[]
@@ -31,7 +31,6 @@ export const MovePlot: React.FC<Props> = ({
   currentSquare,
   disabled = false,
 }: Props) => {
-  const { theme } = useContext(ThemeContext)
   const { isMobile } = useContext(WindowSizeContext)
   const handleMove = useCallback(
     ({ data: { move } }: any) => {
@@ -46,8 +45,8 @@ export const MovePlot: React.FC<Props> = ({
       <ResponsiveScatterPlot
         data={disabled ? [] : data}
         theme={{
-          background: theme === 'dark' ? '#141414' : '#ffffff',
-          textColor: theme === 'dark' ? 'white' : 'black',
+          background: '#141414',
+          textColor: 'white',
         }}
         margin={{ bottom: 36, right: 48, left: 30, top: 30 }}
         xScale={{ min: -4, max: -0.5, type: 'log', base: 2 }}

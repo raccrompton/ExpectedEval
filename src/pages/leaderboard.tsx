@@ -7,7 +7,7 @@ import {
   RegularPlayIcon,
   TrainIcon,
   BotOrNotIcon,
-} from 'src/components/Icons/icons'
+} from 'src/components/Common/Icons'
 import { getLeaderboard } from 'src/api'
 import { LeaderboardColumn } from 'src/components'
 import { LeaderboardProvider } from 'src/components/Leaderboard/LeaderboardContext'

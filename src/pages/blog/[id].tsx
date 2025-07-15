@@ -5,7 +5,7 @@ import { GetStaticPaths, GetStaticProps } from 'next'
 
 import { Post } from 'src/types'
 import { Markdown } from 'src/components'
-import { getSortedPostsData, getPostData } from 'src/blog/posts'
+import { getSortedPostsData, getPostData } from 'src/lib/blog/posts'
 
 interface BlogPostProps {
   post: Post
