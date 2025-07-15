@@ -1092,13 +1092,6 @@ export const DrillPerformanceModal: React.FC<Props> = ({
 
   // For now, let's work directly with the nodes instead of trying to recreate the full tree
   // This is a temporary solution until we can properly access the GameTree
-  const rootNode = useMemo(() => {
-    let root = drill.finalNode
-    while (root.parent) {
-      root = root.parent
-    }
-    return root
-  }, [drill.finalNode])
 
   // Create a proper GameTree starting from the opening end node
   const gameTree = useMemo(() => {

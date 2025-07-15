@@ -17,4 +17,4 @@ export const MOVE_CLASSIFICATION_THRESHOLDS = {
 } as const
 
 export const DEFAULT_MAIA_MODEL = 'maia_kdd_1500' as const
-export const MIN_STOCKFISH_DEPTH = 13 as const
+export const MIN_STOCKFISH_DEPTH = 12 as const
