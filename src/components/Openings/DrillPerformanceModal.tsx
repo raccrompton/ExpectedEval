@@ -21,10 +21,10 @@ import {
   Dot,
   Tooltip,
 } from 'recharts'
-import { ModalContainer } from 'src/components'
+import { ModalContainer, MovesContainer } from 'src/components'
 import { DrillPerformanceData, MoveAnalysis } from 'src/types/openings'
 import { MaiaRatingInsights } from './MaiaRatingInsights'
-import { WindowSizeContext } from 'src/contexts'
+import { WindowSizeContext, TreeControllerContext } from 'src/contexts'
 import {
   ExcellentIcon,
   InaccuracyIcon,
@@ -32,8 +32,9 @@ import {
   MoveClassificationIcon,
 } from 'src/components/Common/MoveIcons'
 import { MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/analysis'
+import { useTreeController } from 'src/hooks'
 import { generateColorSanMapping } from 'src/hooks/useAnalysisController/utils'
-import { GameNode } from 'src/types/base/tree'
+import { GameNode, GameTree } from 'src/types/base/tree'
 
 interface Props {
   performanceData: DrillPerformanceData
@@ -86,205 +87,101 @@ const getColorFromMoveAnalysis = (
 
 // Component for animated game replay
 const AnimatedGameReplay: React.FC<{
-  moveAnalyses: MoveAnalysis[]
   openingFen: string
   playerColor: 'white' | 'black'
-  onMoveIndexChange?: (index: number) => void
-  externalMoveIndex?: number
-  onMoveClick?: (moveIndex: number) => void
-  gameNodesMap: Map<string, GameNode>
-}> = ({
-  moveAnalyses,
-  openingFen,
-  playerColor,
-  onMoveIndexChange,
-  externalMoveIndex,
-  onMoveClick,
-  gameNodesMap,
-}) => {
-  const [currentMoveIndex, setCurrentMoveIndex] = useState(-1)
-  const [chess] = useState(() => new Chess(openingFen))
+  gameTree: GameTree
+}> = ({ openingFen, playerColor, gameTree }) => {
   const [currentFen, setCurrentFen] = useState(openingFen)
-  const [currentMoveQuality, setCurrentMoveQuality] = useState<string | null>(
-    null,
-  )
+  const [currentNode, setCurrentNode] = useState<GameNode | null>(null)
 
-  // Go to specific move
-  const goToMove = useCallback(
-    (moveIndex: number) => {
-      chess.load(openingFen)
-      setCurrentMoveIndex(moveIndex)
-      onMoveIndexChange?.(moveIndex)
+  const treeController = useContext(TreeControllerContext)
 
-      for (let i = 0; i <= moveIndex && i < moveAnalyses.length; i++) {
-        const move = moveAnalyses[i]
-        try {
-          chess.move(move.move, { sloppy: true })
-        } catch (error) {
-          console.error('Error making move:', move.move, error)
-          break
-        }
-      }
+  if (!treeController) {
+    throw new Error(
+      'AnimatedGameReplay must be used within TreeControllerContext',
+    )
+  }
 
-      setCurrentFen(chess.fen())
-
-      if (moveIndex >= 0 && moveIndex < moveAnalyses.length) {
-        const currentMove = moveAnalyses[moveIndex]
-        if (currentMove.isPlayerMove) {
-          setCurrentMoveQuality(currentMove.classification)
-        } else {
-          setCurrentMoveQuality(null)
-        }
-      } else {
-        setCurrentMoveQuality(null)
-      }
-    },
-    [chess, openingFen, moveAnalyses, onMoveIndexChange],
-  )
-
-  // Respond to external move index changes (from chart hover)
+  // Sync current FEN and node with tree controller
   useEffect(() => {
-    if (
-      externalMoveIndex !== undefined &&
-      externalMoveIndex !== currentMoveIndex
-    ) {
-      goToMove(externalMoveIndex)
+    if (treeController.currentNode) {
+      setCurrentFen(treeController.currentNode.fen)
+      setCurrentNode(treeController.currentNode)
     }
-  }, [externalMoveIndex, currentMoveIndex, goToMove])
+  }, [treeController.currentNode])
 
-  const getQualityColor = (quality: string) => {
-    switch (quality) {
-      case 'excellent':
-        return 'text-green-400'
-      case 'inaccuracy':
-        return 'text-yellow-400'
-      case 'blunder':
-        return 'text-red-400'
-      default:
-        return 'text-secondary'
-    }
-  }
-
-  const getQualitySymbol = (quality: string) => {
-    switch (quality) {
-      case 'excellent':
-        return '!!'
-      case 'inaccuracy':
-        return '?!'
-      case 'blunder':
-        return '??'
-      default:
-        return '' // No symbol for normal/good moves
-    }
-  }
-
-  // Helper function to get move classification (simplified for this component)
-  const getSimpleClassification = (analysis: MoveAnalysis): string => {
-    // For the modal, we'll use the classification from the analysis data directly
-    // This maintains compatibility while the underlying system is unified
-    return analysis.classification || ''
-  }
-
-  // Helper function to pair moves for display with proper chess notation
-  const pairMoves = (moves: MoveAnalysis[]) => {
-    const pairs: Array<{
-      white?: MoveAnalysis & {
-        index: number
-        displayMoveNumber: number
-        isWhiteMove: boolean
-      }
-      black?: MoveAnalysis & {
-        index: number
-        displayMoveNumber: number
-        isWhiteMove: boolean
-      }
-      moveNumber: number
-    }> = []
-
-    if (moves.length === 0) return pairs
-
-    let currentMoveNumber = getMoveNumberFromFen(moves[0].fen)
-    for (let i = 0; i < moves.length; i++) {
-      const move = moves[i]
-      const isWhite = isMoveByWhite(move.fen)
-      // For white's move, increment move number
-      if (isWhite) {
-        currentMoveNumber = getMoveNumberFromFen(move.fen)
-        let pair = pairs.find((p) => p.moveNumber === currentMoveNumber)
-        if (!pair) {
-          pair = { moveNumber: currentMoveNumber }
-          pairs.push(pair)
-        }
-        pair.white = {
-          ...move,
-          index: i,
-          displayMoveNumber: currentMoveNumber,
-          isWhiteMove: true,
-        }
-      } else {
-        // For black's move, use the same move number as the previous white move
-        let pair = pairs.find((p) => p.moveNumber === currentMoveNumber)
-        if (!pair) {
-          pair = { moveNumber: currentMoveNumber }
-          pairs.push(pair)
-        }
-        pair.black = {
-          ...move,
-          index: i,
-          displayMoveNumber: currentMoveNumber,
-          isWhiteMove: false,
-        }
-      }
-    }
-    // Sort pairs by move number to ensure proper chronological order
-    return pairs.sort((a, b) => a.moveNumber - b.moveNumber)
-  }
-
-  // Get arrows for optimal moves from the current position (before next move is played)
+  // Get arrows for optimal moves from the current position
   const getArrowsForCurrentMove = useCallback((): DrawShape[] => {
-    // Show arrows for the position we're currently viewing
-    // If we're at the start (currentMoveIndex = -1), show arrows for the opening position
-    // If we're at move N, show arrows for what's optimal from the current position
-    const positionIndex = currentMoveIndex + 1 // Next move to be analyzed
-
-    if (positionIndex < 0 || positionIndex >= moveAnalyses.length) {
-      return []
-    }
+    if (!currentNode) return []
 
     const arrows: DrawShape[] = []
-    const nextMove = moveAnalyses[positionIndex]
 
-    // Show arrows for any position where we have analysis data
-    try {
-      // Maia best move (red arrow - user requested red for Maia)
-      if (nextMove.maiaBestMove && nextMove.maiaBestMove.length === 4) {
-        arrows.push({
-          brush: 'red',
-          orig: nextMove.maiaBestMove.slice(0, 2) as Key,
-          dest: nextMove.maiaBestMove.slice(2, 4) as Key,
-        })
+    // IMPORTANT: The currentNode represents the position AFTER a move was played
+    // But we want to show the best moves for the position BEFORE that move (the current FEN)
+    // So we need to use the currentNode.analysis which is the analysis from the position before the move
+    // But display the arrows on the current board (after the move)
+
+    // We need to find the position that the current FEN represents
+    // This is tricky because the FEN shows the position after the move
+    // But we want the best moves for the player to move in this position
+
+    // The current FEN is the position after the last move
+    // We need to check who is to move in this position
+    const chess = new Chess(currentFen)
+    const currentTurn = chess.turn() // 'w' or 'b'
+
+    // Get the best moves for the player who is to move in the current position
+    // This means we need analysis for the current position, not the previous position
+
+    // Since currentNode represents the position after the move was played,
+    // and currentFen is the FEN of that position,
+    // we need to show arrows for moves that can be played FROM this position
+
+    // Get legal moves from current position
+    const legalMoves = chess.moves({ verbose: true })
+
+    // Get Maia best move (red arrow) - for the player to move in current position
+    if (currentNode.analysis?.maia?.['maia_kdd_1500']?.policy) {
+      const maiaPolicy = currentNode.analysis.maia['maia_kdd_1500'].policy
+      const maiaEntries = Object.entries(maiaPolicy)
+      if (maiaEntries.length > 0) {
+        const bestMove = maiaEntries.reduce((a, b) =>
+          maiaPolicy[a[0]] > maiaPolicy[b[0]] ? a : b,
+        )
+        // Check if this move is legal from current position
+        const isLegal = legalMoves.some(
+          (move) =>
+            move.from + move.to + (move.promotion || '') === bestMove[0],
+        )
+        if (isLegal) {
+          arrows.push({
+            brush: 'red',
+            orig: bestMove[0].slice(0, 2) as Key,
+            dest: bestMove[0].slice(2, 4) as Key,
+          })
+        }
       }
+    }
 
-      // Stockfish best move (blue arrow - user requested blue for Stockfish)
-      if (
-        nextMove.stockfishBestMove &&
-        nextMove.stockfishBestMove.length === 4 &&
-        nextMove.stockfishBestMove !== nextMove.maiaBestMove
-      ) {
+    // Get Stockfish best move (blue arrow) - for the player to move in current position
+    if (currentNode.analysis?.stockfish?.model_move) {
+      const stockfishMove = currentNode.analysis.stockfish.model_move
+      // Check if this move is legal from current position
+      const isLegal = legalMoves.some(
+        (move) =>
+          move.from + move.to + (move.promotion || '') === stockfishMove,
+      )
+      if (isLegal) {
         arrows.push({
           brush: 'blue',
-          orig: nextMove.stockfishBestMove.slice(0, 2) as Key,
-          dest: nextMove.stockfishBestMove.slice(2, 4) as Key,
-          modifiers: { lineWidth: 8 },
+          orig: stockfishMove.slice(0, 2) as Key,
+          dest: stockfishMove.slice(2, 4) as Key,
         })
       }
-    } catch (error) {
-      // Move parsing failed, skip arrows
-      console.warn('Error creating arrows:', error)
     }
 
     return arrows
-  }, [currentMoveIndex, moveAnalyses])
+  }, [currentNode, currentFen])
 
   return (
     <div className="flex h-full flex-col">
@@ -296,19 +193,7 @@ const AnimatedGameReplay: React.FC<{
             Watch your opening unfold with move quality indicators
           </p>
         </div>
-        {/* Move Quality Display - Fixed position in top-right */}
-        {currentMoveQuality && currentMoveQuality !== 'good' && (
-          <div className="absolute right-4 top-4 z-10 flex rounded border border-white/20 bg-background-1/95 px-2 py-1 shadow-lg">
-            <div
-              className={`font-mono text-sm font-bold ${getQualityColor(currentMoveQuality)}`}
-            >
-              {getQualitySymbol(currentMoveQuality)}
-            </div>
-            <div className="ml-2 text-sm capitalize text-secondary">
-              {currentMoveQuality}
-            </div>
-          </div>
-        )}
+        {/* Move Quality Display is now handled by MovesContainer */}
 
         {/* Chess Board */}
         <div className="mx-auto aspect-square w-full max-w-[280px]">
@@ -345,116 +230,20 @@ const AnimatedGameReplay: React.FC<{
         </div>
       </div>
 
-      {/* Move History - No padding, fills remaining height */}
+      {/* Move History - Use MovesContainer for consistency */}
       <div className="flex min-h-0 flex-1 flex-col border-t border-white/10">
-        <div className="red-scrollbar flex-1 overflow-y-auto">
-          <div className="grid auto-rows-min grid-cols-5 whitespace-nowrap rounded-none bg-background-1/60">
-            {pairMoves(moveAnalyses).map((pair, index) => (
-              <React.Fragment key={pair.moveNumber}>
-                {/* Move number */}
-                <span className="flex h-7 items-center justify-center bg-background-2 text-sm text-secondary">
-                  {pair.moveNumber}
-                </span>
-
-                {/* White's move */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  className={`col-span-2 flex h-7 cursor-pointer items-center justify-between px-2 text-sm hover:bg-background-2 ${
-                    externalMoveIndex === pair.white?.index
-                      ? 'bg-human-4/20'
-                      : ''
-                  }`}
-                  onClick={() => pair.white && onMoveClick?.(pair.white.index)}
-                  onKeyDown={(e) => {
-                    if ((e.key === 'Enter' || e.key === ' ') && pair.white) {
-                      e.preventDefault()
-                      onMoveClick?.(pair.white.index)
-                    }
-                  }}
-                >
-                  <span
-                    style={{
-                      color: pair.white
-                        ? getColorFromMoveAnalysis(pair.white, gameNodesMap)
-                        : 'inherit',
-                    }}
-                  >
-                    {pair.white?.san || ''}
-                  </span>
-                  <div className="flex items-center">
-                    {pair.white &&
-                      (() => {
-                        const classification = getSimpleClassification(
-                          pair.white,
-                        )
-                        const classificationObj = {
-                          blunder: classification === 'blunder',
-                          inaccuracy: classification === 'inaccuracy',
-                          excellent: classification === 'excellent',
-                          bestMove: false,
-                        }
-                        return (
-                          <MoveClassificationIcon
-                            classification={classificationObj}
-                            size="small"
-                          />
-                        )
-                      })()}
-                  </div>
-                </div>
-
-                {/* Black's move */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  className={`col-span-2 flex h-7 cursor-pointer items-center justify-between px-2 text-sm hover:bg-background-2 ${
-                    externalMoveIndex === pair.black?.index
-                      ? 'bg-human-4/20'
-                      : ''
-                  }`}
-                  onClick={() => pair.black && onMoveClick?.(pair.black.index)}
-                  onKeyDown={(e) => {
-                    if ((e.key === 'Enter' || e.key === ' ') && pair.black) {
-                      e.preventDefault()
-                      onMoveClick?.(pair.black.index)
-                    }
-                  }}
-                >
-                  <span
-                    style={{
-                      color: pair.black
-                        ? getColorFromMoveAnalysis(pair.black, gameNodesMap)
-                        : 'inherit',
-                    }}
-                  >
-                    {pair.black?.san || ''}
-                  </span>
-                  <div className="flex items-center">
-                    {pair.black &&
-                      (() => {
-                        const classification = getSimpleClassification(
-                          pair.black,
-                        )
-                        const classificationObj = {
-                          blunder: classification === 'blunder',
-                          inaccuracy: classification === 'inaccuracy',
-                          excellent: classification === 'excellent',
-                          bestMove: false,
-                        }
-                        return (
-                          <MoveClassificationIcon
-                            classification={classificationObj}
-                            size="small"
-                          />
-                        )
-                      })()}
-                  </div>
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
+        <TreeControllerContext.Provider value={treeController}>
+          <MovesContainer
+            game={{
+              id: 'drill-performance',
+              tree: gameTree,
+              moves: [], // Not used when tree is provided
+            }}
+            type="analysis"
+            showAnnotations={true}
+            showVariations={false}
+          />
+        </TreeControllerContext.Provider>
       </div>
     </div>
   )
@@ -860,34 +649,26 @@ const EvaluationChart: React.FC<{
 // Desktop layout component
 const DesktopLayout: React.FC<{
   drill: DrillPerformanceData['drill']
-  filteredMoveAnalyses: (MoveAnalysis & { originalIndex: number })[]
   filteredEvaluationChart: DrillPerformanceData['evaluationChart']
-  currentMoveIndex: number
-  hoveredMoveIndex: number | null
-  handleMoveClick: (index: number) => void
-  handleChartHover: (index: number) => void
-  setCurrentMoveIndex: (index: number) => void
   openingFen: string
   performanceData: DrillPerformanceData
   onContinueAnalyzing: () => void
   onNextDrill: () => void
   isLastDrill: boolean
-  gameNodesMap: Map<string, GameNode>
+  gameTree: GameTree
+  playerMoveCount: number
+  treeController: ReturnType<typeof useTreeController>
 }> = ({
   drill,
-  filteredMoveAnalyses,
   filteredEvaluationChart,
-  currentMoveIndex,
-  hoveredMoveIndex,
-  handleMoveClick,
-  handleChartHover,
-  setCurrentMoveIndex,
   openingFen,
   performanceData,
   onContinueAnalyzing,
   onNextDrill,
   isLastDrill,
-  gameNodesMap,
+  gameTree,
+  playerMoveCount,
+  treeController,
 }) => (
   <div className="relative flex h-[90vh] max-h-[800px] w-[95vw] max-w-[1200px] flex-col overflow-hidden rounded-lg bg-background-1 shadow-2xl">
     {/* Header */}
@@ -902,10 +683,7 @@ const DesktopLayout: React.FC<{
             {drill.selection.variation &&
               ` - ${drill.selection.variation.name}`}
             {' • '}
-            Analyzed {
-              filteredMoveAnalyses.filter((m) => m.isPlayerMove).length
-            }{' '}
-            of your moves
+            Analyzed {playerMoveCount} of your moves
             {' • '}
             Playing as{' '}
             {drill.selection.playerColor === 'white' ? 'White' : 'Black'}
@@ -924,212 +702,181 @@ const DesktopLayout: React.FC<{
     <div className="flex flex-1 overflow-hidden">
       {/* Left Panel - Animated Game Replay */}
       <div className="flex w-1/3 flex-col border-r border-white/10">
-        <AnimatedGameReplay
-          moveAnalyses={filteredMoveAnalyses}
-          openingFen={openingFen}
-          playerColor={drill.selection.playerColor}
-          onMoveIndexChange={setCurrentMoveIndex}
-          externalMoveIndex={currentMoveIndex}
-          onMoveClick={handleMoveClick}
-          gameNodesMap={gameNodesMap}
-        />
+        <TreeControllerContext.Provider value={treeController}>
+          <AnimatedGameReplay
+            openingFen={openingFen}
+            playerColor={drill.selection.playerColor}
+            gameTree={gameTree}
+          />
+        </TreeControllerContext.Provider>
       </div>
 
       {/* Center Panel - Evaluation Chart & Critical Decisions */}
       <div className="red-scrollbar flex w-1/3 flex-col overflow-y-auto border-r border-white/10">
         <EvaluationChart
           evaluationChart={filteredEvaluationChart}
-          moveAnalyses={filteredMoveAnalyses}
-          currentMoveIndex={hoveredMoveIndex ?? currentMoveIndex}
-          onHoverMove={handleChartHover}
+          moveAnalyses={performanceData.moveAnalyses}
+          currentMoveIndex={0}
+          onHoverMove={(moveIndex) => {
+            // Navigate to the corresponding move position when hovering over the chart
+            const moveAnalysis = performanceData.moveAnalyses[moveIndex]
+            if (moveAnalysis) {
+              // Find the node that represents the position after this move
+              const targetFen = moveAnalysis.fen
+
+              // Walk through the game tree to find the matching node
+              const findNodeByFen = (node: GameNode): GameNode | null => {
+                if (node.fen === targetFen) {
+                  return node
+                }
+
+                // Check main child
+                if (node.mainChild) {
+                  const found = findNodeByFen(node.mainChild)
+                  if (found) return found
+                }
+
+                // Check all children
+                for (const child of node.children) {
+                  const found = findNodeByFen(child)
+                  if (found) return found
+                }
+
+                return null
+              }
+
+              const targetNode = findNodeByFen(gameTree.getRoot())
+              if (targetNode) {
+                treeController.goToNode(targetNode)
+              }
+            }
+          }}
           playerColor={drill.selection.playerColor}
           drill={drill}
         />
 
         {/* Critical Decisions Section */}
-        {(() => {
-          // Define helper function first
-          const getMoveNumberForIndex = (
-            index: number,
-          ): { moveNumber: number; isWhiteMove: boolean } => {
-            if (index < 0 || index >= filteredMoveAnalyses.length)
-              return { moveNumber: 1, isWhiteMove: true }
-
-            const moveAnalysis = filteredMoveAnalyses[index]
-            if (!moveAnalysis) return { moveNumber: 1, isWhiteMove: true }
-
-            const isWhiteMove = isMoveByWhite(moveAnalysis.fen)
-            let moveNumber = 1
-            if (isWhiteMove) {
-              moveNumber = getMoveNumberFromFen(moveAnalysis.fen)
-            } else {
-              let currentIndex = index - 1
-              while (currentIndex >= 0) {
-                const prevMove = filteredMoveAnalyses[currentIndex]
-                if (isMoveByWhite(prevMove.fen)) {
-                  moveNumber = getMoveNumberFromFen(prevMove.fen)
-                  break
-                }
-                currentIndex--
-              }
-            }
-            return { moveNumber, isWhiteMove }
-          }
-
-          const criticalMoments = filteredMoveAnalyses
-            .map((moveAnalysis, index) => {
-              if (!moveAnalysis.isPlayerMove) return null
-              const classification = moveAnalysis.classification || ''
-
-              let winrateChange = 0
-              if (classification === 'blunder') {
-                winrateChange = MOVE_CLASSIFICATION_THRESHOLDS.BLUNDER_THRESHOLD
-              } else if (classification === 'inaccuracy') {
-                winrateChange =
-                  MOVE_CLASSIFICATION_THRESHOLDS.INACCURACY_THRESHOLD
-              } else {
-                const evaluationLoss = Math.abs(
-                  moveAnalysis.evaluationLoss || 0,
+        <div className="flex w-full flex-col gap-2 border-t border-white/10">
+          <div className="flex flex-col px-3 pt-3">
+            <h3 className="text-lg font-semibold">Critical Decisions</h3>
+            <p className="text-xs text-secondary">
+              Key moments that shaped the game
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 px-3 pb-3">
+            {(() => {
+              // Get critical moves (blunders, excellent moves, inaccuracies)
+              const criticalMoves = performanceData.moveAnalyses
+                .filter((move) => move.isPlayerMove)
+                .filter(
+                  (move) =>
+                    move.classification === 'blunder' ||
+                    move.classification === 'excellent' ||
+                    move.classification === 'inaccuracy',
                 )
-                winrateChange = Math.min(evaluationLoss / 300, 0.05)
-              }
+                .sort((a, b) => {
+                  // Sort by move number (chronological order)
+                  return a.moveNumber - b.moveNumber
+                })
+                .slice(0, 5) // Show top 5 critical moves
 
-              const moveInfo = getMoveNumberForIndex(index)
-              const evaluationPoint = filteredEvaluationChart[index]
-              const previousEvaluationPoint =
-                index > 0 ? filteredEvaluationChart[index - 1] : null
+              // Function to navigate to a specific move position
+              const navigateToMove = (moveAnalysis: MoveAnalysis) => {
+                // Find the node that represents the position BEFORE this move was made
+                const targetFen = moveAnalysis.fenBeforeMove || moveAnalysis.fen
 
-              return {
-                index,
-                moveNumber: moveInfo.moveNumber,
-                isWhiteMove: moveInfo.isWhiteMove,
-                winrateChange,
-                moveAnalysis,
-                isPlayerMove: true,
-                evaluation: evaluationPoint?.evaluation || 0,
-                previousEvaluation: previousEvaluationPoint?.evaluation || 0,
-              }
-            })
-            .filter(
-              (moment): moment is NonNullable<typeof moment> =>
-                moment !== null &&
-                moment.isPlayerMove &&
-                moment.winrateChange >
-                  MOVE_CLASSIFICATION_THRESHOLDS.INACCURACY_THRESHOLD,
-            )
-            .sort((a, b) => a.index - b.index)
-
-          const formatEvaluation = (evaluation: number) => {
-            if (Math.abs(evaluation) >= 1000) {
-              return evaluation > 0 ? '+M' : '-M'
-            }
-            return evaluation > 0
-              ? `+${(evaluation / 100).toFixed(1)}`
-              : `${(evaluation / 100).toFixed(1)}`
-          }
-
-          const classifyMoveInCritical = (
-            moment: (typeof criticalMoments)[0],
-          ): string => {
-            const winrateChange = moment.winrateChange
-
-            if (
-              winrateChange >= MOVE_CLASSIFICATION_THRESHOLDS.BLUNDER_THRESHOLD
-            ) {
-              return 'blunder'
-            } else if (
-              winrateChange >=
-              MOVE_CLASSIFICATION_THRESHOLDS.INACCURACY_THRESHOLD
-            ) {
-              return 'inaccuracy'
-            }
-
-            return ''
-          }
-
-          return criticalMoments.length > 0 ? (
-            <div className="flex w-full flex-col gap-1 border-t border-white/10">
-              <div className="flex flex-col px-3 pt-3">
-                <h3 className="text-lg font-semibold">Critical Decisions</h3>
-                <p className="text-xs text-secondary">
-                  Key moments that shifted the evaluation
-                </p>
-              </div>
-              <div className="flex flex-col">
-                {criticalMoments.map((moment) => {
-                  const classification = classifyMoveInCritical(moment)
-                  const classificationObj = {
-                    blunder: classification === 'blunder',
-                    inaccuracy: classification === 'inaccuracy',
-                    excellent: classification === 'excellent',
-                    bestMove: false,
+                // Walk through the game tree to find the matching node
+                const findNodeByFen = (node: GameNode): GameNode | null => {
+                  if (node.fen === targetFen) {
+                    return node
                   }
 
-                  return (
-                    <div
-                      key={moment.index}
-                      role="button"
-                      tabIndex={0}
-                      className="flex cursor-pointer items-center justify-between border-b border-white/10 px-3 py-2 transition-colors last:border-b-0 hover:bg-background-2"
-                      onClick={() => handleMoveClick(moment.index)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          handleMoveClick(moment.index)
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1">
-                          <span className="text-sm font-medium">
-                            {moment.isWhiteMove
-                              ? `${moment.moveNumber}.`
-                              : `...${moment.moveNumber}.`}{' '}
-                            <span
-                              style={{
-                                color: moment.moveAnalysis
-                                  ? getColorFromMoveAnalysis(
-                                      moment.moveAnalysis,
-                                      gameNodesMap,
-                                    )
-                                  : 'inherit',
-                              }}
-                            >
-                              {moment.moveAnalysis?.san}
-                            </span>
-                          </span>
-                          <MoveClassificationIcon
-                            classification={classificationObj}
-                            size="small"
-                          />
-                        </div>
-                        <span className="text-xs text-secondary">
-                          Loss:{' '}
-                          {Math.abs(moment.moveAnalysis?.evaluationLoss || 0)}cp
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-secondary">
-                          {formatEvaluation(moment.previousEvaluation)}
-                        </span>
-                        <span className="text-secondary">→</span>
-                        <span
-                          className={
-                            moment.evaluation > moment.previousEvaluation
-                              ? 'text-green-400'
-                              : 'text-red-400'
-                          }
-                        >
-                          {formatEvaluation(moment.evaluation)}
-                        </span>
-                      </div>
+                  // Check main child
+                  if (node.mainChild) {
+                    const found = findNodeByFen(node.mainChild)
+                    if (found) return found
+                  }
+
+                  // Check all children
+                  for (const child of node.children) {
+                    const found = findNodeByFen(child)
+                    if (found) return found
+                  }
+
+                  return null
+                }
+
+                const targetNode = findNodeByFen(gameTree.getRoot())
+                if (targetNode) {
+                  treeController.goToNode(targetNode)
+                } else {
+                  // If we can't find the position before the move, try to find the move node and go to its parent
+                  const moveNodeFen = moveAnalysis.fen
+                  const moveNode = findNodeByFen(gameTree.getRoot())
+                  if (moveNode && moveNode.parent) {
+                    treeController.goToNode(moveNode.parent)
+                  }
+                }
+              }
+
+              if (criticalMoves.length === 0) {
+                return (
+                  <div className="py-4 text-center text-sm text-secondary">
+                    No critical decisions found. Great play!
+                  </div>
+                )
+              }
+
+              return criticalMoves.map((move, index) => (
+                <button
+                  key={index}
+                  className="flex w-full cursor-pointer items-center gap-2 rounded bg-background-2/50 p-2 text-left transition-colors hover:bg-background-2"
+                  onClick={() => navigateToMove(move)}
+                  type="button"
+                >
+                  <div className="flex-shrink-0">
+                    {move.classification === 'excellent' && (
+                      <ExcellentIcon size="small" />
+                    )}
+                    {move.classification === 'inaccuracy' && (
+                      <InaccuracyIcon size="small" />
+                    )}
+                    {move.classification === 'blunder' && (
+                      <BlunderIcon size="small" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">
+                        {move.moveNumber}. {move.san}
+                      </span>
+                      <span
+                        className={`text-xs capitalize ${
+                          move.classification === 'excellent'
+                            ? 'text-green-400'
+                            : move.classification === 'blunder'
+                              ? 'text-red-400'
+                              : 'text-yellow-400'
+                        }`}
+                      >
+                        {move.classification}
+                      </span>
                     </div>
-                  )
-                })}
-              </div>
-            </div>
-          ) : null
-        })()}
+                    <div className="text-xs text-secondary">
+                      Eval: {move.evaluation > 0 ? '+' : ''}
+                      {(move.evaluation / 100).toFixed(1)}
+                      {move.evaluationLoss !== 0 && (
+                        <span className="ml-2">
+                          Loss: {Math.abs(move.evaluationLoss / 100).toFixed(1)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))
+            })()}
+          </div>
+        </div>
       </div>
 
       {/* Right Panel - Maia Rating Insights & Key Moments Analysis */}
@@ -1161,13 +908,7 @@ const DesktopLayout: React.FC<{
 // Mobile layout component with tabs
 const MobileLayout: React.FC<{
   drill: DrillPerformanceData['drill']
-  filteredMoveAnalyses: (MoveAnalysis & { originalIndex: number })[]
   filteredEvaluationChart: DrillPerformanceData['evaluationChart']
-  currentMoveIndex: number
-  hoveredMoveIndex: number | null
-  handleMoveClick: (index: number) => void
-  handleChartHover: (index: number) => void
-  setCurrentMoveIndex: (index: number) => void
   openingFen: string
   performanceData: DrillPerformanceData
   onContinueAnalyzing: () => void
@@ -1175,16 +916,12 @@ const MobileLayout: React.FC<{
   isLastDrill: boolean
   activeTab: 'replay' | 'analysis' | 'insights'
   setActiveTab: (tab: 'replay' | 'analysis' | 'insights') => void
-  gameNodesMap: Map<string, GameNode>
+  gameTree: GameTree
+  playerMoveCount: number
+  treeController: ReturnType<typeof useTreeController>
 }> = ({
   drill,
-  filteredMoveAnalyses,
   filteredEvaluationChart,
-  currentMoveIndex,
-  hoveredMoveIndex,
-  handleMoveClick,
-  handleChartHover,
-  setCurrentMoveIndex,
   openingFen,
   performanceData,
   onContinueAnalyzing,
@@ -1192,7 +929,9 @@ const MobileLayout: React.FC<{
   isLastDrill,
   activeTab,
   setActiveTab,
-  gameNodesMap,
+  gameTree,
+  playerMoveCount,
+  treeController,
 }) => (
   <div className="relative flex h-[95vh] w-[95vw] flex-col overflow-hidden rounded-lg bg-background-1 shadow-2xl">
     {/* Header */}
@@ -1206,8 +945,7 @@ const MobileLayout: React.FC<{
               ` - ${drill.selection.variation.name}`}
           </p>
           <p className="text-xs text-secondary">
-            {filteredMoveAnalyses.filter((m) => m.isPlayerMove).length} moves
-            analyzed •{' '}
+            {playerMoveCount} moves analyzed •{' '}
             {drill.selection.playerColor === 'white' ? 'White' : 'Black'}
           </p>
         </div>
@@ -1257,24 +995,55 @@ const MobileLayout: React.FC<{
     {/* Tab Content */}
     <div className="flex-1 overflow-hidden">
       {activeTab === 'replay' && (
-        <AnimatedGameReplay
-          moveAnalyses={filteredMoveAnalyses}
-          openingFen={openingFen}
-          playerColor={drill.selection.playerColor}
-          onMoveIndexChange={setCurrentMoveIndex}
-          externalMoveIndex={currentMoveIndex}
-          onMoveClick={handleMoveClick}
-          gameNodesMap={gameNodesMap}
-        />
+        <TreeControllerContext.Provider value={treeController}>
+          <AnimatedGameReplay
+            openingFen={openingFen}
+            playerColor={drill.selection.playerColor}
+            gameTree={gameTree}
+          />
+        </TreeControllerContext.Provider>
       )}
 
       {activeTab === 'analysis' && (
         <div className="red-scrollbar h-full overflow-y-auto">
           <EvaluationChart
             evaluationChart={filteredEvaluationChart}
-            moveAnalyses={filteredMoveAnalyses}
-            currentMoveIndex={hoveredMoveIndex ?? currentMoveIndex}
-            onHoverMove={handleChartHover}
+            moveAnalyses={performanceData.moveAnalyses}
+            currentMoveIndex={0}
+            onHoverMove={(moveIndex) => {
+              // Navigate to the corresponding move position when hovering over the chart
+              const moveAnalysis = performanceData.moveAnalyses[moveIndex]
+              if (moveAnalysis) {
+                // Find the node that represents the position after this move
+                const targetFen = moveAnalysis.fen
+
+                // Walk through the game tree to find the matching node
+                const findNodeByFen = (node: GameNode): GameNode | null => {
+                  if (node.fen === targetFen) {
+                    return node
+                  }
+
+                  // Check main child
+                  if (node.mainChild) {
+                    const found = findNodeByFen(node.mainChild)
+                    if (found) return found
+                  }
+
+                  // Check all children
+                  for (const child of node.children) {
+                    const found = findNodeByFen(child)
+                    if (found) return found
+                  }
+
+                  return null
+                }
+
+                const targetNode = findNodeByFen(gameTree.getRoot())
+                if (targetNode) {
+                  treeController.goToNode(targetNode)
+                }
+              }
+            }}
             playerColor={drill.selection.playerColor}
             drill={drill}
           />
@@ -1315,50 +1084,81 @@ export const DrillPerformanceModal: React.FC<Props> = ({
   isLastDrill,
 }) => {
   const { isMobile } = useContext(WindowSizeContext)
-  const [currentMoveIndex, setCurrentMoveIndex] = useState(-1)
-  const [hoveredMoveIndex, setHoveredMoveIndex] = useState<number | null>(null)
-  const [isClicked, setIsClicked] = useState(false)
   const [activeTab, setActiveTab] = useState<
     'replay' | 'analysis' | 'insights'
   >('replay')
 
   const { drill, evaluationChart, moveAnalyses } = performanceData
 
-  // Create a map of GameNodes for efficient lookup by FEN
-  const gameNodesMap = useMemo(() => {
-    const nodesMap = new Map<string, GameNode>()
+  // For now, let's work directly with the nodes instead of trying to recreate the full tree
+  // This is a temporary solution until we can properly access the GameTree
 
-    // Traverse the game tree from finalNode back to the beginning
-    let currentNode: GameNode | null = drill.finalNode
-    while (currentNode) {
-      nodesMap.set(currentNode.fen, currentNode)
-      currentNode = currentNode.parent
+  // Create a proper GameTree starting from the opening end node
+  const gameTree = useMemo(() => {
+    // Get the root node and build the tree from there
+    let root = drill.finalNode
+    while (root.parent) {
+      root = root.parent
     }
 
-    return nodesMap
-  }, [drill.finalNode])
+    // Find the opening end node from the drill selection
+    const openingEndFen = drill.selection.variation
+      ? drill.selection.variation.fen
+      : drill.selection.opening.fen
 
-  // Filter out pre-loaded opening moves - only show moves after the opening sequence
-  const filteredMoveAnalyses = useMemo(() => {
-    // Find the index of the first actual gameplay move (first player move)
-    const firstPlayerMoveIndex = moveAnalyses.findIndex(
-      (move) => move.isPlayerMove,
-    )
-
-    if (firstPlayerMoveIndex === -1) {
-      // No player moves found, return empty array
-      return []
+    // Find the actual opening end node in the tree
+    let openingEndTreeNode = root
+    let current: GameNode | null = root
+    while (current) {
+      if (current.fen === openingEndFen) {
+        openingEndTreeNode = current
+        break
+      }
+      current = current.mainChild
     }
 
-    // Include the position before the first player move if it exists
-    // This ensures we can see the evaluation change from the first move
-    const startIndex = Math.max(0, firstPlayerMoveIndex - 1)
+    // Create a new GameTree starting from the opening end node
+    const newTree = new (class extends GameTree {
+      constructor(startNode: GameNode) {
+        super(startNode.fen)
+        // Replace the root with our opening end node
+        this.setRoot(startNode)
+      }
 
-    // Return all moves starting from before the first player move, but preserve original indices
-    return moveAnalyses.slice(startIndex).map((move, index) => ({
-      ...move,
-      originalIndex: startIndex + index, // Track original index for board navigation
-    }))
+      private setRoot(node: GameNode) {
+        // Use reflection to set the private root field
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(this as any).root = node
+      }
+
+      getRoot(): GameNode {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (this as any).root
+      }
+
+      getMainLine(): GameNode[] {
+        const mainLine = []
+        let current: GameNode | null = this.getRoot()
+        while (current) {
+          mainLine.push(current)
+          current = current.mainChild
+        }
+        return mainLine
+      }
+    })(openingEndTreeNode)
+
+    return newTree
+  }, [drill.finalNode, drill.selection])
+
+  // Create tree controller for navigation
+  const treeController = useTreeController(
+    gameTree,
+    drill.selection.playerColor,
+  )
+
+  // Count player moves from move analyses for display purposes
+  const playerMoveCount = useMemo(() => {
+    return moveAnalyses.filter((move) => move.isPlayerMove).length
   }, [moveAnalyses])
 
   // Filter evaluation chart to match the filtered moves
@@ -1374,28 +1174,6 @@ export const DrillPerformanceModal: React.FC<Props> = ({
     return evaluationChart.slice(startIndex)
   }, [evaluationChart, moveAnalyses])
 
-  // Handle hover on chart - update board position only if not clicked
-  const handleChartHover = useCallback(
-    (filteredIndex: number) => {
-      if (!isClicked) {
-        setCurrentMoveIndex(filteredIndex)
-        setHoveredMoveIndex(filteredIndex)
-      }
-    },
-    [isClicked],
-  )
-
-  // Handle click on move list - update both board position and chart highlighting
-  const handleMoveClick = useCallback((filteredIndex: number) => {
-    setCurrentMoveIndex(filteredIndex)
-    setHoveredMoveIndex(filteredIndex)
-    setIsClicked(true)
-
-    setTimeout(() => {
-      setIsClicked(false)
-    }, 500)
-  }, [])
-
   // Get opening FEN from the drill
   const openingFen = drill.selection.variation
     ? drill.selection.variation.fen
@@ -1406,13 +1184,7 @@ export const DrillPerformanceModal: React.FC<Props> = ({
       {isMobile ? (
         <MobileLayout
           drill={drill}
-          filteredMoveAnalyses={filteredMoveAnalyses}
           filteredEvaluationChart={filteredEvaluationChart}
-          currentMoveIndex={currentMoveIndex}
-          hoveredMoveIndex={hoveredMoveIndex}
-          handleMoveClick={handleMoveClick}
-          handleChartHover={handleChartHover}
-          setCurrentMoveIndex={setCurrentMoveIndex}
           openingFen={openingFen}
           performanceData={performanceData}
           onContinueAnalyzing={onContinueAnalyzing}
@@ -1420,24 +1192,22 @@ export const DrillPerformanceModal: React.FC<Props> = ({
           isLastDrill={isLastDrill}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          gameNodesMap={gameNodesMap}
+          gameTree={gameTree}
+          playerMoveCount={playerMoveCount}
+          treeController={treeController}
         />
       ) : (
         <DesktopLayout
           drill={drill}
-          filteredMoveAnalyses={filteredMoveAnalyses}
           filteredEvaluationChart={filteredEvaluationChart}
-          currentMoveIndex={currentMoveIndex}
-          hoveredMoveIndex={hoveredMoveIndex}
-          handleMoveClick={handleMoveClick}
-          handleChartHover={handleChartHover}
-          setCurrentMoveIndex={setCurrentMoveIndex}
           openingFen={openingFen}
           performanceData={performanceData}
           onContinueAnalyzing={onContinueAnalyzing}
           onNextDrill={onNextDrill}
           isLastDrill={isLastDrill}
-          gameNodesMap={gameNodesMap}
+          gameTree={gameTree}
+          playerMoveCount={playerMoveCount}
+          treeController={treeController}
         />
       )}
     </ModalContainer>
