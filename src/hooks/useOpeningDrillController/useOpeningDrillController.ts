@@ -3,8 +3,6 @@ import { Chess } from 'chess.ts'
 import { getGameMove } from 'src/api/play/play'
 import { useTreeController } from '../useTreeController'
 import { useChessSound } from '../useChessSound'
-import { useStockfishEngine } from '../useStockfishEngine'
-import { useMaiaEngine } from '../useMaiaEngine'
 import { useLocalStorage } from '../useLocalStorage'
 import {
   GameTree,
@@ -19,10 +17,12 @@ import {
   DrillPerformanceData,
   OverallPerformanceData,
   DrillConfiguration,
+  MoveAnalysis,
+  EvaluationPoint,
+  RatingPrediction,
+  RatingComparison,
 } from 'src/types/openings'
 import { MAIA_MODELS } from 'src/constants/common'
-import { analyzeDrillPerformance } from 'src/lib/openings/drillAnalysis'
-import { createEngineWrapper } from 'src/lib/analysis'
 
 // Type for cached analysis results
 interface CachedAnalysisResult {
@@ -89,6 +89,7 @@ const parsePgnToTree = (pgn: string, gameTree: GameTree): GameNode | null => {
 
 export const useOpeningDrillController = (
   configuration: DrillConfiguration,
+  ensureAnalysisComplete?: (nodes: GameNode[]) => Promise<void>,
 ) => {
   // Drilling state
   const [remainingDrills, setRemainingDrills] = useState<OpeningSelection[]>([])
@@ -129,10 +130,6 @@ export const useOpeningDrillController = (
 
   // Add chess sound hook
   const { playSound } = useChessSound()
-
-  // Add engine hooks for analysis
-  const { streamEvaluations, isReady: isStockfishReady } = useStockfishEngine()
-  const { maia, status: maiaStatus } = useMaiaEngine()
 
   // Get current Maia model from localStorage (same as analysis controller)
   const [currentMaiaModel, setCurrentMaiaModel] = useLocalStorage(
@@ -294,73 +291,159 @@ export const useOpeningDrillController = (
     return moveMap
   }, [controller.currentNode, isPlayerTurn])
 
-  // Function to evaluate drill performance using comprehensive analysis
+  // Function to evaluate drill performance by extracting analysis from GameTree nodes
   const evaluateDrillPerformance = useCallback(
     async (drillGame: OpeningDrillGame): Promise<DrillPerformanceData> => {
+      const { selection } = drillGame
       const finalNode = controller.currentNode || drillGame.tree.getRoot()
 
-      try {
-        // Use comprehensive analysis if engines are ready
-        if (maiaStatus === 'ready' && isStockfishReady() && maia) {
-          const engines = createEngineWrapper(
-            { streamEvaluations, isReady: isStockfishReady },
-            maia,
-            () => maiaStatus,
-          )
+      // Extract move sequence from the game tree
+      const moveAnalyses: MoveAnalysis[] = []
+      const evaluationChart: EvaluationPoint[] = []
 
-          return await analyzeDrillPerformance(
-            drillGame,
-            finalNode,
-            engines,
-            analysisCache.current || new Map(),
-            (progress) => {
-              // Update analysis progress for UI feedback
-              setAnalysisProgress({
-                total: progress.total,
-                completed: progress.completed,
-                currentMove: progress.currentStep,
-              })
-            },
-          )
+      // Traverse the game tree to extract analysis data
+      const extractNodeAnalysis = (
+        node: GameNode,
+        path: GameNode[] = [],
+      ): void => {
+        const currentPath = [...path, node]
+
+        // Skip the root node (starting position)
+        if (node.move && node.san) {
+          const moveIndex = currentPath.length - 2 // Index of this move (0-based)
+          const isPlayerMove =
+            selection.playerColor === 'white'
+              ? moveIndex % 2 === 0
+              : moveIndex % 2 === 1
+
+          // Get evaluations from node analysis
+          const stockfishEval = node.analysis?.stockfish
+          const maiaEval = node.analysis?.maia?.[currentMaiaModel]
+
+          // Calculate evaluation (use Stockfish if available, otherwise estimate)
+          const evaluation = stockfishEval?.model_optimal_cp ?? 0
+
+          // Get previous evaluation for comparison
+          const prevNode = currentPath[currentPath.length - 2]
+          const prevEvaluation =
+            prevNode?.analysis?.stockfish?.model_optimal_cp ?? 0
+          const evaluationLoss = Math.abs(evaluation - prevEvaluation)
+
+          // Get best moves from analysis for reference
+          const stockfishBestMove = stockfishEval?.model_move
+          const maiaBestMove = maiaEval?.policy
+            ? Object.keys(maiaEval.policy).sort(
+                (a, b) => maiaEval.policy[b] - maiaEval.policy[a],
+              )[0]
+            : undefined
+
+          // Use the proper classification method from GameNode
+          let classification: 'excellent' | 'inaccuracy' | 'blunder' | 'good' =
+            'good'
+
+          if (isPlayerMove && prevNode && node.move) {
+            const nodeClassification = GameNode.classifyMove(
+              prevNode,
+              node.move,
+              currentMaiaModel,
+            )
+
+            if (nodeClassification.blunder) {
+              classification = 'blunder'
+            } else if (nodeClassification.inaccuracy) {
+              classification = 'inaccuracy'
+            } else if (nodeClassification.excellent) {
+              classification = 'excellent'
+            } else {
+              classification = 'good'
+            }
+          }
+
+          const moveAnalysis: MoveAnalysis = {
+            move: node.move,
+            san: node.san,
+            fen: node.fen,
+            fenBeforeMove: prevNode?.fen,
+            moveNumber: Math.ceil((moveIndex + 1) / 2),
+            isPlayerMove,
+            evaluation,
+            classification,
+            evaluationLoss,
+            bestMove: stockfishBestMove || maiaBestMove,
+            bestEvaluation: stockfishEval?.model_optimal_cp,
+            stockfishBestMove,
+            maiaBestMove,
+          }
+
+          moveAnalyses.push(moveAnalysis)
+
+          // Create evaluation chart point
+          const evaluationPoint: EvaluationPoint = {
+            moveNumber: moveAnalysis.moveNumber,
+            evaluation,
+            isPlayerMove,
+            moveClassification: classification,
+          }
+
+          evaluationChart.push(evaluationPoint)
         }
-      } catch (error) {
-        console.error(
-          'Error in comprehensive analysis, falling back to basic:',
-          error,
-        )
+
+        // Continue with main line (first child)
+        if (node.children.length > 0) {
+          extractNodeAnalysis(node.children[0], currentPath)
+        }
       }
 
-      // Fallback to basic analysis if engines not available
-      const { selection, playerMoveCount } = drillGame
-      const goodMoves = Math.floor(playerMoveCount * 0.7)
-      const blunders = Math.max(
-        0,
-        playerMoveCount - goodMoves - Math.floor(playerMoveCount * 0.2),
-      )
-      const accuracy =
-        playerMoveCount > 0 ? (goodMoves / playerMoveCount) * 100 : 100
+      // Start extraction from root
+      extractNodeAnalysis(drillGame.tree.getRoot())
 
+      // Calculate statistics
+      const playerMoves = moveAnalyses.filter((m) => m.isPlayerMove)
+      const excellentMoves = playerMoves.filter(
+        (m) => m.classification === 'excellent',
+      )
+      const goodMoves = playerMoves.filter((m) => m.classification === 'good')
+      const inaccuracyMoves = playerMoves.filter(
+        (m) => m.classification === 'inaccuracy',
+      )
+      const mistakeMoves = playerMoves.filter(
+        (m) => m.classification === 'mistake',
+      )
+      const blunderMoves = playerMoves.filter(
+        (m) => m.classification === 'blunder',
+      )
+
+      const accuracy =
+        playerMoves.length > 0
+          ? ((excellentMoves.length + goodMoves.length) / playerMoves.length) *
+            100
+          : 100
+
+      const averageEvaluationLoss =
+        playerMoves.length > 0
+          ? playerMoves.reduce((sum, move) => sum + move.evaluationLoss, 0) /
+            playerMoves.length
+          : 0
+
+      // Create completed drill
       const completedDrill: CompletedDrill = {
         selection,
         finalNode,
-        playerMoves: drillGame.moves.filter((_, index) => {
-          const isPlayerMove =
-            selection.playerColor === 'white'
-              ? index % 2 === 0
-              : index % 2 === 1
-          return isPlayerMove
-        }),
-        allMoves: drillGame.moves,
-        totalMoves: playerMoveCount,
-        blunders: Array(blunders).fill('placeholder'),
-        goodMoves: Array(goodMoves).fill('placeholder'),
-        finalEvaluation: 0,
+        playerMoves: playerMoves.map((m) => m.move),
+        allMoves: moveAnalyses.map((m) => m.move),
+        totalMoves: playerMoves.length,
+        blunders: blunderMoves.map((m) => m.move),
+        goodMoves: [...excellentMoves, ...goodMoves].map((m) => m.move),
+        finalEvaluation:
+          evaluationChart[evaluationChart.length - 1]?.evaluation ?? 0,
         completedAt: new Date(),
+        moveAnalyses,
+        accuracyPercentage: accuracy,
+        averageEvaluationLoss,
       }
 
-      const feedback = [
-        'Analysis temporarily unavailable. Basic feedback provided.',
-      ]
+      // Generate feedback
+      const feedback: string[] = []
       if (accuracy >= 90) {
         feedback.push('Excellent performance! You played very accurately.')
       } else if (accuracy >= 70) {
@@ -369,37 +452,102 @@ export const useOpeningDrillController = (
         feedback.push('This opening needs more practice.')
       }
 
+      if (blunderMoves.length > 0) {
+        feedback.push(
+          `Watch out for ${blunderMoves.length} critical mistake${blunderMoves.length > 1 ? 's' : ''}.`,
+        )
+      }
+
+      // Generate rating distribution based on actual Maia analysis
+      // We'll create a map of nodes by FEN first for efficient lookup
+      const nodesByFen = new Map<string, GameNode>()
+      const collectNodes = (node: GameNode): void => {
+        nodesByFen.set(node.fen, node)
+        node.children.forEach(collectNodes)
+      }
+      collectNodes(drillGame.tree.getRoot())
+
+      const ratingDistribution: RatingComparison[] = MAIA_MODELS.map(
+        (model) => {
+          const rating = parseInt(model.replace('maia_kdd_', ''))
+
+          // Calculate average probability for this rating level across player moves
+          let totalLogLikelihood = 0
+          let totalProbability = 0
+          let validMoves = 0
+
+          for (const move of playerMoves) {
+            const beforeMoveNode = move.fenBeforeMove
+              ? nodesByFen.get(move.fenBeforeMove)
+              : null
+            const maiaAnalysis = beforeMoveNode?.analysis?.maia?.[model]
+
+            if (maiaAnalysis?.policy && move.move in maiaAnalysis.policy) {
+              const moveProb = maiaAnalysis.policy[move.move]
+              totalProbability += moveProb
+              totalLogLikelihood += Math.log(Math.max(moveProb, 0.001)) // Avoid log(0)
+              validMoves++
+            }
+          }
+
+          const averageMoveProb =
+            validMoves > 0 ? totalProbability / validMoves : 0
+          const logLikelihood =
+            validMoves > 0 ? totalLogLikelihood / validMoves : -10
+
+          // Normalize likelihood probability for better visualization
+          const normalizedLikelihood = Math.max(
+            0,
+            Math.min(1, (logLikelihood + 8) / 8),
+          )
+
+          return {
+            rating,
+            probability: averageMoveProb,
+            moveMatch: false,
+            logLikelihood,
+            likelihoodProbability: normalizedLikelihood,
+            averageMoveProb,
+          }
+        },
+      )
+
+      // Find the rating with highest likelihood
+      const bestRating = ratingDistribution.reduce((best, current) =>
+        current.likelihoodProbability > best.likelihoodProbability
+          ? current
+          : best,
+      )
+
+      const ratingPrediction: RatingPrediction = {
+        predictedRating: bestRating.rating,
+        standardDeviation: 150,
+        sampleSize: playerMoves.length,
+        ratingDistribution,
+      }
+
       return {
         drill: completedDrill,
-        evaluationChart: [],
+        evaluationChart,
         accuracy,
-        blunderCount: blunders,
-        goodMoveCount: goodMoves,
-        inaccuracyCount: 0,
-        mistakeCount: 0,
-        excellentMoveCount: 0,
+        blunderCount: blunderMoves.length,
+        goodMoveCount: goodMoves.length + excellentMoves.length,
+        inaccuracyCount: inaccuracyMoves.length,
+        mistakeCount: mistakeMoves.length,
+        excellentMoveCount: excellentMoves.length,
         feedback,
-        moveAnalyses: [],
+        moveAnalyses,
         ratingComparison: [],
-        ratingPrediction: {
-          predictedRating: 1400,
-          standardDeviation: 200,
-          sampleSize: playerMoveCount,
-          ratingDistribution: [],
-        },
-        bestPlayerMoves: [],
-        worstPlayerMoves: [],
-        averageEvaluationLoss: 0,
-        openingKnowledge: 75,
+        ratingPrediction,
+        bestPlayerMoves: playerMoves
+          .filter((m) => m.classification === 'excellent')
+          .slice(0, 3),
+        worstPlayerMoves: [...blunderMoves, ...mistakeMoves].slice(0, 3),
+        averageEvaluationLoss,
+        openingKnowledge: Math.max(0, Math.min(100, accuracy)),
       }
     },
-    [
-      controller.currentNode,
-      maia,
-      streamEvaluations,
-      isStockfishReady,
-      maiaStatus,
-    ],
+    [controller.currentNode],
   )
 
   // Complete current drill and show performance modal
@@ -416,6 +564,29 @@ export const useOpeningDrillController = (
           completed: 0,
           currentMove: 'Preparing analysis...',
         })
+
+        // Ensure all positions in the drill are analyzed to depth 12
+        if (ensureAnalysisComplete) {
+          setAnalysisProgress({
+            total: 0,
+            completed: 0,
+            currentMove: 'Analyzing positions to depth 12...',
+          })
+
+          // Get all nodes in the main line of the drill
+          const drillNodes: GameNode[] = []
+          let currentNode = drillGame.tree.getRoot()
+          drillNodes.push(currentNode)
+
+          while (currentNode.children.length > 0) {
+            currentNode = currentNode.children[0] // Follow main line
+            drillNodes.push(currentNode)
+          }
+
+          // Request analysis for all nodes
+          await ensureAnalysisComplete(drillNodes)
+        }
+
         const performanceData = await evaluateDrillPerformance(drillGame)
         setCurrentPerformanceData(performanceData)
 
