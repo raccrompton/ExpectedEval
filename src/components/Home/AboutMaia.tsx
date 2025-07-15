@@ -91,10 +91,11 @@ const researchPapers = {
   },
   others: [
     {
-      title: 'Learning Personalized Models of Human Behavior in Chess',
-      link: 'https://www.cs.toronto.edu/~ashton/pubs/maia-personalized2021.pdf',
+      title:
+        'Learning to Imitate with Less: Efficient Individual Behavior Modeling in Chess',
+      link: 'https://www.cs.toronto.edu/~ashton/pubs/maia4all-preprint2025.pdf',
       description:
-        'Creates a version of Maia that learns your individual playing style and mirrors the way you think on the board.',
+        'Captures the way you think on the board, allowing bots to mirror your personal play-style from just 20 of your games.',
     },
     {
       title:
