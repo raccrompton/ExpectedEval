@@ -73,8 +73,14 @@ export const PuzzleLog: React.FC<Props> = ({
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-secondary">
-                      Puzzle Rating: {game.puzzle_elo}
+                      Puzzle Rating:{' '}
+                      {game.result !== undefined ? (
+                        game.puzzle_elo
+                      ) : (
+                        <span className="text-secondary/60">hidden</span>
+                      )}
                     </p>
+
                     {game.ratingDiff !== undefined && (
                       <div className="flex items-center">
                         <span

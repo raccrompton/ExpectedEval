@@ -30,12 +30,14 @@ export const GameInfo: React.FC<Props> = ({
   return (
     <div
       id="analysis-game-list"
-      className="flex w-full flex-col items-start justify-start gap-1 overflow-hidden bg-background-1 p-3 md:rounded"
+      className="flex w-full flex-col items-start justify-start gap-1 overflow-hidden bg-background-1 p-1.5 md:rounded md:p-3"
     >
       <div className="flex w-full items-center justify-between">
         <div className="flex items-center justify-start gap-1.5">
-          <span className="material-symbols-outlined text-xl">{icon}</span>
-          <h2 className="text-xl font-semibold">{title}</h2>
+          <span className="material-symbols-outlined text-lg md:text-xl">
+            {icon}
+          </span>
+          <h2 className="text-lg font-semibold md:text-xl">{title}</h2>
           {currentMaiaModel && setCurrentMaiaModel && (
             <p className="flex items-center gap-1 text-sm md:hidden">
               using
@@ -96,7 +98,9 @@ export const GameInfo: React.FC<Props> = ({
           </button>
         </div>
       </div>
-      <div className="flex w-full flex-col">{children}</div>
+      <div className="flex w-full flex-col text-sm md:text-base">
+        {children}
+      </div>
     </div>
   )
 }
