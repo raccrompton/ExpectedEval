@@ -1169,6 +1169,16 @@ const Train: React.FC<Props> = ({
                 }
               />
             </div>
+            <div className="flex w-full">
+              <Feedback
+                status={status}
+                game={trainingGame}
+                setStatus={setStatus}
+                controller={controller}
+                setAndGiveUp={setAndGiveUp}
+                getNewGame={getNewGame}
+              />
+            </div>
             <StatsDisplay stats={stats} />
             <ContinueAgainstMaia
               launchContinue={launchContinue}
@@ -1179,35 +1189,6 @@ const Train: React.FC<Props> = ({
               id="analysis"
               className="flex w-full flex-col gap-1 overflow-hidden"
             >
-              <div className="relative">
-                <BlunderMeter
-                  hover={showAnalysis ? hover : mockHover}
-                  makeMove={showAnalysis ? makeMove : mockMakeMove}
-                  data={
-                    showAnalysis
-                      ? analysisController.blunderMeter
-                      : mockAnalysisData.blunderMeter
-                  }
-                  colorSanMapping={
-                    showAnalysis
-                      ? analysisController.colorSanMapping
-                      : mockAnalysisData.colorSanMapping
-                  }
-                />
-                {!showAnalysis && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
-                    <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
-                      <span className="material-symbols-outlined mb-1 text-xl text-human-3">
-                        lock
-                      </span>
-                      <p className="text-xs font-medium text-primary">
-                        Analysis Locked
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
               <div className="relative">
                 <Highlight
                   setCurrentMaiaModel={
@@ -1269,6 +1250,35 @@ const Train: React.FC<Props> = ({
               </div>
 
               <div className="relative">
+                <BlunderMeter
+                  hover={showAnalysis ? hover : mockHover}
+                  makeMove={showAnalysis ? makeMove : mockMakeMove}
+                  data={
+                    showAnalysis
+                      ? analysisController.blunderMeter
+                      : mockAnalysisData.blunderMeter
+                  }
+                  colorSanMapping={
+                    showAnalysis
+                      ? analysisController.colorSanMapping
+                      : mockAnalysisData.colorSanMapping
+                  }
+                />
+                {!showAnalysis && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
+                    <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
+                      <span className="material-symbols-outlined mb-1 text-xl text-human-3">
+                        lock
+                      </span>
+                      <p className="text-xs font-medium text-primary">
+                        Analysis Locked
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative">
                 <MoveMap
                   moveMap={
                     showAnalysis
@@ -1298,16 +1308,6 @@ const Train: React.FC<Props> = ({
                   </div>
                 )}
               </div>
-            </div>
-            <div className="flex w-full">
-              <Feedback
-                status={status}
-                game={trainingGame}
-                setStatus={setStatus}
-                controller={controller}
-                setAndGiveUp={setAndGiveUp}
-                getNewGame={getNewGame}
-              />
             </div>
           </div>
         </div>

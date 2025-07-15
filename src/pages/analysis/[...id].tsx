@@ -943,12 +943,6 @@ const Analysis: React.FC<Props> = ({
               </div>
             </div>
             <div className="flex w-full flex-col gap-1 overflow-hidden">
-              <BlunderMeter
-                hover={hover}
-                makeMove={makeMove}
-                data={controller.blunderMeter}
-                colorSanMapping={controller.colorSanMapping}
-              />
               <Highlight
                 hover={hover}
                 makeMove={makeMove}
@@ -964,6 +958,12 @@ const Analysis: React.FC<Props> = ({
                 colorSanMapping={controller.colorSanMapping}
                 boardDescription={controller.boardDescription}
                 currentNode={controller.currentNode}
+              />
+              <BlunderMeter
+                hover={hover}
+                makeMove={makeMove}
+                data={controller.blunderMeter}
+                colorSanMapping={controller.colorSanMapping}
               />
               <MovesByRating
                 moves={controller.movesByRating}

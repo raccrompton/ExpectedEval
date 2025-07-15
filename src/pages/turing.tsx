@@ -170,10 +170,7 @@ const Turing: React.FC<Props> = (props: Props) => {
 
   const mobileLayout = (
     <>
-      <div
-        id="turing-page"
-        className="flex h-full flex-1 flex-col justify-center gap-1"
-      >
+      <div className="flex h-full flex-1 flex-col justify-center gap-1">
         <div className="mt-2 flex h-full flex-col items-start justify-start gap-2">
           <div className="flex h-auto w-full flex-col gap-2">
             <div className="w-screen">
@@ -182,7 +179,10 @@ const Turing: React.FC<Props> = (props: Props) => {
               </GameInfo>
             </div>
           </div>
-          <div className="relative flex aspect-square h-[100vw] w-screen">
+          <div
+            id="turing-page"
+            className="relative flex aspect-square h-[100vw] w-screen"
+          >
             <GameBoard game={game} currentNode={controller.currentNode} />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
