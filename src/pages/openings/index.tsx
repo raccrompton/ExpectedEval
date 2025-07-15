@@ -1096,45 +1096,6 @@ const OpeningsPage: NextPage = () => {
         {isMobile ? mobileLayout() : desktopLayout()}
       </TreeControllerContext.Provider>
 
-      {/* Background Analysis Progress Indicator */}
-      <AnimatePresence>
-        {controller.analysisProgress.total > 0 &&
-          controller.analysisProgress.completed <
-            controller.analysisProgress.total && (
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 50 }}
-              className="fixed bottom-4 right-4 z-40 max-w-xs rounded-lg border border-white/20 bg-background-1 p-4 shadow-lg"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-human-4 border-t-transparent"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Background Analysis</p>
-                  <p className="text-xs text-secondary">
-                    {controller.analysisProgress.completed}/
-                    {controller.analysisProgress.total} positions
-                  </p>
-                </div>
-              </div>
-              <div className="mt-2 h-1 w-full rounded bg-background-3">
-                <div
-                  className="h-full rounded bg-human-4 transition-all duration-300 ease-out"
-                  style={{
-                    width: `${
-                      controller.analysisProgress.total > 0
-                        ? (controller.analysisProgress.completed /
-                            controller.analysisProgress.total) *
-                          100
-                        : 0
-                    }%`,
-                  }}
-                />
-              </div>
-            </motion.div>
-          )}
-      </AnimatePresence>
-
       {/* Analysis Loading Overlay */}
       <AnimatePresence>
         {controller.isAnalyzingDrill && (
