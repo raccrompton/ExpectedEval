@@ -1025,7 +1025,7 @@ const Train: React.FC<Props> = ({
             </div>
 
             {/* Smaller screens (below xl): MovesByRating full width */}
-            <div className="flex h-[calc((85vh)*0.3)] w-full rounded bg-background-1/60 xl:hidden">
+            <div className="flex h-[calc((85vh)*0.3)] w-full xl:hidden">
               <div className="relative h-full w-full">
                 <MovesByRating
                   moves={

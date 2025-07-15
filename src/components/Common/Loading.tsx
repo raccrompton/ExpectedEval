@@ -33,7 +33,7 @@ export const Loading: React.FC = () => {
   }, [currentIndex])
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-backdrop pb-20">
+    <div className="my-40 flex w-screen items-center justify-center bg-backdrop md:my-auto">
       <div className="flex flex-col items-center gap-4">
         <div className="h-[50vw] w-[50vw] opacity-50 md:h-[30vh] md:w-[30vh]">
           <div className="h-full w-full">

@@ -190,7 +190,9 @@ export const MoveMap: React.FC<Props> = ({
       className="flex h-64 max-h-full w-full flex-col overflow-hidden bg-background-1/60 md:h-full md:rounded"
       onMouseLeave={onContainerMouseLeave}
     >
-      <h2 className="p-3 text-sm text-primary xl:text-base">Move Map</h2>
+      <h2 className="p-3 text-base text-primary md:text-sm xl:text-base">
+        Move Map
+      </h2>
       <div className="relative flex h-full w-full flex-col">
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ left: 0, top: 5, right: 30, bottom: 20 }}>
