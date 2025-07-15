@@ -130,11 +130,9 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   const [selected, setSelected] = useState<
     'tournament' | 'lichess' | 'play' | 'hb' | 'custom'
   >(() => {
-    // Check if currentId is a custom game (starts with 'custom-')
     if (currentId?.[0]?.startsWith('custom-')) {
-      return 'custom' // Custom games are in the custom tab
+      return 'custom'
     }
-    // Check if it's one of the other specific types
     if (['lichess', 'play', 'hand', 'brain'].includes(currentId?.[1] ?? '')) {
       if (currentId?.[1] === 'hand' || currentId?.[1] === 'brain') {
         return 'hb'
@@ -492,7 +490,9 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                           className={`flex h-full w-9 items-center justify-center ${selectedGame ? 'bg-background-3' : 'bg-background-2 group-hover:bg-white/5'}`}
                         >
                           <p className="text-sm text-secondary">
-                            {(currentPage - 1) * 100 + index + 1}
+                            {selected === 'play' || selected === 'hb'
+                              ? (currentPage - 1) * 100 + index + 1
+                              : index + 1}
                           </p>
                         </div>
                         <div className="flex flex-1 items-center justify-between overflow-hidden py-1">

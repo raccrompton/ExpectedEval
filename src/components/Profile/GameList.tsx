@@ -293,7 +293,9 @@ export const GameList = () => {
               >
                 <div className="flex h-full w-10 items-center justify-center bg-background-2 py-1 group-hover:bg-white/5">
                   <p className="text-sm text-secondary">
-                    {(currentPage - 1) * 100 + index + 1}
+                    {selected === 'play' || selected === 'hb'
+                      ? (currentPage - 1) * 100 + index + 1
+                      : index + 1}
                   </p>
                 </div>
                 <div className="flex flex-1 items-center justify-between overflow-hidden py-1">
