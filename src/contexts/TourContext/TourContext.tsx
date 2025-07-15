@@ -124,18 +124,12 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
   const CustomTooltip = ({
     step,
     tooltipProps,
-    primaryProps,
-    backProps,
-    closeProps,
     isLastStep,
     index,
     size,
   }: {
     step: { content: unknown }
     tooltipProps: React.HTMLAttributes<HTMLDivElement>
-    primaryProps: React.ButtonHTMLAttributes<HTMLButtonElement>
-    backProps: React.ButtonHTMLAttributes<HTMLButtonElement>
-    closeProps: React.ButtonHTMLAttributes<HTMLButtonElement>
     isLastStep: boolean
     index: number
     size: number
@@ -524,10 +518,6 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
       prevStep()
     }
   }, [tourState.currentStep, prevStep, preScrollToTarget])
-
-  const handleClose = useCallback(() => {
-    skipTour()
-  }, [skipTour])
 
   // Update Joyride steps when tour state changes
   useEffect(() => {
