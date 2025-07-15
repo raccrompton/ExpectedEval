@@ -121,7 +121,7 @@ const MobileBlunderMeter: React.FC<Props> = ({
       id="analysis-blunder-meter"
       className={`flex w-full flex-col gap-2 overflow-hidden rounded ${showContainer ? 'bg-background-1/60 p-3' : ''}`}
     >
-      <p className="text-sm text-primary xl:text-base">Blunder Meter</p>
+      <p className="text-base text-primary">Blunder Meter</p>
       <div className="flex w-full flex-col gap-1">
         <div className="flex w-full flex-row overflow-hidden">
           <div className="flex w-full select-none flex-row overflow-hidden rounded">

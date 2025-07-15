@@ -593,7 +593,7 @@
     "name": "Pirc Defense",
     "description": "The Pirc Defense is a hypermodern opening where Black allows White to take the center and plans to attack it later. It often leads to flexible and complex positions.",
     "pgn": "1. e4 d6",
-    "fen": "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+    "fen": "rnbqkbnr/ppp1pppp/3p4/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
     "variations": [
       {
         "id": "pirc-mainline",
