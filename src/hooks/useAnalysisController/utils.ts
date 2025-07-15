@@ -14,6 +14,38 @@ type ColorSanMappingResult = {
   }
 }
 
+// Unified function to calculate color for a single move
+export const calculateMoveColor = (
+  stockfish: StockfishEvaluation | undefined,
+  moveKey: string,
+): string => {
+  if (!stockfish) return '#FFF'
+
+  // Use winrate_loss_vec if available, otherwise fall back to cp_relative_vec
+  const winrateLoss = stockfish?.winrate_loss_vec?.[moveKey]
+  const relativeEval = stockfish?.cp_relative_vec[moveKey]
+
+  if (winrateLoss !== undefined) {
+    if (winrateLoss >= GOOD_THRESHOLD) {
+      return COLORS.good[0]
+    } else if (winrateLoss >= OK_THRESHOLD) {
+      return COLORS.ok[0]
+    } else {
+      return COLORS.blunder[0]
+    }
+  } else if (relativeEval !== undefined) {
+    if (relativeEval >= -50) {
+      return COLORS.good[0]
+    } else if (relativeEval >= -150) {
+      return COLORS.ok[0]
+    } else {
+      return COLORS.blunder[0]
+    }
+  }
+
+  return '#FFF'
+}
+
 export const generateColorSanMapping = (
   stockfish: StockfishEvaluation | undefined,
   fen: string,
@@ -27,29 +59,7 @@ export const generateColorSanMapping = (
 
   moves.forEach((m) => {
     const moveKey = `${m.from}${m.to}${m.promotion || ''}`
-    // Use winrate_loss_vec if available, otherwise fall back to cp_relative_vec
-    const winrateLoss = stockfish?.winrate_loss_vec?.[moveKey]
-    const relativeEval = stockfish?.cp_relative_vec[moveKey]
-
-    let color = '#FFF'
-
-    if (winrateLoss !== undefined) {
-      if (winrateLoss >= GOOD_THRESHOLD) {
-        color = COLORS.good[0]
-      } else if (winrateLoss >= OK_THRESHOLD) {
-        color = COLORS.ok[0]
-      } else {
-        color = COLORS.blunder[0]
-      }
-    } else if (relativeEval !== undefined) {
-      if (relativeEval >= -50) {
-        color = COLORS.good[0]
-      } else if (relativeEval >= -150) {
-        color = COLORS.ok[0]
-      } else {
-        color = COLORS.blunder[0]
-      }
-    }
+    const color = calculateMoveColor(stockfish, moveKey)
 
     mapping[moveKey] = {
       san: m.san,

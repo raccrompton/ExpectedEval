@@ -204,7 +204,15 @@ export const MovesContainer: React.FC<Props> = (props) => {
                       : 'hover:bg-background-2'
                   } ${highlightSet.has(pairIndex * 2 + 1) ? 'bg-human-3/80' : ''}`}
                 >
-                  <span>{pair.whiteMove.san ?? pair.whiteMove.move}</span>
+                  <span
+                    style={{
+                      color: showAnnotations
+                        ? pair.whiteMove.color || 'inherit'
+                        : 'inherit',
+                    }}
+                  >
+                    {pair.whiteMove.san ?? pair.whiteMove.move}
+                  </span>
                   {shouldShowIndicators(pair.whiteMove) && (
                     <MoveClassificationIcon
                       classification={getMoveClassification(pair.whiteMove)}
@@ -224,7 +232,15 @@ export const MovesContainer: React.FC<Props> = (props) => {
                       : 'hover:bg-background-2'
                   } ${highlightSet.has(pairIndex * 2 + 2) ? 'bg-human-3/80' : ''}`}
                 >
-                  <span>{pair.blackMove.san ?? pair.blackMove.move}</span>
+                  <span
+                    style={{
+                      color: showAnnotations
+                        ? pair.blackMove.color || 'inherit'
+                        : 'inherit',
+                    }}
+                  >
+                    {pair.blackMove.san ?? pair.blackMove.move}
+                  </span>
                   {shouldShowIndicators(pair.blackMove) && (
                     <MoveClassificationIcon
                       classification={getMoveClassification(pair.blackMove)}
@@ -267,9 +283,17 @@ export const MovesContainer: React.FC<Props> = (props) => {
                 if (whiteNode) baseController.goToNode(whiteNode)
               }}
               data-index={index * 2 + 1}
-              className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${baseController.currentNode === whiteNode && 'bg-human-4/20'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
+              className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${baseController.currentNode === whiteNode && 'bg-human-4/10'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
             >
-              {whiteNode?.san ?? whiteNode?.move}
+              <span
+                style={{
+                  color: showAnnotations
+                    ? whiteNode?.color || 'inherit'
+                    : 'inherit',
+                }}
+              >
+                {whiteNode?.san ?? whiteNode?.move}
+              </span>
               {shouldShowIndicators(whiteNode) && (
                 <MoveClassificationIcon
                   classification={getMoveClassification(whiteNode)}
@@ -291,9 +315,17 @@ export const MovesContainer: React.FC<Props> = (props) => {
                 if (blackNode) baseController.goToNode(blackNode)
               }}
               data-index={index * 2 + 2}
-              className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${baseController.currentNode === blackNode && 'bg-human-4/20'} ${highlightSet.has(index * 2 + 2) && 'bg-human-3/80'}`}
+              className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${baseController.currentNode === blackNode && 'bg-human-4/10'} ${highlightSet.has(index * 2 + 2) && 'bg-human-3/80'}`}
             >
-              {blackNode?.san ?? blackNode?.move}
+              <span
+                style={{
+                  color: showAnnotations
+                    ? blackNode?.color || 'inherit'
+                    : 'inherit',
+                }}
+              >
+                {blackNode?.san ?? blackNode?.move}
+              </span>
               {shouldShowIndicators(blackNode) && (
                 <MoveClassificationIcon
                   classification={getMoveClassification(blackNode)}
@@ -395,12 +427,13 @@ function VariationTree({
         onClick={() => goToNode(node)}
         className={`cursor-pointer px-0.5 text-xs ${
           currentNode?.fen === node?.fen
-            ? 'rounded bg-human-4/50 text-primary'
+            ? 'rounded bg-human-4/20 text-primary'
             : 'text-secondary'
         }`}
+        style={{ color: showAnnotations ? node.color || 'inherit' : 'inherit' }}
       >
         {node.moveNumber}. {node.turn === 'w' ? '...' : ''}
-        {node.san}
+        <span>{node.san}</span>
         <span className="inline-flex items-center">
           {shouldShowVariationIndicators(node) && (
             <MoveClassificationIcon
@@ -473,7 +506,7 @@ function InlineChain({
   return (
     <>
       <span className="inline whitespace-normal break-words">
-        {chain.map((child, index) => (
+        {chain.map((child) => (
           <Fragment key={child.move}>
             <span
               onClick={() => goToNode(child)}
@@ -482,9 +515,12 @@ function InlineChain({
                   ? 'rounded bg-human-4/50 text-primary'
                   : 'text-secondary'
               }`}
+              style={{
+                color: showAnnotations ? child.color || 'inherit' : 'inherit',
+              }}
             >
               {child.moveNumber}. {child.turn === 'w' ? '...' : ''}
-              {child.san}
+              <span>{child.san}</span>
               <span className="inline-flex items-center">
                 {shouldShowInlineIndicators(child) && (
                   <MoveClassificationIcon
