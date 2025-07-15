@@ -29,7 +29,7 @@ export const ModalContainer: React.FC<Props> = ({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.1 }}
       onClick={dismiss}
-      className={`fixed bottom-0 top-0 z-[100] flex w-screen items-center justify-center bg-backdrop/90 text-primary ${className}`}
+      className={`fixed bottom-0 top-0 z-[10102] flex w-screen items-center justify-center bg-backdrop/90 text-primary ${className}`}
     >
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <motion.div
