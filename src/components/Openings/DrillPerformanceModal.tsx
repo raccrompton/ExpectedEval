@@ -32,6 +32,8 @@ import {
   MoveClassificationIcon,
 } from 'src/components/Common/MoveIcons'
 import { MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/analysis'
+import { generateColorSanMapping } from 'src/hooks/useAnalysisController/utils'
+import { GameNode } from 'src/types/base/tree'
 
 interface Props {
   performanceData: DrillPerformanceData
@@ -59,6 +61,29 @@ const isMoveByWhite = (fen: string): boolean => {
   return !isWhiteToMove(fen) // If white is to move, then black just moved
 }
 
+// Helper function to get color using the actual Stockfish analysis from GameNodes
+const getColorFromMoveAnalysis = (
+  moveAnalysis: MoveAnalysis,
+  gameNodesMap: Map<string, GameNode>,
+): string => {
+  // Get the GameNode for the position before the move
+  const parentNode = gameNodesMap.get(moveAnalysis.fenBeforeMove || '')
+
+  if (!parentNode || !parentNode.analysis.stockfish) {
+    return 'inherit'
+  }
+
+  // Use the actual Stockfish analysis to generate color mapping
+  const colorSanMapping = generateColorSanMapping(
+    parentNode.analysis.stockfish,
+    parentNode.fen,
+  )
+
+  // Get the color for this specific move
+  const moveKey = moveAnalysis.move
+  return colorSanMapping[moveKey]?.color || 'inherit'
+}
+
 // Component for animated game replay
 const AnimatedGameReplay: React.FC<{
   moveAnalyses: MoveAnalysis[]
@@ -67,6 +92,7 @@ const AnimatedGameReplay: React.FC<{
   onMoveIndexChange?: (index: number) => void
   externalMoveIndex?: number
   onMoveClick?: (moveIndex: number) => void
+  gameNodesMap: Map<string, GameNode>
 }> = ({
   moveAnalyses,
   openingFen,
@@ -74,6 +100,7 @@ const AnimatedGameReplay: React.FC<{
   onMoveIndexChange,
   externalMoveIndex,
   onMoveClick,
+  gameNodesMap,
 }) => {
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1)
   const [chess] = useState(() => new Chess(openingFen))
@@ -346,7 +373,15 @@ const AnimatedGameReplay: React.FC<{
                     }
                   }}
                 >
-                  <span>{pair.white?.san || ''}</span>
+                  <span
+                    style={{
+                      color: pair.white
+                        ? getColorFromMoveAnalysis(pair.white, gameNodesMap)
+                        : 'inherit',
+                    }}
+                  >
+                    {pair.white?.san || ''}
+                  </span>
                   <div className="flex items-center">
                     {pair.white &&
                       (() => {
@@ -386,7 +421,15 @@ const AnimatedGameReplay: React.FC<{
                     }
                   }}
                 >
-                  <span>{pair.black?.san || ''}</span>
+                  <span
+                    style={{
+                      color: pair.black
+                        ? getColorFromMoveAnalysis(pair.black, gameNodesMap)
+                        : 'inherit',
+                    }}
+                  >
+                    {pair.black?.san || ''}
+                  </span>
                   <div className="flex items-center">
                     {pair.black &&
                       (() => {
@@ -829,6 +872,7 @@ const DesktopLayout: React.FC<{
   onContinueAnalyzing: () => void
   onNextDrill: () => void
   isLastDrill: boolean
+  gameNodesMap: Map<string, GameNode>
 }> = ({
   drill,
   filteredMoveAnalyses,
@@ -843,6 +887,7 @@ const DesktopLayout: React.FC<{
   onContinueAnalyzing,
   onNextDrill,
   isLastDrill,
+  gameNodesMap,
 }) => (
   <div className="relative flex h-[90vh] max-h-[800px] w-[95vw] max-w-[1200px] flex-col overflow-hidden rounded-lg bg-background-1 shadow-2xl">
     {/* Header */}
@@ -886,6 +931,7 @@ const DesktopLayout: React.FC<{
           onMoveIndexChange={setCurrentMoveIndex}
           externalMoveIndex={currentMoveIndex}
           onMoveClick={handleMoveClick}
+          gameNodesMap={gameNodesMap}
         />
       </div>
 
@@ -1039,7 +1085,18 @@ const DesktopLayout: React.FC<{
                             {moment.isWhiteMove
                               ? `${moment.moveNumber}.`
                               : `...${moment.moveNumber}.`}{' '}
-                            {moment.moveAnalysis?.san}
+                            <span
+                              style={{
+                                color: moment.moveAnalysis
+                                  ? getColorFromMoveAnalysis(
+                                      moment.moveAnalysis,
+                                      gameNodesMap,
+                                    )
+                                  : 'inherit',
+                              }}
+                            >
+                              {moment.moveAnalysis?.san}
+                            </span>
                           </span>
                           <MoveClassificationIcon
                             classification={classificationObj}
@@ -1118,6 +1175,7 @@ const MobileLayout: React.FC<{
   isLastDrill: boolean
   activeTab: 'replay' | 'analysis' | 'insights'
   setActiveTab: (tab: 'replay' | 'analysis' | 'insights') => void
+  gameNodesMap: Map<string, GameNode>
 }> = ({
   drill,
   filteredMoveAnalyses,
@@ -1134,6 +1192,7 @@ const MobileLayout: React.FC<{
   isLastDrill,
   activeTab,
   setActiveTab,
+  gameNodesMap,
 }) => (
   <div className="relative flex h-[95vh] w-[95vw] flex-col overflow-hidden rounded-lg bg-background-1 shadow-2xl">
     {/* Header */}
@@ -1205,6 +1264,7 @@ const MobileLayout: React.FC<{
           onMoveIndexChange={setCurrentMoveIndex}
           externalMoveIndex={currentMoveIndex}
           onMoveClick={handleMoveClick}
+          gameNodesMap={gameNodesMap}
         />
       )}
 
@@ -1263,6 +1323,20 @@ export const DrillPerformanceModal: React.FC<Props> = ({
   >('replay')
 
   const { drill, evaluationChart, moveAnalyses } = performanceData
+
+  // Create a map of GameNodes for efficient lookup by FEN
+  const gameNodesMap = useMemo(() => {
+    const nodesMap = new Map<string, GameNode>()
+
+    // Traverse the game tree from finalNode back to the beginning
+    let currentNode: GameNode | null = drill.finalNode
+    while (currentNode) {
+      nodesMap.set(currentNode.fen, currentNode)
+      currentNode = currentNode.parent
+    }
+
+    return nodesMap
+  }, [drill.finalNode])
 
   // Filter out pre-loaded opening moves - only show moves after the opening sequence
   const filteredMoveAnalyses = useMemo(() => {
@@ -1346,6 +1420,7 @@ export const DrillPerformanceModal: React.FC<Props> = ({
           isLastDrill={isLastDrill}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          gameNodesMap={gameNodesMap}
         />
       ) : (
         <DesktopLayout
@@ -1362,6 +1437,7 @@ export const DrillPerformanceModal: React.FC<Props> = ({
           onContinueAnalyzing={onContinueAnalyzing}
           onNextDrill={onNextDrill}
           isLastDrill={isLastDrill}
+          gameNodesMap={gameNodesMap}
         />
       )}
     </ModalContainer>

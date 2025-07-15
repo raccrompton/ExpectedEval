@@ -92,7 +92,7 @@ const Leaderboard: React.FC = () => {
             content="Top users across all Maia Chess leaderboards"
           />
         </Head>
-        <div className="flex w-full flex-row items-end justify-between">
+        <div className="flex w-full flex-col items-start justify-between md:flex-row md:items-end">
           <h1 className="text-3xl font-bold">Rating Leaderboards</h1>
           <p className="text-sm text-secondary">
             Last updated: {lastUpdated ? getTimeAgo(lastUpdated) : '...'}
