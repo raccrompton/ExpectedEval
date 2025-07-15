@@ -717,8 +717,39 @@ const DesktopLayout: React.FC<{
           evaluationChart={filteredEvaluationChart}
           moveAnalyses={performanceData.moveAnalyses}
           currentMoveIndex={0}
-          onHoverMove={() => {
-            // Simplified hover handling
+          onHoverMove={(moveIndex) => {
+            // Navigate to the corresponding move position when hovering over the chart
+            const moveAnalysis = performanceData.moveAnalyses[moveIndex]
+            if (moveAnalysis) {
+              // Find the node that represents the position after this move
+              const targetFen = moveAnalysis.fen
+
+              // Walk through the game tree to find the matching node
+              const findNodeByFen = (node: GameNode): GameNode | null => {
+                if (node.fen === targetFen) {
+                  return node
+                }
+
+                // Check main child
+                if (node.mainChild) {
+                  const found = findNodeByFen(node.mainChild)
+                  if (found) return found
+                }
+
+                // Check all children
+                for (const child of node.children) {
+                  const found = findNodeByFen(child)
+                  if (found) return found
+                }
+
+                return null
+              }
+
+              const targetNode = findNodeByFen(gameTree.getRoot())
+              if (targetNode) {
+                treeController.goToNode(targetNode)
+              }
+            }
           }}
           playerColor={drill.selection.playerColor}
           drill={drill}
@@ -979,8 +1010,39 @@ const MobileLayout: React.FC<{
             evaluationChart={filteredEvaluationChart}
             moveAnalyses={performanceData.moveAnalyses}
             currentMoveIndex={0}
-            onHoverMove={() => {
-              // Simplified hover handling
+            onHoverMove={(moveIndex) => {
+              // Navigate to the corresponding move position when hovering over the chart
+              const moveAnalysis = performanceData.moveAnalyses[moveIndex]
+              if (moveAnalysis) {
+                // Find the node that represents the position after this move
+                const targetFen = moveAnalysis.fen
+
+                // Walk through the game tree to find the matching node
+                const findNodeByFen = (node: GameNode): GameNode | null => {
+                  if (node.fen === targetFen) {
+                    return node
+                  }
+
+                  // Check main child
+                  if (node.mainChild) {
+                    const found = findNodeByFen(node.mainChild)
+                    if (found) return found
+                  }
+
+                  // Check all children
+                  for (const child of node.children) {
+                    const found = findNodeByFen(child)
+                    if (found) return found
+                  }
+
+                  return null
+                }
+
+                const targetNode = findNodeByFen(gameTree.getRoot())
+                if (targetNode) {
+                  treeController.goToNode(targetNode)
+                }
+              }
             }}
             playerColor={drill.selection.playerColor}
             drill={drill}
