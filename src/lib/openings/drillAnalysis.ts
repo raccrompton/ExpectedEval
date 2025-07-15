@@ -12,9 +12,7 @@ import {
 } from 'src/types/openings'
 import { cpToWinrate } from 'src/lib/stockfish'
 import { analyzePositionWithStockfish, AnalysisEngines } from 'src/lib/analysis'
-
-// Minimum depth for analysis to be considered sufficient for the modal
-const MIN_STOCKFISH_ANALYSIS_DEPTH = 12
+import { MIN_STOCKFISH_DEPTH } from 'src/constants/analysis'
 
 // Maia rating levels for comparison
 const MAIA_RATINGS = [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900]
@@ -390,7 +388,7 @@ export async function analyzeDrillPerformance(
       const nodeDepth = currentGameNode.analysis?.stockfish?.depth ?? 0
 
       const hasSufficientAnalysis =
-        Math.max(cachedDepth, nodeDepth) >= MIN_STOCKFISH_ANALYSIS_DEPTH
+        Math.max(cachedDepth, nodeDepth) >= MIN_STOCKFISH_DEPTH
 
       if (!hasSufficientAnalysis) {
         positionsToAnalyze.push({ node: currentGameNode, index: i })
@@ -436,12 +434,12 @@ export async function analyzeDrillPerformance(
       }
 
       // If analysis is missing or not deep enough, (re-)analyze to the required depth.
-      if (!evaluation || evaluation.depth < MIN_STOCKFISH_ANALYSIS_DEPTH) {
+      if (!evaluation || evaluation.depth < MIN_STOCKFISH_DEPTH) {
         const deeperEvaluation = await analyzePositionWithStockfish(
           currentGameNode.fen,
           engines,
           {
-            stockfishDepth: MIN_STOCKFISH_ANALYSIS_DEPTH,
+            stockfishDepth: MIN_STOCKFISH_DEPTH,
             stockfishTimeout: 10000,
           }, // Increased timeout for safety
         )

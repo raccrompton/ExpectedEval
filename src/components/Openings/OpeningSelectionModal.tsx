@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useContext } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import Chessground from '@react-chess/chessground'
+import { useWindowSize } from 'src/hooks/useWindowSize'
 import {
   Opening,
   OpeningVariation,
@@ -23,13 +24,134 @@ import {
 } from 'src/lib/analytics'
 import { MAIA_MODELS_WITH_NAMES } from 'src/constants/common'
 
-type MobileTab = 'browse' | 'preview' | 'selected'
+type MobileTab = 'browse' | 'selected'
 
 interface Props {
   openings: Opening[]
   initialSelections?: OpeningSelection[]
   onComplete: (configuration: DrillConfiguration) => void
   onClose: () => void
+}
+
+interface MobileOpeningPopupProps {
+  opening: Opening
+  variation: OpeningVariation | null
+  isOpen: boolean
+  onClose: () => void
+  onAdd: (color: 'white' | 'black') => void
+  onRemove: () => void
+  isSelected: boolean
+}
+
+const MobileOpeningPopup: React.FC<MobileOpeningPopupProps> = ({
+  opening,
+  variation,
+  isOpen,
+  onClose,
+  onAdd,
+  onRemove,
+  isSelected,
+}) => {
+  const [selectedColor, setSelectedColor] = useState<'white' | 'black'>('white')
+  const previewFen = useMemo(() => {
+    return variation ? variation.fen : opening.fen
+  }, [opening, variation])
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="mx-4 w-full max-w-sm rounded-lg bg-background-1 p-4">
+        <div className="mb-4">
+          <h3 className="text-lg font-bold">{opening.name}</h3>
+          {variation && (
+            <p className="text-sm text-secondary">{variation.name}</p>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <div className="mx-auto aspect-square w-full max-w-[200px]">
+            <Chessground
+              contained
+              config={{
+                viewOnly: true,
+                fen: previewFen,
+                coordinates: true,
+                animation: { enabled: true, duration: 200 },
+                orientation: selectedColor,
+              }}
+            />
+          </div>
+        </div>
+
+        {!isSelected && (
+          <div className="mb-4">
+            <p className="mb-2 text-sm font-medium">Play as:</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSelectedColor('white')}
+                className={`flex items-center gap-2 rounded px-3 py-2 text-sm transition-colors ${
+                  selectedColor === 'white'
+                    ? 'bg-human-4 text-white'
+                    : 'bg-background-2 hover:bg-background-3'
+                }`}
+              >
+                <div className="relative h-4 w-4">
+                  <Image
+                    src="/assets/pieces/white king.svg"
+                    fill={true}
+                    alt="white king"
+                  />
+                </div>
+                White
+              </button>
+              <button
+                onClick={() => setSelectedColor('black')}
+                className={`flex items-center gap-2 rounded px-3 py-2 text-sm transition-colors ${
+                  selectedColor === 'black'
+                    ? 'bg-human-4 text-white'
+                    : 'bg-background-2 hover:bg-background-3'
+                }`}
+              >
+                <div className="relative h-4 w-4">
+                  <Image
+                    src="/assets/pieces/black king.svg"
+                    fill={true}
+                    alt="black king"
+                  />
+                </div>
+                Black
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded bg-background-2 py-2 text-sm font-medium transition-colors hover:bg-background-3"
+          >
+            Cancel
+          </button>
+          {isSelected ? (
+            <button
+              onClick={onRemove}
+              className="flex-1 rounded bg-human-4 py-2 text-sm font-medium transition-colors"
+            >
+              Remove
+            </button>
+          ) : (
+            <button
+              onClick={() => onAdd(selectedColor)}
+              className="flex-1 rounded bg-human-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80"
+            >
+              Add Drill
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 const TabNavigation: React.FC<{
@@ -53,17 +175,6 @@ const TabNavigation: React.FC<{
         Browse
       </button>
       <button
-        {...(isMobile ? { id: 'opening-drill-preview' } : {})}
-        onClick={() => setActiveTab('preview')}
-        className={`flex-1 py-3 text-sm font-medium transition-colors ${
-          activeTab === 'preview'
-            ? 'border-b-2 border-human-4 text-primary'
-            : 'text-secondary hover:text-primary'
-        }`}
-      >
-        Preview
-      </button>
-      <button
         {...(isMobile ? { id: 'opening-drill-selected' } : {})}
         onClick={() => setActiveTab('selected')}
         className={`flex-1 py-3 text-sm font-medium transition-colors ${
@@ -78,7 +189,7 @@ const TabNavigation: React.FC<{
   )
 }
 
-// Left Panel - Opening Selection - moved outside main component
+// Left Panel - Opening Selection
 const BrowsePanel: React.FC<{
   activeTab: MobileTab
   filteredOpenings: Opening[]
@@ -97,6 +208,8 @@ const BrowsePanel: React.FC<{
   ) => boolean
   searchTerm: string
   setSearchTerm: (term: string) => void
+  selections: OpeningSelection[]
+  onOpeningClick: (opening: Opening, variation: OpeningVariation | null) => void
 }> = ({
   activeTab,
   filteredOpenings,
@@ -109,249 +222,275 @@ const BrowsePanel: React.FC<{
   isDuplicateSelection,
   searchTerm,
   setSearchTerm,
-}) => (
-  <div
-    id="opening-drill-browse"
-    className={`flex w-full flex-col overflow-y-scroll ${activeTab !== 'browse' ? 'hidden md:flex' : 'flex'} md:border-r md:border-white/10`}
-  >
-    <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
-      <h2 className="text-xl font-bold">Select Openings</h2>
-      <p className="text-xs text-secondary">
-        Click the + button to quickly add an opening with current settings
-      </p>
-    </div>
+  selections,
+  onOpeningClick,
+}) => {
+  const { isMobile } = useContext(WindowSizeContext)
 
-    {/* Mobile header */}
-    <div className="flex h-16 flex-col justify-center gap-1 border-b border-white/10 p-4 md:hidden">
-      <h2 className="text-lg font-bold">Select Openings</h2>
-      <p className="text-xs text-secondary">Choose openings to practice</p>
-    </div>
-
-    {/* Search Bar */}
-    <div className="border-b border-white/10 p-4">
-      <div className="relative">
-        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-secondary">
-          search
-        </span>
-        <input
-          type="text"
-          placeholder="Search openings..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full rounded bg-background-2 py-2 pl-10 pr-4 text-sm text-primary placeholder-secondary focus:outline-none focus:ring-1 focus:ring-human-4"
-        />
-      </div>
-    </div>
-
+  return (
     <div
-      className="red-scrollbar flex flex-1 flex-col overflow-y-auto"
-      style={{ userSelect: 'none' }}
+      id="opening-drill-browse"
+      className={`flex w-full flex-col overflow-y-scroll ${activeTab !== 'browse' ? 'hidden md:flex' : 'flex'} md:border-r md:border-white/10`}
     >
-      {filteredOpenings.map((opening) => (
-        <div key={opening.id} className="flex flex-col">
-          <div
-            className={`group mb-1 transition-colors ${
-              previewOpening.id === opening.id && !previewVariation
-                ? 'bg-human-2/20'
-                : 'hover:bg-human-2/10'
-            }`}
-          >
-            <div className="flex items-center">
+      <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
+        <h2 className="text-xl font-bold">Select Openings</h2>
+        <p className="text-xs text-secondary">
+          Click the + button to quickly add an opening with current settings
+        </p>
+      </div>
+
+      {/* Mobile header */}
+      <div className="flex h-16 flex-col justify-center gap-1 border-b border-white/10 p-4 md:hidden">
+        <h2 className="text-lg font-bold">Select Openings</h2>
+        <p className="text-xs text-secondary">Choose openings to practice</p>
+      </div>
+
+      {/* Search Bar */}
+      <div className="border-b border-white/10 p-4">
+        <div className="relative">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-secondary">
+            search
+          </span>
+          <input
+            type="text"
+            placeholder="Search openings..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded bg-background-2 py-2 pl-10 pr-4 text-sm text-primary placeholder-secondary focus:outline-none focus:ring-1 focus:ring-human-4"
+          />
+        </div>
+      </div>
+
+      <div
+        className="red-scrollbar flex flex-1 flex-col overflow-y-auto"
+        style={{ userSelect: 'none' }}
+      >
+        {filteredOpenings.map((opening) => {
+          const openingIsSelected = selections.some(
+            (selection) =>
+              selection.opening.id === opening.id &&
+              selection.variation === null,
+          )
+          const openingIsBeingPreviewed =
+            previewOpening.id === opening.id && !previewVariation
+          return (
+            <div key={opening.id} className="flex flex-col">
               <div
-                role="button"
-                tabIndex={0}
-                className="flex-1 cursor-pointer p-4"
-                onClick={() => {
-                  setPreviewOpening(opening)
-                  setPreviewVariation(null)
-                  trackOpeningPreviewSelected(opening.name, opening.id, false)
-                  if (window.innerWidth < 768) {
-                    setActiveTab('preview')
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    setPreviewOpening(opening)
-                    setPreviewVariation(null)
-                    trackOpeningPreviewSelected(opening.name, opening.id, false)
-                    if (window.innerWidth < 768) {
-                      setActiveTab('preview')
-                    }
-                  }
-                }}
+                className={`group mb-1 transition-colors ${
+                  isMobile
+                    ? openingIsSelected
+                      ? 'bg-human-2/20'
+                      : ''
+                    : openingIsBeingPreviewed
+                      ? 'bg-human-2/20'
+                      : 'hover:bg-human-2/10'
+                }`}
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">{opening.name}</h3>
-                    <p className="text-sm text-secondary">
-                      {opening.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  addQuickSelection(opening, null)
-                }}
-                disabled={isDuplicateSelection(opening, null)}
-                className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
-                title={
-                  isDuplicateSelection(opening, null)
-                    ? 'Already added with current settings'
-                    : 'Add opening with current settings'
-                }
-              >
-                <span className="material-symbols-outlined text-base">add</span>
-              </button>
-            </div>
-          </div>
-          {opening.variations.map((variation) => (
-            <div
-              key={variation.id}
-              className={`group transition-colors ${
-                previewOpening.id === opening.id &&
-                previewVariation?.id === variation.id
-                  ? 'bg-human-2/20'
-                  : 'hover:bg-human-2/10'
-              }`}
-            >
-              <div className="flex items-center">
-                <div
-                  role="button"
-                  tabIndex={0}
-                  className="flex-1 cursor-pointer px-6 py-1"
-                  onClick={() => {
-                    setPreviewOpening(opening)
-                    setPreviewVariation(variation)
-                    trackOpeningPreviewSelected(
-                      opening.name,
-                      opening.id,
-                      true,
-                      variation.name,
-                    )
-                    if (window.innerWidth < 768) {
-                      setActiveTab('preview')
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                <div className="flex items-center">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="flex-1 cursor-pointer p-4"
+                    onClick={() => {
                       setPreviewOpening(opening)
-                      setPreviewVariation(variation)
+                      setPreviewVariation(null)
                       trackOpeningPreviewSelected(
                         opening.name,
                         opening.id,
-                        true,
-                        variation.name,
+                        false,
                       )
-                      if (window.innerWidth < 768) {
-                        setActiveTab('preview')
+                      if (isMobile) {
+                        onOpeningClick(opening, null)
                       }
-                    }
-                  }}
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-secondary">{variation.name}</p>
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setPreviewOpening(opening)
+                        setPreviewVariation(null)
+                        trackOpeningPreviewSelected(
+                          opening.name,
+                          opening.id,
+                          false,
+                        )
+                        if (isMobile) {
+                          onOpeningClick(opening, null)
+                        }
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium">{opening.name}</h3>
+                        <p className="text-sm text-secondary">
+                          {opening.description}
+                        </p>
+                      </div>
+                    </div>
                   </div>
+                  {openingIsSelected ? (
+                    <span className="material-symbols-outlined mr-3 rounded p-1 text-base text-human-3">
+                      check
+                    </span>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        addQuickSelection(opening, null)
+                      }}
+                      className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
+                      title="Add opening with current settings"
+                    >
+                      <span className="material-symbols-outlined text-base">
+                        add
+                      </span>
+                    </button>
+                  )}
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    addQuickSelection(opening, variation)
-                  }}
-                  disabled={isDuplicateSelection(opening, variation)}
-                  className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
-                  title={
-                    isDuplicateSelection(opening, variation)
-                      ? 'Already added with current settings'
-                      : 'Add variation with current settings'
-                  }
-                >
-                  <span className="material-symbols-outlined text-base">
-                    add
-                  </span>
-                </button>
               </div>
+              {opening.variations.map((variation) => {
+                const variationIsSelected = selections.some(
+                  (selection) =>
+                    selection.opening.id === opening.id &&
+                    selection.variation?.id === variation.id,
+                )
+                const variationIsBeingPreviewed =
+                  previewOpening.id === opening.id &&
+                  previewVariation?.id === variation.id
+
+                return (
+                  <div
+                    key={variation.id}
+                    className={`group transition-colors ${
+                      isMobile
+                        ? variationIsSelected
+                          ? 'bg-human-2/20'
+                          : ''
+                        : variationIsBeingPreviewed
+                          ? 'bg-human-2/20'
+                          : 'hover:bg-human-2/10'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        className="flex-1 cursor-pointer px-6 py-1"
+                        onClick={() => {
+                          setPreviewOpening(opening)
+                          setPreviewVariation(variation)
+                          trackOpeningPreviewSelected(
+                            opening.name,
+                            opening.id,
+                            true,
+                            variation.name,
+                          )
+                          if (isMobile) {
+                            onOpeningClick(opening, variation)
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            setPreviewOpening(opening)
+                            setPreviewVariation(variation)
+                            trackOpeningPreviewSelected(
+                              opening.name,
+                              opening.id,
+                              true,
+                              variation.name,
+                            )
+                            if (isMobile) {
+                              onOpeningClick(opening, variation)
+                            }
+                          }
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-secondary">
+                            {variation.name}
+                          </p>
+                        </div>
+                      </div>
+                      {variationIsSelected ? (
+                        <span className="material-symbols-outlined mr-3 rounded p-1 text-base text-human-3">
+                          check
+                        </span>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            addQuickSelection(opening, variation)
+                          }}
+                          className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
+                          title="Add variation with current settings"
+                        >
+                          <span className="material-symbols-outlined text-base">
+                            add
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          ))}
-        </div>
-      ))}
+          )
+        })}
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 const PreviewPanel: React.FC<{
-  activeTab: MobileTab
+  selections: OpeningSelection[]
   previewOpening: Opening
   previewVariation: OpeningVariation | null
   previewFen: string
   selectedColor: 'white' | 'black'
   setSelectedColor: (color: 'white' | 'black') => void
-  selectedMaiaVersion: (typeof MAIA_MODELS_WITH_NAMES)[0]
-  setSelectedMaiaVersion: (version: (typeof MAIA_MODELS_WITH_NAMES)[0]) => void
-  targetMoveNumber: number
-  setTargetMoveNumber: (number: number) => void
   addSelection: () => void
-  isDuplicateSelection: (
-    opening: Opening,
-    variation: OpeningVariation | null,
-  ) => boolean
 }> = ({
-  activeTab,
+  selections,
   previewOpening,
   previewVariation,
   previewFen,
   selectedColor,
   setSelectedColor,
-  selectedMaiaVersion,
-  setSelectedMaiaVersion,
-  targetMoveNumber,
-  setTargetMoveNumber,
   addSelection,
-  isDuplicateSelection,
-}) => (
-  <div
-    id="opening-drill-preview"
-    className={`flex w-full flex-col overflow-hidden ${activeTab !== 'preview' ? 'hidden md:flex' : 'flex'}`}
-  >
-    <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
-      <h2 className="text-xl font-bold">{previewOpening.name}</h2>
-      <p className="text-xs text-secondary">
-        {previewVariation && `${previewVariation.name} →`} Configure your drill
-        settings
-      </p>
-    </div>
+}) => {
+  const isDuplicateSelection = (
+    opening: Opening,
+    variation: OpeningVariation | null,
+  ) => {
+    return selections.some(
+      (selection) =>
+        selection.opening.id === opening.id &&
+        selection.variation?.id === variation?.id,
+    )
+  }
 
-    {/* Mobile header */}
-    <div className="flex h-16 flex-col justify-center gap-1 border-b border-white/10 p-4 md:hidden">
-      <h2 className="text-lg font-bold">{previewOpening.name}</h2>
-      <p className="text-xs text-secondary">
-        {previewVariation && `${previewVariation.name} →`} Configure settings
-      </p>
-    </div>
-
-    {/* Compact content area - no scrolling */}
-    <div className="flex flex-1 flex-col overflow-hidden">
-      {/* Compact chessboard section */}
-      <div className="flex items-center justify-center p-2 md:p-3">
-        <div className="aspect-square w-full max-w-[180px] md:max-w-[200px]">
-          <Chessground
-            contained
-            config={{
-              viewOnly: true,
-              fen: previewFen,
-              coordinates: true,
-              animation: { enabled: true, duration: 200 },
-            }}
-          />
-        </div>
+  return (
+    <div
+      id="opening-drill-preview"
+      className="hidden w-full flex-col overflow-hidden md:flex"
+    >
+      <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
+        <h2 className="text-xl font-bold">Preview Opening</h2>
+        <p className="text-xs text-secondary">Configure your drill settings</p>
       </div>
 
-      {/* Compact configuration options */}
-      <div className="flex flex-col gap-2 p-2 md:gap-3 md:p-3">
-        {/* Color Selection */}
-        <div>
-          <p className="mb-1 text-xs font-medium md:text-sm">Play as:</p>
+      <div className="flex flex-1 flex-col gap-4 overflow-hidden p-2 md:p-3">
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium md:text-base">
+            {previewOpening.name}
+            <span className="text-xs font-normal text-secondary md:text-sm">
+              {previewVariation && ` → ${previewVariation.name}`}
+            </span>
+          </p>
+          <p className="text-xs text-secondary">{previewOpening.description}</p>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <p className="text-xs font-medium md:text-sm">Play as:</p>
           <div className="flex gap-2">
             <button
               onClick={() => setSelectedColor('white')}
@@ -390,66 +529,42 @@ const PreviewPanel: React.FC<{
           </div>
         </div>
 
-        {/* Maia Version Selection */}
-        <div>
-          <p className="mb-1 text-xs font-medium md:text-sm">Opponent:</p>
-          <select
-            value={selectedMaiaVersion.id}
-            onChange={(e) => {
-              const version = MAIA_MODELS_WITH_NAMES.find(
-                (v) => v.id === e.target.value,
-              )
-              if (version) {
-                setSelectedMaiaVersion(version)
-              }
-            }}
-            className="w-full rounded bg-background-2 p-2 text-xs focus:outline-none md:text-sm"
-          >
-            {MAIA_MODELS_WITH_NAMES.map((version) => (
-              <option key={version.id} value={version.id}>
-                {version.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Move Count Configuration */}
-        <div>
-          <p className="mb-1 text-xs font-medium md:text-sm">
-            Target Move Count: {targetMoveNumber}
-          </p>
-          <input
-            type="range"
-            min="5"
-            max="30"
-            value={targetMoveNumber}
-            onChange={(e) =>
-              setTargetMoveNumber(parseInt(e.target.value) || 10)
-            }
-            className="w-full accent-human-4"
-          />
-          <div className="mt-1 flex justify-between text-xs text-secondary">
-            <span>5</span>
-            <span>30</span>
+        <div className="flex w-full flex-col items-start justify-center gap-1">
+          <p className="text-xs font-medium md:text-sm">Preview:</p>
+          <div className="aspect-square w-full max-w-[250px] self-center md:max-w-[300px]">
+            <Chessground
+              contained
+              config={{
+                viewOnly: true,
+                fen: previewFen,
+                coordinates: true,
+                animation: { enabled: true, duration: 200 },
+                orientation: selectedColor,
+              }}
+            />
           </div>
         </div>
       </div>
-    </div>
 
-    {/* Fixed button section - always visible */}
-    <div className="flex-shrink-0 border-t border-white/10 bg-background-1 p-3 md:p-4">
-      <button
-        onClick={addSelection}
-        disabled={isDuplicateSelection(previewOpening, previewVariation)}
-        className="w-full rounded bg-human-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {isDuplicateSelection(previewOpening, previewVariation)
-          ? 'Already Added with Same Settings'
-          : 'Add to Drill'}
-      </button>
+      <div className="flex-shrink-0 border-t border-white/10 bg-background-1 p-3 md:p-4">
+        <button
+          onClick={addSelection}
+          disabled={isDuplicateSelection(previewOpening, previewVariation)}
+          className="w-full rounded bg-human-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80 disabled:cursor-not-allowed disabled:opacity-50"
+          title={
+            isDuplicateSelection(previewOpening, previewVariation)
+              ? 'Already added with same settings'
+              : 'Add to Drill'
+          }
+        >
+          {isDuplicateSelection(previewOpening, previewVariation)
+            ? 'Drill Already Added'
+            : 'Add to Drill'}
+        </button>
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 const SelectedPanel: React.FC<{
   activeTab: MobileTab
@@ -458,6 +573,10 @@ const SelectedPanel: React.FC<{
   drillCount: number
   setDrillCount: (count: number) => void
   handleStartDrilling: () => void
+  selectedMaiaVersion: (typeof MAIA_MODELS_WITH_NAMES)[0]
+  setSelectedMaiaVersion: (version: (typeof MAIA_MODELS_WITH_NAMES)[0]) => void
+  targetMoveNumber: number
+  setTargetMoveNumber: (number: number) => void
 }> = ({
   activeTab,
   selections,
@@ -465,6 +584,10 @@ const SelectedPanel: React.FC<{
   drillCount,
   setDrillCount,
   handleStartDrilling,
+  selectedMaiaVersion,
+  setSelectedMaiaVersion,
+  targetMoveNumber,
+  setTargetMoveNumber,
 }) => (
   <div
     id="opening-drill-selected"
@@ -554,6 +677,48 @@ const SelectedPanel: React.FC<{
 
     {/* Fixed button section - always visible */}
     <div className="flex-shrink-0 border-t border-white/10 bg-background-1 p-3 md:p-4">
+      {/* Opponent Selection */}
+      <div className="mb-3 md:mb-4">
+        <p className="mb-1 text-xs font-medium md:mb-2 md:text-sm">Opponent:</p>
+        <select
+          value={selectedMaiaVersion.id}
+          onChange={(e) => {
+            const version = MAIA_MODELS_WITH_NAMES.find(
+              (v) => v.id === e.target.value,
+            )
+            if (version) {
+              setSelectedMaiaVersion(version)
+            }
+          }}
+          className="w-full rounded bg-background-2 p-2 text-xs focus:outline-none md:text-sm"
+        >
+          {MAIA_MODELS_WITH_NAMES.map((version) => (
+            <option key={version.id} value={version.id}>
+              {version.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Target Move Count Configuration */}
+      <div className="mb-3 md:mb-4">
+        <p className="mb-1 text-xs font-medium md:mb-2 md:text-sm">
+          Target Move Count: {targetMoveNumber}
+        </p>
+        <input
+          type="range"
+          min="5"
+          max="30"
+          value={targetMoveNumber}
+          onChange={(e) => setTargetMoveNumber(parseInt(e.target.value) || 10)}
+          className="w-full accent-human-4"
+        />
+        <div className="mt-1 flex justify-between text-xs text-secondary">
+          <span>5</span>
+          <span>30</span>
+        </div>
+      </div>
+
       {/* Drill Count Configuration */}
       <div className="mb-3 md:mb-4">
         <p className="mb-1 text-xs font-medium md:mb-2 md:text-sm">
@@ -598,6 +763,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   onClose,
 }) => {
   const { startTour } = useTour()
+  const { isMobile } = useContext(WindowSizeContext)
   const [selections, setSelections] =
     useState<OpeningSelection[]>(initialSelections)
   const [previewOpening, setPreviewOpening] = useState<Opening>(openings[0])
@@ -613,6 +779,12 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   const [activeTab, setActiveTab] = useState<MobileTab>('browse')
   const [initialTourCheck, setInitialTourCheck] = useState(false)
   const [hasTrackedModalOpen, setHasTrackedModalOpen] = useState(false)
+  const [mobilePopupOpening, setMobilePopupOpening] = useState<Opening | null>(
+    null,
+  )
+  const [mobilePopupVariation, setMobilePopupVariation] =
+    useState<OpeningVariation | null>(null)
+  const [mobilePopupOpen, setMobilePopupOpen] = useState(false)
 
   // Check if user has completed the tour on initial load
   useEffect(() => {
@@ -705,7 +877,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
 
     setSelections([...selections, newSelection])
     // Switch to selected tab on mobile after adding
-    if (window.innerWidth < 768) {
+    if (isMobile) {
       setActiveTab('selected')
     }
   }
@@ -719,6 +891,60 @@ export const OpeningSelectionModal: React.FC<Props> = ({
       )
     }
     setSelections(selections.filter((s) => s.id !== selectionId))
+  }
+
+  const handleMobileOpeningClick = (
+    opening: Opening,
+    variation: OpeningVariation | null,
+  ) => {
+    setMobilePopupOpening(opening)
+    setMobilePopupVariation(variation)
+    setMobilePopupOpen(true)
+  }
+
+  const handleMobilePopupAdd = (color: 'white' | 'black') => {
+    if (!mobilePopupOpening) return
+
+    const newSelection: OpeningSelection = {
+      id: `${mobilePopupOpening.id}-${mobilePopupVariation?.id || 'main'}-${color}-${selectedMaiaVersion.id}-${targetMoveNumber}`,
+      opening: mobilePopupOpening,
+      variation: mobilePopupVariation,
+      playerColor: color,
+      maiaVersion: selectedMaiaVersion.id,
+      targetMoveNumber,
+    }
+
+    setSelections([...selections, newSelection])
+    setMobilePopupOpen(false)
+    setMobilePopupOpening(null)
+    setMobilePopupVariation(null)
+  }
+
+  const handleMobilePopupRemove = () => {
+    if (!mobilePopupOpening) return
+
+    const selectionToRemove = selections.find(
+      (s) =>
+        s.opening.id === mobilePopupOpening.id &&
+        s.variation?.id === mobilePopupVariation?.id,
+    )
+
+    if (selectionToRemove) {
+      removeSelection(selectionToRemove.id)
+    }
+
+    setMobilePopupOpen(false)
+    setMobilePopupOpening(null)
+    setMobilePopupVariation(null)
+  }
+
+  const isOpeningSelected = (
+    opening: Opening,
+    variation: OpeningVariation | null,
+  ) => {
+    return selections.some(
+      (s) => s.opening.id === opening.id && s.variation?.id === variation?.id,
+    )
   }
 
   const addQuickSelection = (
@@ -745,23 +971,20 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     }
 
     setSelections([...selections, newSelection])
-    // Also update the preview to show what was just added
     setPreviewOpening(opening)
     setPreviewVariation(variation)
-    // Switch to selected tab on mobile after adding
-    if (window.innerWidth < 768) {
+    if (isMobile) {
       setActiveTab('selected')
     }
   }
 
-  // Helper function to generate drill sequence
+  // Helper function to generate drill sequenc
   const generateDrillSequence = (
     selections: OpeningSelection[],
     count: number,
   ): OpeningSelection[] => {
     if (selections.length === 0) return []
 
-    // Create unique drill objects with timestamps to ensure unique IDs
     const createUniqueDrill = (
       selection: OpeningSelection,
       index: number,
@@ -770,12 +993,11 @@ export const OpeningSelectionModal: React.FC<Props> = ({
       const uniqueId = `${selection.id}-${timestamp}-${index}`
       return {
         ...selection,
-        id: uniqueId, // Create unique ID for each drill instance
+        id: uniqueId,
       }
     }
 
     if (count <= selections.length) {
-      // If drill count is less than or equal to selections, just shuffle and take the required amount
       const shuffled = [...selections].sort(() => Math.random() - 0.5)
       return shuffled
         .slice(0, count)
@@ -907,20 +1129,17 @@ export const OpeningSelectionModal: React.FC<Props> = ({
             isDuplicateSelection={isDuplicateSelection}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
+            selections={selections}
+            onOpeningClick={handleMobileOpeningClick}
           />
           <PreviewPanel
-            activeTab={activeTab}
+            selections={selections}
             previewOpening={previewOpening}
             previewVariation={previewVariation}
             previewFen={previewFen}
             selectedColor={selectedColor}
             setSelectedColor={setSelectedColor}
-            selectedMaiaVersion={selectedMaiaVersion}
-            setSelectedMaiaVersion={setSelectedMaiaVersion}
-            targetMoveNumber={targetMoveNumber}
-            setTargetMoveNumber={setTargetMoveNumber}
             addSelection={addSelection}
-            isDuplicateSelection={isDuplicateSelection}
           />
           <SelectedPanel
             activeTab={activeTab}
@@ -929,8 +1148,32 @@ export const OpeningSelectionModal: React.FC<Props> = ({
             drillCount={drillCount}
             setDrillCount={setDrillCount}
             handleStartDrilling={handleStartDrilling}
+            selectedMaiaVersion={selectedMaiaVersion}
+            setSelectedMaiaVersion={setSelectedMaiaVersion}
+            targetMoveNumber={targetMoveNumber}
+            setTargetMoveNumber={setTargetMoveNumber}
           />
         </div>
+
+        {/* Mobile Opening Popup */}
+        {mobilePopupOpening && (
+          <MobileOpeningPopup
+            opening={mobilePopupOpening}
+            variation={mobilePopupVariation}
+            isOpen={mobilePopupOpen}
+            onClose={() => {
+              setMobilePopupOpen(false)
+              setMobilePopupOpening(null)
+              setMobilePopupVariation(null)
+            }}
+            onAdd={handleMobilePopupAdd}
+            onRemove={handleMobilePopupRemove}
+            isSelected={isOpeningSelected(
+              mobilePopupOpening,
+              mobilePopupVariation,
+            )}
+          />
+        )}
       </motion.div>
     </ModalContainer>
   )
