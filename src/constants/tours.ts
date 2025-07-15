@@ -153,18 +153,10 @@ export const openingDrillTourSteps: TourStep[] = [
     placement: 'right',
   },
   {
-    id: 'opening-drill-configuration',
-    title: 'Configure Drill Settings',
-    description:
-      'Customize your drills by choosing your side (white or black), the Maia opponent strength, and how many moves each drill should last.',
-    targetId: 'opening-drill-preview',
-    placement: 'left',
-  },
-  {
     id: 'opening-drill-start',
     title: 'Start Drilling',
     description:
-      'Review your selected openings and choose how many drills to do (including repetitions if there are more drills than opening variations). Click "Start Drilling" to start!',
+      'Customize your drills by choosing the Maia opponent strength, how many moves in each drill, and how many drills to do. Click "Start Drilling" to start!',
     targetId: 'opening-drill-selected',
     placement: 'left',
   },

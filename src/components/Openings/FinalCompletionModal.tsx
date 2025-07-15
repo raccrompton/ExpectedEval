@@ -355,13 +355,13 @@ export const FinalCompletionModal: React.FC<Props> = ({
           onClick={onContinueAnalyzing}
           className="flex-1 rounded bg-background-2 py-3 text-base font-medium transition-colors hover:bg-background-3"
         >
-          Continue Analyzing Openings
+          Analyze Openings
         </button>
         <button
           onClick={onSelectNewOpenings}
           className="flex-1 rounded bg-human-4 py-3 text-base font-medium transition-colors hover:bg-human-4/80"
         >
-          Select New Openings to Practice
+          Select New Openings
         </button>
       </div>
     </motion.div>
