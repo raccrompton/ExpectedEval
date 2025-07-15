@@ -893,7 +893,7 @@ const DesktopLayout: React.FC<{
         onClick={onContinueAnalyzing}
         className="flex-1 rounded bg-background-2 py-2 font-medium transition-colors hover:bg-background-3"
       >
-        Continue Analyzing
+        Analyze
       </button>
       <button
         onClick={onNextDrill}
@@ -1065,7 +1065,7 @@ const MobileLayout: React.FC<{
         onClick={onContinueAnalyzing}
         className="flex-1 rounded bg-background-2 py-2 font-medium transition-colors hover:bg-background-3"
       >
-        Continue
+        Analyze
       </button>
       <button
         onClick={onNextDrill}
