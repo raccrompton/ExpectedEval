@@ -21,6 +21,8 @@ import {
   AuthContext,
 } from 'src/contexts'
 import { DrillConfiguration, AnalyzedGame } from 'src/types'
+import { GameNode } from 'src/types/base/tree'
+import { MIN_STOCKFISH_DEPTH } from 'src/constants/analysis'
 import openings from 'src/lib/openings/openings.json'
 
 const LazyOpeningDrillAnalysis = lazy(() =>
@@ -60,13 +62,10 @@ const OpeningsPage: NextPage = () => {
   const [showSelectionModal, setShowSelectionModal] = useState(true)
   const [isReopenedModal, setIsReopenedModal] = useState(false)
 
-  // Handle modal close with navigation
   const handleCloseModal = () => {
     if (isReopenedModal) {
-      // Modal was reopened from within the page, just close it
       setShowSelectionModal(false)
     } else {
-      // Modal was opened from initial page load, redirect to home
       router.push('/')
     }
   }
@@ -84,27 +83,22 @@ const OpeningsPage: NextPage = () => {
     }
   }, [user, router])
 
-  // Cleanup on unmount to prevent memory leaks
   useEffect(() => {
     return () => {
-      // Clear any pending state updates
       setArrows([])
       setHoverArrow(null)
       setPromotionFromTo(null)
     }
   }, [])
 
-  // Defer heavy calculations using requestIdleCallback when available
   const deferHeavyOperation = useCallback((callback: () => void) => {
     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
       window.requestIdleCallback(callback, { timeout: 1000 })
     } else {
-      // Fallback for browsers without requestIdleCallback
       setTimeout(callback, 0)
     }
   }, [])
 
-  // Create empty configuration if none exists
   const emptyConfiguration: DrillConfiguration = {
     selections: [],
     drillCount: 0,
@@ -116,7 +110,6 @@ const OpeningsPage: NextPage = () => {
   )
   const { isMobile } = useContext(WindowSizeContext)
 
-  // Memoize expensive player name calculations
   const playerNames = useMemo(() => {
     if (!controller.currentDrill) return null
 
@@ -149,7 +142,6 @@ const OpeningsPage: NextPage = () => {
     controller.currentDrill?.maiaVersion,
   ])
 
-  // Tree controller for direct game tree manipulation
   const treeController = useTreeController(
     controller.gameTree || null,
     controller.currentDrill?.playerColor || 'white',
@@ -310,6 +302,101 @@ const OpeningsPage: NextPage = () => {
     },
     controller.currentDrill?.playerColor || 'white',
   )
+
+  // Function to ensure all positions have sufficient analysis
+  const ensureAnalysisComplete = useCallback(
+    async (nodes: GameNode[]): Promise<void> => {
+      // Use the centralized minimum depth constant
+
+      // Filter nodes that actually need analysis to avoid redundant work
+      const nodesNeedingAnalysis = nodes.filter((node) => {
+        const hasStockfishAnalysis =
+          node.analysis.stockfish &&
+          node.analysis.stockfish.depth >= MIN_STOCKFISH_DEPTH
+        const hasMaiaAnalysis =
+          node.analysis.maia && Object.keys(node.analysis.maia).length > 0
+
+        return !hasStockfishAnalysis || !hasMaiaAnalysis
+      })
+
+      if (nodesNeedingAnalysis.length === 0) {
+        return // All nodes already have sufficient analysis
+      }
+
+      // Set initial progress
+      if (controller.setAnalysisProgress) {
+        controller.setAnalysisProgress({
+          total: nodesNeedingAnalysis.length,
+          completed: 0,
+          currentMove: 'Starting analysis...',
+        })
+      }
+
+      for (let i = 0; i < nodesNeedingAnalysis.length; i++) {
+        const node = nodesNeedingAnalysis[i]
+
+        // Update progress for current node
+        if (controller.setAnalysisProgress) {
+          controller.setAnalysisProgress({
+            total: nodesNeedingAnalysis.length,
+            completed: i,
+            currentMove: `Analyzing position ${i + 1}/${nodesNeedingAnalysis.length}`,
+          })
+        }
+
+        // Set this node as current to trigger analysis via the existing analysis controller
+        if (analysisController && analysisController.setCurrentNode) {
+          analysisController.setCurrentNode(node)
+
+          // Wait for analysis to complete with optimized timing
+          await new Promise<void>((resolve) => {
+            let attempts = 0
+            const maxAttempts = 150 // Reduced from 300 to 150 (15 seconds timeout)
+
+            const checkAnalysis = () => {
+              attempts++
+              const hasStockfish =
+                node.analysis.stockfish &&
+                node.analysis.stockfish.depth >= MIN_STOCKFISH_DEPTH
+              const hasMaia =
+                node.analysis.maia && Object.keys(node.analysis.maia).length > 0
+
+              if (hasStockfish && hasMaia) {
+                resolve()
+              } else if (attempts >= maxAttempts) {
+                console.warn(`Analysis timeout for node ${node.fen}`)
+                resolve()
+              } else {
+                setTimeout(checkAnalysis, 50) // Reduced from 100ms to 50ms for faster checking
+              }
+            }
+
+            // Start checking immediately without delay
+            checkAnalysis()
+          })
+        }
+      }
+
+      // Mark analysis as complete
+      if (controller.setAnalysisProgress) {
+        controller.setAnalysisProgress({
+          total: nodesNeedingAnalysis.length,
+          completed: nodesNeedingAnalysis.length,
+          currentMove: 'Analysis complete',
+        })
+      }
+    },
+    [analysisController, controller.setAnalysisProgress],
+  )
+
+  // Pass the ensureAnalysisComplete function to the controller via ref
+  useEffect(() => {
+    if (controller && ensureAnalysisComplete) {
+      // Store the function in the controller's ref or call a setter
+      // This way the controller can access it when needed
+      controller.setEnsureAnalysisComplete?.(ensureAnalysisComplete)
+    }
+  }, [controller, ensureAnalysisComplete])
 
   // Sync analysis controller with current node
   useEffect(() => {
