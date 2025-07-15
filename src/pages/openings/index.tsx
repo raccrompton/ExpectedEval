@@ -883,38 +883,34 @@ const OpeningsPage: NextPage = () => {
     <div className="flex h-full flex-1 flex-col justify-center gap-1">
       <div className="flex h-full flex-col items-start justify-start gap-1">
         {/* Current Drill Info Header */}
-        <div className="flex w-full flex-col bg-background-1 p-3">
-          <h3 className="mb-2 text-base font-bold text-primary">
-            Current Drill
-          </h3>
+        <div className="flex w-full flex-col bg-background-1 p-2">
+          <h3 className="mb-1 text-sm font-bold text-primary">Current Drill</h3>
           {controller.currentDrill ? (
-            <div className="space-y-1">
-              <div>
-                <p className="text-sm font-medium text-primary">
-                  {controller.currentDrill.opening.name}
-                </p>
-                {controller.currentDrill.variation && (
-                  <p className="text-xs text-secondary">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="font-medium text-primary">
+                {controller.currentDrill.opening.name}
+              </span>
+              {controller.currentDrill.variation && (
+                <>
+                  <span className="text-secondary">•</span>
+                  <span className="text-secondary">
                     {controller.currentDrill.variation.name}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-2 text-xs text-secondary">
-                <span>
-                  vs Maia{' '}
-                  {controller.currentDrill.maiaVersion.replace('maia_kdd_', '')}
-                </span>
-                <span>•</span>
-                <span>{controller.currentDrill.targetMoveNumber} moves</span>
-                <span>•</span>
-                <span>
-                  Drill {controller.currentDrillIndex + 1} of{' '}
-                  {controller.totalDrills}
-                </span>
-              </div>
+                  </span>
+                </>
+              )}
+              <span className="text-secondary">•</span>
+              <span className="text-secondary">
+                vs Maia{' '}
+                {controller.currentDrill.maiaVersion.replace('maia_kdd_', '')}
+              </span>
+              <span className="text-secondary">•</span>
+              <span className="text-secondary">
+                Drill {controller.currentDrillIndex + 1} of{' '}
+                {controller.totalDrills}
+              </span>
             </div>
           ) : (
-            <p className="text-sm text-secondary">No drill selected</p>
+            <p className="text-xs text-secondary">No drill selected</p>
           )}
         </div>
 
