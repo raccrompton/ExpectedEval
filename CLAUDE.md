@@ -21,7 +21,7 @@ This is the Maia Chess Platform Frontend - a sophisticated chess analysis and tr
 npm run dev          # Start development server on localhost:3000
 npm run build        # Build for production
 npm run start        # Start production server
-npm run lint         # Run ESLint (ALWAYS run before committing)
+npm run lint -- --fix # Run ESLint (ALWAYS run before committing)
 npx tsc --noEmit     # Check TypeScript errors
 ```
 
