@@ -5,7 +5,6 @@ import { useContext, useState, useEffect } from 'react'
 
 import { PlayerStats } from 'src/types'
 import { getPlayerStats } from 'src/api'
-import { UserIcon } from 'src/components/Icons/icons'
 import { AuthContext, WindowSizeContext } from 'src/contexts'
 import { AuthenticatedWrapper, UserProfile, GameList } from 'src/components'
 
@@ -83,8 +82,10 @@ const Profile: React.FC<Props> = (props: Props) => {
 
   const desktopLayout = (
     <div className="mx-auto flex h-full w-[90%] flex-col items-start justify-center gap-6 md:py-[2%]">
-      <div className="flex flex-row items-center gap-4">
-        <div className="*:w-16 *:fill-primary">{UserIcon}</div>
+      <div className="flex flex-row items-center gap-2">
+        <span className="material-symbols-outlined text-6xl">
+          account_circle
+        </span>
         <h1 className="text-3xl font-semibold">{user?.displayName}</h1>
       </div>
       <div className="flex flex-col items-start gap-6 md:flex-row">
@@ -97,7 +98,9 @@ const Profile: React.FC<Props> = (props: Props) => {
   const mobileLayout = (
     <div className="mx-auto mt-6 flex w-[90%] flex-col gap-3">
       <div className="flex flex-row items-center gap-2 md:gap-3">
-        <div className="*:w-8 *:fill-primary">{UserIcon}</div>
+        <span className="material-symbols-outlined text-4xl">
+          account_circle
+        </span>
         <h1 className="text-3xl font-semibold">{user?.displayName}</h1>
       </div>
       <div className="flex w-full flex-col gap-4">

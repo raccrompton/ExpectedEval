@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
-
 import { AllStats, SingleStats } from 'src/hooks/useStats'
-import { CaretUpIcon, CaretDownIcon } from 'src/components/Icons/icons'
 
 interface SingleProps {
   stats: SingleStats | undefined
@@ -41,18 +39,16 @@ interface RatingDiffProps {
 const RatingDiffDisplay: React.FC<RatingDiffProps> = ({
   diff,
 }: RatingDiffProps) => {
-  const icon = diff < 0 ? CaretDownIcon : CaretUpIcon
+  const icon = diff < 0 ? 'arrow_drop_down' : 'arrow_drop_up'
   const sign = diff < 0 ? '–' : '+'
 
   return (
     <div
-      className={`ml-4 flex flex-row items-center gap-2 text-base ${diff < 0 ? 'text-red-500' : 'text-green-500'}`}
+      className={`ml-2 flex flex-row items-center gap-0 text-base ${diff < 0 ? 'text-red-500' : 'text-green-500'}`}
     >
-      <i
-        className={`mb-3 h-4 w-4 ${diff < 0 ? '*:fill-red-500' : 'fill-green-500'}`}
-      >
+      <span className="material-symbols-outlined material-symbols-filled text-2xl">
         {icon}
-      </i>
+      </span>
       <p className="text-lg">
         {sign}
         {Math.abs(diff)}

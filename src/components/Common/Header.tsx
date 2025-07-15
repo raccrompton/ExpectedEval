@@ -2,12 +2,11 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/router'
-import { useCallback, useContext, useEffect, useState } from 'react'
-
 import { PlayType } from 'src/types'
+import { useRouter } from 'next/router'
+import { DiscordIcon } from './Icons'
+import { useCallback, useContext, useEffect, useState } from 'react'
 import { AuthContext, ModalContext, WindowSizeContext } from 'src/contexts'
-import { MenuIcon, UserIcon, DiscordIcon } from 'src/components/Icons/icons'
 
 export const Header: React.FC = () => {
   const [showMenu, setShowMenu] = useState(false)
@@ -54,7 +53,7 @@ export const Header: React.FC = () => {
 
   const userInfo = user?.lichessId ? (
     <div className="group relative flex w-full items-center gap-3 rounded bg-background-1 px-3 py-2 md:w-auto">
-      <i className="h-6 w-6">{UserIcon}</i>
+      <span className="material-symbols-outlined text-3xl">account_circle</span>
       <div className="flex flex-col">
         <p className="text-sm">{user?.displayName}</p>
         <p className="text-xs text-secondary">View Info</p>
@@ -98,6 +97,13 @@ export const Header: React.FC = () => {
                 >
                   Play Maia
                 </button>
+
+                <button
+                  onClick={() => startGame('handAndBrain')}
+                  className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
+                >
+                  Play Hand and Brain
+                </button>
                 <a
                   className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
                   href="https://lichess.org/@/maia1"
@@ -106,12 +112,6 @@ export const Header: React.FC = () => {
                 >
                   Play Maia on Lichess
                 </a>
-                <button
-                  onClick={() => startGame('handAndBrain')}
-                  className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
-                >
-                  Play Hand and Brain
-                </button>
               </div>
             </div>
           ) : (
@@ -211,7 +211,7 @@ export const Header: React.FC = () => {
         className="block cursor-pointer *:*:fill-primary md:hidden"
         onClick={() => setShowMenu((show) => !show)}
       >
-        {MenuIcon}
+        <span className="material-symbols-outlined text-3xl">menu</span>
       </button>
       {showMenu && (
         <div className="fixed left-0 top-0 z-50 flex h-screen w-screen flex-col items-start justify-between bg-backdrop py-4">
@@ -226,7 +226,7 @@ export const Header: React.FC = () => {
               className="block cursor-pointer *:*:fill-primary md:hidden"
               onClick={() => setShowMenu(false)}
             >
-              {MenuIcon}
+              <span className="material-symbols-outlined text-3xl">menu</span>
             </button>
           </div>
           <div className="flex flex-col gap-6 px-12">
@@ -237,6 +237,10 @@ export const Header: React.FC = () => {
                   <button onClick={() => startGame('againstMaia')}>
                     Play Maia
                   </button>
+
+                  <button onClick={() => startGame('handAndBrain')}>
+                    Play Hand and Brain
+                  </button>
                   <a
                     href="https://lichess.org/@/maia1"
                     target="_blank"
@@ -244,9 +248,6 @@ export const Header: React.FC = () => {
                   >
                     Play Maia on Lichess
                   </a>
-                  <button onClick={() => startGame('handAndBrain')}>
-                    Play Hand and Brain
-                  </button>
                 </div>
               </div>
             ) : (

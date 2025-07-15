@@ -37,7 +37,7 @@ src/
 ├── providers/       # Context provider wrappers
 ├── styles/          # Global styles and Tailwind config
 ├── types/           # TypeScript type definitions
-├── utils/           # Utility functions
+├── lib/           # Utility functions
 └── workers/         # Web Worker files
 ```
 
@@ -46,7 +46,7 @@ src/
 ### State Management
 
 - **Controller Hooks** for business logic (useAnalysisController, usePlayController, etc.)
-- **React Context** for global state (AuthContext, ThemeContext, ModalContext)
+- **React Context** for global state (AuthContext, ModalContext)
 - **Presentational Components** that receive data via props
 
 ### Component Organization

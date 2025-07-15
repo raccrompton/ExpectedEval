@@ -1,13 +1,8 @@
 import Head from 'next/head'
 import { NextPage } from 'next/types'
 import { useCallback, useContext, useEffect, useState } from 'react'
+import { trackTuringGameStarted } from 'src/lib/analytics'
 import {
-  trackTuringGameStarted,
-  trackTuringMoveNavigated,
-} from 'src/utils/analytics'
-
-import {
-  ModalContext,
   WindowSizeContext,
   TuringControllerContext,
   useTour,
@@ -26,7 +21,7 @@ import {
 import { AllStats } from 'src/hooks/useStats'
 import { TuringGame } from 'src/types/turing'
 import { useTuringController } from 'src/hooks/useTuringController/useTuringController'
-import { tourConfigs } from 'src/config/tours'
+import { tourConfigs } from 'src/constants/tours'
 
 const TuringPage: NextPage = () => {
   const { startTour, tourState } = useTour()
