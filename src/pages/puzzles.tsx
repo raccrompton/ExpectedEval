@@ -662,20 +662,22 @@ const Train: React.FC<Props> = ({
         <div className="flex h-full w-[90%] flex-row gap-4">
           <div className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72">
             <GameInfo title="Puzzles" icon="target" type="train">
-              <p className="text-secondary">
-                Puzzle{' '}
-                <span className="text-secondary/60">#{trainingGame.id}</span>
-              </p>
-              <p className="text-secondary">
-                Rating of puzzle:{' '}
-                {status !== 'correct' && status !== 'forfeit' ? (
-                  <span className="text-secondary/60">hidden</span>
-                ) : (
-                  <span className="text-human-2">
-                    {trainingGame.puzzle_elo}
-                  </span>
-                )}
-              </p>
+              <div className="flex w-full flex-col justify-start text-sm text-secondary 2xl:text-base">
+                <span>
+                  Puzzle{' '}
+                  <span className="text-secondary/60">#{trainingGame.id}</span>
+                </span>
+                <span>
+                  Rating:{' '}
+                  {status !== 'correct' && status !== 'forfeit' ? (
+                    <span className="text-secondary/60">hidden</span>
+                  ) : (
+                    <span className="text-human-2">
+                      {trainingGame.puzzle_elo}
+                    </span>
+                  )}
+                </span>
+              </div>
             </GameInfo>
             <ContinueAgainstMaia
               launchContinue={launchContinue}
@@ -1067,21 +1069,23 @@ const Train: React.FC<Props> = ({
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
         <div className="mt-2 flex h-full flex-col items-start justify-start gap-1">
           <div className="flex h-auto w-full flex-col">
-            <GameInfo title="Training" icon="target" type="train">
-              <p className="text-secondary">
-                Puzzle{' '}
-                <span className="text-secondary/60">#{trainingGame.id}</span>
-              </p>
-              <p className="text-secondary">
-                Rating of puzzle:{' '}
-                {status !== 'correct' && status !== 'forfeit' ? (
-                  <span className="text-secondary/60">hidden</span>
-                ) : (
-                  <span className="text-human-2">
-                    {trainingGame.puzzle_elo}
-                  </span>
-                )}
-              </p>
+            <GameInfo title="Puzzles" icon="target" type="train">
+              <div className="flex w-full items-center justify-between text-secondary">
+                <span>
+                  Puzzle{' '}
+                  <span className="text-secondary/60">#{trainingGame.id}</span>
+                </span>
+                <span>
+                  Rating:{' '}
+                  {status !== 'correct' && status !== 'forfeit' ? (
+                    <span className="text-secondary/60">hidden</span>
+                  ) : (
+                    <span className="text-human-2">
+                      {trainingGame.puzzle_elo}
+                    </span>
+                  )}
+                </span>
+              </div>
             </GameInfo>
           </div>
           <div
@@ -1309,6 +1313,7 @@ const Train: React.FC<Props> = ({
                 )}
               </div>
             </div>
+            {gamesController}
           </div>
         </div>
       </div>
