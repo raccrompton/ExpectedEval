@@ -814,7 +814,7 @@ const Analysis: React.FC<Props> = ({
             </div>
 
             {/* Row 3: MovesByRating */}
-            <div className="flex h-[calc((85vh)*0.3)] w-full rounded bg-background-1/60">
+            <div className="flex h-[calc((85vh)*0.3)] w-full">
               <div className="h-full w-full">
                 <MovesByRating
                   moves={controller.movesByRating}
