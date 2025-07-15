@@ -79,36 +79,40 @@ const Turing: React.FC<Props> = (props: Props) => {
   const Info = (
     <>
       <div className="flex w-full items-center justify-between text-secondary">
-        <p>● Unknown</p>
-        <p>
-          {game.termination.winner === 'white' ? (
-            <span className="text-engine-3">1</span>
-          ) : game.termination.winner === 'black' ? (
-            <span className="text-human-3">0</span>
-          ) : (
-            <span className="text-secondary">½</span>
-          )}
-        </p>
+        <div className="flex items-center gap-2">
+          <span>● Unknown</span>
+          <span>
+            {game.termination.winner === 'white' ? (
+              <span className="text-engine-3">1</span>
+            ) : game.termination.winner === 'black' ? (
+              <span className="text-human-3">0</span>
+            ) : (
+              <span className="text-secondary">½</span>
+            )}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span>○ Unknown</span>
+          <span>
+            {game.termination.winner === 'black' ? (
+              <span className="text-engine-3">1</span>
+            ) : game.termination.winner === 'white' ? (
+              <span className="text-human-3">0</span>
+            ) : (
+              <span className="text-secondary">½</span>
+            )}
+          </span>
+        </div>
       </div>
-      <div className="flex w-full items-center justify-between text-secondary">
-        <p>○ Unknown</p>
-        <p>
-          {game.termination.winner === 'black' ? (
-            <span className="text-engine-3">1</span>
-          ) : game.termination.winner === 'white' ? (
-            <span className="text-human-3">0</span>
-          ) : (
-            <span className="text-secondary">½</span>
-          )}
-        </p>
-      </div>{' '}
-      {game.termination ? (
-        <p className="text-center capitalize text-secondary">
-          {game.termination.winner !== 'none'
-            ? `${game.termination.winner} wins`
-            : 'draw'}
-        </p>
-      ) : null}
+      {game.termination && (
+        <div className="text-center text-secondary">
+          <span className="capitalize">
+            {game.termination.winner !== 'none'
+              ? `${game.termination.winner} wins`
+              : 'draw'}
+          </span>
+        </div>
+      )}
     </>
   )
 
@@ -171,7 +175,7 @@ const Turing: React.FC<Props> = (props: Props) => {
   const mobileLayout = (
     <>
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
-        <div className="mt-2 flex h-full flex-col items-start justify-start gap-2">
+        <div className="mt-2 flex h-full flex-col items-start justify-start">
           <div className="flex h-auto w-full flex-col gap-2">
             <div className="w-screen">
               <GameInfo title="Bot or Not" icon="smart_toy" type="turing">
@@ -218,10 +222,10 @@ const Turing: React.FC<Props> = (props: Props) => {
             </div>
           </div>
         </div>
+        <StatsDisplay stats={stats} />
         <div className="relative bottom-0 flex h-full min-h-[38px] flex-1 flex-col justify-end overflow-auto">
           <TuringLog />
         </div>
-        <StatsDisplay stats={stats} />
       </div>
     </>
   )

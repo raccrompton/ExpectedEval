@@ -97,7 +97,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
   return (
     <CardWrapper>
       <motion.div
-        className="flex h-full min-h-[140px] cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-md border-none bg-background-2 p-4 text-center hover:bg-human-4/20"
+        className="flex h-full cursor-pointer select-none flex-row items-center justify-start gap-4 rounded-md border-none bg-background-2 p-4 text-center hover:bg-human-4/20 md:min-h-[140px] md:flex-col md:justify-center md:gap-3"
         whileHover={{
           scale: 1.03,
           boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
@@ -105,7 +105,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
         }}
       >
         <motion.div className="w-10">{icon}</motion.div>
-        <div className="flex flex-col">
+        <div className="flex flex-col items-start md:items-center">
           <motion.h2 className="text-lg font-bold">{title}</motion.h2>
           <motion.p className="text-xs">{description}</motion.p>
         </div>
@@ -140,7 +140,7 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
   return (
     <Fragment>
       <BetaBlurb />
-      <div className="relative flex flex-col items-center justify-center gap-14 overflow-hidden pb-12 pt-8 md:pb-16 md:pt-20">
+      <div className="relative flex flex-col items-center justify-center gap-4 overflow-hidden pb-12 pt-4 md:gap-14 md:pb-16 md:pt-20">
         <div className="z-10 flex w-full max-w-[1200px] flex-col items-center justify-center gap-10 p-4 text-left md:flex-row md:gap-20">
           <div className="flex w-full flex-col items-start justify-center gap-6 md:w-[45%] md:gap-8">
             <div className="flex flex-col gap-3 md:gap-4">
@@ -176,7 +176,7 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
               )}
             </motion.div>
           </div>
-          <div className="grid w-full flex-1 grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid w-full flex-1 grid-cols-1 gap-2 md:grid-cols-3 md:gap-4">
             <FeatureCard
               icon={<RegularPlayIcon />}
               title="Play Maia"
