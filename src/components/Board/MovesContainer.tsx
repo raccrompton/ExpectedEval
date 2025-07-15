@@ -41,7 +41,7 @@ const getMoveClassification = (
   node: GameNode | null,
   currentMaiaModel?: string,
 ) => {
-  if (!node || !node.parent) {
+  if (!node) {
     return {
       blunder: false,
       inaccuracy: false,
@@ -50,11 +50,12 @@ const getMoveClassification = (
     }
   }
 
-  return GameNode.classifyMove(
-    node.parent,
-    node.move || '',
-    currentMaiaModel || 'maia_kdd_1500',
-  )
+  return {
+    blunder: node.blunder,
+    inaccuracy: node.inaccuracy,
+    excellent: node.excellentMove,
+    bestMove: node.bestMove,
+  }
 }
 
 export const MovesContainer: React.FC<Props> = (props) => {
