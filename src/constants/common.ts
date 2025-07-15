@@ -12,5 +12,5 @@ export const MAIA_MODELS = [
 
 export const MAIA_MODELS_WITH_NAMES = MAIA_MODELS.map((model) => ({
   id: model,
-  name: model,
+  name: model.replace('maia_kdd_', 'Maia '),
 }))
