@@ -1,6 +1,7 @@
 import { Chess, Color } from 'chess.ts'
 import { StockfishEvaluation, MaiaEvaluation } from '..'
 import { MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/analysis'
+import { calculateMoveColor } from 'src/hooks/useAnalysisController/utils'
 
 interface NodeAnalysis {
   maia?: { [rating: string]: MaiaEvaluation }
@@ -163,6 +164,7 @@ export class GameNode {
   private _bestMove: boolean
   private _moveNumber: number
   private _time: number | null
+  private _color: string | null
 
   constructor(
     fen: string,
@@ -188,6 +190,7 @@ export class GameNode {
     this._check = fen.includes('+')
     this._moveNumber = this.parseMoveNumber(fen, this._turn)
     this._time = time
+    this._color = null
   }
 
   get fen(): string {
@@ -237,6 +240,9 @@ export class GameNode {
   }
   get time(): number | null {
     return this._time
+  }
+  get color(): string | null {
+    return this._color
   }
 
   private parseTurn(fen: string): Color {
@@ -368,6 +374,8 @@ export class GameNode {
         this._analysis.stockfish,
         activeModel,
       )
+      // Set color for the child based on current analysis
+      child._color = calculateMoveColor(this._analysis.stockfish, move)
     }
 
     return child
@@ -409,6 +417,8 @@ export class GameNode {
             stockfishEval,
             activeModel,
           )
+          // Set color for existing children based on new analysis
+          child._color = calculateMoveColor(stockfishEval, child.move)
         }
       }
     }

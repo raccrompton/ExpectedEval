@@ -124,18 +124,12 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
   const CustomTooltip = ({
     step,
     tooltipProps,
-    primaryProps,
-    backProps,
-    closeProps,
     isLastStep,
     index,
     size,
   }: {
     step: { content: unknown }
     tooltipProps: React.HTMLAttributes<HTMLDivElement>
-    primaryProps: React.ButtonHTMLAttributes<HTMLButtonElement>
-    backProps: React.ButtonHTMLAttributes<HTMLButtonElement>
-    closeProps: React.ButtonHTMLAttributes<HTMLButtonElement>
     isLastStep: boolean
     index: number
     size: number
@@ -433,32 +427,79 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     [tourState.completedTours],
   )
 
-  // Helper function for mobile scrolling
-  const scrollToTooltipOnMobile = useCallback(() => {
+  // Helper function for mobile-only scrolling (after step change)
+  const scrollToTooltipMobile = useCallback(() => {
+    // Only scroll on mobile devices
     const isMobile = window.innerWidth < 768
-    if (isMobile) {
-      setTimeout(() => {
-        const tooltip = document.querySelector(
-          '[data-testid="react-joyride-tooltip"], .react-joyride__tooltip',
-        )
-        if (tooltip) {
-          const rect = tooltip.getBoundingClientRect()
-          const scrollTop = window.pageYOffset + rect.top - 20
+    if (!isMobile) return
 
-          window.scrollTo({
-            top: scrollTop,
-            behavior: 'smooth',
-          })
+    setTimeout(() => {
+      // First try to find the target element (what the tour is highlighting)
+      const currentStep = tourState.steps[tourState.currentStep]
+      let targetElement = null
+      if (currentStep) {
+        targetElement = document.getElementById(currentStep.targetId)
+      }
+
+      // Fallback to tooltip if target not found
+      const tooltip = document.querySelector(
+        '[data-testid="react-joyride-tooltip"], .react-joyride__tooltip',
+      )
+
+      const elementToScrollTo = targetElement || tooltip
+      if (!elementToScrollTo) return
+
+      const rect = elementToScrollTo.getBoundingClientRect()
+      const scrollTop = window.pageYOffset + rect.top - 100
+
+      window.scrollTo({
+        top: scrollTop,
+        behavior: 'smooth',
+      })
+    }, 200) // Longer delay to let tour render first
+  }, [tourState.steps, tourState.currentStep])
+
+  // Helper function to scroll before step change (mobile only)
+  const preScrollToTarget = useCallback(
+    (targetStepIndex: number) => {
+      // Only scroll on mobile devices
+      const isMobile = window.innerWidth < 768
+      if (!isMobile) return Promise.resolve()
+
+      return new Promise<void>((resolve) => {
+        const targetStep = tourState.steps[targetStepIndex]
+        if (!targetStep) {
+          resolve()
+          return
         }
-      }, 100)
-    }
-  }, [])
+
+        const targetElement = document.getElementById(targetStep.targetId)
+        if (!targetElement) {
+          resolve()
+          return
+        }
+
+        const rect = targetElement.getBoundingClientRect()
+        const scrollTop = window.pageYOffset + rect.top - 100
+
+        window.scrollTo({
+          top: scrollTop,
+          behavior: 'smooth',
+        })
+
+        // Wait for scroll to complete
+        setTimeout(resolve, 300)
+      })
+    },
+    [tourState.steps],
+  )
 
   // Custom handlers for navigation
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
     if (tourState.currentStep < tourState.steps.length - 1) {
+      const nextStepIndex = tourState.currentStep + 1
+      await preScrollToTarget(nextStepIndex)
       nextStep()
-      scrollToTooltipOnMobile()
     } else {
       endTour()
     }
@@ -467,19 +508,16 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     tourState.steps.length,
     nextStep,
     endTour,
-    scrollToTooltipOnMobile,
+    preScrollToTarget,
   ])
 
-  const handlePrevious = useCallback(() => {
+  const handlePrevious = useCallback(async () => {
     if (tourState.currentStep > 0) {
+      const prevStepIndex = tourState.currentStep - 1
+      await preScrollToTarget(prevStepIndex)
       prevStep()
-      scrollToTooltipOnMobile()
     }
-  }, [tourState.currentStep, prevStep, scrollToTooltipOnMobile])
-
-  const handleClose = useCallback(() => {
-    skipTour()
-  }, [skipTour])
+  }, [tourState.currentStep, prevStep, preScrollToTarget])
 
   // Update Joyride steps when tour state changes
   useEffect(() => {
@@ -521,26 +559,18 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
       action?: string
       index?: number
     }) => {
-      const { status, type, action, index } = data
+      const { status, type } = data
 
-      // Handle mobile scrolling when a step becomes active
-      if (
-        type === 'step:after' &&
-        (action === 'next' || action === 'prev' || action === 'start')
-      ) {
-        scrollToTooltipOnMobile()
-      }
-
-      // Also handle initial tour start
+      // Handle initial tour start - only scroll on mobile for first step
       if (type === 'tour:start') {
-        scrollToTooltipOnMobile()
+        scrollToTooltipMobile()
       }
 
       if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
         endTour()
       }
     },
-    [endTour, scrollToTooltipOnMobile],
+    [endTour, scrollToTooltipMobile],
   )
 
   const contextValue: TourContextType = useMemo(

@@ -112,9 +112,9 @@ export const DownloadModelModal: React.FC<Props> = ({
             download.
           </p>
         </div>
-        <div className="mt-6 flex w-full flex-col items-center justify-end gap-2 md:flex-row">
+        <div className="mt-6 flex w-full flex-col items-end justify-end gap-2 md:flex-row">
           {progress ? (
-            <div className="relative order-3 flex h-8 w-full items-center justify-start overflow-hidden rounded bg-human-4/20 px-3 md:order-1 md:h-10 md:w-auto md:flex-1">
+            <div className="relative order-2 flex h-8 w-full items-center justify-start overflow-hidden rounded bg-human-4/20 px-3 md:order-1 md:h-10 md:w-auto md:flex-1">
               <p className="z-10 text-xs text-primary md:text-base">
                 {Math.round(progress)}%
               </p>
@@ -124,40 +124,42 @@ export const DownloadModelModal: React.FC<Props> = ({
               />
             </div>
           ) : null}
-          <Link
-            href="/"
-            className="order-2 flex h-8 cursor-pointer select-none items-center gap-1 self-end rounded bg-background-2 px-3 text-sm transition duration-200 hover:bg-background-3 md:order-3 md:h-10 md:px-4 md:text-base"
-          >
-            <p>Return Home</p>
-          </Link>
-          <div
-            tabIndex={0}
-            role="button"
-            className={`order-2 flex h-8 select-none items-center gap-1 self-end rounded px-3 text-sm transition duration-200 md:order-3 md:h-10 md:px-4 md:text-base ${
-              isDownloading || progress >= 100
-                ? 'cursor-not-allowed bg-human-4/50'
-                : 'cursor-pointer bg-human-4 hover:bg-human-4/90'
-            }`}
-            onClick={handleDownload}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                handleDownload()
-              }
-            }}
-          >
-            {isDownloading ? (
-              <span className="material-symbols-outlined animate-spin text-lg md:text-xl">
-                progress_activity
-              </span>
-            ) : (
-              <span className="material-symbols-outlined text-lg md:text-xl">
-                download
-              </span>
-            )}
-            <p>
-              {isDownloading ? 'Downloading...' : 'Download Maia 2'}{' '}
-              <span className="text-xs text-primary/60">(90mb)</span>
-            </p>
+          <div className="order-1 flex flex-row gap-2 md:order-2">
+            <Link
+              href="/"
+              className="order-2 flex h-8 cursor-pointer select-none items-center gap-1 self-end rounded bg-background-2 px-3 text-sm transition duration-200 hover:bg-background-3 md:order-3 md:h-10 md:px-4 md:text-base"
+            >
+              <p>Return Home</p>
+            </Link>
+            <div
+              tabIndex={0}
+              role="button"
+              className={`order-2 flex h-8 select-none items-center gap-1 self-end rounded px-3 text-sm transition duration-200 md:order-3 md:h-10 md:px-4 md:text-base ${
+                isDownloading || progress >= 100
+                  ? 'cursor-not-allowed bg-human-4/50'
+                  : 'cursor-pointer bg-human-4 hover:bg-human-4/90'
+              }`}
+              onClick={handleDownload}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  handleDownload()
+                }
+              }}
+            >
+              {isDownloading ? (
+                <span className="material-symbols-outlined animate-spin text-lg md:text-xl">
+                  progress_activity
+                </span>
+              ) : (
+                <span className="material-symbols-outlined text-lg md:text-xl">
+                  download
+                </span>
+              )}
+              <p>
+                {isDownloading ? 'Downloading...' : 'Download Maia 2'}{' '}
+                <span className="text-xs text-primary/60">(90mb)</span>
+              </p>
+            </div>
           </div>
         </div>
       </motion.div>

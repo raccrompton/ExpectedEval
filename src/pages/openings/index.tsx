@@ -22,7 +22,7 @@ import {
 } from 'src/contexts'
 import { AnalyzedGame, DrillConfiguration } from 'src/types'
 import openings from 'src/lib/openings/openings.json'
-// Lazy load heavy analysis components
+
 const LazyOpeningDrillAnalysis = lazy(() =>
   import('src/components/Openings/OpeningDrillAnalysis').then((module) => ({
     default: module.OpeningDrillAnalysis,
@@ -871,6 +871,24 @@ const OpeningsPage: NextPage = () => {
             />
           </div>
 
+          {/* Moves Container */}
+          {controller.currentDrillGame && (
+            <div className="relative bottom-0 h-48 max-h-48 flex-1 overflow-auto overflow-y-hidden">
+              <MovesContainer
+                game={{
+                  id: controller.currentDrillGame.id,
+                  tree: controller.gameTree,
+                  moves: movesForContainer,
+                }}
+                type="analysis"
+                showAnnotations={
+                  controller.analysisEnabled || controller.continueAnalyzingMode
+                }
+                showVariations={controller.continueAnalyzingMode}
+              />
+            </div>
+          )}
+
           {/* Drill Progress */}
           {controller.currentDrillGame && controller.currentDrill && (
             <div className="flex w-full items-center gap-3 rounded bg-background-1 p-3">
@@ -902,11 +920,11 @@ const OpeningsPage: NextPage = () => {
           )}
 
           {/* Action Buttons */}
-          <div className="flex justify-center px-2">
+          <div className="flex w-full justify-center gap-1">
             {controller.areAllDrillsCompleted && (
               <button
                 onClick={controller.showSummary}
-                className="rounded bg-human-3 px-6 py-2 text-sm font-medium"
+                className="w-full rounded bg-human-3 px-6 py-2 text-sm font-medium"
               >
                 View Summary
               </button>
@@ -915,7 +933,7 @@ const OpeningsPage: NextPage = () => {
               !controller.showPerformanceModal && (
                 <button
                   onClick={controller.showCurrentPerformance}
-                  className="rounded bg-background-2 px-6 py-2 text-sm font-medium"
+                  className="w-full rounded bg-background-2 px-6 py-2 text-sm font-medium"
                 >
                   View Performance
                 </button>
@@ -924,30 +942,12 @@ const OpeningsPage: NextPage = () => {
               !controller.areAllDrillsCompleted && (
                 <button
                   onClick={controller.moveToNextDrill}
-                  className="rounded bg-human-4 px-6 py-2 text-sm font-medium"
+                  className="w-full rounded bg-human-4 px-6 py-2 text-sm font-medium"
                 >
                   Next Drill
                 </button>
               )}
           </div>
-
-          {/* Moves Container */}
-          {controller.currentDrillGame && (
-            <div className="relative bottom-0 h-48 max-h-48 flex-1 overflow-auto overflow-y-hidden">
-              <MovesContainer
-                game={{
-                  id: controller.currentDrillGame.id,
-                  tree: controller.gameTree,
-                  moves: movesForContainer,
-                }}
-                type="analysis"
-                showAnnotations={
-                  controller.analysisEnabled || controller.continueAnalyzingMode
-                }
-                showVariations={controller.continueAnalyzingMode}
-              />
-            </div>
-          )}
 
           {/* Analysis Components Stacked */}
           <div className="flex w-full flex-col gap-1 overflow-hidden">
