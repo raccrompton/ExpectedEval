@@ -267,7 +267,7 @@ export class GameNode {
     excellent: boolean
     bestMove: boolean
   } {
-    if (!stockfishEval || stockfishEval.depth < 13) {
+    if (!stockfishEval || stockfishEval.depth < 12) {
       return {
         blunder: false,
         inaccuracy: false,
@@ -365,7 +365,7 @@ export class GameNode {
 
     if (
       this._analysis.stockfish &&
-      this._analysis.stockfish.depth >= 13 &&
+      this._analysis.stockfish.depth >= 12 &&
       move
     ) {
       this.classifyMoveByWinrate(
@@ -388,7 +388,7 @@ export class GameNode {
     this._analysis.maia = maiaEval
 
     // Re-classify all children now that we have Maia data
-    if (this._analysis.stockfish && this._analysis.stockfish.depth >= 13) {
+    if (this._analysis.stockfish && this._analysis.stockfish.depth >= 12) {
       for (const child of this._children) {
         if (child.move) {
           this.classifyMoveByWinrate(
@@ -408,7 +408,7 @@ export class GameNode {
   ): void {
     this._analysis.stockfish = stockfishEval
 
-    if (stockfishEval.depth >= 13) {
+    if (stockfishEval.depth >= 12) {
       for (const child of this._children) {
         if (child.move) {
           this.classifyMoveByWinrate(

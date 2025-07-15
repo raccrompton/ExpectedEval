@@ -20,7 +20,7 @@ import {
   TreeControllerContext,
   AuthContext,
 } from 'src/contexts'
-import { AnalyzedGame, DrillConfiguration } from 'src/types'
+import { DrillConfiguration, AnalyzedGame } from 'src/types'
 import openings from 'src/lib/openings/openings.json'
 
 const LazyOpeningDrillAnalysis = lazy(() =>
@@ -42,7 +42,12 @@ import {
   DownloadModelModal,
   AuthenticatedWrapper,
 } from 'src/components'
-import { useOpeningDrillController, useAnalysisController } from 'src/hooks'
+import {
+  useOpeningDrillController,
+  useTreeController,
+  useMaiaEngine,
+  useAnalysisController,
+} from 'src/hooks'
 import {
   getCurrentPlayer,
   getAvailableMovesArray,
@@ -144,121 +149,68 @@ const OpeningsPage: NextPage = () => {
     controller.currentDrill?.maiaVersion,
   ])
 
-  // Memoize moves transformation with stable reference
-  const transformedMoves = useMemo(() => {
-    if (!controller.gameTree) return []
-
-    const mainLine = controller.gameTree.getMainLine()
-    return mainLine.slice(1).map((node) => {
-      const move = node.move
-      return {
-        board: node.fen,
-        lastMove: move
-          ? ([move.slice(0, 2), move.slice(2, 4)] as [string, string])
-          : undefined,
-        san: node.san || '',
-        uci: move || '',
-      }
-    })
-  }, [controller.gameTree])
-
-  // Create analyzed game for analysis controller with optimized dependencies
-  const analyzedGame = useMemo((): AnalyzedGame | null => {
-    if (!controller.gameTree || !controller.currentDrill || !playerNames)
-      return null
-
-    // Use stable drill ID instead of timestamp to prevent unnecessary recreation
-    const drillId = `opening-drill-${controller.currentDrill.id}`
-
-    return {
-      id: drillId,
-      tree: controller.gameTree,
-      blackPlayer: playerNames.blackPlayer,
-      whitePlayer: playerNames.whitePlayer,
-      moves: transformedMoves,
-      availableMoves: transformedMoves.map(() => ({})),
-      gameType: 'play' as const,
-      termination: {
-        result: '*',
-        winner: 'none' as const,
-        condition: 'Normal',
-      },
-      maiaEvaluations: transformedMoves.map(() => ({})),
-      stockfishEvaluations: transformedMoves.map(() => undefined),
-      type: 'play' as const,
-    }
-  }, [
-    controller.gameTree,
-    controller.currentDrill?.id,
-    playerNames,
-    transformedMoves,
-  ])
-
-  // Analysis controller
-  const analysisController = useAnalysisController(
-    analyzedGame || {
-      id: 'empty',
-      tree: controller.gameTree,
-      blackPlayer: { name: 'Black' },
-      whitePlayer: { name: 'White' },
-      moves: [],
-      availableMoves: [],
-      gameType: 'play' as const,
-      termination: {
-        result: '*',
-        winner: 'none' as const,
-        condition: 'Normal',
-      },
-      maiaEvaluations: [],
-      stockfishEvaluations: [],
-      type: 'play' as const,
-    },
+  // Tree controller for direct game tree manipulation
+  const treeController = useTreeController(
+    controller.gameTree || null,
     controller.currentDrill?.playerColor || 'white',
   )
 
-  // Sync analysis controller with current node - use ref to avoid dependency issues
-  const syncCurrentNode = useCallback(() => {
-    if (controller.currentNode && analysisController.setCurrentNode) {
-      analysisController.setCurrentNode(controller.currentNode)
-    }
-  }, [controller.currentNode, analysisController.setCurrentNode])
+  // Maia engine for analysis
+  const {
+    maia,
+    status: maiaStatus,
+    progress: maiaProgress,
+    downloadModel: downloadMaia,
+  } = useMaiaEngine()
 
+  // Sync tree controller with opening drill controller
   useEffect(() => {
-    syncCurrentNode()
-  }, [syncCurrentNode])
+    if (controller.currentNode && treeController.setCurrentNode) {
+      treeController.setCurrentNode(controller.currentNode)
+    }
+  }, [controller.currentNode, treeController.setCurrentNode])
 
   // Memoize arrow calculations to reduce re-renders
   const calculatedArrows = useMemo(() => {
-    if (!controller.analysisEnabled) {
+    if (!controller.analysisEnabled || !treeController.currentNode) {
       return []
     }
 
     const arr: DrawShape[] = []
+    const currentNode = treeController.currentNode
 
-    if (analysisController.moveEvaluation?.maia) {
-      const maiaEntries = Object.entries(
-        analysisController.moveEvaluation.maia.policy,
-      )
+    // Show Maia best move if available
+    if (currentNode.analysis?.maia?.['maia_kdd_1500']?.policy) {
+      const maiaPolicy = currentNode.analysis.maia['maia_kdd_1500'].policy
+      const maiaEntries = Object.entries(maiaPolicy)
       if (maiaEntries.length > 0) {
-        const maia = maiaEntries[0]
+        const bestMove = maiaEntries.reduce((a, b) =>
+          maiaPolicy[a[0]] > maiaPolicy[b[0]] ? a : b,
+        )
         arr.push({
           brush: 'red',
-          orig: maia[0].slice(0, 2) as Key,
-          dest: maia[0].slice(2, 4) as Key,
+          orig: bestMove[0].slice(0, 2) as Key,
+          dest: bestMove[0].slice(2, 4) as Key,
         } as DrawShape)
       }
     }
 
-    if (analysisController.moveEvaluation?.stockfish) {
+    // Show Stockfish best move if available
+    if (currentNode.analysis?.stockfish?.cp_vec) {
       const stockfishEntries = Object.entries(
-        analysisController.moveEvaluation.stockfish.cp_vec,
+        currentNode.analysis.stockfish.cp_vec,
       )
       if (stockfishEntries.length > 0) {
-        const stockfish = stockfishEntries[0]
+        const bestMove = stockfishEntries.reduce((a, b) =>
+          currentNode.analysis.stockfish!.cp_vec[a[0]] >
+          currentNode.analysis.stockfish!.cp_vec[b[0]]
+            ? a
+            : b,
+        )
         arr.push({
           brush: 'blue',
-          orig: stockfish[0].slice(0, 2) as Key,
-          dest: stockfish[0].slice(2, 4) as Key,
+          orig: bestMove[0].slice(0, 2) as Key,
+          dest: bestMove[0].slice(2, 4) as Key,
           modifiers: { lineWidth: 8 },
         })
       }
@@ -267,8 +219,8 @@ const OpeningsPage: NextPage = () => {
     return arr
   }, [
     controller.analysisEnabled,
-    analysisController.moveEvaluation?.maia?.policy,
-    analysisController.moveEvaluation?.stockfish?.cp_vec,
+    treeController.currentNode?.analysis?.maia,
+    treeController.currentNode?.analysis?.stockfish,
   ])
 
   // Set arrows with deferred updates to prevent blocking UI
@@ -313,20 +265,76 @@ const OpeningsPage: NextPage = () => {
     }
   }, [controller])
 
-  // Create moves array from the game tree for MovesContainer - reuse transformedMoves
-  const movesForContainer = useMemo(() => {
-    return transformedMoves
-  }, [transformedMoves])
+  // Create minimal AnalyzedGame for analysis controller
+  const analyzedGame = useMemo((): AnalyzedGame | null => {
+    if (!treeController.gameTree || !controller.currentDrill || !playerNames)
+      return null
 
-  // Show selection modal when no drill configuration exists and Maia model is ready
+    return {
+      id: `opening-drill-${controller.currentDrill.id}`,
+      tree: treeController.gameTree,
+      blackPlayer: playerNames.blackPlayer,
+      whitePlayer: playerNames.whitePlayer,
+      moves: [], // Tree will be used directly
+      availableMoves: [],
+      gameType: 'play' as const,
+      termination: {
+        result: '*',
+        winner: 'none' as const,
+        condition: 'Normal',
+      },
+      maiaEvaluations: [],
+      stockfishEvaluations: [],
+      type: 'play' as const,
+    }
+  }, [treeController.gameTree, controller.currentDrill?.id, playerNames])
+
+  // Analysis controller for the components
+  const analysisController = useAnalysisController(
+    analyzedGame || {
+      id: 'empty',
+      tree: treeController.gameTree,
+      blackPlayer: { name: 'Black' },
+      whitePlayer: { name: 'White' },
+      moves: [],
+      availableMoves: [],
+      gameType: 'play' as const,
+      termination: {
+        result: '*',
+        winner: 'none' as const,
+        condition: 'Normal',
+      },
+      maiaEvaluations: [],
+      stockfishEvaluations: [],
+      type: 'play' as const,
+    },
+    controller.currentDrill?.playerColor || 'white',
+  )
+
+  // Sync analysis controller with current node
   useEffect(() => {
-    if (
-      (!drillConfiguration || drillConfiguration.selections.length === 0) &&
-      analysisController.maiaStatus === 'ready'
-    ) {
+    if (controller.currentNode && analysisController.setCurrentNode) {
+      analysisController.setCurrentNode(controller.currentNode)
+    }
+  }, [controller.currentNode, analysisController.setCurrentNode])
+
+  // Create game object for MovesContainer
+  const gameForContainer = useMemo(() => {
+    if (!treeController.gameTree) return null
+
+    return {
+      id: `opening-drill-${controller.currentDrill?.id || 'current'}`,
+      tree: treeController.gameTree,
+      moves: [], // Not used when tree is provided
+    }
+  }, [treeController.gameTree, controller.currentDrill?.id])
+
+  // Show selection modal when no drill configuration exists
+  useEffect(() => {
+    if (!drillConfiguration || drillConfiguration.selections.length === 0) {
       setShowSelectionModal(true)
     }
-  }, [drillConfiguration, analysisController.maiaStatus])
+  }, [drillConfiguration])
 
   const handleCompleteSelection = useCallback(
     (configuration: DrillConfiguration) => {
@@ -460,7 +468,7 @@ const OpeningsPage: NextPage = () => {
               newFen,
               moveString,
               san,
-              analysisController.currentMaiaModel,
+              'maia_kdd_1500',
             )
             controller.setCurrentNode(newVariation)
           }
@@ -473,7 +481,7 @@ const OpeningsPage: NextPage = () => {
         await controller.makePlayerMove(move)
       }
     },
-    [controller, analysisController.currentMaiaModel],
+    [controller],
   )
 
   // Handle player moves
@@ -557,10 +565,7 @@ const OpeningsPage: NextPage = () => {
   }
 
   // Show download modal if Maia model needs to be downloaded
-  if (
-    analysisController.maiaStatus === 'no-cache' ||
-    analysisController.maiaStatus === 'downloading'
-  ) {
+  if (maiaStatus === 'no-cache' || maiaStatus === 'downloading') {
     return (
       <>
         <Head>
@@ -571,10 +576,7 @@ const OpeningsPage: NextPage = () => {
           />
         </Head>
         <AnimatePresence>
-          <DownloadModelModal
-            progress={analysisController.maiaProgress}
-            download={analysisController.downloadMaia}
-          />
+          <DownloadModelModal progress={maiaProgress} download={downloadMaia} />
         </AnimatePresence>
       </>
     )
@@ -632,11 +634,13 @@ const OpeningsPage: NextPage = () => {
               <div className="flex h-full flex-col">
                 <div className="flex-1 overflow-hidden">
                   <MovesContainer
-                    game={{
-                      id: controller.currentDrillGame.id,
-                      tree: controller.gameTree,
-                      moves: movesForContainer,
-                    }}
+                    game={
+                      gameForContainer || {
+                        id: controller.currentDrillGame.id,
+                        tree: controller.gameTree,
+                        moves: [],
+                      }
+                    }
                     type="analysis"
                     showAnnotations={
                       controller.analysisEnabled ||
@@ -764,22 +768,24 @@ const OpeningsPage: NextPage = () => {
               </div>
             }
           >
-            <LazyOpeningDrillAnalysis
-              currentNode={controller.currentNode}
-              gameTree={controller.gameTree}
-              analysisEnabled={controller.analysisEnabled}
-              onToggleAnalysis={() =>
-                controller.setAnalysisEnabled(!controller.analysisEnabled)
-              }
-              playerColor={controller.currentDrill?.playerColor || 'white'}
-              maiaVersion={
-                controller.currentDrill?.maiaVersion || 'maia_kdd_1500'
-              }
-              analysisController={analysisController}
-              hover={hover}
-              setHoverArrow={setHoverArrow}
-              makeMove={makeMove}
-            />
+            {analyzedGame && (
+              <LazyOpeningDrillAnalysis
+                currentNode={controller.currentNode}
+                gameTree={treeController.gameTree}
+                analysisEnabled={controller.analysisEnabled}
+                onToggleAnalysis={() =>
+                  controller.setAnalysisEnabled(!controller.analysisEnabled)
+                }
+                playerColor={controller.currentDrill?.playerColor || 'white'}
+                maiaVersion={
+                  controller.currentDrill?.maiaVersion || 'maia_kdd_1500'
+                }
+                analysisController={analysisController}
+                hover={hover}
+                setHoverArrow={setHoverArrow}
+                makeMove={makeMove}
+              />
+            )}
           </Suspense>
         </div>
       </div>
@@ -875,11 +881,13 @@ const OpeningsPage: NextPage = () => {
           {controller.currentDrillGame && (
             <div className="relative bottom-0 h-48 max-h-48 flex-1 overflow-auto overflow-y-hidden">
               <MovesContainer
-                game={{
-                  id: controller.currentDrillGame.id,
-                  tree: controller.gameTree,
-                  moves: movesForContainer,
-                }}
+                game={
+                  gameForContainer || {
+                    id: controller.currentDrillGame.id,
+                    tree: controller.gameTree,
+                    moves: [],
+                  }
+                }
                 type="analysis"
                 showAnnotations={
                   controller.analysisEnabled || controller.continueAnalyzingMode
@@ -951,18 +959,10 @@ const OpeningsPage: NextPage = () => {
 
           {/* Analysis Components Stacked */}
           <div className="flex w-full flex-col gap-1 overflow-hidden">
-            <Suspense
-              fallback={
-                <div className="flex h-32 items-center justify-center">
-                  <div className="text-sm text-secondary">
-                    Loading analysis...
-                  </div>
-                </div>
-              }
-            >
+            {analyzedGame && (
               <LazyOpeningDrillAnalysis
                 currentNode={controller.currentNode}
-                gameTree={controller.gameTree}
+                gameTree={treeController.gameTree}
                 analysisEnabled={controller.analysisEnabled}
                 onToggleAnalysis={() =>
                   controller.setAnalysisEnabled(!controller.analysisEnabled)
@@ -976,7 +976,7 @@ const OpeningsPage: NextPage = () => {
                 setHoverArrow={setHoverArrow}
                 makeMove={makeMove}
               />
-            </Suspense>
+            )}
           </div>
         </div>
       </div>
