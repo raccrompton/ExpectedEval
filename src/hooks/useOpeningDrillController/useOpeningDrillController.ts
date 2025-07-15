@@ -23,6 +23,7 @@ import {
   RatingComparison,
 } from 'src/types/openings'
 import { MAIA_MODELS } from 'src/constants/common'
+import { MIN_STOCKFISH_DEPTH } from 'src/constants/analysis'
 
 interface CachedAnalysisResult {
   fen: string
@@ -81,7 +82,6 @@ const parsePgnToTree = (pgn: string, gameTree: GameTree): GameNode | null => {
 
 export const useOpeningDrillController = (
   configuration: DrillConfiguration,
-  ensureAnalysisComplete?: (nodes: GameNode[]) => Promise<void>,
 ) => {
   const [remainingDrills, setRemainingDrills] = useState<OpeningSelection[]>([])
   const [currentDrill, setCurrentDrill] = useState<OpeningSelection | null>(
@@ -99,6 +99,10 @@ export const useOpeningDrillController = (
   const [currentPerformanceData, setCurrentPerformanceData] =
     useState<DrillPerformanceData | null>(null)
   const [isAnalyzingDrill, setIsAnalyzingDrill] = useState(false)
+
+  const ensureAnalysisCompleteRef = useRef<
+    ((nodes: GameNode[]) => Promise<void>) | null
+  >(null)
 
   // Flag to track when we're waiting for Maia's response (to prevent navigation-triggered moves)
   const [waitingForMaiaResponse, setWaitingForMaiaResponse] = useState(false)
@@ -267,6 +271,7 @@ export const useOpeningDrillController = (
     async (drillGame: OpeningDrillGame): Promise<DrillPerformanceData> => {
       const { selection } = drillGame
       const finalNode = controller.currentNode || drillGame.tree.getRoot()
+      // Use the centralized minimum depth constant
 
       const moveAnalyses: MoveAnalysis[] = []
       const evaluationChart: EvaluationPoint[] = []
@@ -286,6 +291,17 @@ export const useOpeningDrillController = (
 
           const stockfishEval = node.analysis?.stockfish
           const maiaEval = node.analysis?.maia?.[currentMaiaModel]
+
+          // Check if analysis meets minimum depth requirement
+          if (stockfishEval && stockfishEval.depth < MIN_STOCKFISH_DEPTH) {
+            console.warn(
+              `Stockfish analysis depth ${stockfishEval.depth} is below minimum required depth ${MIN_STOCKFISH_DEPTH} for position ${node.fen}`,
+            )
+          }
+
+          if (!maiaEval) {
+            console.warn(`Missing Maia analysis for position ${node.fen}`)
+          }
 
           const evaluation = stockfishEval?.model_optimal_cp as number
 
@@ -515,14 +531,8 @@ export const useOpeningDrillController = (
           currentMove: 'Preparing analysis...',
         })
 
-        // Ensure all positions in the drill are analyzed to depth 12
-        if (ensureAnalysisComplete) {
-          setAnalysisProgress({
-            total: 0,
-            completed: 0,
-            currentMove: 'Analyzing positions to depth 12...',
-          })
-
+        // Ensure all positions in the drill are analyzed to sufficient depth
+        if (ensureAnalysisCompleteRef.current) {
           const drillNodes: GameNode[] = []
           let currentNode = drillGame.tree.getRoot()
           drillNodes.push(currentNode)
@@ -532,7 +542,13 @@ export const useOpeningDrillController = (
             drillNodes.push(currentNode)
           }
 
-          await ensureAnalysisComplete(drillNodes)
+          await ensureAnalysisCompleteRef.current(drillNodes)
+        } else {
+          setAnalysisProgress({
+            total: 0,
+            completed: 0,
+            currentMove: 'Analyzing drill performance...',
+          })
         }
 
         const performanceData = await evaluateDrillPerformance(drillGame)
@@ -716,7 +732,6 @@ export const useOpeningDrillController = (
     setCurrentPerformanceData(null)
     setWaitingForMaiaResponse(false)
 
-    // Clear analysis cache and progress
     analysisCache.current.clear()
     setAnalysisProgress({ total: 0, completed: 0, currentMove: null })
   }, [])
@@ -1363,6 +1378,7 @@ export const useOpeningDrillController = (
     analysisEnabled,
     setAnalysisEnabled,
     analysisProgress,
+    setAnalysisProgress,
     continueAnalyzingMode,
 
     // Modal states
@@ -1396,5 +1412,10 @@ export const useOpeningDrillController = (
 
     // Analysis cache for sharing with analysis controller
     analysisCache,
+
+    // Setter for the ensureAnalysisComplete function
+    setEnsureAnalysisComplete: (fn: (nodes: GameNode[]) => Promise<void>) => {
+      ensureAnalysisCompleteRef.current = fn
+    },
   }
 }
