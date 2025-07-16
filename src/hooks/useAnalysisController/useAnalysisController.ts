@@ -21,13 +21,13 @@ export const useAnalysisController = (
       ? 'black'
       : 'white'
 
+  const maia = useContext(MaiaEngineContext)
+  const stockfish = useContext(StockfishEngineContext)
   const controller = useTreeController(game.tree, defaultOrientation)
 
   const [analysisState, setAnalysisState] = useState(0)
   const inProgressAnalyses = useMemo(() => new Set<string>(), [])
 
-  const maiaEngine = useContext(MaiaEngineContext)
-  const stockfishEngine = useContext(StockfishEngineContext)
   const [currentMove, setCurrentMove] = useState<[string, string] | null>()
   const [currentMaiaModel, setCurrentMaiaModel] = useLocalStorage(
     'currentMaiaModel',
@@ -43,13 +43,11 @@ export const useAnalysisController = (
   useEngineAnalysis(
     controller.currentNode || null,
     inProgressAnalyses,
-    maiaEngine,
-    stockfishEngine,
     currentMaiaModel,
     setAnalysisState,
   )
 
-  const moves = useMemo(() => {
+  const availableMoves = useMemo(() => {
     if (!controller.currentNode) return new Map<string, string[]>()
 
     const moveMap = new Map<string, string[]>()
@@ -134,7 +132,7 @@ export const useAnalysisController = (
     setOrientation: controller.setOrientation,
 
     move,
-    moves,
+    availableMoves,
     currentMaiaModel,
     setCurrentMaiaModel,
     currentMove,
@@ -146,7 +144,7 @@ export const useAnalysisController = (
     moveMap,
     blunderMeter,
     boardDescription,
-    stockfish: stockfishEngine,
-    maia: maiaEngine,
+    stockfish: stockfish,
+    maia: maia,
   }
 }

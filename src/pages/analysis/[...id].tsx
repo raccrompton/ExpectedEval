@@ -495,9 +495,9 @@ const Analysis: React.FC<Props> = ({
       if (!playedMove) return
 
       // Check for promotions in available moves
-      const availableMoves = Array.from(controller.moves.entries()).flatMap(
-        ([from, tos]) => tos.map((to) => ({ from, to })),
-      )
+      const availableMoves = Array.from(
+        controller.availableMoves.entries(),
+      ).flatMap(([from, tos]) => tos.map((to) => ({ from, to })))
 
       const matching = availableMoves.filter((m) => {
         return m.from === playedMove[0] && m.to === playedMove[1]
@@ -513,7 +513,7 @@ const Analysis: React.FC<Props> = ({
       const moveUci = playedMove[0] + playedMove[1]
       makeMove(moveUci)
     },
-    [controller.moves, makeMove],
+    [controller.availableMoves, makeMove],
   )
 
   const onPlayerSelectPromotion = useCallback(
@@ -671,7 +671,7 @@ const Analysis: React.FC<Props> = ({
             <div className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]">
               <GameBoard
                 game={analyzedGame}
-                availableMoves={controller.moves}
+                availableMoves={controller.availableMoves}
                 setCurrentSquare={setCurrentSquare}
                 shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
                 currentNode={controller.currentNode as GameNode}
@@ -906,7 +906,7 @@ const Analysis: React.FC<Props> = ({
             <div id="analysis" className="relative flex h-[100vw] w-screen">
               <GameBoard
                 game={analyzedGame}
-                availableMoves={controller.moves}
+                availableMoves={controller.availableMoves}
                 setCurrentSquare={setCurrentSquare}
                 shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
                 currentNode={controller.currentNode as GameNode}
