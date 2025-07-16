@@ -179,7 +179,7 @@ export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
                 event={`Play vs. ${maiaTitle}`}
                 type="play"
               />
-              <StatsDisplay stats={stats} hideSession={true} />
+              <StatsDisplay stats={stats} hideSession={true} isGame={true} />
             </div>
           </div>
           <div
@@ -303,7 +303,7 @@ export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
               </div>
             </div>
             <div className="w-screen">{props.children}</div>
-            <StatsDisplay stats={stats} hideSession={true} />
+            <StatsDisplay stats={stats} hideSession={true} isGame={true} />
             <div className="px-2">
               <ExportGame
                 game={game}
