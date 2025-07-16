@@ -1,8 +1,4 @@
-import React, {
-  useMemo,
-  useCallback,
-  useContext,
-} from 'react'
+import React, { useMemo, useCallback, useContext } from 'react'
 import { Highlight, MoveMap, BlunderMeter, MovesByRating } from '../Analysis'
 import { GameNode } from 'src/types'
 import { GameTree } from 'src/types/base/tree'

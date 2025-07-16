@@ -187,11 +187,9 @@ const OpeningsPage: NextPage = () => {
         currentNode.analysis.stockfish.cp_vec,
       )
       if (stockfishEntries.length > 0) {
+        const vec = currentNode.analysis.stockfish.cp_vec
         const bestMove = stockfishEntries.reduce((a, b) =>
-          currentNode.analysis.stockfish!.cp_vec[a[0]] >
-          currentNode.analysis.stockfish!.cp_vec[b[0]]
-            ? a
-            : b,
+          vec[a[0]] > vec[b[0]] ? a : b,
         )
         arr.push({
           brush: 'blue',
