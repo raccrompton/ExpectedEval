@@ -1,6 +1,7 @@
 import Head from 'next/head'
 import { NextPage } from 'next/types'
 import { useCallback, useContext, useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { trackTuringGameStarted } from 'src/lib/analytics'
 import {
   WindowSizeContext,
@@ -8,7 +9,7 @@ import {
   useTour,
 } from 'src/contexts'
 import {
-  Loading,
+  DelayedLoading,
   GameInfo,
   GameBoard,
   TuringLog,
@@ -46,11 +47,11 @@ const TuringPage: NextPage = () => {
 
   return (
     <TuringControllerContext.Provider value={controller}>
-      {controller.game ? (
-        <Turing game={controller.game} stats={controller.stats} />
-      ) : (
-        <Loading />
-      )}
+      <DelayedLoading isLoading={!controller.game}>
+        {controller.game && (
+          <Turing game={controller.game} stats={controller.stats} />
+        )}
+      </DelayedLoading>
     </TuringControllerContext.Provider>
   )
 }
@@ -66,6 +67,43 @@ const Turing: React.FC<Props> = (props: Props) => {
   const { isMobile } = useContext(WindowSizeContext)
 
   const controller = useContext(TuringControllerContext)
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.2,
+        staggerChildren: 0.05,
+      },
+    },
+    exit: {
+      opacity: 0,
+      transition: { duration: 0.2 },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 4 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.25,
+        ease: [0.25, 0.46, 0.45, 0.94],
+        type: 'tween',
+      },
+    },
+    exit: {
+      opacity: 0,
+      y: -4,
+      transition: {
+        duration: 0.2,
+        ease: [0.25, 0.46, 0.45, 0.94],
+        type: 'tween',
+      },
+    },
+  }
 
   const launchContinue = useCallback(() => {
     const fen = controller.currentNode?.fen
@@ -117,10 +155,19 @@ const Turing: React.FC<Props> = (props: Props) => {
   )
 
   const desktopLayout = (
-    <>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      style={{ willChange: 'transform, opacity' }}
+    >
       <div className="flex h-full flex-1 flex-col justify-center gap-1 py-10">
         <div className="mx-auto mt-2 flex w-[90%] flex-row items-center justify-between gap-4">
-          <div className="flex h-[75vh] min-w-64 flex-grow flex-col justify-between">
+          <motion.div
+            variants={itemVariants}
+            className="flex h-[75vh] min-w-64 flex-grow flex-col justify-between"
+          >
             <div className="flex w-full flex-col gap-2">
               <GameInfo title="Bot or Not" icon="smart_toy" type="turing">
                 {Info}
@@ -135,14 +182,18 @@ const Turing: React.FC<Props> = (props: Props) => {
               </div>
             </div>
             <StatsDisplay stats={stats} />
-          </div>
-          <div
+          </motion.div>
+          <motion.div
+            variants={itemVariants}
             id="turing-page"
             className="relative flex aspect-square w-full max-w-[75vh] flex-shrink-0"
           >
             <GameBoard game={game} currentNode={controller.currentNode} />
-          </div>
-          <div className="flex h-[75vh] min-w-64 flex-grow flex-col gap-1">
+          </motion.div>
+          <motion.div
+            variants={itemVariants}
+            className="flex h-[75vh] min-w-64 flex-grow flex-col gap-1"
+          >
             <div className="relative bottom-0 h-full min-h-[38px] flex-1">
               <MovesContainer
                 game={game}
@@ -166,16 +217,25 @@ const Turing: React.FC<Props> = (props: Props) => {
                 gameTree={controller.gameTree}
               />
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </>
+    </motion.div>
   )
 
   const mobileLayout = (
-    <>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      style={{ willChange: 'transform, opacity' }}
+    >
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
-        <div className="mt-2 flex h-full flex-col items-start justify-start">
+        <motion.div
+          variants={itemVariants}
+          className="mt-2 flex h-full flex-col items-start justify-start"
+        >
           <div className="flex h-auto w-full flex-col gap-2">
             <div className="w-screen">
               <GameInfo title="Bot or Not" icon="smart_toy" type="turing">
@@ -221,13 +281,18 @@ const Turing: React.FC<Props> = (props: Props) => {
               />
             </div>
           </div>
-        </div>
-        <StatsDisplay stats={stats} />
-        <div className="relative bottom-0 flex h-full min-h-[38px] flex-1 flex-col justify-end overflow-auto">
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatsDisplay stats={stats} />
+        </motion.div>
+        <motion.div
+          variants={itemVariants}
+          className="relative bottom-0 flex h-full min-h-[38px] flex-1 flex-col justify-end overflow-auto"
+        >
           <TuringLog />
-        </div>
+        </motion.div>
       </div>
-    </>
+    </motion.div>
   )
 
   return (
@@ -240,7 +305,9 @@ const Turing: React.FC<Props> = (props: Props) => {
         />
       </Head>
       <TuringControllerContext.Provider value={controller}>
-        {isMobile ? mobileLayout : desktopLayout}
+        <AnimatePresence mode="wait">
+          {isMobile ? mobileLayout : desktopLayout}
+        </AnimatePresence>
       </TuringControllerContext.Provider>
     </>
   )
