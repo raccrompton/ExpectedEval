@@ -10,7 +10,7 @@ import {
 
 interface Props {
   progress: number
-  download: () => Promise<void>
+  download: () => void
 }
 
 export const DownloadModelModal: React.FC<Props> = ({

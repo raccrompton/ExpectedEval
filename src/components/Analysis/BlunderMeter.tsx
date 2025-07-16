@@ -373,7 +373,7 @@ function Meter({
       </motion.div>
       <div className="flex h-full w-full flex-col overflow-hidden">
         <p className={`text-xs font-medium xl:text-sm ${textColor}`}>{title}</p>
-        <div className="text-xxs grid w-full grid-cols-3 overflow-hidden overflow-ellipsis text-wrap text-secondary xl:text-xs">
+        <div className="grid w-full grid-cols-3 overflow-hidden overflow-ellipsis text-wrap text-xxs text-secondary xl:text-xs">
           {filteredMoves().map((move) => (
             <button
               key={move.move}

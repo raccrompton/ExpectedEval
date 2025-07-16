@@ -1,18 +1,15 @@
 import { Chess } from 'chess.ts'
-import { useEffect, useMemo, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 
-import {
-  useStockfishEngine,
-  useMaiaEngine,
-  useTreeController,
-  useLocalStorage,
-} from '..'
+import { useTreeController, useLocalStorage } from '..'
 import { AnalyzedGame } from 'src/types'
 import { MAIA_MODELS } from 'src/constants/common'
 import { generateColorSanMapping, calculateBlunderMeter } from './utils'
 import { useEngineAnalysis } from './useEngineAnalysis'
 import { useMoveRecommendations } from './useMoveRecommendations'
 import { useBoardDescription } from './useBoardDescription'
+import { MaiaEngineContext } from 'src/contexts/MaiaEngineContext'
+import { StockfishEngineContext } from 'src/contexts/StockfishEngineContext'
 
 export const useAnalysisController = (
   game: AnalyzedGame,
@@ -24,25 +21,13 @@ export const useAnalysisController = (
       ? 'black'
       : 'white'
 
+  const maia = useContext(MaiaEngineContext)
+  const stockfish = useContext(StockfishEngineContext)
   const controller = useTreeController(game.tree, defaultOrientation)
 
   const [analysisState, setAnalysisState] = useState(0)
   const inProgressAnalyses = useMemo(() => new Set<string>(), [])
 
-  const {
-    maia,
-    status: maiaStatus,
-    progress: maiaProgress,
-    downloadModel: downloadMaia,
-  } = useMaiaEngine()
-
-  const {
-    streamEvaluations,
-    stopEvaluation,
-    isReady: isStockfishReady,
-    status: stockfishStatus,
-    error: stockfishError,
-  } = useStockfishEngine()
   const [currentMove, setCurrentMove] = useState<[string, string] | null>()
   const [currentMaiaModel, setCurrentMaiaModel] = useLocalStorage(
     'currentMaiaModel',
@@ -58,16 +43,11 @@ export const useAnalysisController = (
   useEngineAnalysis(
     controller.currentNode || null,
     inProgressAnalyses,
-    maiaStatus,
-    maia,
-    streamEvaluations,
-    stopEvaluation,
-    isStockfishReady,
     currentMaiaModel,
     setAnalysisState,
   )
 
-  const moves = useMemo(() => {
+  const availableMoves = useMemo(() => {
     if (!controller.currentNode) return new Map<string, string[]>()
 
     const moveMap = new Map<string, string[]>()
@@ -151,13 +131,8 @@ export const useAnalysisController = (
     orientation: controller.orientation,
     setOrientation: controller.setOrientation,
 
-    maiaStatus,
-    downloadMaia,
-    maiaProgress,
-    stockfishStatus,
-    stockfishError,
     move,
-    moves,
+    availableMoves,
     currentMaiaModel,
     setCurrentMaiaModel,
     currentMove,
@@ -169,5 +144,7 @@ export const useAnalysisController = (
     moveMap,
     blunderMeter,
     boardDescription,
+    stockfish: stockfish,
+    maia: maia,
   }
 }

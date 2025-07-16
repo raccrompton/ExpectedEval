@@ -308,10 +308,6 @@ const Analysis: React.FC<Props> = ({
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
   const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
   const [arrows, setArrows] = useState<DrawShape[]>([])
-  const [brushes, setBrushes] = useState<DrawBrushes>({} as DrawBrushes)
-  const [screen, setScreen] = useState(screens[0])
-  const toastId = useRef<string>(null)
-  const stockfishToastId = useRef<string>(null)
   const [currentSquare, setCurrentSquare] = useState<Key | null>(null)
   const [promotionFromTo, setPromotionFromTo] = useState<
     [string, string] | null
@@ -330,50 +326,6 @@ const Analysis: React.FC<Props> = ({
   useEffect(() => {
     setHoverArrow(null)
   }, [controller.currentNode])
-
-  useEffect(() => {
-    return () => {
-      toast.dismiss()
-    }
-  }, [])
-
-  useEffect(() => {
-    if (controller.maiaStatus === 'loading' && !toastId.current) {
-      toastId.current = toast.loading('Loading Maia Model...')
-    } else if (controller.maiaStatus === 'ready') {
-      if (toastId.current) {
-        toast.success('Loaded Maia! Analysis is ready', {
-          id: toastId.current,
-        })
-      } else {
-        toast.success('Loaded Maia! Analysis is ready')
-      }
-    }
-  }, [controller.maiaStatus])
-
-  useEffect(() => {
-    if (controller.stockfishStatus === 'loading' && !stockfishToastId.current) {
-      stockfishToastId.current = toast.loading('Loading Stockfish Engine...')
-    } else if (controller.stockfishStatus === 'ready') {
-      if (stockfishToastId.current) {
-        toast.success('Loaded Stockfish! Engine is ready', {
-          id: stockfishToastId.current,
-        })
-        stockfishToastId.current = null
-      } else {
-        toast.success('Loaded Stockfish! Engine is ready')
-      }
-    } else if (controller.stockfishStatus === 'error') {
-      if (stockfishToastId.current) {
-        toast.error('Failed to load Stockfish engine', {
-          id: stockfishToastId.current,
-        })
-        stockfishToastId.current = null
-      } else {
-        toast.error('Failed to load Stockfish engine')
-      }
-    }
-  }, [controller.stockfishStatus])
 
   const launchContinue = useCallback(() => {
     const fen = controller.currentNode?.fen as string
@@ -492,9 +444,9 @@ const Analysis: React.FC<Props> = ({
       if (!playedMove) return
 
       // Check for promotions in available moves
-      const availableMoves = Array.from(controller.moves.entries()).flatMap(
-        ([from, tos]) => tos.map((to) => ({ from, to })),
-      )
+      const availableMoves = Array.from(
+        controller.availableMoves.entries(),
+      ).flatMap(([from, tos]) => tos.map((to) => ({ from, to })))
 
       const matching = availableMoves.filter((m) => {
         return m.from === playedMove[0] && m.to === playedMove[1]
@@ -510,7 +462,7 @@ const Analysis: React.FC<Props> = ({
       const moveUci = playedMove[0] + playedMove[1]
       makeMove(moveUci)
     },
-    [controller.moves, makeMove],
+    [controller.availableMoves, makeMove],
   )
 
   const onPlayerSelectPromotion = useCallback(
@@ -668,7 +620,7 @@ const Analysis: React.FC<Props> = ({
             <div className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]">
               <GameBoard
                 game={analyzedGame}
-                availableMoves={controller.moves}
+                availableMoves={controller.availableMoves}
                 setCurrentSquare={setCurrentSquare}
                 shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
                 currentNode={controller.currentNode as GameNode}
@@ -903,7 +855,7 @@ const Analysis: React.FC<Props> = ({
             <div id="analysis" className="relative flex h-[100vw] w-screen">
               <GameBoard
                 game={analyzedGame}
-                availableMoves={controller.moves}
+                availableMoves={controller.availableMoves}
                 setCurrentSquare={setCurrentSquare}
                 shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
                 currentNode={controller.currentNode as GameNode}
@@ -1007,11 +959,11 @@ const Analysis: React.FC<Props> = ({
         />
       </Head>
       <AnimatePresence>
-        {controller.maiaStatus === 'no-cache' ||
-        controller.maiaStatus === 'downloading' ? (
+        {controller.maia.status === 'no-cache' ||
+        controller.maia.status === 'downloading' ? (
           <DownloadModelModal
-            progress={controller.maiaProgress}
-            download={controller.downloadMaia}
+            progress={controller.maia.progress}
+            download={controller.maia.downloadModel}
           />
         ) : null}
       </AnimatePresence>
