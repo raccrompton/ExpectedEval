@@ -18,7 +18,13 @@ export const useAnalysisController = (
   game: AnalyzedGame,
   initialOrientation?: 'white' | 'black',
 ) => {
-  const controller = useTreeController(game.tree, initialOrientation)
+  const defaultOrientation = initialOrientation
+    ? initialOrientation
+    : game.whitePlayer.name.includes('Maia')
+      ? 'black'
+      : 'white'
+
+  const controller = useTreeController(game.tree, defaultOrientation)
 
   const [analysisState, setAnalysisState] = useState(0)
   const inProgressAnalyses = useMemo(() => new Set<string>(), [])
