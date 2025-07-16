@@ -2,7 +2,13 @@ import { Chess } from 'chess.ts'
 import { useEffect } from 'react'
 import { getBookMoves } from 'src/api'
 import { MAIA_MODELS } from 'src/constants/common'
-import { GameNode, MaiaEvaluation, StockfishEvaluation } from 'src/types'
+import {
+  GameNode,
+  MaiaEvaluation,
+  StockfishEvaluation,
+  MaiaEngine,
+  StockfishEngine,
+} from 'src/types'
 
 type BatchEvaluateResult = {
   result: MaiaEvaluation[]
@@ -27,18 +33,15 @@ type EngineHooks = {
 export const useEngineAnalysis = (
   currentNode: GameNode | null,
   inProgressAnalyses: Set<string>,
-  maiaStatus: string,
-  maia: { batchEvaluate: EngineHooks['maia']['batchEvaluate'] },
-  streamEvaluations: EngineHooks['streamEvaluations'],
-  stopEvaluation: EngineHooks['stopEvaluation'],
-  isStockfishReady: () => boolean,
+  maia: MaiaEngine,
+  stockfish: StockfishEngine,
   currentMaiaModel: string,
   setAnalysisState: React.Dispatch<React.SetStateAction<number>>,
 ) => {
   async function analyze(board: Chess): Promise<{
     [key: string]: MaiaEvaluation
   }> {
-    const { result } = await maia.batchEvaluate(
+    const { result } = await maia.maia.batchEvaluate(
       Array(9).fill(board.fen()),
       [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900],
       [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900],
@@ -76,12 +79,12 @@ export const useEngineAnalysis = (
       let retries = 0
       const maxRetries = 30 // 3 seconds with 100ms intervals
 
-      while (retries < maxRetries && maiaStatus !== 'ready') {
+      while (retries < maxRetries && maia.status !== 'ready') {
         await new Promise((resolve) => setTimeout(resolve, 100))
         retries++
       }
 
-      if (maiaStatus !== 'ready') {
+      if (maia.status !== 'ready') {
         console.warn('Maia not ready after waiting, skipping analysis')
         return
       }
@@ -134,7 +137,7 @@ export const useEngineAnalysis = (
       clearTimeout(timeoutId)
     }
   }, [
-    maiaStatus,
+    maia.status,
     currentNode,
     currentMaiaModel,
     inProgressAnalyses,
@@ -164,12 +167,12 @@ export const useEngineAnalysis = (
       let retries = 0
       const maxRetries = 30 // 3 seconds with 100ms intervals
 
-      while (retries < maxRetries && !isStockfishReady() && !cancelled) {
+      while (retries < maxRetries && !stockfish.isReady() && !cancelled) {
         await new Promise((resolve) => setTimeout(resolve, 100))
         retries++
       }
 
-      if (cancelled || !isStockfishReady()) {
+      if (cancelled || !stockfish.isReady()) {
         if (!cancelled) {
           console.warn('Stockfish not ready after waiting, skipping analysis')
         }
@@ -177,7 +180,7 @@ export const useEngineAnalysis = (
       }
 
       const chess = new Chess(currentNode.fen)
-      const evaluationStream = streamEvaluations(
+      const evaluationStream = stockfish.streamEvaluations(
         chess.fen(),
         chess.moves().length,
       )
@@ -208,12 +211,5 @@ export const useEngineAnalysis = (
       cancelled = true
       clearTimeout(timeoutId)
     }
-  }, [
-    currentNode,
-    streamEvaluations,
-    stopEvaluation,
-    isStockfishReady,
-    currentMaiaModel,
-    setAnalysisState,
-  ])
+  }, [currentNode, stockfish, currentMaiaModel, setAnalysisState])
 }

@@ -1,8 +1,13 @@
 import Maia from './model'
 import { MaiaStatus } from 'src/types'
-import { useState, useMemo, useCallback } from 'react'
+import { MaiaEngineContext } from 'src/contexts'
+import { ReactNode, useState, useMemo, useCallback } from 'react'
 
-export const useMaiaEngine = () => {
+export const MaiaEngineContextProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}: {
+  children: ReactNode
+}) => {
   const [status, setStatus] = useState<MaiaStatus>('loading')
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
@@ -17,7 +22,7 @@ export const useMaiaEngine = () => {
     return model
   }, [])
 
-  const downloadModel = async () => {
+  const downloadModel = useCallback(async () => {
     try {
       setStatus('downloading')
       await maia.downloadModel()
@@ -25,23 +30,26 @@ export const useMaiaEngine = () => {
       setError(err instanceof Error ? err.message : 'Failed to download model')
       setStatus('error')
     }
-  }
+  }, [maia])
 
-  const getStorageInfo = async () => {
+  const getStorageInfo = useCallback(async () => {
     return await maia.getStorageInfo()
-  }
+  }, [maia])
 
-  const clearStorage = async () => {
+  const clearStorage = useCallback(async () => {
     return await maia.clearStorage()
-  }
+  }, [maia])
 
-  return {
-    maia,
-    status,
-    progress,
-    error,
-    downloadModel,
-    getStorageInfo,
-    clearStorage,
-  }
+  return (
+    <MaiaEngineContext.Provider
+      value={{
+        maia,
+        status,
+        progress,
+        downloadModel,
+      }}
+    >
+      {children}
+    </MaiaEngineContext.Provider>
+  )
 }

@@ -19,6 +19,7 @@ import {
   WindowSizeContext,
   TreeControllerContext,
   AuthContext,
+  MaiaEngineContext,
 } from 'src/contexts'
 import { DrillConfiguration, AnalyzedGame } from 'src/types'
 import { GameNode } from 'src/types/base/tree'
@@ -47,7 +48,6 @@ import {
 import {
   useOpeningDrillController,
   useTreeController,
-  useMaiaEngine,
   useAnalysisController,
 } from 'src/hooks'
 import {
@@ -147,13 +147,7 @@ const OpeningsPage: NextPage = () => {
     controller.currentDrill?.playerColor || 'white',
   )
 
-  // Maia engine for analysis
-  const {
-    maia,
-    status: maiaStatus,
-    progress: maiaProgress,
-    downloadModel: downloadMaia,
-  } = useMaiaEngine()
+  const maiaEngine = useContext(MaiaEngineContext)
 
   // Sync tree controller with opening drill controller
   useEffect(() => {
@@ -652,7 +646,7 @@ const OpeningsPage: NextPage = () => {
   }
 
   // Show download modal if Maia model needs to be downloaded
-  if (maiaStatus === 'no-cache' || maiaStatus === 'downloading') {
+  if (maiaEngine.status === 'no-cache' || maiaEngine.status === 'downloading') {
     return (
       <>
         <Head>
@@ -663,7 +657,10 @@ const OpeningsPage: NextPage = () => {
           />
         </Head>
         <AnimatePresence>
-          <DownloadModelModal progress={maiaProgress} download={downloadMaia} />
+          <DownloadModelModal
+            progress={maiaEngine.progress}
+            download={maiaEngine.downloadModel}
+          />
         </AnimatePresence>
       </>
     )

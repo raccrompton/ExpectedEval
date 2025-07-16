@@ -1,8 +1,18 @@
-import Engine from './engine'
-import { useMemo, useRef, useCallback, useState, useEffect } from 'react'
+import {
+  ReactNode,
+  useRef,
+  useCallback,
+  useState,
+  useEffect,
+  useMemo,
+} from 'react'
+import { StockfishEngineContext } from 'src/contexts'
 import { StockfishStatus } from 'src/types'
+import Engine from 'src/providers/StockfishEngineContextProvider/engine'
 
-export const useStockfishEngine = () => {
+export const StockfishEngineContextProvider: React.FC<{
+  children: ReactNode
+}> = ({ children }: { children: ReactNode }) => {
   const engineRef = useRef<Engine | null>(null)
   const [status, setStatus] = useState<StockfishStatus>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -46,7 +56,7 @@ export const useStockfishEngine = () => {
     return () => clearInterval(interval)
   }, [])
 
-  return useMemo(
+  const contextValue = useMemo(
     () => ({
       streamEvaluations,
       stopEvaluation,
@@ -55,5 +65,11 @@ export const useStockfishEngine = () => {
       error,
     }),
     [streamEvaluations, stopEvaluation, isReady, status, error],
+  )
+
+  return (
+    <StockfishEngineContext.Provider value={contextValue}>
+      {children}
+    </StockfishEngineContext.Provider>
   )
 }
