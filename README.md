@@ -126,11 +126,11 @@ To better understand the patterns used in this codebase, we recommend reviewing 
 
 A key feature of the platform is its ability to run both Stockfish and Maia directly in the user's browser. This is accomplished using WebAssembly and ONNX Runtime Web.
 
-- **Stockfish (`src/hooks/useStockfishEngine/`)**: We use a WebAssembly (WASM) version of Stockfish for standard chess analysis. The `useStockfishEngine` hook provides a simple interface to interact with the engine, allowing for move evaluation streams. This provides the "objective" best moves in any given position.
+- **Stockfish (`src/contexts/StockfishEngineContext/`)**: We use a WebAssembly (WASM) version of Stockfish for standard chess analysis. The Stockfish engine is managed through a React Context provider that provides a simple interface to interact with the engine, allowing for move evaluation streams. This provides the "objective" best moves in any given position.
 
-- **Maia (`src/hooks/useMaiaEngine/`)**: The Maia engine is a neural network provided as an ONNX (Open Neural Network Exchange) model. We use the `onnxruntime-web` library to load and run Maia models on the client-side. The `useMaiaEngine` hook manages the download, initialization, and execution of the various Maia models (e.g., `maia_kdd_1100` to `maia_kdd_1900`). This engine provides the "human-like" move predictions that are central to the platform's mission.
+- **Maia (`src/contexts/MaiaEngineContext/`)**: The Maia engine is a neural network provided as an ONNX (Open Neural Network Exchange) model. We use the `onnxruntime-web` library to load and run Maia models on the client-side. The Maia engine is managed through a React Context provider that handles the download, initialization, and execution of the various Maia models (e.g., `maia_kdd_1100` to `maia_kdd_1900`). This engine provides the "human-like" move predictions that are central to the platform's mission.
 
-These hooks are consumed by higher-level controller hooks (like `useAnalysisController`) to provide the dual-engine analysis that powers many of the platform's features.
+These context providers are consumed by higher-level controller hooks (like `useAnalysisController`) to provide the dual-engine analysis that powers many of the platform's features.
 
 ## Contributing Guidelines
 

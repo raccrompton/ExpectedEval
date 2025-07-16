@@ -17,7 +17,6 @@ import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
 import { Chess, PieceSymbol } from 'chess.ts'
 import { AnimatePresence } from 'framer-motion'
-import toast from 'react-hot-toast'
 import {
   getTrainingGame,
   logPuzzleGuesses,
@@ -58,7 +57,7 @@ import {
   getAvailableMovesArray,
   requiresPromotion,
 } from 'src/lib/train/utils'
-import { mockAnalysisData } from 'src/hooks/useAnalysisController/mockData'
+import { mockAnalysisData } from 'src/lib/analysis/mockAnalysisData'
 import { tourConfigs } from 'src/constants/tours'
 
 const statsLoader = async () => {
@@ -289,8 +288,6 @@ const Train: React.FC<Props> = ({
   const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
   const [arrows, setArrows] = useState<DrawShape[]>([])
   const analysisSyncedRef = useRef(false)
-  const toastId = useRef<string | null>(null)
-  const stockfishToastId = useRef<string | null>(null)
   const [promotionFromTo, setPromotionFromTo] = useState<
     [string, string] | null
   >(null)
@@ -317,54 +314,6 @@ const Train: React.FC<Props> = ({
     }
   }, [showAnalysis, analysisController, controller.currentNode])
 
-  // Toast notifications for Maia model status
-  useEffect(() => {
-    return () => {
-      toast.dismiss()
-    }
-  }, [])
-
-  useEffect(() => {
-    if (analysisController.maiaStatus === 'loading' && !toastId.current) {
-      toastId.current = toast.loading('Loading Maia Model...')
-    } else if (analysisController.maiaStatus === 'ready') {
-      if (toastId.current) {
-        toast.success('Loaded Maia! Analysis is ready', {
-          id: toastId.current,
-        })
-      } else {
-        toast.success('Loaded Maia! Analysis is ready')
-      }
-    }
-  }, [analysisController.maiaStatus])
-
-  useEffect(() => {
-    if (
-      analysisController.stockfishStatus === 'loading' &&
-      !stockfishToastId.current
-    ) {
-      stockfishToastId.current = toast.loading('Loading Stockfish Engine...')
-    } else if (analysisController.stockfishStatus === 'ready') {
-      if (stockfishToastId.current) {
-        toast.success('Loaded Stockfish! Engine is ready', {
-          id: stockfishToastId.current,
-        })
-        stockfishToastId.current = null
-      } else {
-        toast.success('Loaded Stockfish! Engine is ready')
-      }
-    } else if (analysisController.stockfishStatus === 'error') {
-      if (stockfishToastId.current) {
-        toast.error('Failed to load Stockfish engine', {
-          id: stockfishToastId.current,
-        })
-        stockfishToastId.current = null
-      } else {
-        toast.error('Failed to load Stockfish engine')
-      }
-    }
-  }, [analysisController.stockfishStatus])
-
   const onSelectSquare = useCallback(
     (square: Key) => {
       if (!showAnalysis) {
@@ -380,7 +329,9 @@ const Train: React.FC<Props> = ({
       if (!playedMove) return
 
       if (showAnalysis) {
-        const availableMoves = getAvailableMovesArray(analysisController.moves)
+        const availableMoves = getAvailableMovesArray(
+          analysisController.availableMoves,
+        )
 
         if (requiresPromotion(playedMove, availableMoves)) {
           setPromotionFromTo(playedMove)
@@ -708,7 +659,7 @@ const Train: React.FC<Props> = ({
                 onPlayerMakeMove={onPlayerMakeMove}
                 availableMoves={
                   showAnalysis
-                    ? analysisController.moves
+                    ? analysisController.availableMoves
                     : controller.availableMovesMapped
                 }
                 shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
@@ -1106,7 +1057,7 @@ const Train: React.FC<Props> = ({
               }
               availableMoves={
                 showAnalysis
-                  ? analysisController.moves
+                  ? analysisController.availableMoves
                   : controller.availableMovesMapped
               }
               onPlayerMakeMove={onPlayerMakeMove}
@@ -1330,11 +1281,11 @@ const Train: React.FC<Props> = ({
         />
       </Head>
       <AnimatePresence>
-        {analysisController.maiaStatus === 'no-cache' ||
-        analysisController.maiaStatus === 'downloading' ? (
+        {analysisController.maia.status === 'no-cache' ||
+        analysisController.maia.status === 'downloading' ? (
           <DownloadModelModal
-            progress={analysisController.maiaProgress}
-            download={analysisController.downloadMaia}
+            progress={analysisController.maia.progress}
+            download={analysisController.maia.downloadModel}
           />
         ) : null}
       </AnimatePresence>
