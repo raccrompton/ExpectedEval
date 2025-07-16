@@ -1,5 +1,5 @@
 import { Chess } from 'chess.ts'
-import { COLORS, OK_THRESHOLD, GOOD_THRESHOLD } from './constants'
+import { COLORS, MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/analysis'
 import {
   BlunderInfo,
   BlunderMeterResult,
@@ -26,9 +26,11 @@ export const calculateMoveColor = (
   const relativeEval = stockfish?.cp_relative_vec[moveKey]
 
   if (winrateLoss !== undefined) {
-    if (winrateLoss >= GOOD_THRESHOLD) {
+    if (winrateLoss >= -MOVE_CLASSIFICATION_THRESHOLDS.INACCURACY_THRESHOLD) {
       return COLORS.good[0]
-    } else if (winrateLoss >= OK_THRESHOLD) {
+    } else if (
+      winrateLoss >= -MOVE_CLASSIFICATION_THRESHOLDS.BLUNDER_THRESHOLD
+    ) {
       return COLORS.ok[0]
     } else {
       return COLORS.blunder[0]
@@ -76,7 +78,10 @@ export const generateColorSanMapping = (
         .map((m) => `${m.from}${m.to}${m.promotion || ''}`)
         .filter((move) => {
           const winrateLoss = stockfish.winrate_loss_vec?.[move]
-          return winrateLoss !== undefined && winrateLoss >= GOOD_THRESHOLD
+          return (
+            winrateLoss !== undefined &&
+            winrateLoss >= -MOVE_CLASSIFICATION_THRESHOLDS.INACCURACY_THRESHOLD
+          )
         })
         .sort((a, b) => {
           const aLoss = stockfish.winrate_loss_vec?.[a] || 0
@@ -90,8 +95,8 @@ export const generateColorSanMapping = (
           const winrateLoss = stockfish.winrate_loss_vec?.[move]
           return (
             winrateLoss !== undefined &&
-            winrateLoss >= OK_THRESHOLD &&
-            winrateLoss < GOOD_THRESHOLD
+            winrateLoss >= -MOVE_CLASSIFICATION_THRESHOLDS.BLUNDER_THRESHOLD &&
+            winrateLoss < -MOVE_CLASSIFICATION_THRESHOLDS.INACCURACY_THRESHOLD
           )
         })
         .sort((a, b) => {
@@ -104,7 +109,10 @@ export const generateColorSanMapping = (
         .map((m) => `${m.from}${m.to}${m.promotion || ''}`)
         .filter((move) => {
           const winrateLoss = stockfish.winrate_loss_vec?.[move]
-          return winrateLoss !== undefined && winrateLoss < OK_THRESHOLD
+          return (
+            winrateLoss !== undefined &&
+            winrateLoss < -MOVE_CLASSIFICATION_THRESHOLDS.BLUNDER_THRESHOLD
+          )
         })
         .sort((a, b) => {
           const aLoss = stockfish.winrate_loss_vec?.[a] || 0
@@ -194,10 +202,14 @@ export const calculateBlunderMeter = (
       if (winrate_loss === undefined) continue
       const probability = prob * 100
 
-      if (winrate_loss >= GOOD_THRESHOLD) {
+      if (
+        winrate_loss >= -MOVE_CLASSIFICATION_THRESHOLDS.INACCURACY_THRESHOLD
+      ) {
         goodMoveProbability += probability
         goodMoveChanceInfo.push({ move, probability })
-      } else if (winrate_loss >= OK_THRESHOLD) {
+      } else if (
+        winrate_loss >= -MOVE_CLASSIFICATION_THRESHOLDS.BLUNDER_THRESHOLD
+      ) {
         okMoveProbability += probability
         okMoveChanceInfo.push({ move, probability })
       } else {

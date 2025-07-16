@@ -57,7 +57,7 @@ import {
   getAvailableMovesArray,
   requiresPromotion,
 } from 'src/lib/train/utils'
-import { mockAnalysisData } from 'src/hooks/useAnalysisController/mockData'
+import { mockAnalysisData } from 'src/lib/analysis/mockAnalysisData'
 import { tourConfigs } from 'src/constants/tours'
 
 const statsLoader = async () => {
