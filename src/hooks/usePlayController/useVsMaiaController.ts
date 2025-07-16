@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
+import { Chess } from 'chess.ts'
 import { PlayGameConfig } from 'src/types'
 import { backOff } from 'exponential-backoff'
 import { useStats } from 'src/hooks/useStats'
-import { useChessSound } from 'src/hooks/useChessSound'
 import { usePlayController } from 'src/hooks/usePlayController'
 import { getGameMove, submitGameMove, getPlayPlayerStats } from 'src/api'
+import { chessSoundManager } from 'src/lib/chessSoundManager'
 
 const playStatsLoader = async () => {
   const stats = await getPlayPlayerStats()
@@ -19,7 +20,6 @@ export const useVsMaiaPlayController = (
   id: string,
   playGameConfig: PlayGameConfig,
 ) => {
-  const { playSound } = useChessSound()
   const controller = usePlayController(id, playGameConfig)
   const [stats, incrementStats, updateRating] = useStats(playStatsLoader)
 
@@ -69,13 +69,23 @@ export const useVsMaiaPlayController = (
         if (playGameConfig.simulateMaiaTime) {
           setTimeout(() => {
             const moveTime = controller.updateClock()
+
+            const chess = new Chess(controller.currentNode.fen)
+            const destinationSquare = nextMove.slice(2, 4)
+            const isCapture = !!chess.get(destinationSquare)
+
             controller.addMoveWithTime(nextMove, moveTime)
-            playSound(false)
+            chessSoundManager.playMoveSound(isCapture)
           }, moveDelay * 1000)
         } else {
           const moveTime = controller.updateClock()
+
+          const chess = new Chess(controller.currentNode.fen)
+          const destinationSquare = nextMove.slice(2, 4)
+          const isCapture = !!chess.get(destinationSquare)
+
           controller.addMoveWithTime(nextMove, moveTime)
-          playSound(false)
+          chessSoundManager.playMoveSound(isCapture)
         }
       }
     }
