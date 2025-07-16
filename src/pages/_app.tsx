@@ -37,6 +37,9 @@ const OpenSans = Open_Sans({ subsets: ['latin'] })
 function MaiaPlatform({ Component, pageProps }: AppProps) {
   const router = useRouter()
   const isAnalysisPage = router.pathname.startsWith('/analysis')
+  const isPageWithAnalysis = ['/analysis', '/openings', '/puzzles'].some(
+    (path) => router.pathname.includes(path),
+  )
 
   useEffect(() => {
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
@@ -60,12 +63,12 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
         <Compose
           components={[
             ErrorBoundary,
-
             WindowSizeContextProvider,
             AuthContextProvider,
             ModalContextProvider,
-            MaiaEngineContextProvider,
-            StockfishEngineContextProvider,
+            ...(isPageWithAnalysis
+              ? [MaiaEngineContextProvider, StockfishEngineContextProvider]
+              : []),
             ...(isAnalysisPage ? [AnalysisListContextProvider] : []),
           ]}
         >
@@ -87,7 +90,7 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
             />
 
             <meta name="apple-mobile-web-app-title" content="Maia Chess" />
-            <link rel="apple-touch-icon" href="/maia-no-bg.png" />
+            <link rel="apple-touch-icon" href="/maia-ios-icon.png" />
           </Head>
           <div className={`${OpenSans.className} app-container`}>
             <Header />
