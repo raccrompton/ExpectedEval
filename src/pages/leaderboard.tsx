@@ -89,7 +89,7 @@ const Leaderboard: React.FC = () => {
           <title>Leaderboard – Maia Chess</title>
           <meta
             name="description"
-            content="Top users across all Maia Chess leaderboards"
+            content="View top-ranked players across all Maia Chess game modes. Competitive leaderboards for regular play, puzzles, bot detection, hand & brain chess with live ratings and statistics."
           />
         </Head>
         <div className="flex w-full flex-col items-start justify-between md:flex-row md:items-end">

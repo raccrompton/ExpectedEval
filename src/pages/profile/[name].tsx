@@ -66,8 +66,17 @@ const ProfilePage: NextPage = () => {
   return (
     <AuthenticatedWrapper>
       <Head>
-        <title>Profile – Maia Chess</title>
-        <meta name="description" content="User profile and statistics" />
+        <title>
+          {name ? `${name}'s Profile – Maia Chess` : 'Profile – Maia Chess'}
+        </title>
+        <meta
+          name="description"
+          content={
+            name
+              ? `View ${name}'s chess statistics and ratings across all Maia Chess game modes. See performance in regular play, puzzles, hand & brain, and bot detection challenges.`
+              : 'View player profiles and comprehensive chess statistics on Maia Chess. Track ratings, games played, and performance across all game modes.'
+          }
+        />
       </Head>
       <Profile name={name} stats={stats} />
     </AuthenticatedWrapper>

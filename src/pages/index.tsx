@@ -36,7 +36,7 @@ const Home: NextPage = () => {
         <title>Maia Chess</title>
         <meta
           name="description"
-          content="Collection of chess training and analysis tools centered around Maia."
+          content="Maia is a neural network chess model that captures human style. Go beyond perfect engine lines by analyzing games with real-world context, training with curated puzzles, and seeing what players at higher rating levels actually do in every position."
         />
       </Head>
       <HomeHero scrollHandler={scrollHandler} />
