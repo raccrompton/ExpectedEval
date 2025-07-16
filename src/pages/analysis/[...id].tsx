@@ -308,10 +308,6 @@ const Analysis: React.FC<Props> = ({
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
   const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
   const [arrows, setArrows] = useState<DrawShape[]>([])
-  const [brushes, setBrushes] = useState<DrawBrushes>({} as DrawBrushes)
-  const [screen, setScreen] = useState(screens[0])
-  const toastId = useRef<string>(null)
-  const stockfishToastId = useRef<string>(null)
   const [currentSquare, setCurrentSquare] = useState<Key | null>(null)
   const [promotionFromTo, setPromotionFromTo] = useState<
     [string, string] | null
@@ -330,53 +326,6 @@ const Analysis: React.FC<Props> = ({
   useEffect(() => {
     setHoverArrow(null)
   }, [controller.currentNode])
-
-  useEffect(() => {
-    return () => {
-      toast.dismiss()
-    }
-  }, [])
-
-  useEffect(() => {
-    if (controller.maia.status === 'loading' && !toastId.current) {
-      toastId.current = toast.loading('Loading Maia Model...')
-    } else if (controller.maia.status === 'ready') {
-      if (toastId.current) {
-        toast.success('Loaded Maia! Analysis is ready', {
-          id: toastId.current,
-        })
-      } else {
-        toast.success('Loaded Maia! Analysis is ready')
-      }
-    }
-  }, [controller.maia.status])
-
-  useEffect(() => {
-    if (
-      controller.stockfish.status === 'loading' &&
-      !stockfishToastId.current
-    ) {
-      stockfishToastId.current = toast.loading('Loading Stockfish Engine...')
-    } else if (controller.stockfish.status === 'ready') {
-      if (stockfishToastId.current) {
-        toast.success('Loaded Stockfish! Engine is ready', {
-          id: stockfishToastId.current,
-        })
-        stockfishToastId.current = null
-      } else {
-        toast.success('Loaded Stockfish! Engine is ready')
-      }
-    } else if (controller.stockfish.status === 'error') {
-      if (stockfishToastId.current) {
-        toast.error('Failed to load Stockfish engine', {
-          id: stockfishToastId.current,
-        })
-        stockfishToastId.current = null
-      } else {
-        toast.error('Failed to load Stockfish engine')
-      }
-    }
-  }, [controller.stockfish.status])
 
   const launchContinue = useCallback(() => {
     const fen = controller.currentNode?.fen as string
