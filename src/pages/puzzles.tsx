@@ -638,12 +638,10 @@ const Train: React.FC<Props> = ({
     hidden: {
       opacity: 0,
       y: 4,
-      scale: 0.98,
     },
     visible: {
       opacity: 1,
       y: 0,
-      scale: 1,
       transition: {
         duration: 0.25,
         ease: [0.25, 0.46, 0.45, 0.94],
@@ -653,7 +651,6 @@ const Train: React.FC<Props> = ({
     exit: {
       opacity: 0,
       y: -4,
-      scale: 0.98,
       transition: {
         duration: 0.2,
         ease: [0.25, 0.46, 0.45, 0.94],
