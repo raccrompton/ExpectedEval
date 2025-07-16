@@ -23,20 +23,22 @@ export const PlayerInfo: React.FC<PlayerInfoProps> = ({
           {name ?? 'Unknown'} {rating ? `(${rating})` : null}
         </p>
       </div>
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-10">
         {showArrowLegend && (
-          <div className="flex items-start gap-2">
+          <div className="flex flex-col items-start">
             <div className="flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-xs text-human-3">
+              <span className="material-symbols-outlined text-[10px] text-human-3">
                 arrow_outward
               </span>
-              <span className="text-xs text-human-3">Most Human Move</span>
+              <span className="text-[10px] text-human-3">Most Human Move</span>
             </div>
             <div className="flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-xs text-engine-3">
+              <span className="material-symbols-outlined text-[10px] text-engine-3">
                 arrow_outward
               </span>
-              <span className="text-xs text-engine-3">Best Engine Move</span>
+              <span className="text-[10px] text-engine-3">
+                Best Engine Move
+              </span>
             </div>
           </div>
         )}
