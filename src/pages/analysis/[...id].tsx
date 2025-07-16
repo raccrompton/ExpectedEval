@@ -1,5 +1,4 @@
 import React, {
-  useRef,
   useMemo,
   Dispatch,
   useState,
@@ -24,7 +23,7 @@ import {
   GameNode,
 } from 'src/types'
 import { WindowSizeContext, TreeControllerContext, useTour } from 'src/contexts'
-import { Loading } from 'src/components/Common/Loading'
+import { DelayedLoading } from 'src/components/Common/DelayedLoading'
 import { AuthenticatedWrapper } from 'src/components/Common/AuthenticatedWrapper'
 import { PlayerInfo } from 'src/components/Common/PlayerInfo'
 import { MoveMap } from 'src/components/Analysis/MoveMap'
@@ -47,10 +46,10 @@ import { trackAnalysisGameLoaded } from 'src/lib/analytics'
 import { useRouter } from 'next/router'
 import type { Key } from 'chessground/types'
 import { Chess, PieceSymbol } from 'chess.ts'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useAnalysisController } from 'src/hooks'
 import { tourConfigs } from 'src/constants/tours'
-import type { DrawBrushes, DrawShape } from 'chessground/draw'
+import type { DrawShape } from 'chessground/draw'
 import { MAIA_MODELS } from 'src/constants/common'
 
 const AnalysisPage: NextPage = () => {
@@ -247,7 +246,9 @@ const AnalysisPage: NextPage = () => {
           router={router}
         />
       ) : (
-        <Loading />
+        <DelayedLoading isLoading={true}>
+          <div></div>
+        </DelayedLoading>
       )}
     </>
   )
@@ -551,12 +552,57 @@ const Analysis: React.FC<Props> = ({
     </div>
   )
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.2,
+        staggerChildren: 0.05,
+      },
+    },
+  }
+
+  const itemVariants = {
+    hidden: {
+      opacity: 0,
+      y: 4,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.25,
+        ease: [0.25, 0.46, 0.45, 0.94],
+        type: 'tween',
+      },
+    },
+    exit: {
+      opacity: 0,
+      y: -4,
+      transition: {
+        duration: 0.2,
+        ease: [0.25, 0.46, 0.45, 0.94],
+        type: 'tween',
+      },
+    },
+  }
+
   const desktopLayout = (
-    <div className="flex h-full w-full flex-col items-center py-4 md:py-10">
+    <motion.div
+      className="flex h-full w-full flex-col items-center py-4 md:py-10"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      style={{ willChange: 'transform, opacity' }}
+    >
       <div className="flex h-full w-[90%] flex-row gap-4">
-        <div
+        <motion.div
           id="navigation"
           className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72"
+          variants={itemVariants}
+          style={{ willChange: 'transform, opacity' }}
         >
           <GameInfo title="Analysis" icon="bar_chart" type="analysis">
             <NestedGameInfo />
@@ -600,8 +646,12 @@ const Analysis: React.FC<Props> = ({
               />
             </div>
           </div>
-        </div>
-        <div className="flex h-[85vh] w-[45vh] flex-col gap-2 2xl:w-[55vh]">
+        </motion.div>
+        <motion.div
+          className="flex h-[85vh] w-[45vh] flex-col gap-2 2xl:w-[55vh]"
+          variants={itemVariants}
+          style={{ willChange: 'transform, opacity' }}
+        >
           <div className="flex w-full flex-col overflow-hidden rounded">
             <PlayerInfo
               name={
@@ -662,10 +712,12 @@ const Analysis: React.FC<Props> = ({
             currentNode={controller.currentNode as GameNode}
             onDeleteCustomGame={handleDeleteCustomGame}
           />
-        </div>
-        <div
+        </motion.div>
+        <motion.div
           id="analysis"
           className="flex h-[calc(85vh)] w-full flex-col gap-2 xl:h-[calc(55vh+5rem)]"
+          variants={itemVariants}
+          style={{ willChange: 'transform, opacity' }}
         >
           {/* Large screens (xl+): Side by side layout */}
           <div className="hidden xl:flex xl:h-full xl:flex-col xl:gap-2">
@@ -775,15 +827,21 @@ const Analysis: React.FC<Props> = ({
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   )
 
   const [showGameListMobile, setShowGameListMobile] = useState(false)
 
   const mobileLayout = (
-    <>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      style={{ willChange: 'transform, opacity' }}
+    >
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
         {showGameListMobile ? (
           <div className="flex w-full flex-col items-start justify-start gap-1">
@@ -839,7 +897,11 @@ const Analysis: React.FC<Props> = ({
             </div>
           </div>
         ) : (
-          <div className="flex w-full flex-col items-start justify-start gap-1">
+          <motion.div
+            className="flex w-full flex-col items-start justify-start gap-1"
+            variants={itemVariants}
+            style={{ willChange: 'transform, opacity' }}
+          >
             <GameInfo
               title="Analysis"
               icon="bar_chart"
@@ -937,10 +999,10 @@ const Analysis: React.FC<Props> = ({
               onDeleteCustomGame={handleDeleteCustomGame}
               currentNode={controller.currentNode as GameNode}
             />
-          </div>
+          </motion.div>
         )}
       </div>
-    </>
+    </motion.div>
   )
 
   // Helper function to load a game and close the game list
@@ -976,7 +1038,13 @@ const Analysis: React.FC<Props> = ({
         ) : null}
       </AnimatePresence>
       <TreeControllerContext.Provider value={controller}>
-        {analyzedGame && (isMobile ? mobileLayout : desktopLayout)}
+        <AnimatePresence mode="wait">
+          {analyzedGame && (
+            <motion.div key={analyzedGame.id}>
+              {isMobile ? mobileLayout : desktopLayout}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </TreeControllerContext.Provider>
       <AnimatePresence>
         {showCustomModal && (
