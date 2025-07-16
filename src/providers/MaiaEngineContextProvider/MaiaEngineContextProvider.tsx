@@ -1,7 +1,15 @@
 import Maia from './model'
 import { MaiaStatus } from 'src/types'
 import { MaiaEngineContext } from 'src/contexts'
-import { ReactNode, useState, useMemo, useCallback } from 'react'
+import {
+  ReactNode,
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react'
+import toast from 'react-hot-toast'
 
 export const MaiaEngineContextProvider: React.FC<{ children: ReactNode }> = ({
   children,
@@ -11,6 +19,7 @@ export const MaiaEngineContextProvider: React.FC<{ children: ReactNode }> = ({
   const [status, setStatus] = useState<MaiaStatus>('loading')
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const toastId = useRef<string | null>(null)
 
   const maia = useMemo(() => {
     const model = new Maia({
@@ -39,6 +48,37 @@ export const MaiaEngineContextProvider: React.FC<{ children: ReactNode }> = ({
   const clearStorage = useCallback(async () => {
     return await maia.clearStorage()
   }, [maia])
+
+  // Toast notifications for Maia model status
+  useEffect(() => {
+    return () => {
+      toast.dismiss()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (status === 'loading' && !toastId.current) {
+      toastId.current = toast.loading('Loading Maia Model...')
+    } else if (status === 'ready') {
+      if (toastId.current) {
+        toast.success('Loaded Maia! Analysis is ready', {
+          id: toastId.current,
+        })
+        toastId.current = null
+      } else {
+        toast.success('Loaded Maia! Analysis is ready')
+      }
+    } else if (status === 'error') {
+      if (toastId.current) {
+        toast.error('Failed to load Maia model', {
+          id: toastId.current,
+        })
+        toastId.current = null
+      } else {
+        toast.error('Failed to load Maia model')
+      }
+    }
+  }, [status])
 
   return (
     <MaiaEngineContext.Provider

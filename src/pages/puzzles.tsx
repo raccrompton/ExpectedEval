@@ -17,7 +17,6 @@ import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
 import { Chess, PieceSymbol } from 'chess.ts'
 import { AnimatePresence } from 'framer-motion'
-import toast from 'react-hot-toast'
 import {
   getTrainingGame,
   logPuzzleGuesses,
@@ -289,8 +288,6 @@ const Train: React.FC<Props> = ({
   const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
   const [arrows, setArrows] = useState<DrawShape[]>([])
   const analysisSyncedRef = useRef(false)
-  const toastId = useRef<string | null>(null)
-  const stockfishToastId = useRef<string | null>(null)
   const [promotionFromTo, setPromotionFromTo] = useState<
     [string, string] | null
   >(null)
@@ -316,54 +313,6 @@ const Train: React.FC<Props> = ({
       analysisSyncedRef.current = false
     }
   }, [showAnalysis, analysisController, controller.currentNode])
-
-  // Toast notifications for Maia model status
-  useEffect(() => {
-    return () => {
-      toast.dismiss()
-    }
-  }, [])
-
-  useEffect(() => {
-    if (analysisController.maia.status === 'loading' && !toastId.current) {
-      toastId.current = toast.loading('Loading Maia Model...')
-    } else if (analysisController.maia.status === 'ready') {
-      if (toastId.current) {
-        toast.success('Loaded Maia! Analysis is ready', {
-          id: toastId.current,
-        })
-      } else {
-        toast.success('Loaded Maia! Analysis is ready')
-      }
-    }
-  }, [analysisController.maia.status])
-
-  useEffect(() => {
-    if (
-      analysisController.stockfish.status === 'loading' &&
-      !stockfishToastId.current
-    ) {
-      stockfishToastId.current = toast.loading('Loading Stockfish Engine...')
-    } else if (analysisController.stockfish.status === 'ready') {
-      if (stockfishToastId.current) {
-        toast.success('Loaded Stockfish! Engine is ready', {
-          id: stockfishToastId.current,
-        })
-        stockfishToastId.current = null
-      } else {
-        toast.success('Loaded Stockfish! Engine is ready')
-      }
-    } else if (analysisController.stockfish.status === 'error') {
-      if (stockfishToastId.current) {
-        toast.error('Failed to load Stockfish engine', {
-          id: stockfishToastId.current,
-        })
-        stockfishToastId.current = null
-      } else {
-        toast.error('Failed to load Stockfish engine')
-      }
-    }
-  }, [analysisController.stockfish.status])
 
   const onSelectSquare = useCallback(
     (square: Key) => {
