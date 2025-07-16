@@ -162,9 +162,9 @@ const Leaderboard: React.FC = () => {
             </motion.div>
             <motion.div variants={itemVariants} className="my-2 w-full">
               <p className="text-xs text-secondary">
-                <span className="font-medium">Note:</span> Each leaderboard column
-                only features players who have played atleast one game of the
-                corresponding type within the last 7 days.
+                <span className="font-medium">Note:</span> Each leaderboard
+                column only features players who have played atleast one game of
+                the corresponding type within the last 7 days.
               </p>
             </motion.div>
           </motion.div>
