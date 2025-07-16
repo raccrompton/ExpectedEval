@@ -1,6 +1,6 @@
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { Loading } from 'src/components'
+import { DelayedLoading } from 'src/components'
 import { getAnalysisGameList } from 'src/api'
 import { AnalysisListContext } from 'src/contexts'
 import { useContext, useEffect, useState } from 'react'
@@ -50,7 +50,11 @@ const AnalysisPage: NextPage = () => {
     redirectToGame()
   }, [analysisTournamentList, analysisPlayList, push])
 
-  return <Loading />
+  return (
+    <DelayedLoading isLoading={loading}>
+      <div></div>
+    </DelayedLoading>
+  )
 }
 
 export default AnalysisPage
