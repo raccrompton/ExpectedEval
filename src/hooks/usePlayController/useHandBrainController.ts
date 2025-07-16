@@ -1,4 +1,4 @@
-import { PieceSymbol } from 'chess.ts'
+import { PieceSymbol, Chess } from 'chess.ts'
 import type { Key } from 'chessground/types'
 import { backOff } from 'exponential-backoff'
 import type { DrawShape } from 'chessground/draw'
@@ -6,9 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { PlayGameConfig } from 'src/types'
 import { useStats } from 'src/hooks/useStats'
-import { useChessSound } from 'src/hooks/useChessSound'
 import { usePlayController } from './usePlayController'
 import { getGameMove, submitGameMove, getPlayPlayerStats } from 'src/api'
+import { chessSoundManager } from 'src/lib/chessSoundManager'
 
 const brainStatsLoader = async () => {
   const stats = await getPlayPlayerStats()
@@ -33,7 +33,6 @@ export const useHandBrainController = (
   playGameConfig: PlayGameConfig,
 ) => {
   const controller = usePlayController(id, playGameConfig)
-  const { playSound } = useChessSound()
   const isBrain = playGameConfig.isBrain
 
   const [selectedPiece, setSelectedPiece] = useState<PieceSymbol | undefined>(
@@ -111,9 +110,15 @@ export const useHandBrainController = (
 
   const makePlayerMove = useCallback(
     async (moveUci: string) => {
+      const chess = new Chess(controller.currentNode.fen)
+      const destinationSquare = moveUci.slice(2, 4)
+      const isCapture = !!chess.get(destinationSquare)
+
       controller.updateClock()
       controller.addMove(moveUci)
       setSelectedPiece(undefined)
+
+      chessSoundManager.playMoveSound(isCapture)
     },
     [controller],
   )
@@ -154,8 +159,13 @@ export const useHandBrainController = (
       setTimeout(
         () => {
           const moveTime = controller.updateClock()
+
+          const chess = new Chess(controller.currentNode.fen)
+          const destinationSquare = nextMove.slice(2, 4)
+          const isCapture = !!chess.get(destinationSquare)
+
           controller.addMoveWithTime(nextMove, moveTime)
-          playSound(false)
+          chessSoundManager.playMoveSound(isCapture)
         },
         playGameConfig.simulateMaiaTime ? moveDelay * 1000 : 0,
       )
@@ -178,7 +188,6 @@ export const useHandBrainController = (
     playGameConfig.maiaVersion,
     playGameConfig.startFen,
     playGameConfig.simulateMaiaTime,
-    playSound,
   ])
 
   const selectPiece = useCallback(
@@ -201,7 +210,6 @@ export const useHandBrainController = (
         )
         const nextMove = maiaMoves['top_move']
         makePlayerMove(nextMove)
-        playSound(false)
       }
     },
     [
@@ -211,7 +219,6 @@ export const useHandBrainController = (
       playGameConfig.maiaPartnerVersion,
       playGameConfig.startFen,
       brainMoves,
-      playSound,
     ],
   )
 

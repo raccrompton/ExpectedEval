@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { Chess } from 'chess.ts'
 import { getGameMove } from 'src/api/play/play'
 import { useTreeController } from '../useTreeController'
-import { useChessSound } from '../useChessSound'
 import { useLocalStorage } from '../useLocalStorage'
 import {
   GameTree,
@@ -24,6 +23,7 @@ import {
 } from 'src/types/openings'
 import { MAIA_MODELS } from 'src/constants/common'
 import { MIN_STOCKFISH_DEPTH } from 'src/constants/analysis'
+import { chessSoundManager } from 'src/lib/chessSoundManager'
 
 interface CachedAnalysisResult {
   fen: string
@@ -119,8 +119,6 @@ export const useOpeningDrillController = (
 
   const MAX_CACHE_SIZE = 100
   const CACHE_CLEANUP_INTERVAL = 60000
-
-  const { playSound } = useChessSound()
 
   const [currentMaiaModel, setCurrentMaiaModel] = useLocalStorage(
     'currentMaiaModel',
@@ -1017,7 +1015,6 @@ export const useOpeningDrillController = (
         const nodeToMoveFrom = fromNode || controller.currentNode
 
         const chess = new Chess(nodeToMoveFrom.fen)
-        const isCapture = !!chess.get(moveUci.slice(2, 4))
         const moveObj = chess.move(moveUci, { sloppy: true })
 
         if (!moveObj) {
@@ -1054,8 +1051,6 @@ export const useOpeningDrillController = (
         }
 
         if (newNode) {
-          playSound(isCapture)
-
           controller.setCurrentNode(newNode)
 
           const mainLine = controller.gameTree.getMainLine()
@@ -1116,7 +1111,6 @@ export const useOpeningDrillController = (
       currentDrillGame,
       controller,
       isPlayerTurn,
-      playSound,
       currentDrill,
       completeDrill,
       continueAnalyzingMode,
@@ -1142,7 +1136,6 @@ export const useOpeningDrillController = (
         if (maiaMove && maiaMove.length >= 4) {
           let newNode: GameNode | null = null
           const chess = new Chess(fromNode.fen)
-          const isCapture = !!chess.get(maiaMove.slice(2, 4))
 
           const existingChild = fromNode.children.find(
             (child: GameNode) => child.move === maiaMove,
@@ -1164,9 +1157,12 @@ export const useOpeningDrillController = (
           }
 
           if (newNode) {
-            playSound(isCapture)
-
             controller.setCurrentNode(newNode)
+
+            const tempChess = new Chess(fromNode.fen)
+            const tempMoveObj = tempChess.move(maiaMove, { sloppy: true })
+            const isCapture = tempMoveObj?.captured !== undefined
+            chessSoundManager.playMoveSound(isCapture)
 
             const mainLine = controller.gameTree.getMainLine()
             const openingLength = currentDrillGame.openingEndNode
@@ -1209,13 +1205,7 @@ export const useOpeningDrillController = (
         console.error('Error making Maia move:', error)
       }
     },
-    [
-      currentDrillGame,
-      controller,
-      currentDrill,
-      playSound,
-      updateCompletedDrill,
-    ],
+    [currentDrillGame, controller, currentDrill, updateCompletedDrill],
   )
 
   // Helper function to get the latest position in the game tree (where Maia should move from)
