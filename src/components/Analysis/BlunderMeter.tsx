@@ -367,13 +367,13 @@ function Meter({
       <motion.div
         className={`flex h-full min-h-10 min-w-6 flex-col items-center justify-start py-1 xl:min-w-8 ${bgColor}`}
       >
-        <motion.p className="text-[10px] font-bold text-black text-opacity-50 xl:text-xs">
+        <motion.p className="text-xxs font-bold text-black text-opacity-50 xl:text-xs">
           {Math.round(probability)}%
         </motion.p>
       </motion.div>
       <div className="flex h-full w-full flex-col overflow-hidden">
         <p className={`text-xs font-medium xl:text-sm ${textColor}`}>{title}</p>
-        <div className="grid w-full grid-cols-3 overflow-hidden overflow-ellipsis text-wrap text-[10px] text-secondary xl:text-xs">
+        <div className="grid w-full grid-cols-3 overflow-hidden overflow-ellipsis text-wrap text-xxs text-secondary xl:text-xs">
           {filteredMoves().map((move) => (
             <button
               key={move.move}

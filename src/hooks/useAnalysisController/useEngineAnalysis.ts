@@ -1,58 +1,42 @@
 import { Chess } from 'chess.ts'
-import { useEffect } from 'react'
 import { getBookMoves } from 'src/api'
+import { useEffect, useContext } from 'react'
 import { MAIA_MODELS } from 'src/constants/common'
-import { GameNode, MaiaEvaluation, StockfishEvaluation } from 'src/types'
-
-type BatchEvaluateResult = {
-  result: MaiaEvaluation[]
-  time: number
-}
-
-type EngineHooks = {
-  maia: {
-    batchEvaluate: (
-      fens: string[],
-      ratingLevels: number[],
-      thresholds: number[],
-    ) => Promise<BatchEvaluateResult>
-  }
-  streamEvaluations: (
-    fen: string,
-    moveCount: number,
-  ) => AsyncIterable<StockfishEvaluation> | null
-  stopEvaluation: () => void
-}
+import { GameNode, MaiaEvaluation } from 'src/types'
+import { MaiaEngineContext, StockfishEngineContext } from 'src/contexts'
 
 export const useEngineAnalysis = (
   currentNode: GameNode | null,
   inProgressAnalyses: Set<string>,
-  maiaStatus: string,
-  maia: { batchEvaluate: EngineHooks['maia']['batchEvaluate'] },
-  streamEvaluations: EngineHooks['streamEvaluations'],
-  stopEvaluation: EngineHooks['stopEvaluation'],
-  isStockfishReady: () => boolean,
+
   currentMaiaModel: string,
   setAnalysisState: React.Dispatch<React.SetStateAction<number>>,
 ) => {
-  async function analyze(board: Chess): Promise<{
+  const maia = useContext(MaiaEngineContext)
+  const stockfish = useContext(StockfishEngineContext)
+
+  async function inferenceMaiaModel(board: Chess): Promise<{
     [key: string]: MaiaEvaluation
   }> {
-    const { result } = await maia.batchEvaluate(
+    if (!maia.maia) {
+      throw new Error('Maia engine not initialized')
+    }
+
+    const { result } = await maia.maia.batchEvaluate(
       Array(9).fill(board.fen()),
       [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900],
       [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900],
     )
 
-    const maiaEval: { [key: string]: MaiaEvaluation } = {}
+    const maiaEvaluations: { [key: string]: MaiaEvaluation } = {}
     MAIA_MODELS.forEach((model, index) => {
-      maiaEval[model] = result[index]
+      maiaEvaluations[model] = result[index]
     })
 
-    return maiaEval
+    return maiaEvaluations
   }
 
-  async function openingBook(board: Chess) {
+  async function fetchOpeningBook(board: Chess) {
     const bookMoves = await getBookMoves(board.fen())
 
     return bookMoves
@@ -76,12 +60,12 @@ export const useEngineAnalysis = (
       let retries = 0
       const maxRetries = 30 // 3 seconds with 100ms intervals
 
-      while (retries < maxRetries && maiaStatus !== 'ready') {
+      while (retries < maxRetries && maia.status !== 'ready') {
         await new Promise((resolve) => setTimeout(resolve, 100))
         retries++
       }
 
-      if (maiaStatus !== 'ready') {
+      if (maia.status !== 'ready') {
         console.warn('Maia not ready after waiting, skipping analysis')
         return
       }
@@ -90,23 +74,24 @@ export const useEngineAnalysis = (
 
       try {
         if (currentNode.moveNumber <= 5) {
-          const [bookMoves, maiaEval] = await Promise.all([
-            openingBook(board),
-            analyze(board),
+          const [openingBookMoves, maiaEvaluations] = await Promise.all([
+            fetchOpeningBook(board),
+            inferenceMaiaModel(board),
           ])
 
           const analysis: { [key: string]: MaiaEvaluation } = {}
           for (const model of MAIA_MODELS) {
-            const policySource = Object.keys(bookMoves[model] || {}).length
-              ? bookMoves[model]
-              : maiaEval[model].policy
+            const policySource = Object.keys(openingBookMoves[model] || {})
+              .length
+              ? openingBookMoves[model]
+              : maiaEvaluations[model].policy
 
             const sortedPolicy = Object.entries(policySource).sort(
               ([, a], [, b]) => (b as number) - (a as number),
             )
 
             analysis[model] = {
-              value: maiaEval[model].value,
+              value: maiaEvaluations[model].value,
               policy: Object.fromEntries(
                 sortedPolicy,
               ) as MaiaEvaluation['policy'],
@@ -117,8 +102,8 @@ export const useEngineAnalysis = (
           setAnalysisState((state) => state + 1)
           return
         } else {
-          const maiaEval = await analyze(board)
-          currentNode.addMaiaAnalysis(maiaEval, currentMaiaModel)
+          const maiaEvaluations = await inferenceMaiaModel(board)
+          currentNode.addMaiaAnalysis(maiaEvaluations, currentMaiaModel)
           setAnalysisState((state) => state + 1)
         }
       } finally {
@@ -126,6 +111,7 @@ export const useEngineAnalysis = (
       }
     }
 
+    // Delay Maia analysis to prevent rapid fire when moving quickly
     const timeoutId = setTimeout(() => {
       attemptMaiaAnalysis()
     }, 100)
@@ -134,7 +120,7 @@ export const useEngineAnalysis = (
       clearTimeout(timeoutId)
     }
   }, [
-    maiaStatus,
+    maia.status,
     currentNode,
     currentMaiaModel,
     inProgressAnalyses,
@@ -152,24 +138,18 @@ export const useEngineAnalysis = (
 
     let cancelled = false
 
-    // Delay Stockfish analysis to prevent rapid fire when moving quickly
-    const timeoutId = setTimeout(() => {
-      if (cancelled) return
-      attemptStockfishAnalysis()
-    }, 100)
-
     // Add retry logic for Stockfish initialization
     const attemptStockfishAnalysis = async () => {
       // Wait up to 3 seconds for Stockfish to be ready
       let retries = 0
       const maxRetries = 30 // 3 seconds with 100ms intervals
 
-      while (retries < maxRetries && !isStockfishReady() && !cancelled) {
+      while (retries < maxRetries && !stockfish.isReady() && !cancelled) {
         await new Promise((resolve) => setTimeout(resolve, 100))
         retries++
       }
 
-      if (cancelled || !isStockfishReady()) {
+      if (cancelled || !stockfish.isReady()) {
         if (!cancelled) {
           console.warn('Stockfish not ready after waiting, skipping analysis')
         }
@@ -177,7 +157,7 @@ export const useEngineAnalysis = (
       }
 
       const chess = new Chess(currentNode.fen)
-      const evaluationStream = streamEvaluations(
+      const evaluationStream = stockfish.streamEvaluations(
         chess.fen(),
         chess.moves().length,
       )
@@ -204,16 +184,15 @@ export const useEngineAnalysis = (
       }
     }
 
+    // Delay Stockfish analysis to prevent rapid fire when moving quickly
+    const timeoutId = setTimeout(() => {
+      if (cancelled) return
+      attemptStockfishAnalysis()
+    }, 100)
+
     return () => {
       cancelled = true
       clearTimeout(timeoutId)
     }
-  }, [
-    currentNode,
-    streamEvaluations,
-    stopEvaluation,
-    isStockfishReady,
-    currentMaiaModel,
-    setAnalysisState,
-  ])
+  }, [currentNode, stockfish, currentMaiaModel, setAnalysisState])
 }

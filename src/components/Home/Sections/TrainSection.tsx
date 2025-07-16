@@ -363,7 +363,7 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                     <div className="flex items-center space-x-2">
                       <div className="flex items-center">
                         <span className="mr-1.5 h-2.5 w-2.5 rounded-full bg-[#238b45]"></span>
-                        <span className="text-[10px] text-primary/70">
+                        <span className="text-xxs text-primary/70">
                           Best Move
                         </span>
                       </div>
@@ -381,7 +381,7 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                     <div className="flex items-center space-x-2">
                       <div className="flex items-center">
                         <span className="mr-1.5 h-2.5 w-2.5 rounded-full bg-[#fcbba1]"></span>
-                        <span className="text-[10px] text-primary/70">
+                        <span className="text-xxs text-primary/70">
                           Common Mistake
                         </span>
                       </div>
@@ -399,7 +399,7 @@ export const TrainSection = ({ id }: TrainSectionProps) => {
                     <div className="flex items-center space-x-2">
                       <div className="flex items-center">
                         <span className="mr-1.5 h-2.5 w-2.5 rounded-full bg-[#cb181d]"></span>
-                        <span className="text-[10px] text-primary/70">
+                        <span className="text-xxs text-primary/70">
                           Other Mistake
                         </span>
                       </div>

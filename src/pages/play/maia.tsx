@@ -1,3 +1,4 @@
+import Head from 'next/head'
 import { startGame } from 'src/api'
 import { NextPage } from 'next/types'
 import { useRouter } from 'next/router'
@@ -174,14 +175,25 @@ const PlayMaiaPage: NextPage = () => {
     }
   }, [id, playGameConfig, router])
 
-  return router.isReady && id ? (
-    <PlayMaia
-      id={id as string}
-      playGameConfig={playGameConfig}
-      playAgain={() => setPlaySetupModalProps({ ...playGameConfig })}
-    />
-  ) : (
-    <Loading />
+  return (
+    <>
+      <Head>
+        <title>Play vs Maia – Maia Chess</title>
+        <meta
+          name="description"
+          content="Challenge the most human-like chess AI. Unlike traditional engines that play robotically, Maia naturally plays moves a person would make, trained on millions of human games with real chess intuition."
+        />
+      </Head>
+      {router.isReady && id ? (
+        <PlayMaia
+          id={id as string}
+          playGameConfig={playGameConfig}
+          playAgain={() => setPlaySetupModalProps({ ...playGameConfig })}
+        />
+      ) : (
+        <Loading />
+      )}
+    </>
   )
 }
 

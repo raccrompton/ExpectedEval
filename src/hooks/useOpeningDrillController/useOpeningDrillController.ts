@@ -104,10 +104,7 @@ export const useOpeningDrillController = (
     ((nodes: GameNode[]) => Promise<void>) | null
   >(null)
 
-  // Flag to track when we're waiting for Maia's response (to prevent navigation-triggered moves)
   const [waitingForMaiaResponse, setWaitingForMaiaResponse] = useState(false)
-
-  // Flag to track if player chose to continue analyzing past the target move count
   const [continueAnalyzingMode, setContinueAnalyzingMode] = useState(false)
 
   const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgress>({
@@ -248,7 +245,7 @@ export const useOpeningDrillController = (
     )
   }, [allDrillsCompleted, completedDrills.length, configuration.drillCount])
 
-  const moves = useMemo(() => {
+  const availableMoves = useMemo(() => {
     if (!controller.currentNode || !isPlayerTurn)
       return new Map<string, string[]>()
 
@@ -1354,7 +1351,7 @@ export const useOpeningDrillController = (
     setOrientation: controller.setOrientation,
 
     // Available moves
-    moves,
+    availableMoves,
 
     // Actions
     makePlayerMove,

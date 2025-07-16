@@ -19,6 +19,7 @@ import {
   WindowSizeContext,
   TreeControllerContext,
   AuthContext,
+  MaiaEngineContext,
 } from 'src/contexts'
 import { DrillConfiguration, AnalyzedGame } from 'src/types'
 import { GameNode } from 'src/types/base/tree'
@@ -47,7 +48,6 @@ import {
 import {
   useOpeningDrillController,
   useTreeController,
-  useMaiaEngine,
   useAnalysisController,
 } from 'src/hooks'
 import {
@@ -147,13 +147,7 @@ const OpeningsPage: NextPage = () => {
     controller.currentDrill?.playerColor || 'white',
   )
 
-  // Maia engine for analysis
-  const {
-    maia,
-    status: maiaStatus,
-    progress: maiaProgress,
-    downloadModel: downloadMaia,
-  } = useMaiaEngine()
+  const maiaEngine = useContext(MaiaEngineContext)
 
   // Sync tree controller with opening drill controller
   useEffect(() => {
@@ -193,11 +187,9 @@ const OpeningsPage: NextPage = () => {
         currentNode.analysis.stockfish.cp_vec,
       )
       if (stockfishEntries.length > 0) {
+        const vec = currentNode.analysis.stockfish.cp_vec
         const bestMove = stockfishEntries.reduce((a, b) =>
-          currentNode.analysis.stockfish!.cp_vec[a[0]] >
-          currentNode.analysis.stockfish!.cp_vec[b[0]]
-            ? a
-            : b,
+          vec[a[0]] > vec[b[0]] ? a : b,
         )
         arr.push({
           brush: 'blue',
@@ -467,21 +459,21 @@ const OpeningsPage: NextPage = () => {
       // Only show moves if we're at the latest position AND it's player's turn
       const isAtLatestPosition = !controller.currentNode?.mainChild
       if (isAtLatestPosition && controller.isPlayerTurn) {
-        return controller.moves
+        return controller.availableMoves
       }
 
       // If viewing previous moves or not player's turn, show no moves
       return new Map<string, string[]>()
     }
 
-    return controller.moves
+    return controller.availableMoves
   }, [
     controller.analysisEnabled,
     controller.continueAnalyzingMode,
     controller.currentNode?.fen,
     controller.currentNode?.mainChild,
     controller.isPlayerTurn,
-    controller.moves,
+    controller.availableMoves,
   ])
 
   // Player info for the board - optimized to use already computed playerNames
@@ -612,7 +604,7 @@ const OpeningsPage: NextPage = () => {
       // In drill mode, only allow moves when it's the player's turn
       if (!controller.isPlayerTurn) return
 
-      const availableMoves = getAvailableMovesArray(controller.moves)
+      const availableMoves = getAvailableMovesArray(controller.availableMoves)
 
       if (requiresPromotion(playedMove, availableMoves)) {
         setPromotionFromTo(playedMove)
@@ -652,18 +644,21 @@ const OpeningsPage: NextPage = () => {
   }
 
   // Show download modal if Maia model needs to be downloaded
-  if (maiaStatus === 'no-cache' || maiaStatus === 'downloading') {
+  if (maiaEngine.status === 'no-cache' || maiaEngine.status === 'downloading') {
     return (
       <>
         <Head>
           <title>Opening Drills – Maia Chess</title>
           <meta
             name="description"
-            content="Practice chess openings against Maia"
+            content="Drill chess openings against Maia models calibrated to specific rating levels. Practice against opponents similar to those you'll face, with targeted training for your skill level."
           />
         </Head>
         <AnimatePresence>
-          <DownloadModelModal progress={maiaProgress} download={downloadMaia} />
+          <DownloadModelModal
+            progress={maiaEngine.progress}
+            download={maiaEngine.downloadModel}
+          />
         </AnimatePresence>
       </>
     )
@@ -681,7 +676,7 @@ const OpeningsPage: NextPage = () => {
           <title>Opening Drills – Maia Chess</title>
           <meta
             name="description"
-            content="Practice chess openings against Maia"
+            content="Drill chess openings against Maia models calibrated to specific rating levels. Practice against opponents similar to those you'll face, with targeted training for your skill level."
           />
         </Head>
         <AnimatePresence>
@@ -1072,7 +1067,7 @@ const OpeningsPage: NextPage = () => {
         <title>Opening Drills – Maia Chess</title>
         <meta
           name="description"
-          content="Practice chess openings against Maia"
+          content="Master chess openings with interactive drills against Maia AI. Practice popular openings, learn key variations, and get performance analysis to improve your opening repertoire."
         />
       </Head>
       <TreeControllerContext.Provider

@@ -233,8 +233,11 @@ const Turing: React.FC<Props> = (props: Props) => {
   return (
     <>
       <Head>
-        <title>Maia Chess - Bot or Not</title>
-        <meta name="description" content="Turing survey" />
+        <title>Bot or Not – Maia Chess</title>
+        <meta
+          name="description"
+          content="Test your ability to distinguish between human and AI chess play. This Turing Test for chess is a fun way to see if you understand the differences between human and engine moves."
+        />
       </Head>
       <TuringControllerContext.Provider value={controller}>
         {isMobile ? mobileLayout : desktopLayout}

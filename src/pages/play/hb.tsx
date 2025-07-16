@@ -1,3 +1,4 @@
+import Head from 'next/head'
 import { NextPage } from 'next/types'
 import { useRouter } from 'next/router'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
@@ -151,14 +152,25 @@ const PlayHandBrainPage: NextPage = () => {
     }
   }, [id, playGameConfig, router])
 
-  return router.isReady && id ? (
-    <PlayHandBrain
-      id={id as string}
-      playGameConfig={playGameConfig}
-      playAgain={playAgain}
-    />
-  ) : (
-    <Loading />
+  return (
+    <>
+      <Head>
+        <title>Hand & Brain Chess – Maia Chess</title>
+        <meta
+          name="description"
+          content="Team up with Maia in this collaborative chess variant. You can be the 'Hand' making moves while Maia is the 'Brain' selecting pieces, or vice versa."
+        />
+      </Head>
+      {router.isReady && id ? (
+        <PlayHandBrain
+          id={id as string}
+          playGameConfig={playGameConfig}
+          playAgain={playAgain}
+        />
+      ) : (
+        <Loading />
+      )}
+    </>
   )
 }
 

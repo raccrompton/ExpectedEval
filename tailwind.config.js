@@ -36,6 +36,9 @@ module.exports = {
           4: 'rgb(var(--color-engine-accent4))',
         },
       },
+      fontSize: {
+        xxs: ['0.625rem', { lineHeight: '0.875rem' }],
+      },
     },
   },
   plugins: [require('@tailwindcss/typography')],

@@ -3,9 +3,13 @@ import { AllStats, SingleStats } from 'src/hooks/useStats'
 
 interface SingleProps {
   stats: SingleStats | undefined
+  isGame?: boolean
 }
 
-const SingleStatsDisplay: React.FC<SingleProps> = ({ stats }: SingleProps) => {
+const SingleStatsDisplay: React.FC<SingleProps> = ({
+  stats,
+  isGame,
+}: SingleProps) => {
   const winPercentage = stats ? (stats.gamesWon / stats.gamesPlayed) * 100 : 0
 
   return (
@@ -14,7 +18,7 @@ const SingleStatsDisplay: React.FC<SingleProps> = ({ stats }: SingleProps) => {
         <div className={`${stats == undefined && 'opacity-0'}`}>
           {stats?.gamesWon || 0}
         </div>
-        <div className="text-xs">Correct</div>
+        <div className="text-xs">{isGame ? 'Wins' : 'Correct'}</div>
       </div>
       <div className="flex flex-1 flex-col gap-1">
         <div className={`${stats == undefined && 'opacity-0'}`}>
@@ -60,11 +64,13 @@ const RatingDiffDisplay: React.FC<RatingDiffProps> = ({
 interface Props {
   stats: AllStats
   hideSession?: boolean
+  isGame?: boolean
 }
 
 export const StatsDisplay: React.FC<Props> = ({
   hideSession,
   stats,
+  isGame,
 }: Props) => {
   const [cachedRating, setCachedRating] = useState<number | undefined>(0)
 
@@ -91,12 +97,12 @@ export const StatsDisplay: React.FC<Props> = ({
       {hideSession ? null : (
         <div className="flex flex-col gap-1">
           <div className="text-xs uppercase">This session</div>
-          <SingleStatsDisplay stats={stats.session} />
+          <SingleStatsDisplay stats={stats.session} isGame={isGame} />
         </div>
       )}
       <div className="flex flex-col gap-1 text-secondary">
         <div className="text-xs uppercase">Lifetime</div>
-        <SingleStatsDisplay stats={stats.lifetime} />
+        <SingleStatsDisplay stats={stats.lifetime} isGame={isGame} />
       </div>
     </div>
   )
