@@ -1274,10 +1274,10 @@ const Train: React.FC<Props> = ({
   return (
     <>
       <Head>
-        <title>Maia Chess - Train</title>
+        <title>Chess Puzzles – Maia Chess</title>
         <meta
           name="description"
-          content="Collection of chess training and analysis tools centered around Maia."
+          content="Train with Maia as your coach using human-centered puzzles. Curated based on how millions of players improve, with data showing how different ratings approach each position."
         />
       </Head>
       <AnimatePresence>

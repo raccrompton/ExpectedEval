@@ -651,7 +651,7 @@ const OpeningsPage: NextPage = () => {
           <title>Opening Drills – Maia Chess</title>
           <meta
             name="description"
-            content="Practice chess openings against Maia"
+            content="Drill chess openings against Maia models calibrated to specific rating levels. Practice against opponents similar to those you'll face, with targeted training for your skill level."
           />
         </Head>
         <AnimatePresence>
@@ -676,7 +676,7 @@ const OpeningsPage: NextPage = () => {
           <title>Opening Drills – Maia Chess</title>
           <meta
             name="description"
-            content="Practice chess openings against Maia"
+            content="Drill chess openings against Maia models calibrated to specific rating levels. Practice against opponents similar to those you'll face, with targeted training for your skill level."
           />
         </Head>
         <AnimatePresence>
@@ -1071,7 +1071,7 @@ const OpeningsPage: NextPage = () => {
         <title>Opening Drills – Maia Chess</title>
         <meta
           name="description"
-          content="Practice chess openings against Maia"
+          content="Master chess openings with interactive drills against Maia AI. Practice popular openings, learn key variations, and get performance analysis to improve your opening repertoire."
         />
       </Head>
       <TreeControllerContext.Provider

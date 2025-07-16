@@ -952,10 +952,18 @@ const Analysis: React.FC<Props> = ({
   return (
     <>
       <Head>
-        <title>Maia Chess - Analyze</title>
+        <title>
+          {analyzedGame
+            ? `Analyze: ${analyzedGame.whitePlayer.name} vs ${analyzedGame.blackPlayer.name} – Maia Chess`
+            : 'Analyze – Maia Chess'}
+        </title>
         <meta
           name="description"
-          content="Collection of chess training and analysis tools centered around Maia."
+          content={
+            analyzedGame
+              ? `Analyze ${analyzedGame.whitePlayer.name} vs ${analyzedGame.blackPlayer.name} with human-aware AI. See what real players would do, explore moves by rating level, and spot where blunders are most likely to occur.`
+              : 'Analyze chess games with human-aware AI. Combine Stockfish precision with human tendencies learned from millions of games. See what works at your rating level, not just for computers.'
+          }
         />
       </Head>
       <AnimatePresence>
