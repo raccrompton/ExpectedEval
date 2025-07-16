@@ -7,7 +7,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { PlayerStats } from 'src/types'
 import { getPlayerStats } from 'src/api'
 import { AuthContext, WindowSizeContext } from 'src/contexts'
-import { AuthenticatedWrapper, UserProfile, GameList, DelayedLoading } from 'src/components'
+import {
+  AuthenticatedWrapper,
+  UserProfile,
+  GameList,
+  DelayedLoading,
+} from 'src/components'
 
 const ProfilePage: NextPage = () => {
   const router = useRouter()
@@ -132,7 +137,10 @@ const Profile: React.FC<Props> = (props: Props) => {
       style={{ willChange: 'transform, opacity' }}
       className="mx-auto flex h-full w-[90%] flex-col items-start justify-center gap-6 md:py-[2%]"
     >
-      <motion.div variants={itemVariants} className="flex flex-row items-center gap-2">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-row items-center gap-2"
+      >
         <span className="material-symbols-outlined text-6xl">
           account_circle
         </span>
@@ -157,13 +165,19 @@ const Profile: React.FC<Props> = (props: Props) => {
       style={{ willChange: 'transform, opacity' }}
       className="mx-auto mt-6 flex w-[90%] flex-col gap-3"
     >
-      <motion.div variants={itemVariants} className="flex flex-row items-center gap-2 md:gap-3">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-row items-center gap-2 md:gap-3"
+      >
         <span className="material-symbols-outlined text-4xl">
           account_circle
         </span>
         <h1 className="text-3xl font-semibold">{user?.displayName}</h1>
       </motion.div>
-      <motion.div variants={itemVariants} className="flex w-full flex-col gap-4">
+      <motion.div
+        variants={itemVariants}
+        className="flex w-full flex-col gap-4"
+      >
         <GameList />
         <UserProfile stats={props.stats} />
       </motion.div>
