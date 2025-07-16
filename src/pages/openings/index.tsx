@@ -461,21 +461,21 @@ const OpeningsPage: NextPage = () => {
       // Only show moves if we're at the latest position AND it's player's turn
       const isAtLatestPosition = !controller.currentNode?.mainChild
       if (isAtLatestPosition && controller.isPlayerTurn) {
-        return controller.moves
+        return controller.availableMoves
       }
 
       // If viewing previous moves or not player's turn, show no moves
       return new Map<string, string[]>()
     }
 
-    return controller.moves
+    return controller.availableMoves
   }, [
     controller.analysisEnabled,
     controller.continueAnalyzingMode,
     controller.currentNode?.fen,
     controller.currentNode?.mainChild,
     controller.isPlayerTurn,
-    controller.moves,
+    controller.availableMoves,
   ])
 
   // Player info for the board - optimized to use already computed playerNames
@@ -606,7 +606,7 @@ const OpeningsPage: NextPage = () => {
       // In drill mode, only allow moves when it's the player's turn
       if (!controller.isPlayerTurn) return
 
-      const availableMoves = getAvailableMovesArray(controller.moves)
+      const availableMoves = getAvailableMovesArray(controller.availableMoves)
 
       if (requiresPromotion(playedMove, availableMoves)) {
         setPromotionFromTo(playedMove)
