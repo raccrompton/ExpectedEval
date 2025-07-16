@@ -1,5 +1,40 @@
 import { Game } from '../base'
 import { AvailableMoves } from '../training'
+import Maia from 'src/providers/MaiaEngineContextProvider/model'
+
+export interface MaiaEngine {
+  maia?: Maia
+  status: MaiaStatus
+  progress: number
+  downloadModel: () => void
+}
+
+export interface StockfishEngine {
+  error: string | null
+  status: StockfishStatus
+  isReady: () => boolean
+  stopEvaluation: () => void
+  streamEvaluations: (
+    fen: string,
+    moveCount: number,
+  ) => AsyncIterable<StockfishEvaluation> | null
+}
+
+export interface MaiaEvaluation {
+  policy: { [key: string]: number }
+  value: number
+}
+
+export interface StockfishEvaluation {
+  sent: boolean
+  depth: number
+  model_move: string
+  model_optimal_cp: number
+  cp_vec: { [key: string]: number }
+  cp_relative_vec: { [key: string]: number }
+  winrate_vec?: { [key: string]: number }
+  winrate_loss_vec?: { [key: string]: number }
+}
 
 type EvaluationType =
   | 'tournament'
@@ -68,22 +103,6 @@ export interface MoveMap {
 export interface PositionEvaluation {
   trickiness: number
   performance: number
-}
-
-export interface MaiaEvaluation {
-  policy: { [key: string]: number }
-  value: number
-}
-
-export interface StockfishEvaluation {
-  sent: boolean
-  depth: number
-  model_move: string
-  model_optimal_cp: number
-  cp_vec: { [key: string]: number }
-  cp_relative_vec: { [key: string]: number }
-  winrate_vec?: { [key: string]: number }
-  winrate_loss_vec?: { [key: string]: number }
 }
 
 export interface ColorSanMapping {

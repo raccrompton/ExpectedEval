@@ -38,6 +38,10 @@ export const useTreeController = (
     }
   }, [gameTree, setCurrentNode])
 
+  useEffect(() => {
+    setOrientation(initialOrientation)
+  }, [initialOrientation])
+
   return {
     gameTree,
     currentNode,

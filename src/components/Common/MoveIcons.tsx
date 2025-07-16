@@ -12,11 +12,11 @@ const getSizeClasses = (size: 'small' | 'medium' | 'large') => {
     case 'small':
       return 'h-3 w-3 text-[8px]'
     case 'medium':
-      return 'h-4 w-4 text-[10px]'
+      return 'h-4 w-4 text-xxs'
     case 'large':
       return 'h-5 w-5 text-xs'
     default:
-      return 'h-4 w-4 text-[10px]'
+      return 'h-4 w-4 text-xxs'
   }
 }
 
