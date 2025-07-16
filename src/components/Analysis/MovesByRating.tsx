@@ -46,7 +46,7 @@ export const MovesByRating: React.FC<Props> = ({
       <h2 className="p-3 text-base text-primary md:text-sm xl:text-base">
         Moves by Rating
       </h2>
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="90%">
         <AreaChart
           data={moves}
           margin={{
