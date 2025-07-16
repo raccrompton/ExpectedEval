@@ -14,6 +14,8 @@ import {
   ModalContextProvider,
   WindowSizeContextProvider,
   AnalysisListContextProvider,
+  MaiaEngineContextProvider,
+  StockfishEngineContextProvider,
 } from 'src/providers'
 import { TourProvider as TourContextProvider } from 'src/contexts'
 import 'src/styles/tailwind.css'
@@ -55,6 +57,8 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
             WindowSizeContextProvider,
             AuthContextProvider,
             ModalContextProvider,
+            MaiaEngineContextProvider,
+            StockfishEngineContextProvider,
             ...(isAnalysisPage ? [AnalysisListContextProvider] : []),
           ]}
         >

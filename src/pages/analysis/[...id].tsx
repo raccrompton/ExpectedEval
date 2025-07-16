@@ -338,9 +338,9 @@ const Analysis: React.FC<Props> = ({
   }, [])
 
   useEffect(() => {
-    if (controller.maiaStatus === 'loading' && !toastId.current) {
+    if (controller.maia.status === 'loading' && !toastId.current) {
       toastId.current = toast.loading('Loading Maia Model...')
-    } else if (controller.maiaStatus === 'ready') {
+    } else if (controller.maia.status === 'ready') {
       if (toastId.current) {
         toast.success('Loaded Maia! Analysis is ready', {
           id: toastId.current,
@@ -349,12 +349,15 @@ const Analysis: React.FC<Props> = ({
         toast.success('Loaded Maia! Analysis is ready')
       }
     }
-  }, [controller.maiaStatus])
+  }, [controller.maia.status])
 
   useEffect(() => {
-    if (controller.stockfishStatus === 'loading' && !stockfishToastId.current) {
+    if (
+      controller.stockfish.status === 'loading' &&
+      !stockfishToastId.current
+    ) {
       stockfishToastId.current = toast.loading('Loading Stockfish Engine...')
-    } else if (controller.stockfishStatus === 'ready') {
+    } else if (controller.stockfish.status === 'ready') {
       if (stockfishToastId.current) {
         toast.success('Loaded Stockfish! Engine is ready', {
           id: stockfishToastId.current,
@@ -363,7 +366,7 @@ const Analysis: React.FC<Props> = ({
       } else {
         toast.success('Loaded Stockfish! Engine is ready')
       }
-    } else if (controller.stockfishStatus === 'error') {
+    } else if (controller.stockfish.status === 'error') {
       if (stockfishToastId.current) {
         toast.error('Failed to load Stockfish engine', {
           id: stockfishToastId.current,
@@ -373,7 +376,7 @@ const Analysis: React.FC<Props> = ({
         toast.error('Failed to load Stockfish engine')
       }
     }
-  }, [controller.stockfishStatus])
+  }, [controller.stockfish.status])
 
   const launchContinue = useCallback(() => {
     const fen = controller.currentNode?.fen as string
@@ -1007,11 +1010,11 @@ const Analysis: React.FC<Props> = ({
         />
       </Head>
       <AnimatePresence>
-        {controller.maiaStatus === 'no-cache' ||
-        controller.maiaStatus === 'downloading' ? (
+        {controller.maia.status === 'no-cache' ||
+        controller.maia.status === 'downloading' ? (
           <DownloadModelModal
-            progress={controller.maiaProgress}
-            download={controller.downloadMaia}
+            progress={controller.maia.progress}
+            download={controller.maia.downloadModel}
           />
         ) : null}
       </AnimatePresence>
