@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Chess } from 'chess.ts'
-import { useChessSound } from 'src/hooks'
+import { chessSoundManager } from 'src/lib/chessSoundManager'
 import { defaults } from 'chessground/state'
 import type { Key } from 'chessground/types'
 import Chessground from '@react-chess/chessground'
-import { BaseGame, Check, GameNode, Color } from 'src/types'
+import { BaseGame, GameNode, Color } from 'src/types'
 import type { DrawBrushes, DrawShape } from 'chessground/draw'
 import { useCallback, useMemo, Dispatch, SetStateAction } from 'react'
 
@@ -35,8 +35,6 @@ export const GameBoard: React.FC<Props> = ({
   setCurrentSquare,
   onSelectSquare,
 }: Props) => {
-  const { playSound } = useChessSound()
-
   const after = useCallback(
     (from: string, to: string) => {
       if (onPlayerMakeMove) onPlayerMakeMove([from, to])
@@ -59,7 +57,7 @@ export const GameBoard: React.FC<Props> = ({
         ) {
           const moveAttempt = chess.move({ from: from, to: to })
           if (moveAttempt) {
-            playSound(isCapture)
+            chessSoundManager.playMoveSound(isCapture)
 
             const newFen = chess.fen()
             const moveString = from + to
@@ -78,21 +76,13 @@ export const GameBoard: React.FC<Props> = ({
             }
           }
         } else {
-          playSound(isCapture)
+          chessSoundManager.playMoveSound(isCapture)
         }
       } else {
-        playSound(false)
+        chessSoundManager.playMoveSound(false)
       }
     },
-    [
-      game,
-      gameTree,
-      goToNode,
-      playSound,
-      currentNode,
-      onPlayerMakeMove,
-      setCurrentSquare,
-    ],
+    [game, gameTree, goToNode, currentNode, onPlayerMakeMove, setCurrentSquare],
   )
 
   const boardConfig = useMemo(() => {
