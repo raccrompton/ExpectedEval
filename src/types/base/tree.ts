@@ -33,6 +33,11 @@ export class GameTree {
   }
 
   toPGN(): string {
+    const chess = this.toChess()
+    return chess.pgn()
+  }
+
+  toChess(): Chess {
     const chess = new Chess()
 
     if (this.root.fen !== chess.fen()) {
@@ -54,7 +59,7 @@ export class GameTree {
       }
     }
 
-    return chess.pgn()
+    return chess
   }
 
   getRoot(): GameNode {
