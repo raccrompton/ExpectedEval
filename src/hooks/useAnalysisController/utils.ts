@@ -5,6 +5,7 @@ import {
   BlunderMeterResult,
   MaiaEvaluation,
   StockfishEvaluation,
+  GameNode,
 } from 'src/types'
 
 type ColorSanMappingResult = {
@@ -286,4 +287,58 @@ export const calculateBlunderMeter = (
       moves: goodMoveChanceInfo,
     },
   }
+}
+
+export const getBestMoves = (
+  currentNode: GameNode | null,
+  maiaModel = 'maia_kdd_1500',
+): {
+  maiaBestMove: string | null
+  stockfishBestMove: string | null
+} => {
+  if (!currentNode) {
+    return { maiaBestMove: null, stockfishBestMove: null }
+  }
+
+  const chess = new Chess(currentNode.fen)
+  const isBlackTurn = chess.turn() === 'b'
+
+  // Get Maia best move
+  let maiaBestMove: string | null = null
+  if (currentNode.analysis?.maia?.[maiaModel]?.policy) {
+    const maiaPolicy = currentNode.analysis.maia[maiaModel].policy
+    const maiaEntries = Object.entries(maiaPolicy)
+    if (maiaEntries.length > 0) {
+      // Maia policy is probability-based, so higher is always better regardless of turn
+      const bestMove = maiaEntries.reduce((a, b) =>
+        maiaPolicy[a[0]] > maiaPolicy[b[0]] ? a : b,
+      )
+      maiaBestMove = bestMove[0]
+    }
+  }
+
+  // Get Stockfish best move
+  let stockfishBestMove: string | null = null
+  if (currentNode.analysis?.stockfish?.cp_vec) {
+    const stockfishEntries = Object.entries(
+      currentNode.analysis.stockfish.cp_vec,
+    )
+    if (stockfishEntries.length > 0) {
+      const cpVec = currentNode.analysis.stockfish.cp_vec
+      // For black turn, lower centipawn is better (since cp is from white's perspective)
+      // For white turn, higher centipawn is better
+      const bestMove = stockfishEntries.reduce((a, b) =>
+        isBlackTurn
+          ? cpVec[a[0]] < cpVec[b[0]]
+            ? a
+            : b
+          : cpVec[a[0]] > cpVec[b[0]]
+            ? a
+            : b,
+      )
+      stockfishBestMove = bestMove[0]
+    }
+  }
+
+  return { maiaBestMove, stockfishBestMove }
 }

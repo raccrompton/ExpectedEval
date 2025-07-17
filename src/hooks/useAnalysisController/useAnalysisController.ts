@@ -4,7 +4,11 @@ import { useContext, useEffect, useMemo, useState } from 'react'
 import { useTreeController, useLocalStorage } from '..'
 import { AnalyzedGame } from 'src/types'
 import { MAIA_MODELS } from 'src/constants/common'
-import { generateColorSanMapping, calculateBlunderMeter } from './utils'
+import {
+  generateColorSanMapping,
+  calculateBlunderMeter,
+  getBestMoves,
+} from './utils'
 import { useEngineAnalysis } from './useEngineAnalysis'
 import { useMoveRecommendations } from './useMoveRecommendations'
 import { useBoardDescription } from './useBoardDescription'
@@ -146,5 +150,7 @@ export const useAnalysisController = (
     boardDescription,
     stockfish: stockfish,
     maia: maia,
+    getBestMoves: (node: typeof controller.currentNode) =>
+      getBestMoves(node, currentMaiaModel),
   }
 }
