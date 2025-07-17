@@ -631,7 +631,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
               backgroundColor: 'rgb(38, 36, 45)', // background-1 to match tooltip
               overlayColor: 'rgba(0, 0, 0, 0.5)',
               spotlightShadow: '0 0 15px rgba(159, 79, 68, 0.3)',
-              zIndex: 10000,
+              zIndex: 1001,
             },
             spotlight: {
               borderRadius: '4px',
