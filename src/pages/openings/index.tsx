@@ -21,6 +21,7 @@ import {
   AuthContext,
   MaiaEngineContext,
 } from 'src/contexts'
+import { useTour } from 'src/contexts/TourContext'
 import { DrillConfiguration, AnalyzedGame } from 'src/types'
 import { GameNode } from 'src/types/base/tree'
 import { MIN_STOCKFISH_DEPTH } from 'src/constants/analysis'
@@ -59,6 +60,7 @@ import {
 const OpeningsPage: NextPage = () => {
   const router = useRouter()
   const { user } = useContext(AuthContext)
+  const { endTour } = useTour()
   const [showSelectionModal, setShowSelectionModal] = useState(true)
   const [isReopenedModal, setIsReopenedModal] = useState(false)
 
@@ -66,6 +68,8 @@ const OpeningsPage: NextPage = () => {
     if (isReopenedModal) {
       setShowSelectionModal(false)
     } else {
+      // End any active tour before redirecting to prevent tour persistence on home page
+      endTour()
       router.push('/')
     }
   }
