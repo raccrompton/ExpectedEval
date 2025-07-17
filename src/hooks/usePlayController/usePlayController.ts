@@ -70,7 +70,7 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
   const game: PlayedGame = useMemo(() => {
     const mainLine = gameTree.getMainLine()
     const lastNode = mainLine[mainLine.length - 1]
-    const chess = new Chess(lastNode.fen)
+    const chess = gameTree.toChess()
 
     const termination = resigned
       ? ({
