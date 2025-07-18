@@ -74,7 +74,6 @@ const OpeningsPage: NextPage = () => {
   const [promotionFromTo, setPromotionFromTo] = useState<
     [string, string] | null
   >(null)
-  const [arrows, setArrows] = useState<DrawShape[]>([])
   const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
 
   useEffect(() => {
@@ -85,7 +84,6 @@ const OpeningsPage: NextPage = () => {
 
   useEffect(() => {
     return () => {
-      setArrows([])
       setHoverArrow(null)
       setPromotionFromTo(null)
     }
@@ -206,13 +204,6 @@ const OpeningsPage: NextPage = () => {
     treeController.currentNode?.analysis?.maia,
     treeController.currentNode?.analysis?.stockfish,
   ])
-
-  // Set arrows with deferred updates to prevent blocking UI
-  useEffect(() => {
-    deferHeavyOperation(() => {
-      setArrows(calculatedArrows)
-    })
-  }, [calculatedArrows, deferHeavyOperation])
 
   // Clear hover arrow when node changes
   useEffect(() => {
@@ -762,7 +753,15 @@ const OpeningsPage: NextPage = () => {
                 availableMoves={availableMoves}
                 onPlayerMakeMove={onPlayerMakeMove}
                 onSelectSquare={onSelectSquare}
-                shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
+                shapes={
+                  controller.analysisEnabled
+                    ? hoverArrow
+                      ? [...analysisController.arrows, hoverArrow]
+                      : [...analysisController.arrows]
+                    : hoverArrow
+                      ? [hoverArrow]
+                      : []
+                }
               />
               {promotionFromTo && (
                 <PromotionOverlay
@@ -919,7 +918,15 @@ const OpeningsPage: NextPage = () => {
               availableMoves={availableMoves}
               onPlayerMakeMove={onPlayerMakeMove}
               onSelectSquare={onSelectSquare}
-              shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
+              shapes={
+                controller.analysisEnabled
+                  ? hoverArrow
+                    ? [...analysisController.arrows, hoverArrow]
+                    : [...analysisController.arrows]
+                  : hoverArrow
+                    ? [hoverArrow]
+                    : []
+              }
             />
             {promotionFromTo && (
               <PromotionOverlay

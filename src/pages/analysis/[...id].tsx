@@ -308,7 +308,6 @@ const Analysis: React.FC<Props> = ({
   const { width } = useContext(WindowSizeContext)
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
   const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
-  const [arrows, setArrows] = useState<DrawShape[]>([])
   const [currentSquare, setCurrentSquare] = useState<Key | null>(null)
   const [promotionFromTo, setPromotionFromTo] = useState<
     [string, string] | null
@@ -355,41 +354,6 @@ const Analysis: React.FC<Props> = ({
       router.push('/analysis')
     }
   }, [analyzedGame, router])
-
-  useEffect(() => {
-    const arr = []
-
-    if (controller.moveEvaluation?.maia) {
-      const maia = Object.entries(controller.moveEvaluation?.maia?.policy)[0]
-      if (maia) {
-        arr.push({
-          brush: 'red',
-          orig: maia[0].slice(0, 2) as Key,
-          dest: maia[0].slice(2, 4) as Key,
-        } as DrawShape)
-      }
-    }
-
-    if (controller.moveEvaluation?.stockfish) {
-      const stockfish = Object.entries(
-        controller.moveEvaluation?.stockfish.cp_vec,
-      )[0]
-      if (stockfish) {
-        arr.push({
-          brush: 'blue',
-          orig: stockfish[0].slice(0, 2) as Key,
-          dest: stockfish[0].slice(2, 4) as Key,
-          modifiers: { lineWidth: 8 },
-        })
-      }
-    }
-
-    setArrows(arr)
-  }, [
-    controller.moveEvaluation,
-    controller.currentNode,
-    controller.orientation,
-  ])
 
   const hover = (move?: string) => {
     if (move) {
@@ -672,7 +636,11 @@ const Analysis: React.FC<Props> = ({
                 game={analyzedGame}
                 availableMoves={controller.availableMoves}
                 setCurrentSquare={setCurrentSquare}
-                shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
+                shapes={
+                  hoverArrow
+                    ? [...controller.arrows, hoverArrow]
+                    : [...controller.arrows]
+                }
                 currentNode={controller.currentNode as GameNode}
                 orientation={controller.orientation}
                 onPlayerMakeMove={onPlayerMakeMove}
@@ -919,7 +887,11 @@ const Analysis: React.FC<Props> = ({
                 game={analyzedGame}
                 availableMoves={controller.availableMoves}
                 setCurrentSquare={setCurrentSquare}
-                shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
+                shapes={
+                  hoverArrow
+                    ? [...controller.arrows, hoverArrow]
+                    : [...controller.arrows]
+                }
                 currentNode={controller.currentNode as GameNode}
                 orientation={controller.orientation}
                 onPlayerMakeMove={onPlayerMakeMove}

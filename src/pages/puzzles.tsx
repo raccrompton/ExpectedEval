@@ -302,7 +302,6 @@ const Train: React.FC<Props> = ({
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
   const [movePlotHover, setMovePlotHover] = useState<DrawShape | null>(null)
   const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
-  const [arrows, setArrows] = useState<DrawShape[]>([])
   const analysisSyncedRef = useRef(false)
   const [promotionFromTo, setPromotionFromTo] = useState<
     [string, string] | null
@@ -580,49 +579,6 @@ const Train: React.FC<Props> = ({
     // Intentionally empty - no hover arrows in puzzle mode
   }, [])
 
-  useEffect(() => {
-    if (!showAnalysis || !analysisController.moveEvaluation) {
-      setArrows([])
-      return
-    }
-
-    const arr = []
-
-    if (analysisController.moveEvaluation?.maia) {
-      const maia = Object.entries(
-        analysisController.moveEvaluation?.maia?.policy,
-      )[0]
-      if (maia) {
-        arr.push({
-          brush: 'red',
-          orig: maia[0].slice(0, 2) as Key,
-          dest: maia[0].slice(2, 4) as Key,
-        } as DrawShape)
-      }
-    }
-
-    if (analysisController.moveEvaluation?.stockfish) {
-      const stockfish = Object.entries(
-        analysisController.moveEvaluation?.stockfish.cp_vec,
-      )[0]
-      if (stockfish) {
-        arr.push({
-          brush: 'blue',
-          orig: stockfish[0].slice(0, 2) as Key,
-          dest: stockfish[0].slice(2, 4) as Key,
-          modifiers: { lineWidth: 8 },
-        })
-      }
-    }
-
-    setArrows(arr)
-  }, [
-    showAnalysis,
-    analysisController.moveEvaluation,
-    analysisController.currentNode,
-    analysisController.orientation,
-  ])
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -728,7 +684,15 @@ const Train: React.FC<Props> = ({
                   ? analysisController.availableMoves
                   : controller.availableMovesMapped
               }
-              shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
+              shapes={
+                showAnalysis
+                  ? hoverArrow
+                    ? [...analysisController.arrows, hoverArrow]
+                    : [...analysisController.arrows]
+                  : hoverArrow
+                    ? [hoverArrow]
+                    : []
+              }
               onSelectSquare={onSelectSquare}
               goToNode={showAnalysis ? analysisController.goToNode : undefined}
               gameTree={showAnalysis ? analyzedGame.tree : undefined}
@@ -1134,7 +1098,15 @@ const Train: React.FC<Props> = ({
                   : controller.availableMovesMapped
               }
               onPlayerMakeMove={onPlayerMakeMove}
-              shapes={hoverArrow ? [...arrows, hoverArrow] : [...arrows]}
+              shapes={
+                showAnalysis
+                  ? hoverArrow
+                    ? [...analysisController.arrows, hoverArrow]
+                    : [...analysisController.arrows]
+                  : hoverArrow
+                    ? [hoverArrow]
+                    : []
+              }
               onSelectSquare={onSelectSquare}
               goToNode={showAnalysis ? analysisController.goToNode : undefined}
               gameTree={showAnalysis ? analyzedGame.tree : undefined}
