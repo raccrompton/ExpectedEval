@@ -124,7 +124,7 @@ export const GameList = () => {
               parse(game, gameType),
             )
             const calculatedTotalPages =
-              data.total_pages || Math.ceil(data.total_games / 100)
+              data.total_pages || Math.ceil(data.total_games / 25)
 
             setTotalPagesCache((prev) => ({
               ...prev,
