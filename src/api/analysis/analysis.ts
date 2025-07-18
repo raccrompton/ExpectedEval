@@ -76,8 +76,22 @@ export const getAnalysisList = async (): Promise<
   return data
 }
 
-export const getAnalysisGameList = async (type = 'play', page = 1) => {
-  const res = await fetch(buildUrl(`analysis/user/list/${type}/${page}`))
+export const getAnalysisGameList = async (
+  type = 'play',
+  page = 1,
+  lichessId?: string,
+) => {
+  const url = buildUrl(`analysis/user/list/${type}/${page}`)
+  const searchParams = new URLSearchParams()
+
+  if (lichessId) {
+    searchParams.append('lichess_id', lichessId)
+  }
+
+  const fullUrl = searchParams.toString()
+    ? `${url}?${searchParams.toString()}`
+    : url
+  const res = await fetch(fullUrl)
 
   if (res.status === 401) {
     throw new Error('Unauthorized')
