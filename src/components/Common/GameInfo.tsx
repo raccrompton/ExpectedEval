@@ -39,7 +39,7 @@ export const GameInfo: React.FC<Props> = ({
           </span>
           <h2 className="text-lg font-semibold md:text-xl">{title}</h2>
           {currentMaiaModel && setCurrentMaiaModel && (
-            <p className="flex items-center gap-1 text-sm md:hidden">
+            <div className="flex items-center gap-1 text-sm md:hidden">
               using
               <div className="relative inline-flex items-center gap-0.5">
                 <select
@@ -57,12 +57,13 @@ export const GameInfo: React.FC<Props> = ({
                   arrow_drop_down
                 </span>
               </div>
-            </p>
+            </div>
           )}
         </div>
         <div className="flex items-center gap-2">
           {showGameListButton && (
             <button
+              type="button"
               className="flex items-center gap-1 rounded bg-human-4/30 px-2 py-1 text-sm text-human-2 duration-200 hover:bg-human-4/50 md:hidden"
               onClick={onGameListClick}
             >
