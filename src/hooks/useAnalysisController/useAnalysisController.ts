@@ -1,14 +1,15 @@
 import { Chess } from 'chess.ts'
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { Key, useContext, useEffect, useMemo, useState } from 'react'
 
-import { useTreeController, useLocalStorage } from '..'
 import { AnalyzedGame } from 'src/types'
+import type { DrawShape } from 'chessground/draw'
 import { MAIA_MODELS } from 'src/constants/common'
-import { generateColorSanMapping, calculateBlunderMeter } from './utils'
+import { useTreeController, useLocalStorage } from '..'
 import { useEngineAnalysis } from './useEngineAnalysis'
-import { useMoveRecommendations } from './useMoveRecommendations'
 import { useBoardDescription } from './useBoardDescription'
+import { useMoveRecommendations } from './useMoveRecommendations'
 import { MaiaEngineContext } from 'src/contexts/MaiaEngineContext'
+import { generateColorSanMapping, calculateBlunderMeter } from './utils'
 import { StockfishEngineContext } from 'src/contexts/StockfishEngineContext'
 
 export const useAnalysisController = (
@@ -119,6 +120,37 @@ export const useAnalysisController = (
     return undefined
   }, [currentMove, controller.currentNode])
 
+  const arrows = useMemo(() => {
+    if (!controller.currentNode) return []
+
+    const arrows: DrawShape[] = []
+
+    if (moveEvaluation?.maia) {
+      const bestMove = Object.entries(moveEvaluation.maia.policy)[0]
+      if (bestMove) {
+        arrows.push({
+          brush: 'red',
+          orig: bestMove[0].slice(0, 2) as Key,
+          dest: bestMove[0].slice(2, 4) as Key,
+        } as DrawShape)
+      }
+    }
+
+    if (moveEvaluation?.stockfish) {
+      const bestMove = Object.entries(moveEvaluation.stockfish.cp_vec)[0]
+      if (bestMove) {
+        arrows.push({
+          brush: 'blue',
+          orig: bestMove[0].slice(0, 2) as Key,
+          dest: bestMove[0].slice(2, 4) as Key,
+          modifiers: { lineWidth: 8 },
+        } as DrawShape)
+      }
+    }
+
+    return arrows
+  }, [controller.currentNode, moveEvaluation])
+
   return {
     gameTree: controller.gameTree,
     currentNode: controller.currentNode,
@@ -144,6 +176,7 @@ export const useAnalysisController = (
     moveMap,
     blunderMeter,
     boardDescription,
+    arrows,
     stockfish: stockfish,
     maia: maia,
   }
