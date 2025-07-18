@@ -21,7 +21,6 @@ import {
   AuthContext,
   MaiaEngineContext,
 } from 'src/contexts'
-import { useTour } from 'src/contexts/TourContext'
 import { DrillConfiguration, AnalyzedGame } from 'src/types'
 import { GameNode } from 'src/types/base/tree'
 import { MIN_STOCKFISH_DEPTH } from 'src/constants/analysis'
@@ -60,7 +59,6 @@ import {
 const OpeningsPage: NextPage = () => {
   const router = useRouter()
   const { user } = useContext(AuthContext)
-  const { endTour } = useTour()
   const [showSelectionModal, setShowSelectionModal] = useState(true)
   const [isReopenedModal, setIsReopenedModal] = useState(false)
 
@@ -68,8 +66,6 @@ const OpeningsPage: NextPage = () => {
     if (isReopenedModal) {
       setShowSelectionModal(false)
     } else {
-      // End any active tour before redirecting to prevent tour persistence on home page
-      endTour()
       router.push('/')
     }
   }
@@ -153,6 +149,106 @@ const OpeningsPage: NextPage = () => {
 
   const maiaEngine = useContext(MaiaEngineContext)
 
+  // Sync tree controller with opening drill controller
+  useEffect(() => {
+    if (controller.currentNode && treeController.setCurrentNode) {
+      treeController.setCurrentNode(controller.currentNode)
+    }
+  }, [controller.currentNode, treeController.setCurrentNode])
+
+  // Memoize arrow calculations to reduce re-renders
+  const calculatedArrows = useMemo(() => {
+    if (!controller.analysisEnabled || !treeController.currentNode) {
+      return []
+    }
+
+    const arr: DrawShape[] = []
+    const currentNode = treeController.currentNode
+
+    // Show Maia best move if available
+    if (currentNode.analysis?.maia?.['maia_kdd_1500']?.policy) {
+      const maiaPolicy = currentNode.analysis.maia['maia_kdd_1500'].policy
+      const maiaEntries = Object.entries(maiaPolicy)
+      if (maiaEntries.length > 0) {
+        const bestMove = maiaEntries.reduce((a, b) =>
+          maiaPolicy[a[0]] > maiaPolicy[b[0]] ? a : b,
+        )
+        arr.push({
+          brush: 'red',
+          orig: bestMove[0].slice(0, 2) as Key,
+          dest: bestMove[0].slice(2, 4) as Key,
+        } as DrawShape)
+      }
+    }
+
+    // Show Stockfish best move if available
+    if (currentNode.analysis?.stockfish?.cp_vec) {
+      const stockfishEntries = Object.entries(
+        currentNode.analysis.stockfish.cp_vec,
+      )
+      if (stockfishEntries.length > 0) {
+        const vec = currentNode.analysis.stockfish.cp_vec
+        const bestMove = stockfishEntries.reduce((a, b) =>
+          vec[a[0]] > vec[b[0]] ? a : b,
+        )
+        arr.push({
+          brush: 'blue',
+          orig: bestMove[0].slice(0, 2) as Key,
+          dest: bestMove[0].slice(2, 4) as Key,
+          modifiers: { lineWidth: 8 },
+        })
+      }
+    }
+
+    return arr
+  }, [
+    controller.analysisEnabled,
+    treeController.currentNode?.analysis?.maia,
+    treeController.currentNode?.analysis?.stockfish,
+  ])
+
+  // Set arrows with deferred updates to prevent blocking UI
+  useEffect(() => {
+    deferHeavyOperation(() => {
+      setArrows(calculatedArrows)
+    })
+  }, [calculatedArrows, deferHeavyOperation])
+
+  // Clear hover arrow when node changes
+  useEffect(() => {
+    setHoverArrow(null)
+  }, [controller.currentNode])
+
+  // Hover function for analysis components
+  const hover = useCallback((move?: string) => {
+    if (move) {
+      setHoverArrow({
+        orig: move.slice(0, 2) as Key,
+        dest: move.slice(2, 4) as Key,
+        brush: 'green',
+        modifiers: { lineWidth: 10 },
+      })
+    } else {
+      setHoverArrow(null)
+    }
+  }, [])
+
+  // Custom navigation functions that respect opening end position
+  const customGoToPreviousNode = useCallback(() => {
+    if (!controller.isAtOpeningEnd) {
+      controller.goToPreviousNode()
+    }
+  }, [controller])
+
+  const customGoToRootNode = useCallback(() => {
+    if (
+      !controller.isAtOpeningEnd &&
+      controller.currentDrillGame?.openingEndNode
+    ) {
+      controller.goToNode(controller.currentDrillGame.openingEndNode)
+    }
+  }, [controller])
+
   // Create minimal AnalyzedGame for analysis controller
   const analyzedGame = useMemo((): AnalyzedGame | null => {
     if (!treeController.gameTree || !controller.currentDrill || !playerNames)
@@ -198,95 +294,6 @@ const OpeningsPage: NextPage = () => {
     },
     controller.currentDrill?.playerColor || 'white',
   )
-
-  // Sync tree controller with opening drill controller
-  useEffect(() => {
-    if (controller.currentNode && treeController.setCurrentNode) {
-      treeController.setCurrentNode(controller.currentNode)
-    }
-  }, [controller.currentNode, treeController.setCurrentNode])
-
-  // Memoize arrow calculations to reduce re-renders
-  const calculatedArrows = useMemo(() => {
-    if (!controller.analysisEnabled || !treeController.currentNode) {
-      return []
-    }
-
-    const arr: DrawShape[] = []
-    const currentNode = treeController.currentNode
-
-    // Use centralized best move calculation
-    const { maiaBestMove, stockfishBestMove } =
-      analysisController.getBestMoves(currentNode)
-
-    // Show Maia best move if available
-    if (maiaBestMove) {
-      arr.push({
-        brush: 'red',
-        orig: maiaBestMove.slice(0, 2) as Key,
-        dest: maiaBestMove.slice(2, 4) as Key,
-      } as DrawShape)
-    }
-
-    // Show Stockfish best move if available
-    if (stockfishBestMove) {
-      arr.push({
-        brush: 'blue',
-        orig: stockfishBestMove.slice(0, 2) as Key,
-        dest: stockfishBestMove.slice(2, 4) as Key,
-        modifiers: { lineWidth: 8 },
-      })
-    }
-
-    return arr
-  }, [
-    controller.analysisEnabled,
-    treeController.currentNode?.analysis?.maia,
-    treeController.currentNode?.analysis?.stockfish,
-    analysisController.getBestMoves,
-  ])
-
-  // Set arrows with deferred updates to prevent blocking UI
-  useEffect(() => {
-    deferHeavyOperation(() => {
-      setArrows(calculatedArrows)
-    })
-  }, [calculatedArrows, deferHeavyOperation])
-
-  // Clear hover arrow when node changes
-  useEffect(() => {
-    setHoverArrow(null)
-  }, [controller.currentNode])
-
-  // Hover function for analysis components
-  const hover = useCallback((move?: string) => {
-    if (move) {
-      setHoverArrow({
-        orig: move.slice(0, 2) as Key,
-        dest: move.slice(2, 4) as Key,
-        brush: 'green',
-        modifiers: { lineWidth: 10 },
-      })
-    } else {
-      setHoverArrow(null)
-    }
-  }, [])
-
-  // Custom navigation functions that respect opening end position
-  const customGoToPreviousNode = useCallback(() => {
-    if (!controller.isAtOpeningEnd) {
-      controller.goToPreviousNode()
-    }
-  }, [controller])
-
-  const customGoToRootNode = useCallback(() => {
-    if (
-      !controller.isAtOpeningEnd &&
-      controller.currentDrillGame?.openingEndNode
-    ) {
-      controller.goToNode(controller.currentDrillGame.openingEndNode)
-    }
-  }, [controller])
 
   // Function to ensure all positions have sufficient analysis
   const ensureAnalysisComplete = useCallback(

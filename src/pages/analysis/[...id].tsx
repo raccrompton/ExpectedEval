@@ -359,32 +359,37 @@ const Analysis: React.FC<Props> = ({
   useEffect(() => {
     const arr = []
 
-    if (controller.currentNode) {
-      // Use centralized best move calculation
-      const { maiaBestMove, stockfishBestMove } = controller.getBestMoves(
-        controller.currentNode,
-      )
-
-      if (maiaBestMove) {
+    if (controller.moveEvaluation?.maia) {
+      const maia = Object.entries(controller.moveEvaluation?.maia?.policy)[0]
+      if (maia) {
         arr.push({
           brush: 'red',
-          orig: maiaBestMove.slice(0, 2) as Key,
-          dest: maiaBestMove.slice(2, 4) as Key,
+          orig: maia[0].slice(0, 2) as Key,
+          dest: maia[0].slice(2, 4) as Key,
         } as DrawShape)
       }
+    }
 
-      if (stockfishBestMove) {
+    if (controller.moveEvaluation?.stockfish) {
+      const stockfish = Object.entries(
+        controller.moveEvaluation?.stockfish.cp_vec,
+      )[0]
+      if (stockfish) {
         arr.push({
           brush: 'blue',
-          orig: stockfishBestMove.slice(0, 2) as Key,
-          dest: stockfishBestMove.slice(2, 4) as Key,
+          orig: stockfish[0].slice(0, 2) as Key,
+          dest: stockfish[0].slice(2, 4) as Key,
           modifiers: { lineWidth: 8 },
         })
       }
     }
 
     setArrows(arr)
-  }, [controller.currentNode, controller.getBestMoves])
+  }, [
+    controller.moveEvaluation,
+    controller.currentNode,
+    controller.orientation,
+  ])
 
   const hover = (move?: string) => {
     if (move) {
