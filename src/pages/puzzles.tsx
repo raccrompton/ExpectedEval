@@ -300,7 +300,6 @@ const Train: React.FC<Props> = ({
 
   const { width } = useContext(WindowSizeContext)
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
-  const [movePlotHover, setMovePlotHover] = useState<DrawShape | null>(null)
   const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
   const analysisSyncedRef = useRef(false)
   const [promotionFromTo, setPromotionFromTo] = useState<
