@@ -1,5 +1,6 @@
 import { Dispatch, SetStateAction } from 'react'
 import { AnalysisTournamentGame } from 'src/types'
+import { useRouter } from 'next/router'
 type Props = {
   id: string
   index: number
@@ -32,6 +33,7 @@ export const Tournament = ({
   loadNewTournamentGame,
   setCurrentMove,
 }: Props) => {
+  const router = useRouter()
   const games = analysisTournamentList.get(id)
   const [sectionId, title] = id.split('---')
   const opened = openIndex == index
@@ -72,14 +74,9 @@ export const Tournament = ({
             <button
               key={j}
               className={`group relative flex items-center justify-between text-left ${selected ? 'bg-background-2 font-bold' : 'hover:bg-background-2'}`}
-              onClick={async () => {
+              onClick={() => {
                 setLoadingIndex(j)
-
-                await loadNewTournamentGame(
-                  [sectionId, game.game_index.toString()],
-                  setCurrentMove,
-                )
-                setLoadingIndex(null)
+                router.push(`/analysis/${sectionId}/${game.game_index}`)
               }}
               ref={selected && opened ? selectedGameElement : null}
             >

@@ -12,6 +12,7 @@ import { Tournament } from 'src/components'
 import { AnalysisListContext } from 'src/contexts'
 import { getAnalysisGameList } from 'src/api'
 import { getCustomAnalysesAsWebGames } from 'src/lib/customAnalysis'
+import { useRouter } from 'next/router'
 
 interface GameData {
   game_id: string
@@ -53,6 +54,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   onCustomAnalysis,
   refreshTrigger,
 }) => {
+  const router = useRouter()
   const {
     analysisPlayList,
     analysisHandList,
@@ -80,7 +82,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   }, [refreshTrigger])
 
   useEffect(() => {
-    if (currentId?.[0]?.startsWith('custom-')) {
+    if (currentId?.[1] === 'custom') {
       setSelected('custom')
     }
   }, [currentId])
@@ -130,16 +132,17 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   const [selected, setSelected] = useState<
     'tournament' | 'lichess' | 'play' | 'hb' | 'custom'
   >(() => {
-    if (currentId?.[0]?.startsWith('custom-')) {
+    if (currentId?.[1] === 'custom') {
       return 'custom'
+    } else if (currentId?.[1] === 'lichess') {
+      return 'lichess'
+    } else if (currentId?.[1] === 'play') {
+      return 'play'
+    } else if (currentId?.[1] === 'hand') {
+      return 'hb'
+    } else if (currentId?.[1] === 'brain') {
+      return 'hb'
     }
-    if (['lichess', 'play', 'hand', 'brain'].includes(currentId?.[1] ?? '')) {
-      if (currentId?.[1] === 'hand' || currentId?.[1] === 'brain') {
-        return 'hb'
-      }
-      return currentId?.[1] as 'lichess' | 'play'
-    }
-
     return 'tournament'
   })
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null)
@@ -198,7 +201,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
               parse(game, selected),
             )
             const calculatedTotalPages =
-              data.total_pages || Math.ceil(data.total_games / 100)
+              data.total_pages || Math.ceil(data.total_games / 25)
 
             setTotalPagesCache((prev) => ({
               ...prev,
@@ -265,7 +268,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
               parse(game, gameType),
             )
             const calculatedTotalPages =
-              data.total_pages || Math.ceil(data.total_games / 100)
+              data.total_pages || Math.ceil(data.total_games / 25)
 
             setTotalPagesCache((prev) => ({
               ...prev,
@@ -464,25 +467,18 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                     return (
                       <button
                         key={index}
-                        onClick={async () => {
+                        onClick={() => {
                           setLoadingIndex(index)
                           if (game.type === 'pgn') {
-                            await loadNewLichessGames(
-                              game.id,
-                              game.pgn as string,
-                            )
+                            router.push(`/analysis/${game.id}/pgn`)
                           } else if (
                             game.type === 'custom-pgn' ||
                             game.type === 'custom-fen'
                           ) {
-                            await loadNewCustomGame(game.id)
+                            router.push(`/analysis/${game.id}/custom`)
                           } else {
-                            await loadNewUserGames(
-                              game.id,
-                              game.type as 'play' | 'hand' | 'brain',
-                            )
+                            router.push(`/analysis/${game.id}/${game.type}`)
                           }
-                          setLoadingIndex(null)
                         }}
                         className={`group flex w-full cursor-pointer items-center gap-2 pr-1 ${selectedGame ? 'bg-background-2 font-bold' : index % 2 === 0 ? 'bg-background-1/30 hover:bg-background-2' : 'bg-background-1/10 hover:bg-background-2'}`}
                       >
@@ -491,7 +487,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                         >
                           <p className="text-sm text-secondary">
                             {selected === 'play' || selected === 'hb'
-                              ? (currentPage - 1) * 100 + index + 1
+                              ? (currentPage - 1) * 25 + index + 1
                               : index + 1}
                           </p>
                         </div>
