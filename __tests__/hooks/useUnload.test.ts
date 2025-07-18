@@ -139,7 +139,7 @@ describe('useUnload', () => {
 
   it('should handle non-function handler gracefully', () => {
     // This shouldn't happen in practice, but test for robustness
-    const handler = null as any
+    const handler = null as unknown as () => string
     renderHook(() => useUnload(handler))
 
     const eventListener = mockAddEventListener.mock.calls[0][1]

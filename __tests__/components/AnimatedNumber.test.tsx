@@ -5,7 +5,7 @@ import { AnimatedNumber } from '../../src/components/Common/AnimatedNumber'
 let mockValue = 1000
 jest.mock('framer-motion', () => ({
   motion: {
-    span: ({ children, className, ...props }: any) => (
+    span: ({ children, className, ...props }: React.ComponentProps<'span'>) => (
       <span className={className} {...props}>
         {children}
       </span>
