@@ -478,7 +478,7 @@ const PreviewPanel: React.FC<{
         <p className="text-xs text-secondary">Configure your drill settings</p>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 overflow-hidden p-2 md:p-3">
+      <div className="flex flex-1 flex-col gap-4 overflow-hidden p-3 md:p-4">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-medium md:text-base">
             {previewOpening.name}
@@ -629,10 +629,10 @@ const SelectedPanel: React.FC<{
                   }
                 }}
                 onClick={() => removeSelection(selection.id)}
-                className="group flex cursor-pointer items-center justify-between border-b border-white/5 p-3 transition-colors hover:bg-human-2/10 md:p-4"
+                className="group flex cursor-pointer items-center justify-between border-b border-white/5 p-3 transition-colors hover:bg-human-2/10 md:px-4"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <div className="relative h-4 w-4 flex-shrink-0 md:h-5 md:w-5">
                       <Image
                         src={
@@ -644,22 +644,15 @@ const SelectedPanel: React.FC<{
                         alt={`${selection.playerColor} king`}
                       />
                     </div>
-                    <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex min-w-0 flex-1 flex-row items-center gap-2">
                       <span className="truncate text-xs font-medium text-primary md:text-sm">
                         {selection.opening.name}
                       </span>
-                      <div className="flex items-center gap-1 text-xs text-secondary">
-                        {selection.variation && (
-                          <span className="truncate">
-                            {selection.variation.name} •
-                          </span>
-                        )}
-                        <span>
-                          v. Maia{' '}
-                          {selection.maiaVersion.replace('maia_kdd_', '')} •
+                      {selection.variation && (
+                        <span className="mt-1 truncate text-xxs text-secondary">
+                          {selection.variation.name}
                         </span>
-                        <span>{selection.targetMoveNumber} moves</span>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -708,14 +701,14 @@ const SelectedPanel: React.FC<{
         <input
           type="range"
           min="5"
-          max="30"
+          max="20"
           value={targetMoveNumber}
           onChange={(e) => setTargetMoveNumber(parseInt(e.target.value) || 10)}
           className="w-full accent-human-4"
         />
         <div className="mt-1 flex justify-between text-xs text-secondary">
           <span>5</span>
-          <span>30</span>
+          <span>20</span>
         </div>
       </div>
 
@@ -727,14 +720,14 @@ const SelectedPanel: React.FC<{
         <input
           type="range"
           min="1"
-          max="50"
+          max="20"
           value={drillCount}
           onChange={(e) => setDrillCount(parseInt(e.target.value) || 5)}
           className="w-full accent-human-4"
         />
         <div className="mt-1 flex justify-between text-xs text-secondary">
           <span>1</span>
-          <span>50</span>
+          <span>20</span>
         </div>
         <p className="mt-1 text-xs text-secondary">
           {drillCount <= selections.length
@@ -813,6 +806,17 @@ export const OpeningSelectionModal: React.FC<Props> = ({
       setHasTrackedModalOpen(true)
     }
   }, [hasTrackedModalOpen, initialSelections.length])
+
+  // Update the ID to reflect the new settings
+  useEffect(() => {
+    setSelections((prevSelections) =>
+      prevSelections.map((selection) => ({
+        ...selection,
+        maiaVersion: selectedMaiaVersion.id,
+        targetMoveNumber,
+      })),
+    )
+  }, [selectedMaiaVersion.id, targetMoveNumber])
 
   const handleStartTour = () => {
     startTour(tourConfigs.openingDrill.id, tourConfigs.openingDrill.steps, true)
