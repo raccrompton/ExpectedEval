@@ -88,7 +88,7 @@ export const ExcellentIcon: React.FC<IconProps> = ({
         className={`ml-1 flex select-none items-center justify-center rounded-full bg-green-500 font-bold text-white ${sizeClasses} ${className}`}
         data-tooltip-id={id}
       >
-        !
+        !!
       </div>
       <Tooltip
         id={id}

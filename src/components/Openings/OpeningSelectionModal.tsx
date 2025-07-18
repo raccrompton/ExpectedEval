@@ -464,8 +464,7 @@ const PreviewPanel: React.FC<{
     return selections.some(
       (selection) =>
         selection.opening.id === opening.id &&
-        selection.variation?.id === variation?.id &&
-        selection.playerColor === selectedColor,
+        selection.variation?.id === variation?.id,
     )
   }
 
@@ -815,19 +814,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     }
   }, [hasTrackedModalOpen, initialSelections.length])
 
-  // Update all existing selections when global settings change
-  useEffect(() => {
-    setSelections((prevSelections) =>
-      prevSelections.map((selection) => ({
-        ...selection,
-        maiaVersion: selectedMaiaVersion.id,
-        targetMoveNumber,
-        // Update the ID to reflect the new settings
-        id: `${selection.opening.id}-${selection.variation?.id || 'main'}-${selection.playerColor}-${selectedMaiaVersion.id}-${targetMoveNumber}`,
-      })),
-    )
-  }, [selectedMaiaVersion.id, targetMoveNumber])
-
   const handleStartTour = () => {
     startTour(tourConfigs.openingDrill.id, tourConfigs.openingDrill.steps, true)
   }
@@ -863,7 +849,8 @@ export const OpeningSelectionModal: React.FC<Props> = ({
       (s) =>
         s.opening.id === opening.id &&
         s.variation?.id === variation?.id &&
-        s.playerColor === selectedColor,
+        s.playerColor === selectedColor &&
+        s.maiaVersion === selectedMaiaVersion.id,
     )
   }
 

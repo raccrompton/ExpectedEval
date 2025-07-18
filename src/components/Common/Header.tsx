@@ -226,7 +226,7 @@ export const Header: React.FC = () => {
         <span className="material-symbols-outlined text-3xl">menu</span>
       </button>
       {showMenu && (
-        <div className="fixed left-0 top-0 z-[1010] flex h-screen w-screen flex-col items-start justify-between bg-backdrop py-4">
+        <div className="fixed left-0 top-0 z-[10101] flex h-screen w-screen flex-col items-start justify-between bg-backdrop py-4">
           <div className="flex w-full flex-row justify-between px-4">
             <Link href="/" passHref>
               <div className="flex flex-row items-center gap-2">
