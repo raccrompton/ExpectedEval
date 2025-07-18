@@ -87,7 +87,9 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="flex min-h-screen w-screen flex-col bg-backdrop">
+        <div
+          className={`${OpenSans.className} app-container flex min-h-screen w-screen flex-col bg-backdrop`}
+        >
           <Header />
           <div className="flex flex-1 flex-col items-center justify-center gap-8 p-6">
             <div className="flex max-w-2xl flex-col items-center gap-6 text-center">
