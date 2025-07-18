@@ -29,6 +29,7 @@ export interface DrillConfiguration {
   selections: OpeningSelection[]
   drillCount: number
   drillSequence: OpeningSelection[]
+  sessionId?: string
 }
 
 export interface OpeningDrillState {

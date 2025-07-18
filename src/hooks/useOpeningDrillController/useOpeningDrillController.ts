@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { Chess } from 'chess.ts'
 import { getGameMove } from 'src/api/play/play'
+import { submitOpeningDrill } from 'src/api/opening'
 import { useTreeController } from '../useTreeController'
 import { useLocalStorage } from '../useLocalStorage'
 import {
@@ -564,6 +565,23 @@ export const useOpeningDrillController = (
           }
         })
 
+        // Submit drill data to backend if session ID is available
+        if (configuration.sessionId) {
+          try {
+            await submitOpeningDrill({
+              session_id: configuration.sessionId,
+              opening_fen: drillGame.selection.variation
+                ? drillGame.selection.variation.fen
+                : drillGame.selection.opening.fen,
+              side_played: drillGame.selection.playerColor,
+              moves_played_uci: drillGame.moves,
+            })
+          } catch (error) {
+            console.error('Failed to submit drill to backend:', error)
+            // Continue even if backend submission fails
+          }
+        }
+
         setShowPerformanceModal(true)
       } catch (error) {
         console.error('Error completing drill analysis:', error)
@@ -572,7 +590,7 @@ export const useOpeningDrillController = (
         setIsAnalyzingDrill(false)
       }
     },
-    [currentDrillGame, evaluateDrillPerformance],
+    [currentDrillGame, evaluateDrillPerformance, configuration.sessionId],
   )
 
   const moveToNextDrill = useCallback(() => {
