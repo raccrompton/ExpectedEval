@@ -223,7 +223,10 @@ export const UserGameList = ({ lichessId, userName }: UserGameListProps) => {
       <div className="red-scrollbar flex max-h-64 flex-col overflow-y-scroll md:max-h-96">
         {loading ? (
           <div className="flex h-full items-center justify-center py-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-white"></div>
+            <div
+              data-testid="loading-spinner"
+              className="h-8 w-8 animate-spin rounded-full border-b-2 border-white"
+            ></div>
           </div>
         ) : (
           <>
