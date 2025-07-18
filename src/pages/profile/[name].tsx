@@ -10,7 +10,7 @@ import { WindowSizeContext } from 'src/contexts'
 import {
   AuthenticatedWrapper,
   UserProfile,
-  UserGameList,
+  GameList,
   DelayedLoading,
 } from 'src/components'
 
@@ -168,7 +168,12 @@ const Profile: React.FC<Props> = (props: Props) => {
         variants={itemVariants}
         className="flex w-full flex-col items-start gap-6 md:flex-row"
       >
-        <UserGameList lichessId={props.name} userName={props.name} />
+        <GameList 
+          lichessId={props.name} 
+          userName={props.name}
+          showCustom={false}
+          showLichess={false}
+        />
         <UserProfile stats={props.stats} wide />
       </motion.div>
     </motion.div>
@@ -196,7 +201,12 @@ const Profile: React.FC<Props> = (props: Props) => {
         variants={itemVariants}
         className="flex w-full flex-col gap-6"
       >
-        <UserGameList lichessId={props.name} userName={props.name} />
+        <GameList 
+          lichessId={props.name} 
+          userName={props.name}
+          showCustom={false}
+          showLichess={false}
+        />
         <UserProfile stats={props.stats} wide />
       </motion.div>
     </motion.div>
