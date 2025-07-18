@@ -411,6 +411,13 @@ export class GameNode {
     stockfishEval: StockfishEvaluation,
     activeModel?: string,
   ): void {
+    if (
+      this._analysis.stockfish &&
+      this._analysis.stockfish.depth >= stockfishEval.depth
+    ) {
+      return
+    }
+
     this._analysis.stockfish = stockfishEval
 
     if (stockfishEval.depth >= 12) {
@@ -422,7 +429,6 @@ export class GameNode {
             stockfishEval,
             activeModel,
           )
-          // Set color for existing children based on new analysis
           child._color = calculateMoveColor(stockfishEval, child.move)
         }
       }
