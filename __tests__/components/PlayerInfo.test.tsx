@@ -27,7 +27,7 @@ describe('PlayerInfo Component', () => {
   })
 
   it('should render "Unknown" when name is not provided', () => {
-    render(<PlayerInfo name={undefined as any} color="white" />)
+    render(<PlayerInfo name={undefined as unknown as string} color="white" />)
 
     expect(screen.getByText('Unknown')).toBeInTheDocument()
   })
