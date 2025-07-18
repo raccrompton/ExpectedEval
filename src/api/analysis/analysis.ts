@@ -434,7 +434,7 @@ const createAnalyzedGameFromPGN = async (
   const tree = buildGameTree(moves, startingFen)
 
   return {
-    id: id || `custom-pgn-${Date.now()}`,
+    id: id || `pgn-${Date.now()}`,
     blackPlayer: { name: headers.Black || 'Black', rating: undefined },
     whitePlayer: { name: headers.White || 'White', rating: undefined },
     moves,
@@ -495,7 +495,7 @@ const createAnalyzedGameFromFEN = async (
   const tree = new GameTree(fen)
 
   return {
-    id: id || `custom-fen-${Date.now()}`,
+    id: id || `fen-${Date.now()}`,
     blackPlayer: { name: 'Black', rating: undefined },
     whitePlayer: { name: 'White', rating: undefined },
     moves,
