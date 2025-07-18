@@ -77,6 +77,7 @@ const AnalysisPage: NextPage = () => {
     async (
       newId: string[],
       setCurrentMove?: Dispatch<SetStateAction<number>>,
+      updateUrl = true,
     ) => {
       let game
       try {
@@ -98,9 +99,11 @@ const AnalysisPage: NextPage = () => {
       setAnalyzedGame({ ...game, type: 'tournament' })
       setCurrentId(newId)
 
-      router.push(`/analysis/${newId.join('/')}`, undefined, {
-        shallow: true,
-      })
+      if (updateUrl) {
+        router.push(`/analysis/${newId.join('/')}`, undefined, {
+          shallow: true,
+        })
+      }
     },
     [router],
   )
@@ -110,6 +113,7 @@ const AnalysisPage: NextPage = () => {
       id: string,
       pgn: string,
       setCurrentMove?: Dispatch<SetStateAction<number>>,
+      updateUrl = true,
     ) => {
       let game
       try {
@@ -126,7 +130,9 @@ const AnalysisPage: NextPage = () => {
       })
       setCurrentId([id, 'pgn'])
 
-      router.push(`/analysis/${id}/pgn`, undefined, { shallow: true })
+      if (updateUrl) {
+        router.push(`/analysis/${id}/pgn`, undefined, { shallow: true })
+      }
     },
     [router],
   )
@@ -136,6 +142,7 @@ const AnalysisPage: NextPage = () => {
       id: string,
       type: 'play' | 'hand' | 'brain',
       setCurrentMove?: Dispatch<SetStateAction<number>>,
+      updateUrl = true,
     ) => {
       let game
       try {
@@ -149,15 +156,21 @@ const AnalysisPage: NextPage = () => {
       setAnalyzedGame({ ...game, type })
       setCurrentId([id, type])
 
-      router.push(`/analysis/${id}/${type}`, undefined, {
-        shallow: true,
-      })
+      if (updateUrl) {
+        router.push(`/analysis/${id}/${type}`, undefined, {
+          shallow: true,
+        })
+      }
     },
-    [],
+    [router],
   )
 
   const getAndSetCustomGame = useCallback(
-    async (id: string, setCurrentMove?: Dispatch<SetStateAction<number>>) => {
+    async (
+      id: string,
+      setCurrentMove?: Dispatch<SetStateAction<number>>,
+      updateUrl = true,
+    ) => {
       let game
       try {
         game = await getAnalyzedCustomGame(id)
@@ -168,11 +181,13 @@ const AnalysisPage: NextPage = () => {
       if (setCurrentMove) setCurrentMove(0)
 
       setAnalyzedGame(game)
-      setCurrentId([id])
+      setCurrentId([id, 'custom'])
 
-      router.push(`/analysis/${id}`, undefined, {
-        shallow: true,
-      })
+      if (updateUrl) {
+        router.push(`/analysis/${id}/custom`, undefined, {
+          shallow: true,
+        })
+      }
     },
     [router],
   )
@@ -192,9 +207,9 @@ const AnalysisPage: NextPage = () => {
       }
 
       setAnalyzedGame(game)
-      setCurrentId([game.id])
+      setCurrentId([game.id, 'custom'])
 
-      router.push(`/analysis/${game.id}`, undefined, {
+      router.push(`/analysis/${game.id}/custom`, undefined, {
         shallow: true,
       })
     },
@@ -203,24 +218,27 @@ const AnalysisPage: NextPage = () => {
 
   useEffect(() => {
     ;(async () => {
-      if (analyzedGame == undefined) {
-        const queryId = id as string[]
-        if (queryId[0]?.startsWith('custom-')) {
-          try {
-            const game = await getAnalyzedCustomGame(queryId[0])
-            setAnalyzedGame(game)
-            setCurrentId(queryId)
-          } catch (e) {
-            console.error('Failed to load custom analysis:', e)
-            toast.error('Custom analysis not found')
-          }
+      const queryId = id as string[]
+      if (!queryId || queryId.length === 0) return
+
+      const needsNewGame =
+        !analyzedGame || currentId.join('/') !== queryId.join('/')
+
+      if (needsNewGame) {
+        if (queryId[1] === 'custom') {
+          getAndSetCustomGame(queryId[0], undefined, false)
         } else if (queryId[1] === 'pgn') {
           const pgn = await getLichessGamePGN(queryId[0])
-          getAndSetLichessGame(queryId[0], pgn, undefined)
+          getAndSetLichessGame(queryId[0], pgn, undefined, false)
         } else if (['play', 'hand', 'brain'].includes(queryId[1])) {
-          getAndSetUserGame(queryId[0], queryId[1] as 'play' | 'hand' | 'brain')
+          getAndSetUserGame(
+            queryId[0],
+            queryId[1] as 'play' | 'hand' | 'brain',
+            undefined,
+            false,
+          )
         } else {
-          getAndSetTournamentGame(queryId)
+          getAndSetTournamentGame(queryId, undefined, false)
         }
       }
     })()
@@ -230,6 +248,7 @@ const AnalysisPage: NextPage = () => {
     getAndSetTournamentGame,
     getAndSetLichessGame,
     getAndSetUserGame,
+    getAndSetCustomGame,
   ])
 
   return (
@@ -261,20 +280,24 @@ interface Props {
   getAndSetTournamentGame: (
     newId: string[],
     setCurrentMove?: Dispatch<SetStateAction<number>>,
+    updateUrl?: boolean,
   ) => Promise<void>
   getAndSetLichessGame: (
     id: string,
     pgn: string,
     setCurrentMove?: Dispatch<SetStateAction<number>>,
+    updateUrl?: boolean,
   ) => Promise<void>
   getAndSetUserGame: (
     id: string,
     type: 'play' | 'hand' | 'brain',
     setCurrentMove?: Dispatch<SetStateAction<number>>,
+    updateUrl?: boolean,
   ) => Promise<void>
   getAndSetCustomGame: (
     id: string,
     setCurrentMove?: Dispatch<SetStateAction<number>>,
+    updateUrl?: boolean,
   ) => Promise<void>
   getAndSetCustomAnalysis: (
     type: 'pgn' | 'fen',
@@ -318,8 +341,15 @@ const Analysis: React.FC<Props> = ({
   const controller = useAnalysisController(analyzedGame)
 
   useEffect(() => {
-    if (analyzedGame.tree) {
-      controller.setCurrentNode(analyzedGame.tree.getRoot())
+    if (analyzedGame?.tree) {
+      try {
+        const rootNode = analyzedGame.tree.getRoot()
+        if (rootNode) {
+          controller.setCurrentNode(rootNode)
+        }
+      } catch (error) {
+        console.error('Error setting current node:', error)
+      }
     }
   }, [analyzedGame])
 
@@ -1010,13 +1040,7 @@ const Analysis: React.FC<Props> = ({
         ) : null}
       </AnimatePresence>
       <TreeControllerContext.Provider value={controller}>
-        <AnimatePresence mode="wait">
-          {analyzedGame && (
-            <motion.div key={analyzedGame.id}>
-              {isMobile ? mobileLayout : desktopLayout}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {analyzedGame && <div>{isMobile ? mobileLayout : desktopLayout}</div>}
       </TreeControllerContext.Provider>
       <AnimatePresence>
         {showCustomModal && (

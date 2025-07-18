@@ -17,7 +17,7 @@ export const saveCustomAnalysis = (
   name?: string,
 ): StoredCustomAnalysis => {
   const analyses = getStoredCustomAnalyses()
-  const id = `custom-${type}-${Date.now()}`
+  const id = `${type}-${Date.now()}`
 
   let preview = ''
   if (type === 'pgn') {
