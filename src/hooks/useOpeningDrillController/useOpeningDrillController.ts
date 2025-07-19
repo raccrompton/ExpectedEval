@@ -367,7 +367,10 @@ export const useOpeningDrillController = (
         }
       }
 
-      extractNodeAnalysis(drillGame.tree.getRoot())
+      // Start analysis from the opening end node, not from the game root
+      // This ensures the evaluation chart only includes post-opening moves that the player actually played
+      const startingNode = drillGame.openingEndNode || drillGame.tree.getRoot()
+      extractNodeAnalysis(startingNode)
 
       const playerMoves = moveAnalyses.filter((m) => m.isPlayerMove)
       const excellentMoves = playerMoves.filter(
