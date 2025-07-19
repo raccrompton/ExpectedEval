@@ -109,7 +109,7 @@ export const ExportGame: React.FC<Props> = (props) => {
             tabIndex={0}
             role="button"
             onClick={() => copy(fen)}
-            className="material-symbols-outlined select-none text-base text-secondary hover:text-primary"
+            className="material-symbols-outlined select-none !text-sm text-secondary hover:text-primary"
           >
             content_copy
           </i>
@@ -136,7 +136,7 @@ export const ExportGame: React.FC<Props> = (props) => {
             tabIndex={0}
             role="button"
             onClick={() => copy(pgn)}
-            className="material-symbols-outlined select-none text-base text-secondary hover:text-primary"
+            className="material-symbols-outlined select-none !text-sm text-secondary hover:text-primary"
           >
             content_copy
           </i>
