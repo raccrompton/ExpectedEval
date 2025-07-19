@@ -911,6 +911,11 @@ const Train: React.FC<Props> = ({
                         ? analysisController.colorSanMapping
                         : mockAnalysisData.colorSanMapping
                     }
+                    moveEvaluation={
+                      showAnalysis
+                        ? analysisController.moveEvaluation
+                        : mockAnalysisData.moveEvaluation
+                    }
                     showContainer={false}
                   />
                 </div>
@@ -965,6 +970,11 @@ const Train: React.FC<Props> = ({
                   showAnalysis
                     ? analysisController.colorSanMapping
                     : mockAnalysisData.colorSanMapping
+                }
+                moveEvaluation={
+                  showAnalysis
+                    ? analysisController.moveEvaluation
+                    : mockAnalysisData.moveEvaluation
                 }
               />
             </div>
@@ -1261,6 +1271,11 @@ const Train: React.FC<Props> = ({
                     showAnalysis
                       ? analysisController.colorSanMapping
                       : mockAnalysisData.colorSanMapping
+                  }
+                  moveEvaluation={
+                    showAnalysis
+                      ? analysisController.moveEvaluation
+                      : mockAnalysisData.moveEvaluation
                   }
                 />
                 {!showAnalysis && (
