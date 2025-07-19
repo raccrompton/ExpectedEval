@@ -164,14 +164,14 @@ describe('Analysis Page makeMove Logic for FEN Positions', () => {
       // First move - should create main line
       const result1 = simulateFixedMakeMove(tree, rootNode, 'f3g5')
       expect(result1?.type).toBe('main')
-      const firstMove = result1?.node
+      const firstMove = result1?.node as GameNode
 
       // Second move from same position - should create variation
       const result2 = simulateFixedMakeMove(tree, rootNode, 'f3e5')
       expect(result2?.type).toBe('variation')
 
       // Third move extending main line - should be main line
-      const result3 = simulateFixedMakeMove(tree, firstMove!, 'd7d6')
+      const result3 = simulateFixedMakeMove(tree, firstMove, 'd7d6')
       expect(result3?.type).toBe('main')
 
       // Verify final structure

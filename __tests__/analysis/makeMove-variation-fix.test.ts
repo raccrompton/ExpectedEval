@@ -75,12 +75,15 @@ describe('makeMove Logic - Variation Continuation Test', () => {
     }
 
     // Step 4: Make move from the variation node (should create another variation, not main line)
-    const result = simulateMakeMove(variation, 'g1f3')
+    const result = simulateMakeMove(variation, 'g1f3') as {
+      type: 'variation'
+      node: GameNode
+    }
 
     // Assertions
     expect(result).not.toBeNull()
-    expect(result!.type).toBe('variation')
-    expect(result!.node.isMainline).toBe(false)
+    expect(result.type).toBe('variation')
+    expect(result.node.isMainline).toBe(false)
     expect(variation.mainChild).toBeNull() // variation should not have gained a main child
     expect(variation.children).toHaveLength(1) // should have one child (the move we just made)
     expect(variation.children[0].isMainline).toBe(false) // that child should be a variation
@@ -132,12 +135,15 @@ describe('makeMove Logic - Variation Continuation Test', () => {
     }
 
     // Make first move from FEN position (should be main line since root is on main line)
-    const result = simulateMakeMove(root, 'g1f3')
+    const result = simulateMakeMove(root, 'g1f3') as {
+      type: 'main_line'
+      node: GameNode
+    }
 
     expect(result).not.toBeNull()
-    expect(result!.type).toBe('main_line')
-    expect(result!.node.isMainline).toBe(true)
-    expect(root.mainChild).toBe(result!.node)
+    expect(result.type).toBe('main_line')
+    expect(result.node.isMainline).toBe(true)
+    expect(root.mainChild).toBe(result.node)
   })
 
   it('should handle complex variation tree correctly', () => {
@@ -208,20 +214,29 @@ describe('makeMove Logic - Variation Continuation Test', () => {
     }
 
     // Make move from e4 (main line) - should create main line continuation
-    const e4Continue = simulateMakeMove(e4, 'e7e5')
+    const e4Continue = simulateMakeMove(e4, 'e7e5') as {
+      type: 'main_line'
+      node: GameNode
+    }
     expect(e4Continue).not.toBeNull()
-    expect(e4Continue!.type).toBe('main_line')
-    expect(e4Continue!.node.isMainline).toBe(true)
+    expect(e4Continue.type).toBe('main_line')
+    expect(e4Continue.node.isMainline).toBe(true)
 
     // Make move from d4 (variation) - should create variation continuation
-    const d4Continue = simulateMakeMove(d4, 'g8f6')
-    expect(d4Continue!.type).toBe('variation')
-    expect(d4Continue!.node.isMainline).toBe(false)
+    const d4Continue = simulateMakeMove(d4, 'g8f6') as {
+      type: 'variation'
+      node: GameNode
+    }
+    expect(d4Continue.type).toBe('variation')
+    expect(d4Continue.node.isMainline).toBe(false)
 
     // Make move from Nf3 (variation) - should create variation continuation
-    const nf3Continue = simulateMakeMove(nf3, 'e7e5')
-    expect(nf3Continue!.type).toBe('variation')
-    expect(nf3Continue!.node.isMainline).toBe(false)
+    const nf3Continue = simulateMakeMove(nf3, 'e7e5') as {
+      type: 'variation'
+      node: GameNode
+    }
+    expect(nf3Continue.type).toBe('variation')
+    expect(nf3Continue.node.isMainline).toBe(false)
 
     // Verify tree structure
     expect(root.children).toHaveLength(3) // e4, d4, Nf3
@@ -229,7 +244,7 @@ describe('makeMove Logic - Variation Continuation Test', () => {
     expect(d4.children).toHaveLength(1) // Nf6 (variation)
     expect(nf3.children).toHaveLength(1) // e5 (variation)
 
-    expect(e4.mainChild).toBe(e4Continue!.node)
+    expect(e4.mainChild).toBe(e4Continue.node)
     expect(d4.mainChild).toBeNull() // variations don't have main children
     expect(nf3.mainChild).toBeNull() // variations don't have main children
   })
