@@ -420,43 +420,45 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
       className="flex h-full flex-col items-start justify-start overflow-hidden bg-background-1 md:rounded"
     >
       <div className="flex h-full w-full flex-col">
-        <div className="grid select-none grid-cols-6 border-b-2 border-white border-opacity-10">
+        <div className="flex select-none items-center border-b-2 border-white border-opacity-10">
           <Header
             label="★"
             name="favorites"
             selected={selected}
             setSelected={handleTabChange}
           />
-          <Header
-            label="Play"
-            name="play"
-            selected={selected}
-            setSelected={handleTabChange}
-          />
-          <Header
-            label="H&B"
-            name="hb"
-            selected={selected}
-            setSelected={handleTabChange}
-          />
-          <Header
-            label="Custom"
-            name="custom"
-            selected={selected}
-            setSelected={handleTabChange}
-          />
-          <Header
-            label="Lichess"
-            name="lichess"
-            selected={selected}
-            setSelected={handleTabChange}
-          />
-          <Header
-            label="WC"
-            name="tournament"
-            selected={selected}
-            setSelected={handleTabChange}
-          />
+          <div className="grid flex-1 grid-cols-5">
+            <Header
+              label="Play"
+              name="play"
+              selected={selected}
+              setSelected={handleTabChange}
+            />
+            <Header
+              label="H&B"
+              name="hb"
+              selected={selected}
+              setSelected={handleTabChange}
+            />
+            <Header
+              label="Custom"
+              name="custom"
+              selected={selected}
+              setSelected={handleTabChange}
+            />
+            <Header
+              label="Lichess"
+              name="lichess"
+              selected={selected}
+              setSelected={handleTabChange}
+            />
+            <Header
+              label="WC"
+              name="tournament"
+              selected={selected}
+              setSelected={handleTabChange}
+            />
+          </div>
         </div>
 
         {/* H&B Subsections */}
@@ -561,57 +563,65 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                           className="flex flex-1 cursor-pointer items-center justify-between overflow-hidden py-1"
                         >
                           <div className="flex items-center gap-2 overflow-hidden">
+                            <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-primary">
+                              {game.label}
+                            </p>
                             {selected === 'favorites' &&
                               (game.type === 'hand' ||
                                 game.type === 'brain') && (
-                                <span className="material-symbols-outlined flex-shrink-0 text-xs text-secondary">
+                                <span className="material-symbols-outlined flex-shrink-0 !text-sm text-secondary">
                                   {game.type === 'hand'
                                     ? 'hand_gesture'
                                     : 'neurology'}
                                 </span>
                               )}
-                            <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-primary">
-                              {game.label}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {selected === 'favorites' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleFavoriteGame(game)
+                                }}
+                                className="flex items-center justify-center text-secondary transition hover:text-primary"
+                                title="Edit favourite"
+                              >
+                                <span className="material-symbols-outlined !text-xs">
+                                  edit
+                                </span>
+                              </button>
+                            )}
+                            {selected !== 'favorites' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleFavoriteGame(game)
+                                }}
+                                className={`flex items-center justify-center transition ${
+                                  isFavorited
+                                    ? 'text-yellow-400 hover:text-yellow-300'
+                                    : 'text-secondary hover:text-primary'
+                                }`}
+                                title={
+                                  isFavorited
+                                    ? 'Edit favourite'
+                                    : 'Add to favourites'
+                                }
+                              >
+                                <span
+                                  className={`material-symbols-outlined !text-xs ${isFavorited ? 'material-symbols-filled' : ''}`}
+                                >
+                                  star
+                                </span>
+                              </button>
+                            )}
+                            <p className="whitespace-nowrap text-sm font-light text-secondary">
+                              {game.result
+                                .replace('1/2', '½')
+                                .replace('1/2', '½')}
                             </p>
                           </div>
-                          <p className="whitespace-nowrap text-sm font-light text-secondary">
-                            {game.result}
-                          </p>
                         </button>
-                        {selected !== 'favorites' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleFavoriteGame(game)
-                            }}
-                            className={`mr-1 flex items-center justify-center px-2 py-1 transition ${
-                              isFavorited
-                                ? 'text-yellow-400 hover:text-yellow-300'
-                                : 'text-secondary hover:text-primary'
-                            }`}
-                            title={
-                              isFavorited ? 'Edit favorite' : 'Add to favorites'
-                            }
-                          >
-                            <span className="material-symbols-outlined text-sm">
-                              {isFavorited ? 'star' : 'star_border'}
-                            </span>
-                          </button>
-                        )}
-                        {selected === 'favorites' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleFavoriteGame(game)
-                            }}
-                            className="mr-1 flex items-center justify-center px-2 py-1 text-secondary transition hover:text-primary"
-                            title="Edit favorite"
-                          >
-                            <span className="material-symbols-outlined text-sm">
-                              edit
-                            </span>
-                          </button>
-                        )}
                       </div>
                     )
                   })}
@@ -667,8 +677,10 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
             getCurrentGames().length === 0 &&
             !loading && (
               <div className="flex flex-1 items-start justify-center gap-1 py-2 md:items-center">
-                <span className="material-symbols-outlined text-sm text-secondary">
-                  {selected === 'favorites' ? 'star_border' : 'chess_pawn'}
+                <span
+                  className={`material-symbols-outlined !text-xs ${selected === 'favorites' ? 'material-symbols-filled' : ''}`}
+                >
+                  star
                 </span>
                 <p className="text-xs text-secondary">
                   {selected === 'favorites'
@@ -724,7 +736,7 @@ function Header({
   return (
     <button
       onClick={() => setSelected(name)}
-      className={`relative flex items-center justify-center md:py-1 ${selected === name ? 'bg-human-4/30' : 'bg-background-1/80 hover:bg-background-2'} `}
+      className={`relative flex items-center justify-center md:py-1 ${selected === name ? 'bg-human-4/30' : 'bg-background-1/80 hover:bg-background-2'} ${name === 'favorites' ? 'px-3' : ''}`}
     >
       <div className="flex items-center justify-start">
         <p
@@ -732,11 +744,6 @@ function Header({
         >
           {label}
         </p>
-        <i
-          className={`material-symbols-outlined text-base transition duration-200 ${selected === name ? 'text-human-2/80' : 'text-primary/80'}`}
-        >
-          keyboard_arrow_down
-        </i>
       </div>
       {selected === name && (
         <motion.div
