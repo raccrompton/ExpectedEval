@@ -209,13 +209,13 @@ describe('GameList', () => {
 
     // Wait for the hand games to load and check subsection labels
     await waitFor(() => {
-      expect(screen.getByText('Hand (1)')).toBeInTheDocument()
-      expect(screen.getByText('Brain (0)')).toBeInTheDocument()
+      expect(screen.getByText('Hand')).toBeInTheDocument()
+      expect(screen.getByText('Brain')).toBeInTheDocument()
     })
 
     // Click on Brain subsection
     await act(async () => {
-      await user.click(screen.getByText('Brain (0)'))
+      await user.click(screen.getByText('Brain'))
     })
 
     // Verify API call for brain games

@@ -151,7 +151,7 @@ const Profile: React.FC<Props> = (props: Props) => {
         variants={itemVariants}
         className="flex flex-row items-center gap-2"
       >
-        <span className="material-symbols-outlined text-6xl">
+        <span className="material-symbols-outlined !text-6xl">
           account_circle
         </span>
         <div className="flex flex-col">
@@ -174,7 +174,7 @@ const Profile: React.FC<Props> = (props: Props) => {
           showCustom={false}
           showLichess={false}
         />
-        <UserProfile stats={props.stats} wide />
+        <UserProfile stats={props.stats} />
       </motion.div>
     </motion.div>
   )
@@ -207,7 +207,7 @@ const Profile: React.FC<Props> = (props: Props) => {
           showCustom={false}
           showLichess={false}
         />
-        <UserProfile stats={props.stats} wide />
+        <UserProfile stats={props.stats} />
       </motion.div>
     </motion.div>
   )

@@ -12,6 +12,7 @@ import { Tournament } from 'src/components'
 import { AnalysisListContext } from 'src/contexts'
 import { getAnalysisGameList } from 'src/api'
 import { getCustomAnalysesAsWebGames } from 'src/lib/customAnalysis'
+import { AnalysisWebGame } from 'src/types'
 import { useRouter } from 'next/router'
 
 interface GameData {
@@ -66,9 +67,15 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
-  const [localPlayGames, setLocalPlayGames] = useState(analysisPlayList)
-  const [localHandGames, setLocalHandGames] = useState(analysisHandList)
-  const [localBrainGames, setLocalBrainGames] = useState(analysisBrainList)
+
+  const [gamesByPage, setGamesByPage] = useState<{
+    [gameType: string]: { [page: number]: AnalysisWebGame[] }
+  }>({
+    play: {},
+    hand: {},
+    brain: {},
+  })
+
   const [customAnalyses, setCustomAnalyses] = useState(() => {
     if (typeof window !== 'undefined') {
       return getCustomAnalysesAsWebGames()
@@ -208,9 +215,14 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
               [selected]: calculatedTotalPages,
             }))
 
-            if (selected === 'play') {
-              setLocalPlayGames(parsedGames)
-            }
+            setGamesByPage((prev) => ({
+              ...prev,
+              [selected]: {
+                ...prev[selected],
+                [currentPage]: parsedGames,
+              },
+            }))
+
             setLoading(false)
           })
           .catch(() => {
@@ -275,11 +287,14 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
               [gameType]: calculatedTotalPages,
             }))
 
-            if (gameType === 'hand') {
-              setLocalHandGames(parsedGames)
-            } else if (gameType === 'brain') {
-              setLocalBrainGames(parsedGames)
-            }
+            setGamesByPage((prev) => ({
+              ...prev,
+              [gameType]: {
+                ...prev[gameType],
+                [currentPage]: parsedGames,
+              },
+            }))
+
             setLoading(false)
           })
           .catch(() => {
@@ -299,20 +314,23 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
       const gameType = hbSubsection === 'hand' ? 'hand' : 'brain'
       if (totalPagesCache[gameType]) {
         setTotalPages(totalPagesCache[gameType])
+      } else {
+        setTotalPages(1)
       }
-      setCurrentPage(currentPagePerTab[gameType])
+      setCurrentPage(currentPagePerTab[gameType] || 1)
     } else if (totalPagesCache[selected]) {
       setTotalPages(totalPagesCache[selected])
+      setCurrentPage(currentPagePerTab[selected] || 1)
     } else if (
       selected === 'lichess' ||
       selected === 'tournament' ||
       selected === 'custom'
     ) {
       setTotalPages(1)
-    }
-
-    if (selected !== 'hb') {
-      setCurrentPage(currentPagePerTab[selected])
+      setCurrentPage(1)
+    } else {
+      setTotalPages(1)
+      setCurrentPage(currentPagePerTab[selected] || 1)
     }
   }, [selected, hbSubsection, totalPagesCache, currentPagePerTab])
 
@@ -342,9 +360,10 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
 
   const getCurrentGames = () => {
     if (selected === 'play') {
-      return localPlayGames
+      return gamesByPage.play[currentPage] || []
     } else if (selected === 'hb') {
-      return hbSubsection === 'hand' ? localHandGames : localBrainGames
+      const gameType = hbSubsection === 'hand' ? 'hand' : 'brain'
+      return gamesByPage[gameType]?.[currentPage] || []
     } else if (selected === 'custom') {
       return customAnalyses
     } else if (selected === 'lichess') {
@@ -397,34 +416,32 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
           <div className="flex border-b border-white border-opacity-10">
             <button
               onClick={() => setHbSubsection('hand')}
-              className={`flex-1 px-3 py-2 text-sm ${
+              className={`flex-1 px-3 text-sm ${
                 hbSubsection === 'hand'
                   ? 'bg-background-2 text-primary'
                   : 'bg-background-1/50 text-secondary hover:bg-background-2'
               }`}
             >
-              <div className="flex items-center justify-center gap-2">
-                <span className="material-symbols-outlined text-xs">
+              <div className="flex items-center justify-center gap-1">
+                <span className="material-symbols-outlined !text-lg">
                   hand_gesture
                 </span>
-                <span className="text-xs">Hand ({localHandGames.length})</span>
+                <span className="text-xs">Hand</span>
               </div>
             </button>
             <button
               onClick={() => setHbSubsection('brain')}
-              className={`flex-1 px-3 py-2 text-sm ${
+              className={`flex-1 px-3 text-sm ${
                 hbSubsection === 'brain'
                   ? 'bg-background-2 text-primary'
                   : 'bg-background-1/50 text-secondary hover:bg-background-2'
               }`}
             >
-              <div className="flex items-center justify-center gap-2">
-                <span className="material-symbols-outlined text-xs">
-                  psychology
+              <div className="flex items-center justify-center gap-1">
+                <span className="material-symbols-outlined !text-lg">
+                  neurology
                 </span>
-                <span className="text-xs">
-                  Brain ({localBrainGames.length})
-                </span>
+                <span className="text-xs">Brain</span>
               </div>
             </button>
           </div>
