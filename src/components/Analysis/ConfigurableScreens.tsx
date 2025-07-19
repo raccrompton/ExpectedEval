@@ -12,6 +12,8 @@ interface Props {
   game: AnalyzedGame
   currentNode: GameNode
   onDeleteCustomGame?: () => void
+  onAnalyzeEntireGame?: () => void
+  isAnalysisInProgress?: boolean
 }
 
 export const ConfigurableScreens: React.FC<Props> = ({
@@ -22,6 +24,8 @@ export const ConfigurableScreens: React.FC<Props> = ({
   game,
   currentNode,
   onDeleteCustomGame,
+  onAnalyzeEntireGame,
+  isAnalysisInProgress,
 }) => {
   const screens = [
     {
@@ -50,10 +54,10 @@ export const ConfigurableScreens: React.FC<Props> = ({
                 if (e.key === 'Enter') setScreen(s)
               }}
               onClick={() => setScreen(s)}
-              className={`relative flex cursor-pointer select-none flex-row px-3 py-1.5 ${selected ? 'bg-white/5' : 'hover:bg-white hover:bg-opacity-[0.02]'} transition duration-200`}
+              className={`relative flex cursor-pointer select-none flex-row px-3 py-1.5 transition duration-200 ${selected ? 'bg-white/5' : 'hover:bg-white hover:bg-opacity-[0.02]'}`}
             >
               <p
-                className={`text-sm transition duration-200 ${selected ? 'text-primary' : 'text-secondary'} `}
+                className={`text-xs transition duration-200 2xl:text-sm ${selected ? 'text-primary' : 'text-secondary'} `}
               >
                 {s.name}
               </p>
@@ -67,7 +71,7 @@ export const ConfigurableScreens: React.FC<Props> = ({
           )
         })}
       </div>
-      <div className="red-scrollbar flex flex-col items-start justify-start overflow-y-scroll bg-backdrop/30">
+      <div className="red-scrollbar flex flex-1 flex-col items-start justify-start overflow-y-scroll bg-backdrop/30">
         {screen.id === 'configure' ? (
           <ConfigureAnalysis
             currentMaiaModel={currentMaiaModel}
@@ -76,9 +80,11 @@ export const ConfigurableScreens: React.FC<Props> = ({
             MAIA_MODELS={MAIA_MODELS}
             game={game}
             onDeleteCustomGame={onDeleteCustomGame}
+            onAnalyzeEntireGame={onAnalyzeEntireGame}
+            isAnalysisInProgress={isAnalysisInProgress}
           />
         ) : screen.id === 'export' ? (
-          <div className="flex w-full flex-col p-4">
+          <div className="flex w-full flex-col p-3">
             <ExportGame
               game={game}
               currentNode={currentNode}

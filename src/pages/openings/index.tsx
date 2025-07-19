@@ -1103,7 +1103,7 @@ const OpeningsPage: NextPage = () => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
           >
-            <div className="flex max-w-md flex-col items-center gap-4 rounded-lg bg-background-1 p-8 shadow-2xl">
+            <div className="flex max-w-md flex-col items-center gap-4 rounded-lg border border-white/10 bg-background-1 p-8 shadow-2xl">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-human-4 border-t-transparent"></div>
               <div className="text-center">
                 <h3 className="text-lg font-semibold">

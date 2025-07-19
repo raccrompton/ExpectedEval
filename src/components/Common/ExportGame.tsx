@@ -102,14 +102,14 @@ export const ExportGame: React.FC<Props> = (props) => {
     <div className="flex w-full flex-col gap-2">
       <div className="flex w-full flex-col gap-0.5">
         <div className="flex w-full items-center justify-between">
-          <p className="select-none text-sm font-semibold tracking-wider text-secondary">
+          <p className="select-none text-xs font-semibold tracking-wider text-secondary">
             FEN
           </p>
           <i
             tabIndex={0}
             role="button"
             onClick={() => copy(fen)}
-            className="material-symbols-outlined select-none !text-sm text-secondary hover:text-primary"
+            className="material-symbols-outlined select-none !text-xs text-secondary hover:text-primary"
           >
             content_copy
           </i>
@@ -118,9 +118,9 @@ export const ExportGame: React.FC<Props> = (props) => {
           role="button"
           tabIndex={0}
           onClick={() => copy(fen)}
-          className="border-1 group flex w-full cursor-pointer overflow-x-hidden rounded border border-white/5 bg-background-1/50 px-3 py-2"
+          className="border-1 group flex w-full cursor-pointer overflow-x-hidden rounded border border-white/5 bg-background-1/50 p-1"
         >
-          <p className="whitespace-nowrap text-xs text-secondary group-hover:text-secondary/80">
+          <p className="whitespace-nowrap text-xxs text-secondary group-hover:text-secondary/80">
             {fen}
           </p>
         </div>
@@ -128,7 +128,7 @@ export const ExportGame: React.FC<Props> = (props) => {
       <div className="flex w-full flex-col gap-0.5">
         <div className="flex w-full items-center justify-between">
           <div className="flex w-full items-center">
-            <p className="select-none text-sm font-semibold tracking-wider text-secondary">
+            <p className="select-none text-xs font-semibold tracking-wider text-secondary">
               PGN
             </p>
           </div>
@@ -136,7 +136,7 @@ export const ExportGame: React.FC<Props> = (props) => {
             tabIndex={0}
             role="button"
             onClick={() => copy(pgn)}
-            className="material-symbols-outlined select-none !text-sm text-secondary hover:text-primary"
+            className="material-symbols-outlined select-none !text-xs text-secondary hover:text-primary"
           >
             content_copy
           </i>
@@ -145,9 +145,9 @@ export const ExportGame: React.FC<Props> = (props) => {
           role="button"
           tabIndex={0}
           onClick={() => copy(pgn)}
-          className="group flex max-h-32 w-full cursor-pointer overflow-x-hidden overflow-y-scroll rounded border border-white/5 bg-background-1/50 p-3"
+          className="group flex w-full cursor-pointer overflow-x-hidden overflow-y-scroll rounded border border-white/5 bg-background-1/50 p-1"
         >
-          <p className="whitespace-pre-wrap text-xs text-secondary group-hover:text-secondary/80">
+          <p className="whitespace-pre-wrap text-xxs text-secondary group-hover:text-secondary/80">
             {pgn}
           </p>
         </div>
