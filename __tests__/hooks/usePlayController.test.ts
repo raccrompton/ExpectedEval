@@ -1,7 +1,10 @@
 import { Chess } from 'chess.ts'
 
 // Helper functions extracted from usePlayController for testing
-const computeTimeTermination = (chess: Chess, playerWhoRanOutOfTime: 'white' | 'black') => {
+const computeTimeTermination = (
+  chess: Chess,
+  playerWhoRanOutOfTime: 'white' | 'black',
+) => {
   // If there's insufficient material on the board, it's a draw
   if (chess.insufficientMaterial()) {
     return {
@@ -82,7 +85,7 @@ describe('Time-based game termination', () => {
     it('should handle both players correctly', () => {
       // King + Pawn vs King (sufficient material)
       const chess = new Chess('8/8/8/8/8/8/4P3/4K2k w - - 0 1')
-      
+
       const whiteTimeout = computeTimeTermination(chess, 'white')
       expect(whiteTimeout).toEqual({
         result: '0-1',
