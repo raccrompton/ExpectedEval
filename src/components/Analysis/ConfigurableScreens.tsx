@@ -12,6 +12,8 @@ interface Props {
   game: AnalyzedGame
   currentNode: GameNode
   onDeleteCustomGame?: () => void
+  onAnalyzeEntireGame?: () => void
+  isAnalysisInProgress?: boolean
 }
 
 export const ConfigurableScreens: React.FC<Props> = ({
@@ -22,6 +24,8 @@ export const ConfigurableScreens: React.FC<Props> = ({
   game,
   currentNode,
   onDeleteCustomGame,
+  onAnalyzeEntireGame,
+  isAnalysisInProgress,
 }) => {
   const screens = [
     {
@@ -76,6 +80,8 @@ export const ConfigurableScreens: React.FC<Props> = ({
             MAIA_MODELS={MAIA_MODELS}
             game={game}
             onDeleteCustomGame={onDeleteCustomGame}
+            onAnalyzeEntireGame={onAnalyzeEntireGame}
+            isAnalysisInProgress={isAnalysisInProgress}
           />
         ) : screen.id === 'export' ? (
           <div className="flex w-full flex-col p-4">

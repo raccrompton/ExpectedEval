@@ -6,6 +6,7 @@ import type { DrawShape } from 'chessground/draw'
 import { MAIA_MODELS } from 'src/constants/common'
 import { useTreeController, useLocalStorage } from '..'
 import { useEngineAnalysis } from './useEngineAnalysis'
+import { useGameAnalysis } from './useGameAnalysis'
 import { useBoardDescription } from './useBoardDescription'
 import { useMoveRecommendations } from './useMoveRecommendations'
 import { MaiaEngineContext } from 'src/contexts/MaiaEngineContext'
@@ -44,6 +45,12 @@ export const useAnalysisController = (
   useEngineAnalysis(
     controller.currentNode || null,
     inProgressAnalyses,
+    currentMaiaModel,
+    setAnalysisState,
+  )
+
+  const gameAnalysis = useGameAnalysis(
+    game.tree,
     currentMaiaModel,
     setAnalysisState,
   )
@@ -179,5 +186,6 @@ export const useAnalysisController = (
     arrows,
     stockfish: stockfish,
     maia: maia,
+    gameAnalysis,
   }
 }

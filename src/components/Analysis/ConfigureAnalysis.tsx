@@ -12,6 +12,8 @@ interface Props {
   MAIA_MODELS: string[]
   game: AnalyzedGame
   onDeleteCustomGame?: () => void
+  onAnalyzeEntireGame?: () => void
+  isAnalysisInProgress?: boolean
 }
 
 export const ConfigureAnalysis: React.FC<Props> = ({
@@ -21,6 +23,8 @@ export const ConfigureAnalysis: React.FC<Props> = ({
   MAIA_MODELS,
   game,
   onDeleteCustomGame,
+  onAnalyzeEntireGame,
+  isAnalysisInProgress = false,
 }: Props) => {
   const isCustomGame = game.type === 'custom-pgn' || game.type === 'custom-fen'
 
@@ -44,6 +48,30 @@ export const ConfigureAnalysis: React.FC<Props> = ({
         launchContinue={launchContinue}
         background="bg-human-4/60 hover:bg-human-4/80 text-primary/70 hover:text-primary !px-2 !py-1.5 !text-sm"
       />
+      {onAnalyzeEntireGame && (
+        <div className="mt-2 w-full">
+          <button
+            onClick={onAnalyzeEntireGame}
+            disabled={isAnalysisInProgress}
+            className={`w-full rounded border border-human-4/40 px-2 py-1.5 text-sm transition duration-200 ${
+              isAnalysisInProgress
+                ? 'cursor-not-allowed bg-human-4/20 text-primary/40'
+                : 'text-primary/70 hover:border-human-4/60 hover:bg-human-4/10 hover:text-primary'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-1.5">
+              <span className="material-symbols-outlined text-sm">
+                {isAnalysisInProgress ? 'psychology' : 'analytics'}
+              </span>
+              <span>
+                {isAnalysisInProgress
+                  ? 'Analysis in Progress...'
+                  : 'Analyze Entire Game'}
+              </span>
+            </div>
+          </button>
+        </div>
+      )}
       {isCustomGame && onDeleteCustomGame && (
         <div className="mt-2 w-full">
           <button
