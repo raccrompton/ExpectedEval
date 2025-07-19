@@ -47,31 +47,33 @@ export const PlayControls: React.FC<Props> = ({
           ) : null}
         </div>
       ) : (
-        <div className="flex flex-col gap-2 p-4 text-center">
-          {playerActive ? 'Your turn' : 'Waiting for opponent'}
+        <div className="flex flex-col gap-4 p-4 text-center">
+          <div className="text-sm font-medium">
+            {playerActive ? 'Your turn' : 'Waiting for opponent'}
+          </div>
 
           {/* Maia timing toggle */}
           {simulateMaiaTime !== undefined && setSimulateMaiaTime && (
-            <div className="flex flex-col gap-2 rounded bg-background-2 p-3">
-              <span className="text-sm font-medium text-primary">
-                Maia thinking time:
-              </span>
-              <div className="flex overflow-hidden rounded-lg">
+            <div className="w-full">
+              <div className="mb-2 text-xs font-medium text-primary/70">
+                Maia thinking time
+              </div>
+              <div className="flex w-full overflow-hidden rounded border border-primary/10">
                 <button
-                  className={`flex-1 px-3 py-1 text-sm font-medium transition-colors ${
+                  className={`flex-1 px-3 py-1 text-xs font-medium transition-all duration-200 ${
                     !simulateMaiaTime
-                      ? 'bg-human-4 text-white'
-                      : 'bg-background-3 text-primary hover:bg-background-2'
+                      ? 'bg-human-3 text-white'
+                      : 'bg-background-1 text-primary hover:bg-background-2'
                   }`}
                   onClick={() => setSimulateMaiaTime(false)}
                 >
                   Instant
                 </button>
                 <button
-                  className={`flex-1 px-3 py-1 text-sm font-medium transition-colors ${
+                  className={`flex-1 px-3 py-1 text-xs font-medium transition-all duration-200 ${
                     simulateMaiaTime
-                      ? 'bg-human-4 text-white'
-                      : 'bg-background-3 text-primary hover:bg-background-2'
+                      ? 'bg-human-3 text-white'
+                      : 'bg-background-1 text-primary hover:bg-background-2'
                   }`}
                   onClick={() => setSimulateMaiaTime(true)}
                 >
@@ -81,13 +83,20 @@ export const PlayControls: React.FC<Props> = ({
             </div>
           )}
 
-          {offerDraw ? <button onClick={offerDraw}>Offer draw</button> : null}
+          {offerDraw ? (
+            <button
+              onClick={offerDraw}
+              className="flex w-full items-center justify-center rounded bg-engine-3 py-2 transition duration-200 hover:bg-engine-4"
+            >
+              <p className="font-medium uppercase tracking-wide">Offer draw</p>
+            </button>
+          ) : null}
           {resign ? (
             <button
               onClick={resign}
-              className="flex items-center justify-center rounded bg-human-3 py-2 transition duration-200 hover:bg-human-4"
+              className="flex items-center justify-center rounded bg-human-3 px-4 py-1.5 transition duration-200 hover:bg-human-4"
             >
-              <p className="text-lg">Resign</p>
+              <p className="text-sm font-medium">Resign</p>
             </button>
           ) : null}
         </div>
