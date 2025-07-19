@@ -1,7 +1,15 @@
 import { Chess } from 'chess.ts'
-import { Key, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  Key,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+} from 'react'
 
-import { AnalyzedGame } from 'src/types'
+import { AnalyzedGame, GameNode } from 'src/types'
 import type { DrawShape } from 'chessground/draw'
 import { MAIA_MODELS } from 'src/constants/common'
 import { useTreeController, useLocalStorage } from '..'
@@ -11,6 +19,19 @@ import { useMoveRecommendations } from './useMoveRecommendations'
 import { MaiaEngineContext } from 'src/contexts/MaiaEngineContext'
 import { generateColorSanMapping, calculateBlunderMeter } from './utils'
 import { StockfishEngineContext } from 'src/contexts/StockfishEngineContext'
+
+export interface GameAnalysisProgress {
+  currentMoveIndex: number
+  totalMoves: number
+  currentMove: string
+  isAnalyzing: boolean
+  isComplete: boolean
+  isCancelled: boolean
+}
+
+export interface GameAnalysisConfig {
+  targetDepth: number
+}
 
 export const useAnalysisController = (
   game: AnalyzedGame,
@@ -29,6 +50,151 @@ export const useAnalysisController = (
   const [analysisState, setAnalysisState] = useState(0)
   const inProgressAnalyses = useMemo(() => new Set<string>(), [])
 
+  // Game analysis state
+  const [gameAnalysisConfig, setGameAnalysisConfig] =
+    useState<GameAnalysisConfig>({
+      targetDepth: 18,
+    })
+
+  const [gameAnalysisProgress, setGameAnalysisProgress] =
+    useState<GameAnalysisProgress>({
+      currentMoveIndex: 0,
+      totalMoves: 0,
+      currentMove: '',
+      isAnalyzing: false,
+      isComplete: false,
+      isCancelled: false,
+    })
+
+  const gameAnalysisController = useRef<{
+    cancelled: boolean
+    currentNode: GameNode | null
+  }>({
+    cancelled: false,
+    currentNode: null,
+  })
+
+  // Simple batch analysis functions that reuse existing analysis infrastructure
+  const startGameAnalysis = useCallback(
+    async (targetDepth: number) => {
+      // If already analyzing, cancel the current analysis first
+      if (gameAnalysisProgress.isAnalyzing) {
+        gameAnalysisController.current.cancelled = true
+        stockfish.stopEvaluation()
+      }
+
+      // Reset state
+      gameAnalysisController.current.cancelled = false
+      gameAnalysisController.current.currentNode = null
+
+      const mainLine = game.tree.getMainLine()
+
+      setGameAnalysisConfig({ targetDepth })
+      setGameAnalysisProgress({
+        currentMoveIndex: 0,
+        totalMoves: mainLine.length,
+        currentMove: '',
+        isAnalyzing: true,
+        isComplete: false,
+        isCancelled: false,
+      })
+
+      // Wait for engines to be ready
+      let retries = 0
+      const maxRetries = 50 // 5 seconds
+
+      while (
+        retries < maxRetries &&
+        (!stockfish.isReady() || maia.status !== 'ready') &&
+        !gameAnalysisController.current.cancelled
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        retries++
+      }
+
+      if (gameAnalysisController.current.cancelled) {
+        setGameAnalysisProgress((prev) => ({
+          ...prev,
+          isAnalyzing: false,
+          isCancelled: true,
+        }))
+        return
+      }
+
+      // Analyze each position in the main line
+      for (let i = 0; i < mainLine.length; i++) {
+        if (gameAnalysisController.current.cancelled) break
+
+        const node = mainLine[i]
+        gameAnalysisController.current.currentNode = node
+
+        // Update the UI to show the current node being analyzed (live update)
+        controller.setCurrentNode(node)
+
+        const moveDisplay = node.san || node.move || `Position ${i + 1}`
+
+        setGameAnalysisProgress((prev) => ({
+          ...prev,
+          currentMoveIndex: i + 1,
+          currentMove: moveDisplay,
+        }))
+
+        // Wait for analysis to reach target depth (the useEngineAnalysis will handle this)
+        let analysisRetries = 0
+        const maxAnalysisRetries = 600 // 60 seconds max per position
+
+        while (
+          analysisRetries < maxAnalysisRetries &&
+          !gameAnalysisController.current.cancelled &&
+          (!node.analysis.stockfish ||
+            node.analysis.stockfish.depth < targetDepth)
+        ) {
+          await new Promise((resolve) => setTimeout(resolve, 100))
+          analysisRetries++
+        }
+      }
+
+      // Analysis complete
+      setGameAnalysisProgress((prev) => ({
+        ...prev,
+        isAnalyzing: false,
+        isComplete: !gameAnalysisController.current.cancelled,
+        isCancelled: gameAnalysisController.current.cancelled,
+      }))
+
+      gameAnalysisController.current.currentNode = null
+    },
+    [
+      game.tree,
+      gameAnalysisProgress.isAnalyzing,
+      stockfish,
+      maia.status,
+      controller.setCurrentNode,
+    ],
+  )
+
+  const cancelGameAnalysis = useCallback(() => {
+    gameAnalysisController.current.cancelled = true
+    stockfish.stopEvaluation()
+
+    setGameAnalysisProgress((prev) => ({
+      ...prev,
+      isAnalyzing: false,
+      isCancelled: true,
+    }))
+  }, [stockfish])
+
+  const resetGameAnalysisProgress = useCallback(() => {
+    setGameAnalysisProgress({
+      currentMoveIndex: 0,
+      totalMoves: 0,
+      currentMove: '',
+      isAnalyzing: false,
+      isComplete: false,
+      isCancelled: false,
+    })
+  }, [])
+
   const [currentMove, setCurrentMove] = useState<[string, string] | null>()
   const [currentMaiaModel, setCurrentMaiaModel] = useLocalStorage(
     'currentMaiaModel',
@@ -46,6 +212,7 @@ export const useAnalysisController = (
     inProgressAnalyses,
     currentMaiaModel,
     setAnalysisState,
+    gameAnalysisProgress.isAnalyzing ? gameAnalysisConfig.targetDepth : 18,
   )
 
   const availableMoves = useMemo(() => {
@@ -179,5 +346,14 @@ export const useAnalysisController = (
     arrows,
     stockfish: stockfish,
     maia: maia,
+    gameAnalysis: {
+      progress: gameAnalysisProgress,
+      config: gameAnalysisConfig,
+      setConfig: setGameAnalysisConfig,
+      startAnalysis: startGameAnalysis,
+      cancelAnalysis: cancelGameAnalysis,
+      resetProgress: resetGameAnalysisProgress,
+      isEnginesReady: stockfish.isReady() && maia.status === 'ready',
+    },
   }
 }
