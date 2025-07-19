@@ -15,14 +15,22 @@ interface Props {
   id: string
   playGameConfig: PlayGameConfig
   playAgain: () => void
+  simulateMaiaTime: boolean
+  setSimulateMaiaTime: (value: boolean) => void
 }
 
 const PlayMaia: React.FC<Props> = ({
   id,
   playGameConfig,
   playAgain,
+  simulateMaiaTime,
+  setSimulateMaiaTime,
 }: Props) => {
-  const controller = useVsMaiaPlayController(id, playGameConfig)
+  const controller = useVsMaiaPlayController(
+    id,
+    playGameConfig,
+    simulateMaiaTime,
+  )
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -61,6 +69,8 @@ const PlayMaia: React.FC<Props> = ({
                 : undefined
             }
             playAgain={playAgain}
+            simulateMaiaTime={simulateMaiaTime}
+            setSimulateMaiaTime={setSimulateMaiaTime}
           />
         </div>
       </GameplayInterface>
@@ -90,9 +100,11 @@ const PlayMaiaPage: NextPage = () => {
     timeControl,
     isBrain,
     sampleMoves,
-    simulateMaiaTime,
     startFen,
   } = router.query
+
+  // simulateMaiaTime is now managed locally instead of from query params
+  const [simulateMaiaTime, setSimulateMaiaTime] = useState<boolean>(true)
 
   const playGameConfig: PlayGameConfig = useMemo(
     () => ({
@@ -102,18 +114,10 @@ const PlayMaiaPage: NextPage = () => {
       timeControl: (timeControl || 'unlimited') as TimeControl,
       isBrain: isBrain == 'true',
       sampleMoves: sampleMoves == 'true',
-      simulateMaiaTime: simulateMaiaTime == 'true',
+      // simulateMaiaTime is now managed locally
       startFen: typeof startFen == 'string' ? startFen : undefined,
     }),
-    [
-      startFen,
-      isBrain,
-      maiaVersion,
-      player,
-      sampleMoves,
-      simulateMaiaTime,
-      timeControl,
-    ],
+    [startFen, isBrain, maiaVersion, player, sampleMoves, timeControl],
   )
 
   useEffect(() => {
@@ -190,6 +194,8 @@ const PlayMaiaPage: NextPage = () => {
             id={id as string}
             playGameConfig={playGameConfig}
             playAgain={() => setPlaySetupModalProps({ ...playGameConfig })}
+            simulateMaiaTime={simulateMaiaTime}
+            setSimulateMaiaTime={setSimulateMaiaTime}
           />
         )}
       </DelayedLoading>
