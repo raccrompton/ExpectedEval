@@ -1,5 +1,5 @@
 import { GameTree, GameNode } from 'src/types/base/tree'
-import { Chess } from 'chess.ts'
+import { Chess, Move } from 'chess.ts'
 
 describe('GameTree FEN Position Move Handling', () => {
   describe('Making moves from custom FEN position', () => {
@@ -49,24 +49,24 @@ describe('GameTree FEN Position Move Handling', () => {
 
       // First move - should be main line
       const chess1 = new Chess(customFen)
-      const move1 = chess1.move('Ng5')
+      const move1 = chess1.move('Ng5') as Move
       expect(move1).toBeTruthy()
       const mainNode = tree.addMainMove(
         rootNode,
         chess1.fen(),
         'f3g5',
-        move1!.san,
+        move1.san,
       )
 
       // Second alternative move from same position - should be variation
       const chess2 = new Chess(customFen)
-      const move2 = chess2.move('Nxe5')
+      const move2 = chess2.move('Nxe5') as Move
       expect(move2).toBeTruthy()
       const variationNode = tree.addVariation(
         rootNode,
         chess2.fen(),
         'f3e5',
-        move2!.san,
+        move2.san,
       )
 
       // Verify structure
@@ -89,14 +89,14 @@ describe('GameTree FEN Position Move Handling', () => {
 
       // Add first main line move
       const chess1 = new Chess(customFen)
-      const move1 = chess1.move('Ng5')
+      const move1 = chess1.move('Ng5') as Move
       expect(move1).toBeTruthy()
-      const node1 = tree.addMainMove(rootNode, chess1.fen(), 'f3g5', move1!.san)
+      const node1 = tree.addMainMove(rootNode, chess1.fen(), 'f3g5', move1.san)
 
       // Add second main line move
-      const move2 = chess1.move('d6')
+      const move2 = chess1.move('d6') as Move
       expect(move2).toBeTruthy()
-      const node2 = tree.addMainMove(node1, chess1.fen(), 'd7d6', move2!.san)
+      const node2 = tree.addMainMove(node1, chess1.fen(), 'd7d6', move2.san)
 
       // Verify main line structure
       const mainLine = tree.getMainLine()
