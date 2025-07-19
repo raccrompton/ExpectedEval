@@ -457,10 +457,14 @@ export const GameList = ({
                           ? 'text-yellow-400 hover:text-yellow-300'
                           : 'text-secondary hover:text-primary'
                       }`}
-                      title={isFavorited ? 'Edit favorite' : 'Add to favorites'}
+                      title={
+                        isFavorited ? 'Edit favourite' : 'Add to favourites'
+                      }
                     >
-                      <span className="material-symbols-outlined text-sm">
-                        {isFavorited ? 'star' : 'star_border'}
+                      <span
+                        className={`material-symbols-outlined !text-xs ${isFavorited ? 'material-symbols-filled' : ''}`}
+                      >
+                        star
                       </span>
                     </button>
                   )}
@@ -471,7 +475,7 @@ export const GameList = ({
                         handleFavoriteGame(game)
                       }}
                       className="mr-2 flex items-center justify-center px-2 py-1 text-secondary transition hover:text-primary"
-                      title="Edit favorite"
+                      title="Edit favourite"
                     >
                       <span className="material-symbols-outlined text-sm">
                         edit
