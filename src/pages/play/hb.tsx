@@ -17,14 +17,22 @@ interface Props {
   id: string
   playGameConfig: PlayGameConfig
   playAgain: () => void
+  simulateMaiaTime: boolean
+  setSimulateMaiaTime: (value: boolean) => void
 }
 
 const PlayHandBrain: React.FC<Props> = ({
   id,
   playGameConfig,
   playAgain,
+  simulateMaiaTime,
+  setSimulateMaiaTime,
 }: Props) => {
-  const controller = useHandBrainController(id, playGameConfig)
+  const controller = useHandBrainController(
+    id,
+    playGameConfig,
+    simulateMaiaTime,
+  )
 
   return (
     <PlayControllerContext.Provider value={controller}>
@@ -39,6 +47,8 @@ const PlayHandBrain: React.FC<Props> = ({
           selectPiece={controller.selectPiece}
           resign={() => controller.setResigned(true)}
           playAgain={playAgain}
+          simulateMaiaTime={simulateMaiaTime}
+          setSimulateMaiaTime={setSimulateMaiaTime}
         />
       </GameplayInterface>
     </PlayControllerContext.Provider>
@@ -69,9 +79,11 @@ const PlayHandBrainPage: NextPage = () => {
     timeControl,
     isBrain,
     sampleMoves,
-    simulateMaiaTime,
     startFen,
   } = router.query
+
+  // simulateMaiaTime is now managed locally instead of from query params
+  const [simulateMaiaTime, setSimulateMaiaTime] = useState<boolean>(true)
 
   const playGameConfig: PlayGameConfig = useMemo(
     () => ({
@@ -82,7 +94,7 @@ const PlayHandBrainPage: NextPage = () => {
       timeControl: (timeControl || 'unlimited') as TimeControl,
       isBrain: isBrain == 'true',
       sampleMoves: sampleMoves == 'true',
-      simulateMaiaTime: simulateMaiaTime == 'true',
+      // simulateMaiaTime is now managed locally
       startFen: typeof startFen == 'string' ? startFen : undefined,
     }),
     [
@@ -92,7 +104,6 @@ const PlayHandBrainPage: NextPage = () => {
       maiaPartnerVersion,
       player,
       sampleMoves,
-      simulateMaiaTime,
       timeControl,
     ],
   )
@@ -167,6 +178,8 @@ const PlayHandBrainPage: NextPage = () => {
             id={id as string}
             playGameConfig={playGameConfig}
             playAgain={playAgain}
+            simulateMaiaTime={simulateMaiaTime}
+            setSimulateMaiaTime={setSimulateMaiaTime}
           />
         )}
       </DelayedLoading>

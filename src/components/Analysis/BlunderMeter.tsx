@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 import {
@@ -211,26 +211,71 @@ function MovesList({
     stockfish?: StockfishEvaluation
   } | null
 }) {
+  const { isMobile } = useContext(WindowSizeContext)
   const [tooltipData, setTooltipData] = useState<{
     move: string
     position: { x: number; y: number }
   } | null>(null)
+  const [mobileTooltipMove, setMobileTooltipMove] = useState<string | null>(
+    null,
+  )
+
+  // Clear tooltip when position changes (indicated by colorSanMapping change)
+  useEffect(() => {
+    setTooltipData(null)
+    setMobileTooltipMove(null)
+  }, [colorSanMapping])
 
   const filteredMoves = () => {
     return moves.slice(0, 6).filter((move) => move.probability >= 8)
   }
 
   const handleMouseEnter = (move: string, event: React.MouseEvent) => {
-    hover(move)
-    setTooltipData({
-      move,
-      position: { x: event.clientX, y: event.clientY },
-    })
+    if (!isMobile) {
+      hover(move)
+      setTooltipData({
+        move,
+        position: { x: event.clientX, y: event.clientY },
+      })
+    }
   }
 
   const handleMouseLeave = () => {
-    hover()
-    setTooltipData(null)
+    if (!isMobile) {
+      hover()
+      setTooltipData(null)
+    }
+  }
+
+  const handleClick = (move: string, event: React.MouseEvent) => {
+    if (isMobile) {
+      if (mobileTooltipMove === move) {
+        // Second click on same move - make the move
+        makeMove(move)
+        setMobileTooltipMove(null)
+        setTooltipData(null)
+      } else {
+        // First click - show tooltip
+        hover(move)
+        setMobileTooltipMove(move)
+        setTooltipData({
+          move,
+          position: { x: event.clientX, y: event.clientY },
+        })
+      }
+    } else {
+      // Desktop - make move immediately
+      makeMove(move)
+    }
+  }
+
+  const handleTooltipClick = (move: string) => {
+    if (isMobile) {
+      makeMove(move)
+      setMobileTooltipMove(null)
+      setTooltipData(null)
+      hover()
+    }
   }
 
   return (
@@ -243,7 +288,7 @@ function MovesList({
             className="text-left hover:underline"
             onMouseLeave={handleMouseLeave}
             onMouseEnter={(e) => handleMouseEnter(move.move, e)}
-            onClick={() => makeMove(move.move)}
+            onClick={(e) => handleClick(move.move, e)}
           >
             {colorSanMapping[move.move]?.san || move.move} (
             {Math.round(move.probability)}%)
@@ -265,6 +310,7 @@ function MovesList({
             moveEvaluation.stockfish?.cp_relative_vec?.[tooltipData.move]
           }
           position={tooltipData.position}
+          onClickMove={isMobile ? handleTooltipClick : undefined}
         />
       )}
     </div>
@@ -333,26 +379,71 @@ function Meter({
     stockfish?: StockfishEvaluation
   } | null
 }) {
+  const { isMobile } = useContext(WindowSizeContext)
   const [tooltipData, setTooltipData] = useState<{
     move: string
     position: { x: number; y: number }
   } | null>(null)
+  const [mobileTooltipMove, setMobileTooltipMove] = useState<string | null>(
+    null,
+  )
+
+  // Clear tooltip when position changes (indicated by colorSanMapping change)
+  useEffect(() => {
+    setTooltipData(null)
+    setMobileTooltipMove(null)
+  }, [colorSanMapping])
 
   const filteredMoves = () => {
     return moves.slice(0, 6).filter((move) => move.probability >= 8)
   }
 
   const handleMouseEnter = (move: string, event: React.MouseEvent) => {
-    hover(move)
-    setTooltipData({
-      move,
-      position: { x: event.clientX, y: event.clientY },
-    })
+    if (!isMobile) {
+      hover(move)
+      setTooltipData({
+        move,
+        position: { x: event.clientX, y: event.clientY },
+      })
+    }
   }
 
   const handleMouseLeave = () => {
-    hover()
-    setTooltipData(null)
+    if (!isMobile) {
+      hover()
+      setTooltipData(null)
+    }
+  }
+
+  const handleClick = (move: string, event: React.MouseEvent) => {
+    if (isMobile) {
+      if (mobileTooltipMove === move) {
+        // Second click on same move - make the move
+        makeMove(move)
+        setMobileTooltipMove(null)
+        setTooltipData(null)
+      } else {
+        // First click - show tooltip
+        hover(move)
+        setMobileTooltipMove(move)
+        setTooltipData({
+          move,
+          position: { x: event.clientX, y: event.clientY },
+        })
+      }
+    } else {
+      // Desktop - make move immediately
+      makeMove(move)
+    }
+  }
+
+  const handleTooltipClick = (move: string) => {
+    if (isMobile) {
+      makeMove(move)
+      setMobileTooltipMove(null)
+      setTooltipData(null)
+      hover()
+    }
   }
 
   return (
@@ -380,7 +471,7 @@ function Meter({
               className="text-left hover:underline"
               onMouseLeave={handleMouseLeave}
               onMouseEnter={(e) => handleMouseEnter(move.move, e)}
-              onClick={() => makeMove(move.move)}
+              onClick={(e) => handleClick(move.move, e)}
             >
               {colorSanMapping[move.move]?.san || move.move} (
               {Math.round(move.probability)}%){' '}
@@ -403,6 +494,7 @@ function Meter({
             moveEvaluation.stockfish?.cp_relative_vec?.[tooltipData.move]
           }
           position={tooltipData.position}
+          onClickMove={isMobile ? handleTooltipClick : undefined}
         />
       )}
     </motion.div>

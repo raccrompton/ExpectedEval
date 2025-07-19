@@ -86,9 +86,7 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
   const [sampleMoves, setSampleMoves] = useState<boolean>(
     props.sampleMoves || true,
   )
-  const [simulateMaiaTime, setSimulateMaiaTime] = useState<boolean>(
-    props.simulateMaiaTime || true,
-  )
+  // simulateMaiaTime is now managed in-game, not in setup modal
 
   const [maiaPartnerVersion, setMaiaPartnerVersion] = useState<string>(
     props.maiaPartnerVersion || maiaOptions[0],
@@ -122,7 +120,7 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
             maiaVersion: maiaVersion,
             timeControl: timeControl,
             sampleMoves: sampleMoves,
-            simulateMaiaTime: simulateMaiaTime,
+            // simulateMaiaTime is now managed in-game
             startFen: fen,
           },
         })
@@ -136,7 +134,7 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
             timeControl: timeControl,
             isBrain: isBrain,
             sampleMoves: sampleMoves,
-            simulateMaiaTime: simulateMaiaTime,
+            // simulateMaiaTime is now managed in-game
             startFen: fen,
           },
         })
@@ -150,7 +148,6 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
       maiaVersion,
       timeControl,
       sampleMoves,
-      simulateMaiaTime,
       fen,
       isBrain,
     ],
@@ -260,23 +257,6 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
                     labels={TimeControlOptionNames}
                     selected={timeControl}
                     onChange={setTimeControl}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="maia-time-select"
-                  className="mb-1 block text-sm font-medium text-primary"
-                >
-                  Maia thinking time:
-                </label>
-                <div id="maia-time-select">
-                  <OptionSelect
-                    options={[false, true]}
-                    labels={['Instant', 'Human-like']}
-                    selected={simulateMaiaTime}
-                    onChange={setSimulateMaiaTime}
                   />
                 </div>
               </div>

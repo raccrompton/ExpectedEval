@@ -19,6 +19,7 @@ const playStatsLoader = async () => {
 export const useVsMaiaPlayController = (
   id: string,
   playGameConfig: PlayGameConfig,
+  simulateMaiaTime: boolean,
 ) => {
   const controller = usePlayController(id, playGameConfig)
   const [stats, incrementStats, updateRating] = useStats(playStatsLoader)
@@ -52,8 +53,8 @@ export const useVsMaiaPlayController = (
               playGameConfig.maiaVersion,
               playGameConfig.startFen,
               null,
-              playGameConfig.simulateMaiaTime ? initialClock : 0,
-              playGameConfig.simulateMaiaTime ? maiaClock : 0,
+              simulateMaiaTime ? initialClock : 0,
+              simulateMaiaTime ? maiaClock : 0,
             ),
           {
             jitter: 'full',
@@ -66,7 +67,7 @@ export const useVsMaiaPlayController = (
           return
         }
 
-        if (playGameConfig.simulateMaiaTime) {
+        if (simulateMaiaTime) {
           setTimeout(() => {
             const moveTime = controller.updateClock()
 
@@ -95,7 +96,7 @@ export const useVsMaiaPlayController = (
     return () => {
       canceled = true
     }
-  }, [controller, playGameConfig])
+  }, [controller, playGameConfig, simulateMaiaTime])
 
   useEffect(() => {
     const gameOverState = controller.game.termination?.type || 'not_over'
