@@ -31,6 +31,7 @@ const handStatsLoader = async () => {
 export const useHandBrainController = (
   id: string,
   playGameConfig: PlayGameConfig,
+  simulateMaiaTime: boolean,
 ) => {
   const controller = usePlayController(id, playGameConfig)
   const isBrain = playGameConfig.isBrain
@@ -142,8 +143,8 @@ export const useHandBrainController = (
             playGameConfig.maiaVersion,
             playGameConfig.startFen,
             null,
-            playGameConfig.simulateMaiaTime ? initialClock : 0,
-            playGameConfig.simulateMaiaTime ? maiaClock : 0,
+            simulateMaiaTime ? initialClock : 0,
+            simulateMaiaTime ? maiaClock : 0,
           ),
         {
           jitter: 'full',
@@ -167,7 +168,7 @@ export const useHandBrainController = (
           controller.addMoveWithTime(nextMove, moveTime)
           chessSoundManager.playMoveSound(isCapture)
         },
-        playGameConfig.simulateMaiaTime ? moveDelay * 1000 : 0,
+        simulateMaiaTime ? moveDelay * 1000 : 0,
       )
     }
 
@@ -187,7 +188,7 @@ export const useHandBrainController = (
     controller,
     playGameConfig.maiaVersion,
     playGameConfig.startFen,
-    playGameConfig.simulateMaiaTime,
+    simulateMaiaTime,
   ])
 
   const selectPiece = useCallback(
