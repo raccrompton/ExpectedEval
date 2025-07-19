@@ -53,7 +53,7 @@ export const selectOpeningDrills = async (
 export const submitOpeningDrill = async (
   request: SubmitOpeningDrillRequest,
 ): Promise<void> => {
-  const res = await fetch(buildUrl('opening/submit_opening_drill'), {
+  const res = await fetch(buildUrl('opening/record_opening_drill'), {
     method: 'POST',
     headers: {
       Accept: 'application/json',

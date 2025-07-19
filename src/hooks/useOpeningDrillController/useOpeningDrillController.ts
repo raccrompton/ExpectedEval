@@ -527,6 +527,23 @@ export const useOpeningDrillController = (
           currentMove: 'Preparing analysis...',
         })
 
+        // Submit drill data to backend if session ID is available
+        if (configuration.sessionId) {
+          try {
+            await submitOpeningDrill({
+              session_id: configuration.sessionId,
+              opening_fen: drillGame.selection.variation
+                ? drillGame.selection.variation.fen
+                : drillGame.selection.opening.fen,
+              side_played: drillGame.selection.playerColor,
+              moves_played_uci: drillGame.moves,
+            })
+          } catch (error) {
+            console.error('Failed to submit drill to backend:', error)
+            // Continue even if backend submission fails
+          }
+        }
+
         // Ensure all positions in the drill are analyzed to sufficient depth
         if (ensureAnalysisCompleteRef.current) {
           const drillNodes: GameNode[] = []
@@ -565,23 +582,6 @@ export const useOpeningDrillController = (
           }
         })
 
-        // Submit drill data to backend if session ID is available
-        if (configuration.sessionId) {
-          try {
-            await submitOpeningDrill({
-              session_id: configuration.sessionId,
-              opening_fen: drillGame.selection.variation
-                ? drillGame.selection.variation.fen
-                : drillGame.selection.opening.fen,
-              side_played: drillGame.selection.playerColor,
-              moves_played_uci: drillGame.moves,
-            })
-          } catch (error) {
-            console.error('Failed to submit drill to backend:', error)
-            // Continue even if backend submission fails
-          }
-        }
-
         setShowPerformanceModal(true)
       } catch (error) {
         console.error('Error completing drill analysis:', error)
@@ -593,7 +593,23 @@ export const useOpeningDrillController = (
     [currentDrillGame, evaluateDrillPerformance, configuration.sessionId],
   )
 
-  const moveToNextDrill = useCallback(() => {
+  const moveToNextDrill = useCallback(async () => {
+    // Submit drill data to backend if session ID is available
+    if (configuration.sessionId && currentDrillGame) {
+      try {
+        await submitOpeningDrill({
+          session_id: configuration.sessionId,
+          opening_fen: currentDrillGame.selection.variation
+            ? currentDrillGame.selection.variation.fen
+            : currentDrillGame.selection.opening.fen,
+          side_played: currentDrillGame.selection.playerColor,
+          moves_played_uci: currentDrillGame.moves,
+        })
+      } catch (error) {
+        console.error('Failed to submit drill to backend:', error)
+      }
+    }
+
     setShowPerformanceModal(false)
     setCurrentPerformanceData(null)
     setContinueAnalyzingMode(false)
