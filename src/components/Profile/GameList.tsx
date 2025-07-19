@@ -134,7 +134,12 @@ export const GameList = ({
 
   useEffect(() => {
     const targetUser = lichessId || user?.lichessId
-    if (targetUser && selected !== 'lichess' && selected !== 'custom') {
+    if (
+      targetUser &&
+      selected !== 'lichess' &&
+      selected !== 'custom' &&
+      selected !== 'favorites'
+    ) {
       const gameType = selected === 'hb' ? hbSubsection : selected
       const isAlreadyFetched = fetchedCache[gameType]?.[currentPage]
 
@@ -425,6 +430,14 @@ export const GameList = ({
                     className="flex flex-1 cursor-pointer items-center justify-between overflow-hidden py-1"
                   >
                     <div className="flex items-center gap-2 overflow-hidden">
+                      {selected === 'favorites' &&
+                        (game.type === 'hand' || game.type === 'brain') && (
+                          <span className="material-symbols-outlined flex-shrink-0 text-xs text-secondary">
+                            {game.type === 'hand'
+                              ? 'hand_gesture'
+                              : 'neurology'}
+                          </span>
+                        )}
                       <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-primary">
                         {game.label}
                       </p>

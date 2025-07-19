@@ -188,7 +188,8 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
       selected !== 'tournament' &&
       selected !== 'lichess' &&
       selected !== 'custom' &&
-      selected !== 'hb'
+      selected !== 'hb' &&
+      selected !== 'favorites'
     ) {
       const isAlreadyFetched = fetchedCache[selected]?.[currentPage]
 
@@ -560,6 +561,15 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                           className="flex flex-1 cursor-pointer items-center justify-between overflow-hidden py-1"
                         >
                           <div className="flex items-center gap-2 overflow-hidden">
+                            {selected === 'favorites' &&
+                              (game.type === 'hand' ||
+                                game.type === 'brain') && (
+                                <span className="material-symbols-outlined flex-shrink-0 text-xs text-secondary">
+                                  {game.type === 'hand'
+                                    ? 'hand_gesture'
+                                    : 'neurology'}
+                                </span>
+                              )}
                             <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-primary">
                               {game.label}
                             </p>
@@ -653,15 +663,21 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
               )}
             </>
           )}
-          {!((selected === 'play' || selected === 'hb') && totalPages > 1) && (
-            <div className="flex flex-1 items-start justify-center gap-1 py-2 md:items-center">
-              <span className="material-symbols-outlined text-sm text-secondary">
-                chess_pawn
-              </span>
-              <p className="text-xs text-secondary">Play more games...</p>
-              <p className="ml-2 text-xs text-secondary">₍^. .^₎⟆</p>
-            </div>
-          )}
+          {!((selected === 'play' || selected === 'hb') && totalPages > 1) &&
+            getCurrentGames().length === 0 &&
+            !loading && (
+              <div className="flex flex-1 items-start justify-center gap-1 py-2 md:items-center">
+                <span className="material-symbols-outlined text-sm text-secondary">
+                  {selected === 'favorites' ? 'star_border' : 'chess_pawn'}
+                </span>
+                <p className="text-xs text-secondary">
+                  {selected === 'favorites'
+                    ? 'Hit the star to favorite games...'
+                    : 'Play more games...'}
+                </p>
+                <p className="ml-2 text-xs text-secondary">₍^. .^₎⟆</p>
+              </div>
+            )}
         </div>
         {onCustomAnalysis && (
           <button
