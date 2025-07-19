@@ -12,10 +12,24 @@ describe('useOpeningDrillController evaluation chart generation', () => {
     startingNode: GameNode,
     playerColor: 'white' | 'black',
   ) => {
-    const moveAnalyses: any[] = []
-    const evaluationChart: any[] = []
+    const moveAnalyses: Array<{
+      move: string
+      san: string
+      fen: string
+      isPlayerMove: boolean
+      evaluation: number
+      moveNumber: number
+    }> = []
+    const evaluationChart: Array<{
+      moveNumber: number
+      evaluation: number
+      isPlayerMove: boolean
+    }> = []
 
-    const extractNodeAnalysis = (node: GameNode, path: GameNode[] = []): void => {
+    const extractNodeAnalysis = (
+      node: GameNode,
+      path: GameNode[] = [],
+    ): void => {
       const currentPath = [...path, node]
 
       if (node.move && node.san) {
@@ -59,39 +73,46 @@ describe('useOpeningDrillController evaluation chart generation', () => {
     // Create a game tree representing: 1. e4 e5 2. Nf3 Nc6 (opening) 3. Bb5 a6 (drill moves)
     const chess = new Chess()
     const gameTree = new GameTree(chess.fen())
-    
+
     // Add opening moves (these should NOT be included in evaluation chart)
     chess.move('e4')
-    const e4Node = gameTree.addMainMove(gameTree.getRoot(), chess.fen(), 'e2e4', 'e4')!
-    
+    const e4Node = gameTree.addMainMove(
+      gameTree.getRoot(),
+      chess.fen(),
+      'e2e4',
+      'e4',
+    )!
+
     chess.move('e5')
     const e5Node = gameTree.addMainMove(e4Node, chess.fen(), 'e7e5', 'e5')!
-    
+
     chess.move('Nf3')
     const nf3Node = gameTree.addMainMove(e5Node, chess.fen(), 'g1f3', 'Nf3')!
-    
+
     chess.move('Nc6')
     const nc6Node = gameTree.addMainMove(nf3Node, chess.fen(), 'b8c6', 'Nc6')! // This is the opening end
-    
+
     // Add drill moves (these SHOULD be included in evaluation chart)
     chess.move('Bb5')
     const bb5Node = gameTree.addMainMove(nc6Node, chess.fen(), 'f1b5', 'Bb5')!
-    
+
     chess.move('a6')
     const a6Node = gameTree.addMainMove(bb5Node, chess.fen(), 'a7a6', 'a6')!
 
     // Test starting from game root (old behavior - should include all moves)
-    const { moveAnalyses: rootAnalyses, evaluationChart: rootChart } = 
+    const { moveAnalyses: rootAnalyses, evaluationChart: rootChart } =
       extractNodeAnalysisFromPosition(gameTree.getRoot(), 'white')
 
     // Test starting from opening end (new behavior - should only include drill moves)
-    const { moveAnalyses: openingEndAnalyses, evaluationChart: openingEndChart } = 
-      extractNodeAnalysisFromPosition(nc6Node, 'white')
+    const {
+      moveAnalyses: openingEndAnalyses,
+      evaluationChart: openingEndChart,
+    } = extractNodeAnalysisFromPosition(nc6Node, 'white')
 
     // Verify that starting from root includes all moves (including opening)
     expect(rootAnalyses).toHaveLength(6) // e4, e5, Nf3, Nc6, Bb5, a6
     expect(rootChart).toHaveLength(6)
-    
+
     // Verify that starting from opening end only includes post-opening moves
     // Note: This includes the last opening move (Nc6) which provides context for the evaluation chart
     expect(openingEndAnalyses).toHaveLength(3) // Nc6 (last opening move), Bb5, a6
@@ -112,15 +133,22 @@ describe('useOpeningDrillController evaluation chart generation', () => {
   it('should handle the case where opening end node is null', () => {
     const chess = new Chess()
     const gameTree = new GameTree(chess.fen())
-    
+
     // Add some moves
     chess.move('e4')
-    const e4Node = gameTree.addMainMove(gameTree.getRoot(), chess.fen(), 'e2e4', 'e4')!
+    const e4Node = gameTree.addMainMove(
+      gameTree.getRoot(),
+      chess.fen(),
+      'e2e4',
+      'e4',
+    )!
 
     // Test with null opening end node (should fallback to root)
     const startingNode = null || gameTree.getRoot() // Simulates the fallback logic
-    const { moveAnalyses, evaluationChart } = 
-      extractNodeAnalysisFromPosition(startingNode, 'white')
+    const { moveAnalyses, evaluationChart } = extractNodeAnalysisFromPosition(
+      startingNode,
+      'white',
+    )
 
     expect(moveAnalyses).toHaveLength(1)
     expect(evaluationChart).toHaveLength(1)
