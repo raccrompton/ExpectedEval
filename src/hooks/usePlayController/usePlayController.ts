@@ -38,6 +38,27 @@ const computeTermination = (chess: Chess): Termination | undefined => {
   }
 }
 
+const computeTimeTermination = (
+  chess: Chess,
+  playerWhoRanOutOfTime: Color,
+): Termination => {
+  // If there's insufficient material on the board, it's a draw
+  if (chess.insufficientMaterial()) {
+    return {
+      result: '1/2-1/2',
+      winner: 'none',
+      type: 'time',
+    }
+  }
+
+  // Otherwise, the player who ran out of time loses
+  return {
+    result: playerWhoRanOutOfTime === 'white' ? '0-1' : '1-0',
+    winner: playerWhoRanOutOfTime === 'white' ? 'black' : 'white',
+    type: 'time',
+  }
+}
+
 export const usePlayController = (id: string, config: PlayGameConfig) => {
   const [gameTree, setGameTree] = useState<GameTree>(
     () => new GameTree(config.startFen || nullFen),
@@ -73,11 +94,13 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
     const chess = gameTree.toChess()
 
     const termination = resigned
-      ? ({
-          result: chess.turn() == 'w' ? '0-1' : '1-0',
-          winner: chess.turn() == 'w' ? 'black' : 'white',
-          type: Math.min(whiteClock, blackClock) > 0 ? 'resign' : 'time',
-        } as Termination)
+      ? Math.min(whiteClock, blackClock) > 0
+        ? ({
+            result: chess.turn() == 'w' ? '0-1' : '1-0',
+            winner: chess.turn() == 'w' ? 'black' : 'white',
+            type: 'resign',
+          } as Termination)
+        : computeTimeTermination(chess, chess.turn() == 'w' ? 'white' : 'black')
       : computeTermination(chess)
 
     const moves = []
