@@ -9,9 +9,17 @@ import React, {
 } from 'react'
 import { motion } from 'framer-motion'
 import { Tournament } from 'src/components'
+import { FavoriteModal } from 'src/components/Common/FavoriteModal'
 import { AnalysisListContext } from 'src/contexts'
 import { getAnalysisGameList } from 'src/api'
 import { getCustomAnalysesAsWebGames } from 'src/lib/customAnalysis'
+import {
+  getFavoritesAsWebGames,
+  addFavoriteGame,
+  removeFavoriteGame,
+  updateFavoriteName,
+  isFavoriteGame,
+} from 'src/lib/favorites'
 import { AnalysisWebGame } from 'src/types'
 import { useRouter } from 'next/router'
 
@@ -82,10 +90,23 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     }
     return []
   })
+  const [favoriteGames, setFavoriteGames] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return getFavoritesAsWebGames()
+    }
+    return []
+  })
   const [hbSubsection, setHbSubsection] = useState<'hand' | 'brain'>('hand')
+
+  // Modal state for favoriting
+  const [favoriteModal, setFavoriteModal] = useState<{
+    isOpen: boolean
+    game: AnalysisWebGame | null
+  }>({ isOpen: false, game: null })
 
   useEffect(() => {
     setCustomAnalyses(getCustomAnalysesAsWebGames())
+    setFavoriteGames(getFavoritesAsWebGames())
   }, [refreshTrigger])
 
   useEffect(() => {
@@ -137,7 +158,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   }, [analysisTournamentList, currentId, listKeys])
 
   const [selected, setSelected] = useState<
-    'tournament' | 'lichess' | 'play' | 'hb' | 'custom'
+    'tournament' | 'lichess' | 'play' | 'hb' | 'custom' | 'favorites'
   >(() => {
     if (currentId?.[1] === 'custom') {
       return 'custom'
@@ -353,9 +374,27 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   }
 
   const handleTabChange = (
-    newTab: 'tournament' | 'play' | 'hb' | 'custom' | 'lichess',
+    newTab: 'tournament' | 'play' | 'hb' | 'custom' | 'lichess' | 'favorites',
   ) => {
     setSelected(newTab)
+  }
+
+  const handleFavoriteGame = (game: AnalysisWebGame) => {
+    setFavoriteModal({ isOpen: true, game })
+  }
+
+  const handleSaveFavorite = (customName: string) => {
+    if (favoriteModal.game) {
+      addFavoriteGame(favoriteModal.game, customName)
+      setFavoriteGames(getFavoritesAsWebGames())
+    }
+  }
+
+  const handleRemoveFavorite = () => {
+    if (favoriteModal.game) {
+      removeFavoriteGame(favoriteModal.game.id)
+      setFavoriteGames(getFavoritesAsWebGames())
+    }
   }
 
   const getCurrentGames = () => {
@@ -368,6 +407,8 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
       return customAnalyses
     } else if (selected === 'lichess') {
       return analysisLichessList
+    } else if (selected === 'favorites') {
+      return favoriteGames
     }
     return []
   }
@@ -378,7 +419,13 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
       className="flex h-full flex-col items-start justify-start overflow-hidden bg-background-1 md:rounded"
     >
       <div className="flex h-full w-full flex-col">
-        <div className="grid select-none grid-cols-5 border-b-2 border-white border-opacity-10">
+        <div className="grid select-none grid-cols-6 border-b-2 border-white border-opacity-10">
+          <Header
+            label="★"
+            name="favorites"
+            selected={selected}
+            setSelected={handleTabChange}
+          />
           <Header
             label="Play"
             name="play"
@@ -481,23 +528,11 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                 <>
                   {getCurrentGames().map((game, index) => {
                     const selectedGame = currentId && currentId[0] === game.id
+                    const isFavorited = isFavoriteGame(game.id)
                     return (
-                      <button
+                      <div
                         key={index}
-                        onClick={() => {
-                          setLoadingIndex(index)
-                          if (game.type === 'pgn') {
-                            router.push(`/analysis/${game.id}/pgn`)
-                          } else if (
-                            game.type === 'custom-pgn' ||
-                            game.type === 'custom-fen'
-                          ) {
-                            router.push(`/analysis/${game.id}/custom`)
-                          } else {
-                            router.push(`/analysis/${game.id}/${game.type}`)
-                          }
-                        }}
-                        className={`group flex w-full cursor-pointer items-center gap-2 pr-1 ${selectedGame ? 'bg-background-2 font-bold' : index % 2 === 0 ? 'bg-background-1/30 hover:bg-background-2' : 'bg-background-1/10 hover:bg-background-2'}`}
+                        className={`group flex w-full items-center gap-2 ${selectedGame ? 'bg-background-2 font-bold' : index % 2 === 0 ? 'bg-background-1/30 hover:bg-background-2' : 'bg-background-1/10 hover:bg-background-2'}`}
                       >
                         <div
                           className={`flex h-full w-9 items-center justify-center ${selectedGame ? 'bg-background-3' : 'bg-background-2 group-hover:bg-white/5'}`}
@@ -508,7 +543,22 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                               : index + 1}
                           </p>
                         </div>
-                        <div className="flex flex-1 items-center justify-between overflow-hidden py-1">
+                        <button
+                          onClick={() => {
+                            setLoadingIndex(index)
+                            if (game.type === 'pgn') {
+                              router.push(`/analysis/${game.id}/pgn`)
+                            } else if (
+                              game.type === 'custom-pgn' ||
+                              game.type === 'custom-fen'
+                            ) {
+                              router.push(`/analysis/${game.id}/custom`)
+                            } else {
+                              router.push(`/analysis/${game.id}/${game.type}`)
+                            }
+                          }}
+                          className="flex flex-1 cursor-pointer items-center justify-between overflow-hidden py-1"
+                        >
                           <div className="flex items-center gap-2 overflow-hidden">
                             <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-primary">
                               {game.label}
@@ -517,8 +567,42 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                           <p className="whitespace-nowrap text-sm font-light text-secondary">
                             {game.result}
                           </p>
-                        </div>
-                      </button>
+                        </button>
+                        {selected !== 'favorites' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleFavoriteGame(game)
+                            }}
+                            className={`mr-1 flex items-center justify-center px-2 py-1 transition ${
+                              isFavorited
+                                ? 'text-yellow-400 hover:text-yellow-300'
+                                : 'text-secondary hover:text-primary'
+                            }`}
+                            title={
+                              isFavorited ? 'Edit favorite' : 'Add to favorites'
+                            }
+                          >
+                            <span className="material-symbols-outlined text-sm">
+                              {isFavorited ? 'star' : 'star_border'}
+                            </span>
+                          </button>
+                        )}
+                        {selected === 'favorites' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleFavoriteGame(game)
+                            }}
+                            className="mr-1 flex items-center justify-center px-2 py-1 text-secondary transition hover:text-primary"
+                            title="Edit favorite"
+                          >
+                            <span className="material-symbols-outlined text-sm">
+                              edit
+                            </span>
+                          </button>
+                        )}
+                      </div>
                     )
                   })}
                   {(selected === 'play' || selected === 'hb') &&
@@ -593,6 +677,17 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
           </button>
         )}
       </div>
+      <FavoriteModal
+        isOpen={favoriteModal.isOpen}
+        currentName={favoriteModal.game?.label || ''}
+        onClose={() => setFavoriteModal({ isOpen: false, game: null })}
+        onSave={handleSaveFavorite}
+        onRemove={
+          favoriteModal.game && isFavoriteGame(favoriteModal.game.id)
+            ? handleRemoveFavorite
+            : undefined
+        }
+      />
     </div>
   ) : null
 }
@@ -604,10 +699,10 @@ function Header({
   setSelected,
 }: {
   label: string
-  name: 'tournament' | 'play' | 'hb' | 'custom' | 'lichess'
-  selected: 'tournament' | 'play' | 'hb' | 'custom' | 'lichess'
+  name: 'tournament' | 'play' | 'hb' | 'custom' | 'lichess' | 'favorites'
+  selected: 'tournament' | 'play' | 'hb' | 'custom' | 'lichess' | 'favorites'
   setSelected: (
-    name: 'tournament' | 'play' | 'hb' | 'custom' | 'lichess',
+    name: 'tournament' | 'play' | 'hb' | 'custom' | 'lichess' | 'favorites',
   ) => void
 }) {
   return (

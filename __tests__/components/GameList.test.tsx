@@ -16,6 +16,19 @@ jest.mock('src/lib/customAnalysis', () => ({
   getCustomAnalysesAsWebGames: jest.fn(() => []),
 }))
 
+// Mock favorites utility
+jest.mock('src/lib/favorites', () => ({
+  getFavoritesAsWebGames: jest.fn(() => []),
+  addFavoriteGame: jest.fn(),
+  removeFavoriteGame: jest.fn(),
+  isFavoriteGame: jest.fn(() => false),
+}))
+
+// Mock FavoriteModal component
+jest.mock('src/components/Common/FavoriteModal', () => ({
+  FavoriteModal: () => null,
+}))
+
 // Mock framer-motion to avoid animation issues in tests
 jest.mock('framer-motion', () => ({
   motion: {
@@ -136,6 +149,8 @@ describe('GameList', () => {
   })
 
   it('fetches games with lichessId when provided', async () => {
+    const user = userEvent.setup()
+
     await act(async () => {
       render(
         <AuthWrapper>
@@ -147,6 +162,11 @@ describe('GameList', () => {
           />
         </AuthWrapper>,
       )
+    })
+
+    // Click on Play tab to trigger API call
+    await act(async () => {
+      await user.click(screen.getByText('Play'))
     })
 
     await waitFor(() => {
@@ -159,6 +179,8 @@ describe('GameList', () => {
   })
 
   it('displays correct game labels for other users', async () => {
+    const user = userEvent.setup()
+
     await act(async () => {
       render(
         <AuthWrapper>
@@ -172,18 +194,30 @@ describe('GameList', () => {
       )
     })
 
+    // Click on Play tab to see games
+    await act(async () => {
+      await user.click(screen.getByText('Play'))
+    })
+
     await waitFor(() => {
       expect(screen.getByText('OtherUser vs. Maia 1500')).toBeInTheDocument()
     })
   })
 
   it('displays correct game labels for current user', async () => {
+    const user = userEvent.setup()
+
     await act(async () => {
       render(
         <AuthWrapper>
           <GameList />
         </AuthWrapper>,
       )
+    })
+
+    // Click on Play tab to see games
+    await act(async () => {
+      await user.click(screen.getByText('Play'))
     })
 
     await waitFor(() => {
@@ -235,10 +269,10 @@ describe('GameList', () => {
       </AuthWrapper>,
     )
 
-    // With all 4 tabs
-    expect(document.querySelector('.grid-cols-4')).toBeInTheDocument()
+    // With all 5 tabs (favorites, play, hb, custom, lichess)
+    expect(document.querySelector('.grid-cols-5')).toBeInTheDocument()
 
-    // With only 2 tabs
+    // With only 3 tabs (favorites, play, hb)
     await act(async () => {
       rerender(
         <AuthWrapper>
@@ -247,6 +281,6 @@ describe('GameList', () => {
       )
     })
 
-    expect(document.querySelector('.grid-cols-2')).toBeInTheDocument()
+    expect(document.querySelector('.grid-cols-3')).toBeInTheDocument()
   })
 })
