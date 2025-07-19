@@ -10,6 +10,7 @@ import { WindowSizeContext } from 'src/contexts'
 import {
   AuthenticatedWrapper,
   UserProfile,
+  GameList,
   DelayedLoading,
 } from 'src/components'
 
@@ -150,7 +151,7 @@ const Profile: React.FC<Props> = (props: Props) => {
         variants={itemVariants}
         className="flex flex-row items-center gap-2"
       >
-        <span className="material-symbols-outlined text-6xl">
+        <span className="material-symbols-outlined !text-6xl">
           account_circle
         </span>
         <div className="flex flex-col">
@@ -167,7 +168,13 @@ const Profile: React.FC<Props> = (props: Props) => {
         variants={itemVariants}
         className="flex w-full flex-col items-start gap-6 md:flex-row"
       >
-        <UserProfile stats={props.stats} wide />
+        <GameList
+          lichessId={props.name}
+          userName={props.name}
+          showCustom={false}
+          showLichess={false}
+        />
+        <UserProfile stats={props.stats} />
       </motion.div>
     </motion.div>
   )
@@ -194,7 +201,13 @@ const Profile: React.FC<Props> = (props: Props) => {
         variants={itemVariants}
         className="flex w-full flex-col gap-6"
       >
-        <UserProfile stats={props.stats} wide />
+        <GameList
+          lichessId={props.name}
+          userName={props.name}
+          showCustom={false}
+          showLichess={false}
+        />
+        <UserProfile stats={props.stats} />
       </motion.div>
     </motion.div>
   )
