@@ -905,6 +905,7 @@ const Analysis: React.FC<Props> = ({
                   setShowCustomModal(true)
                   setShowGameListMobile(false)
                 }}
+                onGameSelected={() => setShowGameListMobile(false)}
                 refreshTrigger={refreshTrigger}
               />
             </div>
