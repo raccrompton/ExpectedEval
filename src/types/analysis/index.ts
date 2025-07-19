@@ -17,6 +17,7 @@ export interface StockfishEngine {
   streamEvaluations: (
     fen: string,
     moveCount: number,
+    depth?: number,
   ) => AsyncIterable<StockfishEvaluation> | null
 }
 

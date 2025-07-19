@@ -24,12 +24,12 @@ export const StockfishEngineContextProvider: React.FC<{
   }
 
   const streamEvaluations = useCallback(
-    (fen: string, legalMoveCount: number) => {
+    (fen: string, legalMoveCount: number, depth?: number) => {
       if (!engineRef.current) {
         console.error('Engine not initialized')
         return null
       }
-      return engineRef.current.streamEvaluations(fen, legalMoveCount)
+      return engineRef.current.streamEvaluations(fen, legalMoveCount, depth)
     },
     [],
   )

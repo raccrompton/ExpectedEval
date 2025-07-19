@@ -8,9 +8,9 @@ import { MaiaEngineContext, StockfishEngineContext } from 'src/contexts'
 export const useEngineAnalysis = (
   currentNode: GameNode | null,
   inProgressAnalyses: Set<string>,
-
   currentMaiaModel: string,
   setAnalysisState: React.Dispatch<React.SetStateAction<number>>,
+  targetDepth = 18,
 ) => {
   const maia = useContext(MaiaEngineContext)
   const stockfish = useContext(StockfishEngineContext)
@@ -132,7 +132,7 @@ export const useEngineAnalysis = (
     if (!currentNode) return
     if (
       currentNode.analysis.stockfish &&
-      currentNode.analysis.stockfish?.depth >= 18
+      currentNode.analysis.stockfish?.depth >= targetDepth
     )
       return
 
@@ -160,6 +160,7 @@ export const useEngineAnalysis = (
       const evaluationStream = stockfish.streamEvaluations(
         chess.fen(),
         chess.moves().length,
+        targetDepth,
       )
 
       if (evaluationStream && !cancelled) {
@@ -194,5 +195,5 @@ export const useEngineAnalysis = (
       cancelled = true
       clearTimeout(timeoutId)
     }
-  }, [currentNode, stockfish, currentMaiaModel, setAnalysisState])
+  }, [currentNode, stockfish, currentMaiaModel, setAnalysisState, targetDepth])
 }
