@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 import {
@@ -216,6 +216,11 @@ function MovesList({
     position: { x: number; y: number }
   } | null>(null)
 
+  // Clear tooltip when position changes (indicated by colorSanMapping change)
+  useEffect(() => {
+    setTooltipData(null)
+  }, [colorSanMapping])
+
   const filteredMoves = () => {
     return moves.slice(0, 6).filter((move) => move.probability >= 8)
   }
@@ -337,6 +342,11 @@ function Meter({
     move: string
     position: { x: number; y: number }
   } | null>(null)
+
+  // Clear tooltip when position changes (indicated by colorSanMapping change)
+  useEffect(() => {
+    setTooltipData(null)
+  }, [colorSanMapping])
 
   const filteredMoves = () => {
     return moves.slice(0, 6).filter((move) => move.probability >= 8)
