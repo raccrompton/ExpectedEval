@@ -394,6 +394,8 @@ const Analysis: React.FC<Props> = ({
 
   const handleAnalysisConfigConfirm = useCallback(
     (depth: number) => {
+      // Reset any previous analysis state before starting new one
+      controller.gameAnalysis.resetProgress()
       controller.gameAnalysis.setConfig({ targetDepth: depth })
       controller.gameAnalysis.startAnalysis()
     },

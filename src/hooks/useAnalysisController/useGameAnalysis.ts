@@ -128,9 +128,6 @@ export const useGameAnalysis = (
       const shouldAnalyze =
         !node.analysis.stockfish ||
         node.analysis.stockfish.depth < config.targetDepth
-      console.log(
-        `Node analysis check - hasStockfish: ${!!node.analysis.stockfish}, currentDepth: ${node.analysis.stockfish?.depth || 'none'}, targetDepth: ${config.targetDepth}, shouldAnalyze: ${shouldAnalyze}`,
-      )
 
       if (
         !analysisController.current.cancelled &&
@@ -139,9 +136,6 @@ export const useGameAnalysis = (
       ) {
         try {
           const chess = new Chess(node.fen)
-          console.log(
-            `Starting Stockfish analysis for node with target depth: ${config.targetDepth}`,
-          )
           const evaluationStream = stockfish.streamEvaluations(
             chess.fen(),
             chess.moves().length,
@@ -160,15 +154,8 @@ export const useGameAnalysis = (
               node.addStockfishAnalysis(evaluation, currentMaiaModel)
               setAnalysisState((state) => state + 1)
 
-              console.log(
-                `Received evaluation at depth ${evaluation.depth}, target: ${config.targetDepth}`,
-              )
-
               // Stop when we reach target depth
               if (evaluation.depth >= config.targetDepth) {
-                console.log(
-                  `Reached target depth ${config.targetDepth}, stopping analysis`,
-                )
                 break
               }
             }
@@ -190,7 +177,13 @@ export const useGameAnalysis = (
   )
 
   const startAnalysis = useCallback(async () => {
-    if (!gameTree || progress.isAnalyzing) return
+    if (!gameTree) return
+
+    // If already analyzing, cancel the current analysis first
+    if (progress.isAnalyzing) {
+      analysisController.current.cancelled = true
+      stockfish.stopEvaluation()
+    }
 
     // Reset state
     analysisController.current.cancelled = false
