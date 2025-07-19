@@ -1,6 +1,6 @@
 import { MoveTooltip } from './MoveTooltip'
 import { InteractiveDescription } from './InteractiveDescription'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useContext } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MaiaEvaluation,
@@ -10,6 +10,7 @@ import {
 } from 'src/types'
 import { cpToWinrate } from 'src/lib/stockfish'
 import { MAIA_MODELS } from 'src/constants/common'
+import { WindowSizeContext } from 'src/contexts'
 
 type DescriptionSegment =
   | { type: 'text'; content: string }
@@ -52,6 +53,7 @@ export const Highlight: React.FC<Props> = ({
   currentNode,
   isHomePage = false,
 }: Props) => {
+  const { isMobile } = useContext(WindowSizeContext)
   const [tooltipData, setTooltipData] = useState<{
     move: string
     maiaProb?: number
@@ -60,10 +62,14 @@ export const Highlight: React.FC<Props> = ({
     stockfishCpRelative?: number
     position: { x: number; y: number }
   } | null>(null)
+  const [mobileTooltipMove, setMobileTooltipMove] = useState<string | null>(
+    null,
+  )
 
   // Clear tooltip when position changes (indicated by currentNode change)
   useEffect(() => {
     setTooltipData(null)
+    setMobileTooltipMove(null)
   }, [currentNode])
 
   const findMatchingMove = (move: string, source: 'maia' | 'stockfish') => {
@@ -83,41 +89,109 @@ export const Highlight: React.FC<Props> = ({
     winrate?: number,
     cpRelative?: number,
   ) => {
-    hover(move)
+    if (!isMobile) {
+      hover(move)
 
-    const matchingMove = findMatchingMove(move, source)
-    const maiaProb =
-      source === 'maia' ? prob : (matchingMove as { prob: number })?.prob
-    const stockfishCp =
-      source === 'stockfish' ? cp : (matchingMove as { cp: number })?.cp
-    const stockfishWinrate =
-      source === 'stockfish'
-        ? winrate
-        : (matchingMove as { winrate?: number })?.winrate
-    const stockfishCpRelative =
-      source === 'stockfish'
-        ? cpRelative
-        : (matchingMove as { cp_relative?: number })?.cp_relative
+      const matchingMove = findMatchingMove(move, source)
+      const maiaProb =
+        source === 'maia' ? prob : (matchingMove as { prob: number })?.prob
+      const stockfishCp =
+        source === 'stockfish' ? cp : (matchingMove as { cp: number })?.cp
+      const stockfishWinrate =
+        source === 'stockfish'
+          ? winrate
+          : (matchingMove as { winrate?: number })?.winrate
+      const stockfishCpRelative =
+        source === 'stockfish'
+          ? cpRelative
+          : (matchingMove as { cp_relative?: number })?.cp_relative
 
-    // Get Stockfish cp relative from the move evaluation if not provided
-    const actualStockfishCpRelative =
-      stockfishCpRelative !== undefined
-        ? stockfishCpRelative
-        : moveEvaluation?.stockfish?.cp_relative_vec?.[move]
+      // Get Stockfish cp relative from the move evaluation if not provided
+      const actualStockfishCpRelative =
+        stockfishCpRelative !== undefined
+          ? stockfishCpRelative
+          : moveEvaluation?.stockfish?.cp_relative_vec?.[move]
 
-    setTooltipData({
-      move,
-      maiaProb,
-      stockfishCp,
-      stockfishWinrate,
-      stockfishCpRelative: actualStockfishCpRelative,
-      position: { x: event.clientX, y: event.clientY },
-    })
+      setTooltipData({
+        move,
+        maiaProb,
+        stockfishCp,
+        stockfishWinrate,
+        stockfishCpRelative: actualStockfishCpRelative,
+        position: { x: event.clientX, y: event.clientY },
+      })
+    }
   }
 
   const handleMouseLeave = () => {
-    hover()
-    setTooltipData(null)
+    if (!isMobile) {
+      hover()
+      setTooltipData(null)
+    }
+  }
+
+  const handleClick = (
+    move: string,
+    source: 'maia' | 'stockfish',
+    event: React.MouseEvent,
+    prob?: number,
+    cp?: number,
+    winrate?: number,
+    cpRelative?: number,
+  ) => {
+    if (isMobile) {
+      if (mobileTooltipMove === move) {
+        // Second click on same move - make the move
+        makeMove(move)
+        setMobileTooltipMove(null)
+        setTooltipData(null)
+      } else {
+        // First click - show tooltip
+        hover(move)
+        setMobileTooltipMove(move)
+
+        const matchingMove = findMatchingMove(move, source)
+        const maiaProb =
+          source === 'maia' ? prob : (matchingMove as { prob: number })?.prob
+        const stockfishCp =
+          source === 'stockfish' ? cp : (matchingMove as { cp: number })?.cp
+        const stockfishWinrate =
+          source === 'stockfish'
+            ? winrate
+            : (matchingMove as { winrate?: number })?.winrate
+        const stockfishCpRelative =
+          source === 'stockfish'
+            ? cpRelative
+            : (matchingMove as { cp_relative?: number })?.cp_relative
+
+        // Get Stockfish cp relative from the move evaluation if not provided
+        const actualStockfishCpRelative =
+          stockfishCpRelative !== undefined
+            ? stockfishCpRelative
+            : moveEvaluation?.stockfish?.cp_relative_vec?.[move]
+
+        setTooltipData({
+          move,
+          maiaProb,
+          stockfishCp,
+          stockfishWinrate,
+          stockfishCpRelative: actualStockfishCpRelative,
+          position: { x: event.clientX, y: event.clientY },
+        })
+      }
+    } else {
+      // Desktop - make move immediately
+      makeMove(move)
+    }
+  }
+
+  const handleTooltipClick = (move: string) => {
+    if (isMobile) {
+      makeMove(move)
+      setMobileTooltipMove(null)
+      setTooltipData(null)
+      hover()
+    }
   }
 
   // Track whether description exists (not its content)
@@ -228,7 +302,7 @@ export const Highlight: React.FC<Props> = ({
                   }}
                   onMouseLeave={handleMouseLeave}
                   onMouseEnter={(e) => handleMouseEnter(move, 'maia', e, prob)}
-                  onClick={() => makeMove(move)}
+                  onClick={(e) => handleClick(move, 'maia', e, prob)}
                 >
                   <p className="text-left font-mono text-sm md:text-xxs xl:text-xs">
                     {colorSanMapping[move]?.san ?? move}
@@ -296,7 +370,17 @@ export const Highlight: React.FC<Props> = ({
                         cp_relative,
                       )
                     }
-                    onClick={() => makeMove(move)}
+                    onClick={(e) =>
+                      handleClick(
+                        move,
+                        'stockfish',
+                        e,
+                        undefined,
+                        cp,
+                        winrate,
+                        cp_relative,
+                      )
+                    }
                   >
                     <p className="text-left font-mono text-sm md:text-xxs xl:text-xs">
                       {colorSanMapping[move]?.san ?? move}
@@ -345,6 +429,7 @@ export const Highlight: React.FC<Props> = ({
           stockfishWinrate={tooltipData.stockfishWinrate}
           stockfishCpRelative={tooltipData.stockfishCpRelative}
           position={tooltipData.position}
+          onClickMove={isMobile ? handleTooltipClick : undefined}
         />
       )}
     </div>

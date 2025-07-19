@@ -11,6 +11,7 @@ interface MoveTooltipProps {
   stockfishCpRelative?: number
   position?: { x: number; y: number }
   isVisible?: boolean
+  onClickMove?: (move: string) => void
 }
 
 export const MoveTooltip: React.FC<MoveTooltipProps> = ({
@@ -22,21 +23,34 @@ export const MoveTooltip: React.FC<MoveTooltipProps> = ({
   stockfishCpRelative,
   position,
   isVisible = true,
+  onClickMove,
 }) => {
   if (!isVisible || !position || typeof window === 'undefined') return null
 
   const san = colorSanMapping[move]?.san ?? move
   const color = colorSanMapping[move]?.color ?? '#fff'
 
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (onClickMove && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault()
+      onClickMove(move)
+    }
+  }
+
   const tooltipContent = (
     <div
-      className="pointer-events-none fixed z-50 flex w-auto min-w-[12rem] flex-col overflow-hidden rounded-lg border border-white/30 bg-background-1 text-primary backdrop-blur-sm"
+      className={`fixed z-50 flex w-auto min-w-[12rem] flex-col overflow-hidden rounded-lg border border-white/30 bg-background-1 text-primary backdrop-blur-sm ${onClickMove ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'}`}
       style={{
         left: position.x + 15,
         top: position.y - 10,
         transform:
           position.x > window.innerWidth - 250 ? 'translateX(-100%)' : 'none',
       }}
+      onClick={onClickMove ? () => onClickMove(move) : undefined}
+      onKeyDown={onClickMove ? handleKeyDown : undefined}
+      role={onClickMove ? 'button' : undefined}
+      tabIndex={onClickMove ? 0 : undefined}
+      aria-label={onClickMove ? `Make move ${san}` : undefined}
     >
       {/* Header */}
       <div className="flex w-full justify-between border-b border-white/20 bg-gradient-to-r from-background-2/90 to-background-2/70 px-3 py-1.5">
