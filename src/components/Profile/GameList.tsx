@@ -13,8 +13,26 @@ interface GameData {
   player_color: 'white' | 'black'
 }
 
-export const GameList = () => {
+interface GameListProps {
+  showCustom?: boolean
+  showLichess?: boolean
+  lichessId?: string
+  userName?: string
+}
+
+export const GameList = ({
+  showCustom = true,
+  showLichess = true,
+  lichessId,
+  userName,
+}: GameListProps) => {
   const { user } = useContext(AuthContext)
+
+  // Determine available tabs based on props
+  const availableTabs = ['play', 'hb']
+  if (showCustom) availableTabs.push('custom')
+  if (showLichess) availableTabs.push('lichess')
+
   const [selected, setSelected] = useState<
     'play' | 'hb' | 'custom' | 'lichess'
   >('play')
@@ -57,17 +75,20 @@ export const GameList = () => {
 
   // Update custom analyses when component mounts
   useEffect(() => {
-    setCustomAnalyses(getCustomAnalysesAsWebGames())
+    if (showCustom) {
+      setCustomAnalyses(getCustomAnalysesAsWebGames())
+    }
   }, [])
 
   useEffect(() => {
-    if (user?.lichessId && !fetchedCache.lichess[1]) {
+    const targetUser = lichessId || user?.lichessId
+    if (targetUser && showLichess && !fetchedCache.lichess[1]) {
       setFetchedCache((prev) => ({
         ...prev,
         lichess: { ...prev.lichess, 1: true },
       }))
 
-      getLichessGames(user?.lichessId, (data) => {
+      getLichessGames(targetUser, (data) => {
         const result = data.pgn.match(/\[Result\s+"(.+?)"\]/)[1] || '?'
 
         const game: AnalysisWebGame = {
@@ -80,10 +101,11 @@ export const GameList = () => {
         setGames((x) => [...x, game])
       })
     }
-  }, [user?.lichessId, fetchedCache.lichess])
+  }, [user?.lichessId, lichessId, showLichess, fetchedCache.lichess])
 
   useEffect(() => {
-    if (user?.lichessId && selected !== 'lichess' && selected !== 'custom') {
+    const targetUser = lichessId || user?.lichessId
+    if (targetUser && selected !== 'lichess' && selected !== 'custom') {
       const gameType = selected === 'hb' ? hbSubsection : selected
       const isAlreadyFetched = fetchedCache[gameType]?.[currentPage]
 
@@ -95,7 +117,7 @@ export const GameList = () => {
           [gameType]: { ...prev[gameType], [currentPage]: true },
         }))
 
-        getAnalysisGameList(gameType, currentPage)
+        getAnalysisGameList(gameType, currentPage, lichessId)
           .then((data) => {
             const parse = (
               game: {
@@ -109,12 +131,14 @@ export const GameList = () => {
               const raw = game.maia_name.replace('_kdd_', ' ')
               const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
 
+              const playerLabel = userName || 'You'
+
               return {
                 id: game.game_id,
                 label:
                   game.player_color === 'white'
-                    ? `You vs. ${maia}`
-                    : `${maia} vs. You`,
+                    ? `${playerLabel} vs. ${maia}`
+                    : `${maia} vs. ${playerLabel}`,
                 result: game.result,
                 type,
               }
@@ -151,7 +175,15 @@ export const GameList = () => {
           })
       }
     }
-  }, [user?.lichessId, selected, hbSubsection, currentPage, fetchedCache])
+  }, [
+    user?.lichessId,
+    lichessId,
+    userName,
+    selected,
+    hbSubsection,
+    currentPage,
+    fetchedCache,
+  ])
 
   useEffect(() => {
     if (selected === 'hb') {
@@ -162,14 +194,24 @@ export const GameList = () => {
       setCurrentPage(currentPagePerTab[gameType])
     } else if (totalPagesCache[selected]) {
       setTotalPages(totalPagesCache[selected])
-    } else if (selected === 'lichess' || selected === 'custom') {
+    } else if (
+      (selected === 'lichess' && showLichess) ||
+      (selected === 'custom' && showCustom)
+    ) {
       setTotalPages(1)
     }
 
     if (selected !== 'hb') {
       setCurrentPage(currentPagePerTab[selected])
     }
-  }, [selected, hbSubsection, totalPagesCache, currentPagePerTab])
+  }, [
+    selected,
+    hbSubsection,
+    totalPagesCache,
+    currentPagePerTab,
+    showLichess,
+    showCustom,
+  ])
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -198,9 +240,9 @@ export const GameList = () => {
       return playGames
     } else if (selected === 'hb') {
       return hbSubsection === 'hand' ? handGames : brainGames
-    } else if (selected === 'custom') {
+    } else if (selected === 'custom' && showCustom) {
       return customAnalyses
-    } else if (selected === 'lichess') {
+    } else if (selected === 'lichess' && showLichess) {
       return games
     }
     return []
@@ -209,9 +251,19 @@ export const GameList = () => {
   return (
     <div className="flex w-full flex-col overflow-hidden rounded border border-white border-opacity-10 md:w-[600px]">
       <div className="flex flex-row items-center justify-start gap-4 border-b border-white border-opacity-10 bg-background-1 px-2 py-3 md:px-4">
-        <p className="text-xl font-bold md:text-xl">Your Games</p>
+        <p className="text-xl font-bold md:text-xl">
+          {userName ? `${userName}'s Games` : 'Your Games'}
+        </p>
       </div>
-      <div className="grid select-none grid-cols-4 border-b-2 border-white border-opacity-10">
+      <div
+        className={`grid select-none border-b-2 border-white border-opacity-10 ${
+          availableTabs.length === 2
+            ? 'grid-cols-2'
+            : availableTabs.length === 3
+              ? 'grid-cols-3'
+              : 'grid-cols-4'
+        }`}
+      >
         <Header
           label="Play"
           name="play"
@@ -224,18 +276,22 @@ export const GameList = () => {
           selected={selected}
           setSelected={handleTabChange}
         />
-        <Header
-          label="Custom"
-          name="custom"
-          selected={selected}
-          setSelected={handleTabChange}
-        />
-        <Header
-          label="Lichess"
-          name="lichess"
-          selected={selected}
-          setSelected={handleTabChange}
-        />
+        {showCustom && (
+          <Header
+            label="Custom"
+            name="custom"
+            selected={selected}
+            setSelected={handleTabChange}
+          />
+        )}
+        {showLichess && (
+          <Header
+            label="Lichess"
+            name="lichess"
+            selected={selected}
+            setSelected={handleTabChange}
+          />
+        )}
       </div>
 
       {/* H&B Subsections */}
