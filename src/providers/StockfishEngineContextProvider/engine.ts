@@ -60,6 +60,7 @@ class Engine {
   async *streamEvaluations(
     fen: string,
     legalMoveCount: number,
+    targetDepth = 18,
   ): AsyncGenerator<StockfishEvaluation> {
     if (this.stockfish && this.isReady) {
       if (typeof global.gc === 'function') {
@@ -81,7 +82,7 @@ class Engine {
 
       this.sendMessage('ucinewgame')
       this.sendMessage(`position fen ${fen}`)
-      this.sendMessage('go depth 18')
+      this.sendMessage(`go depth ${targetDepth}`)
 
       while (this.isEvaluating) {
         try {

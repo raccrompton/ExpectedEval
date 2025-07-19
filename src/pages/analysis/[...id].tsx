@@ -34,6 +34,8 @@ import { AnalysisGameList } from 'src/components/Analysis/AnalysisGameList'
 import { DownloadModelModal } from 'src/components/Analysis/DownloadModelModal'
 import { CustomAnalysisModal } from 'src/components/Analysis/CustomAnalysisModal'
 import { ConfigurableScreens } from 'src/components/Analysis/ConfigurableScreens'
+import { AnalysisConfigModal } from 'src/components/Analysis/AnalysisConfigModal'
+import { AnalysisProgressOverlay } from 'src/components/Analysis/AnalysisProgressOverlay'
 import { GameBoard } from 'src/components/Board/GameBoard'
 import { MovesContainer } from 'src/components/Board/MovesContainer'
 import { BoardController } from 'src/components/Board/BoardController'
@@ -336,6 +338,7 @@ const Analysis: React.FC<Props> = ({
     [string, string] | null
   >(null)
   const [showCustomModal, setShowCustomModal] = useState(false)
+  const [showAnalysisConfigModal, setShowAnalysisConfigModal] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   const controller = useAnalysisController(analyzedGame)
@@ -384,6 +387,23 @@ const Analysis: React.FC<Props> = ({
       router.push('/analysis')
     }
   }, [analyzedGame, router])
+
+  const handleAnalyzeEntireGame = useCallback(() => {
+    setShowAnalysisConfigModal(true)
+  }, [])
+
+  const handleAnalysisConfigConfirm = useCallback(
+    (depth: number) => {
+      // Reset any previous analysis state before starting new one
+      controller.gameAnalysis.resetProgress()
+      controller.gameAnalysis.startAnalysis(depth)
+    },
+    [controller.gameAnalysis],
+  )
+
+  const handleAnalysisCancel = useCallback(() => {
+    controller.gameAnalysis.cancelAnalysis()
+  }, [controller.gameAnalysis])
 
   const hover = (move?: string) => {
     if (move) {
@@ -724,6 +744,8 @@ const Analysis: React.FC<Props> = ({
             game={analyzedGame}
             currentNode={controller.currentNode as GameNode}
             onDeleteCustomGame={handleDeleteCustomGame}
+            onAnalyzeEntireGame={handleAnalyzeEntireGame}
+            isAnalysisInProgress={controller.gameAnalysis.progress.isAnalyzing}
           />
         </motion.div>
         <motion.div
@@ -1015,6 +1037,10 @@ const Analysis: React.FC<Props> = ({
               MAIA_MODELS={MAIA_MODELS}
               game={analyzedGame}
               onDeleteCustomGame={handleDeleteCustomGame}
+              onAnalyzeEntireGame={handleAnalyzeEntireGame}
+              isAnalysisInProgress={
+                controller.gameAnalysis.progress.isAnalyzing
+              }
               currentNode={controller.currentNode as GameNode}
             />
           </motion.div>
@@ -1063,6 +1089,24 @@ const Analysis: React.FC<Props> = ({
           <CustomAnalysisModal
             onSubmit={handleCustomAnalysis}
             onClose={() => setShowCustomModal(false)}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showAnalysisConfigModal && (
+          <AnalysisConfigModal
+            isOpen={showAnalysisConfigModal}
+            onClose={() => setShowAnalysisConfigModal(false)}
+            onConfirm={handleAnalysisConfigConfirm}
+            initialDepth={controller.gameAnalysis.config.targetDepth}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {controller.gameAnalysis.progress.isAnalyzing && (
+          <AnalysisProgressOverlay
+            progress={controller.gameAnalysis.progress}
+            onCancel={handleAnalysisCancel}
           />
         )}
       </AnimatePresence>
