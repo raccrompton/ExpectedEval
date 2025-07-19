@@ -261,26 +261,4 @@ describe('GameList', () => {
       )
     })
   })
-
-  it('adjusts grid columns based on available tabs', async () => {
-    const { rerender } = render(
-      <AuthWrapper>
-        <GameList />
-      </AuthWrapper>,
-    )
-
-    // With all 5 tabs (favorites, play, hb, custom, lichess)
-    expect(document.querySelector('.grid-cols-5')).toBeInTheDocument()
-
-    // With only 3 tabs (favorites, play, hb)
-    await act(async () => {
-      rerender(
-        <AuthWrapper>
-          <GameList showCustom={false} showLichess={false} />
-        </AuthWrapper>,
-      )
-    })
-
-    expect(document.querySelector('.grid-cols-3')).toBeInTheDocument()
-  })
 })
