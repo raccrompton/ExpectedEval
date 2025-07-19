@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { GameAnalysisProgress } from 'src/hooks/useAnalysisController/useGameAnalysis'
+import { GameAnalysisProgress } from 'src/hooks/useAnalysisController/useAnalysisController'
 
 interface Props {
   progress: GameAnalysisProgress
