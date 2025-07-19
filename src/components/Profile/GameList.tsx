@@ -42,10 +42,7 @@ export const GameList = ({
 
   const [selected, setSelected] = useState<
     'play' | 'hb' | 'custom' | 'lichess' | 'favorites'
-  >(() => {
-    // Default to favorites if it's available, otherwise play
-    return 'favorites'
-  })
+  >(showCustom ? 'favorites' : 'play')
   const [hbSubsection, setHbSubsection] = useState<'hand' | 'brain'>('hand')
   const [games, setGames] = useState<AnalysisWebGame[]>([])
 
@@ -317,51 +314,55 @@ export const GameList = ({
           {userName ? `${userName}'s Games` : 'Your Games'}
         </p>
       </div>
-      <div
-        className={`grid select-none border-b-2 border-white border-opacity-10 ${
-          availableTabs.length === 3
-            ? 'grid-cols-3'
-            : availableTabs.length === 4
-              ? 'grid-cols-4'
-              : availableTabs.length === 5
-                ? 'grid-cols-5'
-                : 'grid-cols-6'
-        }`}
-      >
-        <Header
-          label="★"
-          name="favorites"
-          selected={selected}
-          setSelected={handleTabChange}
-        />
-        <Header
-          label="Play"
-          name="play"
-          selected={selected}
-          setSelected={handleTabChange}
-        />
-        <Header
-          label="H&B"
-          name="hb"
-          selected={selected}
-          setSelected={handleTabChange}
-        />
+      <div className="flex select-none items-center border-b-2 border-white border-opacity-10">
         {showCustom && (
           <Header
-            label="Custom"
-            name="custom"
+            label="★"
+            name="favorites"
             selected={selected}
             setSelected={handleTabChange}
           />
         )}
-        {showLichess && (
+        <div
+          className={`grid flex-1 ${
+            availableTabs.length === 3
+              ? 'grid-cols-2'
+              : availableTabs.length === 4
+                ? 'grid-cols-3'
+                : availableTabs.length === 5
+                  ? 'grid-cols-4'
+                  : 'grid-cols-5'
+          }`}
+        >
           <Header
-            label="Lichess"
-            name="lichess"
+            label="Play"
+            name="play"
             selected={selected}
             setSelected={handleTabChange}
           />
-        )}
+          <Header
+            label="H&B"
+            name="hb"
+            selected={selected}
+            setSelected={handleTabChange}
+          />
+          {showCustom && (
+            <Header
+              label="Custom"
+              name="custom"
+              selected={selected}
+              setSelected={handleTabChange}
+            />
+          )}
+          {showLichess && (
+            <Header
+              label="Lichess"
+              name="lichess"
+              selected={selected}
+              setSelected={handleTabChange}
+            />
+          )}
+        </div>
       </div>
 
       {/* H&B Subsections */}
@@ -430,58 +431,60 @@ export const GameList = ({
                     className="flex flex-1 cursor-pointer items-center justify-between overflow-hidden py-1"
                   >
                     <div className="flex items-center gap-2 overflow-hidden">
+                      <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-primary">
+                        {game.label}
+                      </p>
                       {selected === 'favorites' &&
                         (game.type === 'hand' || game.type === 'brain') && (
-                          <span className="material-symbols-outlined flex-shrink-0 text-xs text-secondary">
+                          <span className="material-symbols-outlined flex-shrink-0 !text-sm text-secondary">
                             {game.type === 'hand'
                               ? 'hand_gesture'
                               : 'neurology'}
                           </span>
                         )}
-                      <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-primary">
-                        {game.label}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {selected === 'favorites' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleFavoriteGame(game)
+                          }}
+                          className="flex items-center justify-center text-secondary transition hover:text-primary"
+                          title="Edit favourite"
+                        >
+                          <span className="material-symbols-outlined !text-xs">
+                            edit
+                          </span>
+                        </button>
+                      )}
+                      {selected !== 'favorites' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleFavoriteGame(game)
+                          }}
+                          className={`flex items-center justify-center transition ${
+                            isFavorited
+                              ? 'text-yellow-400 hover:text-yellow-300'
+                              : 'text-secondary hover:text-primary'
+                          }`}
+                          title={
+                            isFavorited ? 'Edit favourite' : 'Add to favourites'
+                          }
+                        >
+                          <span
+                            className={`material-symbols-outlined !text-xs ${isFavorited ? 'material-symbols-filled' : ''}`}
+                          >
+                            star
+                          </span>
+                        </button>
+                      )}
+                      <p className="whitespace-nowrap text-sm text-secondary">
+                        {game.result.replace('1/2', '½').replace('1/2', '½')}
                       </p>
                     </div>
-                    <p className="whitespace-nowrap text-sm text-secondary">
-                      {game.result}
-                    </p>
                   </a>
-                  {selected !== 'favorites' && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleFavoriteGame(game)
-                      }}
-                      className={`mr-2 flex items-center justify-center px-2 py-1 transition ${
-                        isFavorited
-                          ? 'text-yellow-400 hover:text-yellow-300'
-                          : 'text-secondary hover:text-primary'
-                      }`}
-                      title={
-                        isFavorited ? 'Edit favourite' : 'Add to favourites'
-                      }
-                    >
-                      <span
-                        className={`material-symbols-outlined !text-xs ${isFavorited ? 'material-symbols-filled' : ''}`}
-                      >
-                        star
-                      </span>
-                    </button>
-                  )}
-                  {selected === 'favorites' && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleFavoriteGame(game)
-                      }}
-                      className="mr-2 flex items-center justify-center px-2 py-1 text-secondary transition hover:text-primary"
-                      title="Edit favourite"
-                    >
-                      <span className="material-symbols-outlined text-sm">
-                        edit
-                      </span>
-                    </button>
-                  )}
                 </div>
               )
             })}
@@ -556,27 +559,20 @@ function Header({
   return (
     <button
       onClick={() => setSelected(name)}
-      className={`relative flex items-center justify-center py-0.5 ${
+      className={`relative flex items-center justify-center py-1 transition duration-200 ${
         selected === name
           ? 'bg-human-4/30'
           : 'bg-background-1/80 hover:bg-background-2'
-      } transition duration-200`}
+      } ${name === 'favorites' ? 'px-3' : ''}`}
     >
       <div className="flex items-center justify-start gap-1">
         <p
-          className={`text-sm transition duration-200 ${
+          className={`text-xs transition duration-200 ${
             selected === name ? 'text-human-2' : 'text-primary'
           }`}
         >
           {label}
         </p>
-        <i
-          className={`material-symbols-outlined text-base transition duration-200 ${
-            selected === name ? 'text-human-2/80' : 'text-primary/80'
-          }`}
-        >
-          keyboard_arrow_down
-        </i>
       </div>
       {selected === name && (
         <motion.div
