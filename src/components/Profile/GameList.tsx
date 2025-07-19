@@ -38,9 +38,15 @@ export const GameList = ({
   >('play')
   const [hbSubsection, setHbSubsection] = useState<'hand' | 'brain'>('hand')
   const [games, setGames] = useState<AnalysisWebGame[]>([])
-  const [playGames, setPlayGames] = useState<AnalysisWebGame[]>([])
-  const [handGames, setHandGames] = useState<AnalysisWebGame[]>([])
-  const [brainGames, setBrainGames] = useState<AnalysisWebGame[]>([])
+
+  const [gamesByPage, setGamesByPage] = useState<{
+    [gameType: string]: { [page: number]: AnalysisWebGame[] }
+  }>({
+    play: {},
+    hand: {},
+    brain: {},
+  })
+
   const [customAnalyses, setCustomAnalyses] = useState(() => {
     if (typeof window !== 'undefined') {
       return getCustomAnalysesAsWebGames()
@@ -155,13 +161,14 @@ export const GameList = ({
               [gameType]: calculatedTotalPages,
             }))
 
-            if (gameType === 'play') {
-              setPlayGames(parsedGames)
-            } else if (gameType === 'hand') {
-              setHandGames(parsedGames)
-            } else if (gameType === 'brain') {
-              setBrainGames(parsedGames)
-            }
+            // Store games by page instead of replacing
+            setGamesByPage((prev) => ({
+              ...prev,
+              [gameType]: {
+                ...prev[gameType],
+                [currentPage]: parsedGames,
+              },
+            }))
 
             setLoading(false)
           })
@@ -190,19 +197,23 @@ export const GameList = ({
       const gameType = hbSubsection
       if (totalPagesCache[gameType]) {
         setTotalPages(totalPagesCache[gameType])
+      } else {
+        setTotalPages(1) // Default to 1 page until data is loaded
       }
-      setCurrentPage(currentPagePerTab[gameType])
+      setCurrentPage(currentPagePerTab[gameType] || 1)
     } else if (totalPagesCache[selected]) {
       setTotalPages(totalPagesCache[selected])
+      setCurrentPage(currentPagePerTab[selected] || 1)
     } else if (
       (selected === 'lichess' && showLichess) ||
       (selected === 'custom' && showCustom)
     ) {
       setTotalPages(1)
-    }
-
-    if (selected !== 'hb') {
-      setCurrentPage(currentPagePerTab[selected])
+      setCurrentPage(1)
+    } else {
+      // For other sections (like 'play'), default to page 1 until data loads
+      setTotalPages(1)
+      setCurrentPage(currentPagePerTab[selected] || 1)
     }
   }, [
     selected,
@@ -237,9 +248,10 @@ export const GameList = ({
 
   const getCurrentGames = () => {
     if (selected === 'play') {
-      return playGames
+      return gamesByPage.play[currentPage] || []
     } else if (selected === 'hb') {
-      return hbSubsection === 'hand' ? handGames : brainGames
+      const gameType = hbSubsection
+      return gamesByPage[gameType]?.[currentPage] || []
     } else if (selected === 'custom' && showCustom) {
       return customAnalyses
     } else if (selected === 'lichess' && showLichess) {
@@ -299,32 +311,32 @@ export const GameList = ({
         <div className="flex border-b border-white border-opacity-10">
           <button
             onClick={() => setHbSubsection('hand')}
-            className={`flex-1 px-3 py-1.5 text-sm ${
+            className={`flex-1 px-3 text-sm ${
               hbSubsection === 'hand'
                 ? 'bg-background-2 text-primary'
                 : 'bg-background-1/50 text-secondary hover:bg-background-2'
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined text-xs">
+            <div className="flex items-center justify-center gap-1">
+              <span className="material-symbols-outlined !text-lg">
                 hand_gesture
               </span>
-              <span className="text-xs">Hand ({handGames.length})</span>
+              <span className="text-xs">Hand</span>
             </div>
           </button>
           <button
             onClick={() => setHbSubsection('brain')}
-            className={`flex-1 px-3 py-1.5 text-sm ${
+            className={`flex-1 px-3 text-sm ${
               hbSubsection === 'brain'
                 ? 'bg-background-2 text-primary'
                 : 'bg-background-1/50 text-secondary hover:bg-background-2'
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined text-xs">
-                psychology
+            <div className="flex items-center justify-center gap-1">
+              <span className="material-symbols-outlined !text-lg">
+                neurology
               </span>
-              <span className="text-xs">Brain ({brainGames.length})</span>
+              <span className="text-xs">Brain</span>
             </div>
           </button>
         </div>
@@ -350,7 +362,7 @@ export const GameList = ({
                 <div className="flex h-full w-10 items-center justify-center bg-background-2 py-1 group-hover:bg-white/5">
                   <p className="text-sm text-secondary">
                     {selected === 'play' || selected === 'hb'
-                      ? (currentPage - 1) * 100 + index + 1
+                      ? (currentPage - 1) * 25 + index + 1
                       : index + 1}
                   </p>
                 </div>
