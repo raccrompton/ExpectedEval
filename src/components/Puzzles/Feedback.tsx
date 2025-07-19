@@ -71,13 +71,13 @@ export const Feedback: React.FC<Props> = ({
         {(status === 'forfeit' || status === 'correct') && (
           <div className="mt-4 flex items-start gap-2">
             <div className="flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-xs text-human-3">
+              <span className="material-symbols-outlined !text-xs text-human-3">
                 arrow_outward
               </span>
               <span className="text-xs text-human-3">Most Human Move</span>
             </div>
             <div className="flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-xs text-engine-3">
+              <span className="material-symbols-outlined !text-xs text-engine-3">
                 arrow_outward
               </span>
               <span className="text-xs text-engine-3">Best Engine Move</span>
