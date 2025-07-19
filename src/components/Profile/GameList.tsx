@@ -5,6 +5,13 @@ import { AuthContext } from 'src/contexts'
 import { AnalysisWebGame } from 'src/types'
 import { getLichessGames, getAnalysisGameList } from 'src/api'
 import { getCustomAnalysesAsWebGames } from 'src/lib/customAnalysis'
+import { FavoriteModal } from 'src/components/Common/FavoriteModal'
+import {
+  getFavoritesAsWebGames,
+  addFavoriteGame,
+  removeFavoriteGame,
+  isFavoriteGame,
+} from 'src/lib/favorites'
 
 interface GameData {
   game_id: string
@@ -29,13 +36,16 @@ export const GameList = ({
   const { user } = useContext(AuthContext)
 
   // Determine available tabs based on props
-  const availableTabs = ['play', 'hb']
+  const availableTabs = ['favorites', 'play', 'hb']
   if (showCustom) availableTabs.push('custom')
   if (showLichess) availableTabs.push('lichess')
 
   const [selected, setSelected] = useState<
-    'play' | 'hb' | 'custom' | 'lichess'
-  >('play')
+    'play' | 'hb' | 'custom' | 'lichess' | 'favorites'
+  >(() => {
+    // Default to favorites if it's available, otherwise play
+    return 'favorites'
+  })
   const [hbSubsection, setHbSubsection] = useState<'hand' | 'brain'>('hand')
   const [games, setGames] = useState<AnalysisWebGame[]>([])
 
@@ -53,9 +63,21 @@ export const GameList = ({
     }
     return []
   })
+  const [favoriteGames, setFavoriteGames] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return getFavoritesAsWebGames()
+    }
+    return []
+  })
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
+
+  // Modal state for favoriting
+  const [favoriteModal, setFavoriteModal] = useState<{
+    isOpen: boolean
+    game: AnalysisWebGame | null
+  }>({ isOpen: false, game: null })
 
   const [fetchedCache, setFetchedCache] = useState<{
     [key: string]: { [page: number]: boolean }
@@ -79,11 +101,12 @@ export const GameList = ({
     lichess: 1,
   })
 
-  // Update custom analyses when component mounts
+  // Update custom analyses and favorites when component mounts
   useEffect(() => {
     if (showCustom) {
       setCustomAnalyses(getCustomAnalysesAsWebGames())
     }
+    setFavoriteGames(getFavoritesAsWebGames())
   }, [])
 
   useEffect(() => {
@@ -111,7 +134,12 @@ export const GameList = ({
 
   useEffect(() => {
     const targetUser = lichessId || user?.lichessId
-    if (targetUser && selected !== 'lichess' && selected !== 'custom') {
+    if (
+      targetUser &&
+      selected !== 'lichess' &&
+      selected !== 'custom' &&
+      selected !== 'favorites'
+    ) {
       const gameType = selected === 'hb' ? hbSubsection : selected
       const isAlreadyFetched = fetchedCache[gameType]?.[currentPage]
 
@@ -242,8 +270,28 @@ export const GameList = ({
     }
   }
 
-  const handleTabChange = (newTab: 'play' | 'hb' | 'custom' | 'lichess') => {
+  const handleTabChange = (
+    newTab: 'play' | 'hb' | 'custom' | 'lichess' | 'favorites',
+  ) => {
     setSelected(newTab)
+  }
+
+  const handleFavoriteGame = (game: AnalysisWebGame) => {
+    setFavoriteModal({ isOpen: true, game })
+  }
+
+  const handleSaveFavorite = (customName: string) => {
+    if (favoriteModal.game) {
+      addFavoriteGame(favoriteModal.game, customName)
+      setFavoriteGames(getFavoritesAsWebGames())
+    }
+  }
+
+  const handleRemoveFavorite = () => {
+    if (favoriteModal.game) {
+      removeFavoriteGame(favoriteModal.game.id)
+      setFavoriteGames(getFavoritesAsWebGames())
+    }
   }
 
   const getCurrentGames = () => {
@@ -256,6 +304,8 @@ export const GameList = ({
       return customAnalyses
     } else if (selected === 'lichess' && showLichess) {
       return games
+    } else if (selected === 'favorites') {
+      return favoriteGames
     }
     return []
   }
@@ -269,13 +319,21 @@ export const GameList = ({
       </div>
       <div
         className={`grid select-none border-b-2 border-white border-opacity-10 ${
-          availableTabs.length === 2
-            ? 'grid-cols-2'
-            : availableTabs.length === 3
-              ? 'grid-cols-3'
-              : 'grid-cols-4'
+          availableTabs.length === 3
+            ? 'grid-cols-3'
+            : availableTabs.length === 4
+              ? 'grid-cols-4'
+              : availableTabs.length === 5
+                ? 'grid-cols-5'
+                : 'grid-cols-6'
         }`}
       >
+        <Header
+          label="★"
+          name="favorites"
+          selected={selected}
+          setSelected={handleTabChange}
+        />
         <Header
           label="Play"
           name="play"
@@ -349,35 +407,84 @@ export const GameList = ({
           </div>
         ) : (
           <>
-            {getCurrentGames().map((game, index) => (
-              <a
-                key={index}
-                href={`/analysis/${game.id}/${game.type}`}
-                className={`group flex w-full cursor-pointer items-center gap-2 pr-2 ${
-                  index % 2 === 0
-                    ? 'bg-background-1/30 hover:bg-background-2'
-                    : 'bg-background-1/10 hover:bg-background-2'
-                }`}
-              >
-                <div className="flex h-full w-10 items-center justify-center bg-background-2 py-1 group-hover:bg-white/5">
-                  <p className="text-sm text-secondary">
-                    {selected === 'play' || selected === 'hb'
-                      ? (currentPage - 1) * 25 + index + 1
-                      : index + 1}
-                  </p>
-                </div>
-                <div className="flex flex-1 items-center justify-between overflow-hidden py-1">
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-primary">
-                      {game.label}
+            {getCurrentGames().map((game, index) => {
+              const isFavorited = isFavoriteGame(game.id)
+              return (
+                <div
+                  key={index}
+                  className={`group flex w-full items-center gap-2 ${
+                    index % 2 === 0
+                      ? 'bg-background-1/30 hover:bg-background-2'
+                      : 'bg-background-1/10 hover:bg-background-2'
+                  }`}
+                >
+                  <div className="flex h-full w-10 items-center justify-center bg-background-2 py-1 group-hover:bg-white/5">
+                    <p className="text-sm text-secondary">
+                      {selected === 'play' || selected === 'hb'
+                        ? (currentPage - 1) * 25 + index + 1
+                        : index + 1}
                     </p>
                   </div>
-                  <p className="whitespace-nowrap text-sm text-secondary">
-                    {game.result}
-                  </p>
+                  <a
+                    href={`/analysis/${game.id}/${game.type}`}
+                    className="flex flex-1 cursor-pointer items-center justify-between overflow-hidden py-1"
+                  >
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      {selected === 'favorites' &&
+                        (game.type === 'hand' || game.type === 'brain') && (
+                          <span className="material-symbols-outlined flex-shrink-0 text-xs text-secondary">
+                            {game.type === 'hand'
+                              ? 'hand_gesture'
+                              : 'neurology'}
+                          </span>
+                        )}
+                      <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-primary">
+                        {game.label}
+                      </p>
+                    </div>
+                    <p className="whitespace-nowrap text-sm text-secondary">
+                      {game.result}
+                    </p>
+                  </a>
+                  {selected !== 'favorites' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleFavoriteGame(game)
+                      }}
+                      className={`mr-2 flex items-center justify-center px-2 py-1 transition ${
+                        isFavorited
+                          ? 'text-yellow-400 hover:text-yellow-300'
+                          : 'text-secondary hover:text-primary'
+                      }`}
+                      title={
+                        isFavorited ? 'Edit favourite' : 'Add to favourites'
+                      }
+                    >
+                      <span
+                        className={`material-symbols-outlined !text-xs ${isFavorited ? 'material-symbols-filled' : ''}`}
+                      >
+                        star
+                      </span>
+                    </button>
+                  )}
+                  {selected === 'favorites' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleFavoriteGame(game)
+                      }}
+                      className="mr-2 flex items-center justify-center px-2 py-1 text-secondary transition hover:text-primary"
+                      title="Edit favourite"
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        edit
+                      </span>
+                    </button>
+                  )}
                 </div>
-              </a>
-            ))}
+              )
+            })}
           </>
         )}
       </div>
@@ -418,6 +525,17 @@ export const GameList = ({
           </button>
         </div>
       )}
+      <FavoriteModal
+        isOpen={favoriteModal.isOpen}
+        currentName={favoriteModal.game?.label || ''}
+        onClose={() => setFavoriteModal({ isOpen: false, game: null })}
+        onSave={handleSaveFavorite}
+        onRemove={
+          favoriteModal.game && isFavoriteGame(favoriteModal.game.id)
+            ? handleRemoveFavorite
+            : undefined
+        }
+      />
     </div>
   )
 }
@@ -429,9 +547,11 @@ function Header({
   setSelected,
 }: {
   label: string
-  name: 'play' | 'hb' | 'custom' | 'lichess'
-  selected: 'play' | 'hb' | 'custom' | 'lichess'
-  setSelected: (name: 'play' | 'hb' | 'custom' | 'lichess') => void
+  name: 'play' | 'hb' | 'custom' | 'lichess' | 'favorites'
+  selected: 'play' | 'hb' | 'custom' | 'lichess' | 'favorites'
+  setSelected: (
+    name: 'play' | 'hb' | 'custom' | 'lichess' | 'favorites',
+  ) => void
 }) {
   return (
     <button
