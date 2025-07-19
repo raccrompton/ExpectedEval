@@ -35,9 +35,9 @@ describe('Analyze Entire Game Components', () => {
     it('renders depth options', () => {
       render(<AnalysisConfigModal {...defaultProps} />)
 
-      expect(screen.getByText('Depth 12 - Fast')).toBeInTheDocument()
-      expect(screen.getByText('Depth 15 - Balanced')).toBeInTheDocument()
-      expect(screen.getByText('Depth 18 - Deep')).toBeInTheDocument()
+      expect(screen.getByText('Fast (d12)')).toBeInTheDocument()
+      expect(screen.getByText('Balanced (d15)')).toBeInTheDocument()
+      expect(screen.getByText('Deep (d18)')).toBeInTheDocument()
     })
 
     it('renders start analysis button', () => {
