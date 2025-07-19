@@ -168,8 +168,8 @@ const Profile: React.FC<Props> = (props: Props) => {
         variants={itemVariants}
         className="flex w-full flex-col items-start gap-6 md:flex-row"
       >
-        <GameList 
-          lichessId={props.name} 
+        <GameList
+          lichessId={props.name}
           userName={props.name}
           showCustom={false}
           showLichess={false}
@@ -201,8 +201,8 @@ const Profile: React.FC<Props> = (props: Props) => {
         variants={itemVariants}
         className="flex w-full flex-col gap-6"
       >
-        <GameList 
-          lichessId={props.name} 
+        <GameList
+          lichessId={props.name}
           userName={props.name}
           showCustom={false}
           showLichess={false}

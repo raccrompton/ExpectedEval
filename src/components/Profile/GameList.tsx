@@ -20,19 +20,19 @@ interface GameListProps {
   userName?: string
 }
 
-export const GameList = ({ 
-  showCustom = true, 
-  showLichess = true, 
-  lichessId, 
-  userName 
+export const GameList = ({
+  showCustom = true,
+  showLichess = true,
+  lichessId,
+  userName,
 }: GameListProps) => {
   const { user } = useContext(AuthContext)
-  
+
   // Determine available tabs based on props
   const availableTabs = ['play', 'hb']
   if (showCustom) availableTabs.push('custom')
   if (showLichess) availableTabs.push('lichess')
-  
+
   const [selected, setSelected] = useState<
     'play' | 'hb' | 'custom' | 'lichess'
   >('play')
@@ -130,7 +130,7 @@ export const GameList = ({
             ) => {
               const raw = game.maia_name.replace('_kdd_', ' ')
               const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
-              
+
               const playerLabel = userName || 'You'
 
               return {
@@ -175,7 +175,15 @@ export const GameList = ({
           })
       }
     }
-  }, [user?.lichessId, lichessId, userName, selected, hbSubsection, currentPage, fetchedCache])
+  }, [
+    user?.lichessId,
+    lichessId,
+    userName,
+    selected,
+    hbSubsection,
+    currentPage,
+    fetchedCache,
+  ])
 
   useEffect(() => {
     if (selected === 'hb') {
@@ -186,14 +194,24 @@ export const GameList = ({
       setCurrentPage(currentPagePerTab[gameType])
     } else if (totalPagesCache[selected]) {
       setTotalPages(totalPagesCache[selected])
-    } else if ((selected === 'lichess' && showLichess) || (selected === 'custom' && showCustom)) {
+    } else if (
+      (selected === 'lichess' && showLichess) ||
+      (selected === 'custom' && showCustom)
+    ) {
       setTotalPages(1)
     }
 
     if (selected !== 'hb') {
       setCurrentPage(currentPagePerTab[selected])
     }
-  }, [selected, hbSubsection, totalPagesCache, currentPagePerTab, showLichess, showCustom])
+  }, [
+    selected,
+    hbSubsection,
+    totalPagesCache,
+    currentPagePerTab,
+    showLichess,
+    showCustom,
+  ])
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -237,10 +255,15 @@ export const GameList = ({
           {userName ? `${userName}'s Games` : 'Your Games'}
         </p>
       </div>
-      <div className={`grid select-none border-b-2 border-white border-opacity-10 ${
-        availableTabs.length === 2 ? 'grid-cols-2' : 
-        availableTabs.length === 3 ? 'grid-cols-3' : 'grid-cols-4'
-      }`}>
+      <div
+        className={`grid select-none border-b-2 border-white border-opacity-10 ${
+          availableTabs.length === 2
+            ? 'grid-cols-2'
+            : availableTabs.length === 3
+              ? 'grid-cols-3'
+              : 'grid-cols-4'
+        }`}
+      >
         <Header
           label="Play"
           name="play"
