@@ -22,6 +22,7 @@ export const useGameAnalysis = (
   gameTree: GameTree | null,
   currentMaiaModel: string,
   setAnalysisState: React.Dispatch<React.SetStateAction<number>>,
+  setCurrentNode?: (node: GameNode) => void,
 ) => {
   const maia = useContext(MaiaEngineContext)
   const stockfish = useContext(StockfishEngineContext)
@@ -124,17 +125,27 @@ export const useGameAnalysis = (
       }
 
       // Analyze with Stockfish if not already at target depth
+      const shouldAnalyze =
+        !node.analysis.stockfish ||
+        node.analysis.stockfish.depth < config.targetDepth
+      console.log(
+        `Node analysis check - hasStockfish: ${!!node.analysis.stockfish}, currentDepth: ${node.analysis.stockfish?.depth || 'none'}, targetDepth: ${config.targetDepth}, shouldAnalyze: ${shouldAnalyze}`,
+      )
+
       if (
         !analysisController.current.cancelled &&
         stockfish.isReady() &&
-        (!node.analysis.stockfish ||
-          node.analysis.stockfish.depth < config.targetDepth)
+        shouldAnalyze
       ) {
         try {
           const chess = new Chess(node.fen)
+          console.log(
+            `Starting Stockfish analysis for node with target depth: ${config.targetDepth}`,
+          )
           const evaluationStream = stockfish.streamEvaluations(
             chess.fen(),
             chess.moves().length,
+            config.targetDepth,
           )
 
           if (evaluationStream) {
@@ -149,8 +160,15 @@ export const useGameAnalysis = (
               node.addStockfishAnalysis(evaluation, currentMaiaModel)
               setAnalysisState((state) => state + 1)
 
+              console.log(
+                `Received evaluation at depth ${evaluation.depth}, target: ${config.targetDepth}`,
+              )
+
               // Stop when we reach target depth
               if (evaluation.depth >= config.targetDepth) {
+                console.log(
+                  `Reached target depth ${config.targetDepth}, stopping analysis`,
+                )
                 break
               }
             }
@@ -218,6 +236,11 @@ export const useGameAnalysis = (
       const node = mainLine[i]
       analysisController.current.currentNode = node
 
+      // Update the UI to show the current node being analyzed (live update)
+      if (setCurrentNode) {
+        setCurrentNode(node)
+      }
+
       const moveDisplay = node.san || node.move || `Position ${i + 1}`
 
       setProgress((prev) => ({
@@ -238,7 +261,14 @@ export const useGameAnalysis = (
     }))
 
     analysisController.current.currentNode = null
-  }, [gameTree, progress.isAnalyzing, stockfish, maia.status, analyzeNode])
+  }, [
+    gameTree,
+    progress.isAnalyzing,
+    stockfish,
+    maia.status,
+    analyzeNode,
+    setCurrentNode,
+  ])
 
   const cancelAnalysis = useCallback(() => {
     analysisController.current.cancelled = true

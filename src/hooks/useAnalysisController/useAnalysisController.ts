@@ -53,6 +53,7 @@ export const useAnalysisController = (
     game.tree,
     currentMaiaModel,
     setAnalysisState,
+    controller.setCurrentNode,
   )
 
   const availableMoves = useMemo(() => {
