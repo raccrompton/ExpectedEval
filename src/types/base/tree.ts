@@ -302,22 +302,6 @@ export class GameNode {
           !blunder &&
           absoluteWinrateLoss >=
             MOVE_CLASSIFICATION_THRESHOLDS.INACCURACY_THRESHOLD
-
-        // Excellent: Less than 2% winrate loss AND less than 10% Maia probability
-        if (
-          absoluteWinrateLoss <
-          MOVE_CLASSIFICATION_THRESHOLDS.EXCELLENT_WINRATE_THRESHOLD
-        ) {
-          if (maiaEval && activeModel && maiaEval[activeModel]) {
-            const policy = maiaEval[activeModel].policy
-            if (policy && move in policy) {
-              const probability = policy[move]
-              excellent =
-                probability <=
-                MOVE_CLASSIFICATION_THRESHOLDS.MAIA_UNLIKELY_THRESHOLD
-            }
-          }
-        }
       }
     } else {
       // Fallback to centipawn-based classification if winrate not available
@@ -327,12 +311,73 @@ export class GameNode {
       }
     }
 
+    // Excellent move criteria: Less than 10% Maia probability AND
+    // at least 10% higher winrate than weighted average
+    if (
+      maiaEval &&
+      activeModel &&
+      maiaEval[activeModel] &&
+      stockfishEval.winrate_vec
+    ) {
+      const policy = maiaEval[activeModel].policy
+      if (policy && move in policy) {
+        const probability = policy[move]
+
+        // Check Maia probability threshold
+        const lowMaiaProbability =
+          probability <= MOVE_CLASSIFICATION_THRESHOLDS.MAIA_UNLIKELY_THRESHOLD
+
+        if (lowMaiaProbability) {
+          // Calculate weighted average winrate using Maia probabilities as weights
+          const weightedAverageWinrate = this.calculateWeightedAverageWinrate(
+            stockfishEval.winrate_vec,
+            policy,
+          )
+
+          const currentMoveWinrate = stockfishEval.winrate_vec[move]
+          if (
+            currentMoveWinrate !== undefined &&
+            weightedAverageWinrate !== null
+          ) {
+            // Check if current move is at least 10% higher than weighted average
+            excellent =
+              currentMoveWinrate >=
+              weightedAverageWinrate +
+                MOVE_CLASSIFICATION_THRESHOLDS.EXCELLENT_WINRATE_ADVANTAGE_THRESHOLD
+          }
+        }
+      }
+    }
+
     return {
       blunder,
       inaccuracy,
       excellent,
       bestMove,
     }
+  }
+
+  // Helper method to calculate weighted average winrate
+  private calculateWeightedAverageWinrate(
+    winrateVec: { [move: string]: number },
+    maiaPolicy: { [move: string]: number },
+  ): number | null {
+    let totalWeight = 0
+    let weightedSum = 0
+
+    // Calculate weighted sum using Maia probabilities as weights
+    for (const move in maiaPolicy) {
+      const weight = maiaPolicy[move]
+      const winrate = winrateVec[move]
+
+      if (weight !== undefined && winrate !== undefined) {
+        weightedSum += weight * winrate
+        totalWeight += weight
+      }
+    }
+
+    // Return weighted average, or null if no valid data
+    return totalWeight > 0 ? weightedSum / totalWeight : null
   }
 
   private classifyMoveByWinrate(
