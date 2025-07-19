@@ -1161,7 +1161,8 @@ export const DrillPerformanceModal: React.FC<Props> = ({
     return moveAnalyses.filter((move) => move.isPlayerMove).length
   }, [moveAnalyses])
 
-  // Filter evaluation chart to match the filtered moves
+  // Filter evaluation chart to start from the position before the first player move
+  // This provides context by showing the evaluation before the player's first contribution
   const filteredEvaluationChart = useMemo(() => {
     const firstPlayerMoveIndex = moveAnalyses.findIndex(
       (move) => move.isPlayerMove,
