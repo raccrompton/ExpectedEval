@@ -51,6 +51,7 @@ interface AnalysisGameListProps {
     setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
   onCustomAnalysis?: () => void
+  onGameSelected?: () => void // Called when a game is selected (for mobile popup closing)
   refreshTrigger?: number // Used to trigger refresh when custom analysis is added
 }
 
@@ -61,6 +62,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   loadNewUserGames,
   loadNewCustomGame,
   onCustomAnalysis,
+  onGameSelected,
   refreshTrigger,
 }) => {
   const router = useRouter()
@@ -559,6 +561,8 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                             } else {
                               router.push(`/analysis/${game.id}/${game.type}`)
                             }
+                            // Call the callback if provided (for mobile popup closing)
+                            onGameSelected?.()
                           }}
                           className="flex flex-1 cursor-pointer items-center justify-between overflow-hidden py-1"
                         >
