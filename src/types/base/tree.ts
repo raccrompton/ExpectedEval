@@ -339,7 +339,7 @@ export class GameNode {
             currentMoveWinrate !== undefined &&
             weightedAverageWinrate !== null
           ) {
-            // Check if current move is at least 10% higher than weighted average
+            // Check if current move is at least x% higher than weighted average
             excellent =
               currentMoveWinrate >=
               weightedAverageWinrate +
