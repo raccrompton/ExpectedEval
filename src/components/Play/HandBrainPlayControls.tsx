@@ -32,6 +32,8 @@ interface Props {
   resign?: () => void
   offerDraw?: () => void
   playAgain?: () => void
+  simulateMaiaTime?: boolean
+  setSimulateMaiaTime?: (value: boolean) => void
 }
 
 export const HandBrainPlayControls: React.FC<Props> = ({
@@ -45,6 +47,8 @@ export const HandBrainPlayControls: React.FC<Props> = ({
   resign,
   offerDraw,
   playAgain,
+  simulateMaiaTime,
+  setSimulateMaiaTime,
 }: Props) => {
   const status = playerActive
     ? isBrain
@@ -110,20 +114,54 @@ export const HandBrainPlayControls: React.FC<Props> = ({
                 ) : null}
               </div>
             )}
+
+            {/* Maia timing toggle */}
+            {simulateMaiaTime !== undefined && setSimulateMaiaTime && (
+              <div className="w-full">
+                <div className="mb-2 text-center text-xs font-medium text-primary/70">
+                  Maia thinking time
+                </div>
+                <div className="flex w-full overflow-hidden rounded border border-primary/10">
+                  <button
+                    className={`flex-1 px-3 py-1 text-xs font-medium transition-all duration-200 ${
+                      !simulateMaiaTime
+                        ? 'bg-human-3 text-white'
+                        : 'bg-background-1 text-primary hover:bg-background-2'
+                    }`}
+                    onClick={() => setSimulateMaiaTime(false)}
+                  >
+                    Instant
+                  </button>
+                  <button
+                    className={`flex-1 px-3 py-1 text-xs font-medium transition-all duration-200 ${
+                      simulateMaiaTime
+                        ? 'bg-human-3 text-white'
+                        : 'bg-background-1 text-primary hover:bg-background-2'
+                    }`}
+                    onClick={() => setSimulateMaiaTime(true)}
+                  >
+                    Human-like
+                  </button>
+                </div>
+              </div>
+            )}
+
             {offerDraw ? (
               <button
                 onClick={offerDraw}
-                className="mt-4 flex w-full justify-center rounded bg-engine-3 py-2 text-primary transition duration-200 hover:bg-engine-4"
+                className="flex w-full justify-center rounded bg-engine-3 py-2 text-primary transition duration-200 hover:bg-engine-4"
               >
-                Offer draw
+                <p className="font-medium uppercase tracking-wide">
+                  Offer draw
+                </p>
               </button>
             ) : null}
             {resign ? (
               <button
                 onClick={resign}
-                className="mt-4 flex w-full justify-center rounded bg-human-3 py-2 text-primary transition duration-200 hover:bg-human-4"
+                className="flex w-full justify-center rounded bg-human-3 px-4 py-1.5 text-primary transition duration-200 hover:bg-human-4"
               >
-                Resign
+                <p className="text-sm font-medium">Resign</p>
               </button>
             ) : null}
           </div>
