@@ -11,15 +11,12 @@ import { ProfileColumn } from 'src/components'
 import { PlayerStats } from 'src/types'
 
 interface Props {
-  wide?: boolean
   stats: PlayerStats
 }
 
-export const UserProfile = ({ wide, stats }: Props) => {
+export const UserProfile = ({ stats }: Props) => {
   return (
-    <div
-      className={`grid h-full w-full grid-cols-1 gap-3 md:gap-6 ${wide ? 'md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'lg:grid-cols-2 2xl:grid-cols-3'}`}
-    >
+    <div className="grid h-full w-full grid-cols-1 gap-3 md:gap-6 lg:grid-cols-2 2xl:grid-cols-3">
       <ProfileColumn
         icon={<RegularPlayIcon />}
         name="Regular"
