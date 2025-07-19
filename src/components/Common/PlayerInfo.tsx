@@ -27,13 +27,13 @@ export const PlayerInfo: React.FC<PlayerInfoProps> = ({
         {showArrowLegend && (
           <div className="flex flex-col items-start">
             <div className="flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-xxs text-human-3">
+              <span className="material-symbols-outlined !text-xxs text-human-3">
                 arrow_outward
               </span>
               <span className="text-xxs text-human-3">Most Human Move</span>
             </div>
             <div className="flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-xxs text-engine-3">
+              <span className="material-symbols-outlined !text-xxs text-engine-3">
                 arrow_outward
               </span>
               <span className="text-xxs text-engine-3">Best Engine Move</span>

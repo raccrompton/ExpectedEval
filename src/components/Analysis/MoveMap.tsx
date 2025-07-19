@@ -8,7 +8,7 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from 'recharts'
-import { useContext, useState } from 'react'
+import { useContext, useState, useEffect } from 'react'
 import { ColorSanMapping } from 'src/types'
 import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
@@ -64,6 +64,17 @@ export const MoveMap: React.FC<Props> = ({
     x: number
     y: number
   } | null>(null)
+  const [mobileTooltipMove, setMobileTooltipMove] = useState<string | null>(
+    null,
+  )
+
+  // Clear tooltip when position changes (indicated by colorSanMapping change)
+  useEffect(() => {
+    setHoveredMove(null)
+    setHoveredMoveData(null)
+    setMousePosition(null)
+    setMobileTooltipMove(null)
+  }, [colorSanMapping])
 
   // Responsive font sizing based on screen width
   const getAxisLabelFontSize = () => {
@@ -136,36 +147,95 @@ export const MoveMap: React.FC<Props> = ({
     moveData: MoveMapEntry,
     event?: React.MouseEvent,
   ) => {
-    setHoverArrow({
-      orig: move.slice(0, 2) as Key,
-      dest: move.slice(2, 4) as Key,
-      brush: 'green',
-      modifiers: {
-        lineWidth: 10,
-      },
-    })
-    setHoveredMove(move)
-    setHoveredMoveData(moveData)
-
-    // Capture mouse position for tooltip positioning
-    if (event) {
-      // Get position relative to the viewport for better positioning
-      setMousePosition({
-        x: event.clientX,
-        y: event.clientY,
+    if (!isMobile) {
+      setHoverArrow({
+        orig: move.slice(0, 2) as Key,
+        dest: move.slice(2, 4) as Key,
+        brush: 'green',
+        modifiers: {
+          lineWidth: 10,
+        },
       })
+      setHoveredMove(move)
+      setHoveredMoveData(moveData)
+
+      // Capture mouse position for tooltip positioning
+      if (event) {
+        // Get position relative to the viewport for better positioning
+        setMousePosition({
+          x: event.clientX,
+          y: event.clientY,
+        })
+      }
     }
   }
 
   const onMouseLeave = () => {
-    setHoverArrow(null)
-    setHoveredMove(null)
-    setHoveredMoveData(null)
-    setMousePosition(null)
+    if (!isMobile) {
+      setHoverArrow(null)
+      setHoveredMove(null)
+      setHoveredMoveData(null)
+      setMousePosition(null)
+    }
+  }
+
+  const onCellClick = (
+    move: string,
+    moveData: MoveMapEntry,
+    event?: React.MouseEvent,
+  ) => {
+    if (isMobile) {
+      if (mobileTooltipMove === move) {
+        // Second click on same move - make the move
+        makeMove(move)
+        setMobileTooltipMove(null)
+        setHoveredMove(null)
+        setHoveredMoveData(null)
+        setMousePosition(null)
+        setHoverArrow(null)
+      } else {
+        // First click - show tooltip
+        setMobileTooltipMove(move)
+        setHoverArrow({
+          orig: move.slice(0, 2) as Key,
+          dest: move.slice(2, 4) as Key,
+          brush: 'green',
+          modifiers: {
+            lineWidth: 10,
+          },
+        })
+        setHoveredMove(move)
+        setHoveredMoveData(moveData)
+
+        // Capture mouse position for tooltip positioning
+        if (event) {
+          setMousePosition({
+            x: event.clientX,
+            y: event.clientY,
+          })
+        }
+      }
+    } else {
+      // Desktop - make move immediately
+      makeMove(move)
+    }
+  }
+
+  const onTooltipClick = (move: string) => {
+    if (isMobile) {
+      makeMove(move)
+      setMobileTooltipMove(null)
+      setHoveredMove(null)
+      setHoveredMoveData(null)
+      setMousePosition(null)
+      setHoverArrow(null)
+    }
   }
 
   const onContainerMouseLeave = () => {
-    onMouseLeave()
+    if (!isMobile) {
+      onMouseLeave()
+    }
   }
 
   const renderTooltip = () => {
@@ -180,6 +250,7 @@ export const MoveMap: React.FC<Props> = ({
         stockfishWinrate={hoveredMoveData.winrate}
         stockfishCpRelative={hoveredMoveData.relativeCp}
         position={mousePosition}
+        onClickMove={isMobile ? onTooltipClick : undefined}
       />
     )
   }
@@ -304,7 +375,9 @@ export const MoveMap: React.FC<Props> = ({
                       onMouseEnter(entry.move, entry, event)
                     }
                     onMouseLeave={onMouseLeave}
-                    onMouseDown={() => makeMove(entry.move)}
+                    onMouseDown={(event) =>
+                      onCellClick(entry.move, entry, event)
+                    }
                     style={{ cursor: 'pointer' }}
                   />
                 </Scatter>

@@ -91,14 +91,14 @@ describe('PlayerInfo Component', () => {
       // Human move arrow
       expect(arrowIcons[0]).toHaveClass(
         'material-symbols-outlined',
-        'text-xxs',
+        '!text-xxs',
         'text-human-3',
       )
 
       // Engine move arrow
       expect(arrowIcons[1]).toHaveClass(
         'material-symbols-outlined',
-        'text-xxs',
+        '!text-xxs',
         'text-engine-3',
       )
     })

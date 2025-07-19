@@ -175,6 +175,11 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
             colorSanMapping={
               analysisEnabled ? analysisController.colorSanMapping : {}
             }
+            moveEvaluation={
+              analysisEnabled && analysisController.moveEvaluation
+                ? analysisController.moveEvaluation
+                : undefined
+            }
           />
           {!analysisEnabled && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
@@ -362,6 +367,11 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
             colorSanMapping={
               analysisEnabled ? analysisController.colorSanMapping : {}
             }
+            moveEvaluation={
+              analysisEnabled && analysisController.moveEvaluation
+                ? analysisController.moveEvaluation
+                : undefined
+            }
           />
           {!analysisEnabled && (
             <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
@@ -436,6 +446,11 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
                 }
                 colorSanMapping={
                   analysisEnabled ? analysisController.colorSanMapping : {}
+                }
+                moveEvaluation={
+                  analysisEnabled && analysisController.moveEvaluation
+                    ? analysisController.moveEvaluation
+                    : undefined
                 }
                 showContainer={false}
               />
