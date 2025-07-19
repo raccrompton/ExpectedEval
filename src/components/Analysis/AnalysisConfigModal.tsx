@@ -17,13 +17,21 @@ export const AnalysisConfigModal: React.FC<Props> = ({
   const [selectedDepth, setSelectedDepth] = useState(initialDepth)
 
   const depthOptions = [
-    { value: 12, label: 'Depth 12 - Fast', description: 'Quick analysis' },
+    {
+      value: 12,
+      label: 'Fast (d12)',
+      description: 'Quick surface-level analysis',
+    },
     {
       value: 15,
-      label: 'Depth 15 - Balanced',
-      description: 'Good quality & speed',
+      label: 'Balanced (d15)',
+      description: 'Deeper analysis with good speed',
     },
-    { value: 18, label: 'Depth 18 - Deep', description: 'Thorough analysis' },
+    {
+      value: 18,
+      label: 'Deep (d18)',
+      description: 'Thorough analysis with slower speed',
+    },
   ]
 
   const handleConfirm = () => {
@@ -46,7 +54,7 @@ export const AnalysisConfigModal: React.FC<Props> = ({
       }}
     >
       <motion.div
-        className="flex w-full flex-col gap-4 rounded-md border border-background-1 bg-backdrop p-5 md:w-[min(500px,40vw)] md:p-6"
+        className="flex w-full flex-col gap-4 rounded-md border border-white/10 bg-background-1 p-5 md:w-[min(500px,40vw)] md:p-6"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }}
@@ -54,8 +62,8 @@ export const AnalysisConfigModal: React.FC<Props> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-2xl text-human-4">
-            psychology
+          <span className="material-symbols-outlined text-2xl text-human-3">
+            network_intelligence
           </span>
           <h2 className="text-xl font-semibold">Analyze Entire Game</h2>
         </div>
@@ -72,7 +80,7 @@ export const AnalysisConfigModal: React.FC<Props> = ({
                 className={`flex cursor-pointer items-center gap-3 rounded border p-3 transition duration-200 ${
                   selectedDepth === option.value
                     ? 'border-human-4 bg-human-4/10'
-                    : 'border-white/20 hover:border-white/40 hover:bg-white/5'
+                    : 'border-white/10 hover:border-white/20 hover:bg-white/5'
                 }`}
                 htmlFor={`depth-${option.value}`}
                 aria-label={`Select ${option.label}`}
@@ -96,11 +104,15 @@ export const AnalysisConfigModal: React.FC<Props> = ({
             ))}
           </div>
 
-          <div className="mt-2 rounded bg-background-2/60 p-3">
+          <div className="mt-2 flex items-start gap-2 rounded bg-background-2/60 p-3">
+            <span className="material-symbols-outlined !text-base text-secondary">
+              info
+            </span>
             <p className="text-xs text-secondary">
-              <span className="material-symbols-outlined text-sm">info</span>
               Higher depths provide more accurate analysis but take longer to
-              complete. You can cancel the analysis at any time.
+              complete. You can cancel the analysis at any time. Currently,
+              analysis only persists until you close the tab, but we are working
+              on a persistent analysis feature!
             </p>
           </div>
         </div>
