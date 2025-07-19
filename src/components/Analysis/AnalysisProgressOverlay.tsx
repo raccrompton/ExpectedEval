@@ -20,7 +20,7 @@ export const AnalysisProgressOverlay: React.FC<Props> = ({
 
   return (
     <motion.div
-      className="absolute left-0 top-0 z-20 flex h-screen w-screen flex-col items-center justify-center bg-black/10 px-4 backdrop-blur-[2px] md:px-0"
+      className="absolute left-0 top-0 z-20 flex h-screen w-screen flex-col items-center justify-center bg-black/60 px-4 md:px-0"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
