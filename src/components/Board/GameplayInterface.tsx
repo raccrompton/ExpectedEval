@@ -134,7 +134,7 @@ export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
           ) : game.termination?.winner === 'white' ? (
             <span className="text-human-3">0</span>
           ) : game.termination ? (
-            <span>1/2</span>
+            <span>½</span>
           ) : null}
         </p>
       </div>{' '}
