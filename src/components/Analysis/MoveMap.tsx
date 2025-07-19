@@ -8,7 +8,7 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from 'recharts'
-import { useContext, useState } from 'react'
+import { useContext, useState, useEffect } from 'react'
 import { ColorSanMapping } from 'src/types'
 import type { Key } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
@@ -64,6 +64,13 @@ export const MoveMap: React.FC<Props> = ({
     x: number
     y: number
   } | null>(null)
+
+  // Clear tooltip when position changes (indicated by colorSanMapping change)
+  useEffect(() => {
+    setHoveredMove(null)
+    setHoveredMoveData(null)
+    setMousePosition(null)
+  }, [colorSanMapping])
 
   // Responsive font sizing based on screen width
   const getAxisLabelFontSize = () => {

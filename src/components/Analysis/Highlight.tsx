@@ -61,6 +61,11 @@ export const Highlight: React.FC<Props> = ({
     position: { x: number; y: number }
   } | null>(null)
 
+  // Clear tooltip when position changes (indicated by currentNode change)
+  useEffect(() => {
+    setTooltipData(null)
+  }, [currentNode])
+
   const findMatchingMove = (move: string, source: 'maia' | 'stockfish') => {
     if (source === 'maia') {
       return recommendations.stockfish?.find((rec) => rec.move === move)
