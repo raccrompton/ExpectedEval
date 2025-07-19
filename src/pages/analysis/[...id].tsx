@@ -420,8 +420,23 @@ const Analysis: React.FC<Props> = ({
       const san = moveAttempt.san
 
       if (controller.currentNode.mainChild?.move === moveString) {
+        // Existing main line move - navigate to it
         controller.goToNode(controller.currentNode.mainChild)
+      } else if (
+        !controller.currentNode.mainChild &&
+        controller.currentNode.isMainline
+      ) {
+        // No main child exists AND we're on main line - create main line move
+        const newMainMove = analyzedGame.tree.addMainMove(
+          controller.currentNode,
+          newFen,
+          moveString,
+          san,
+          controller.currentMaiaModel,
+        )
+        controller.goToNode(newMainMove)
       } else {
+        // Either main child exists but different move, OR we're in a variation - create variation
         const newVariation = analyzedGame.tree.addVariation(
           controller.currentNode,
           newFen,
