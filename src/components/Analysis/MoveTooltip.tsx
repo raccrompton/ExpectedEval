@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { ColorSanMapping } from 'src/types'
 
 interface MoveTooltipProps {
@@ -22,14 +23,14 @@ export const MoveTooltip: React.FC<MoveTooltipProps> = ({
   position,
   isVisible = true,
 }) => {
-  if (!isVisible || !position) return null
+  if (!isVisible || !position || typeof window === 'undefined') return null
 
   const san = colorSanMapping[move]?.san ?? move
   const color = colorSanMapping[move]?.color ?? '#fff'
 
-  return (
+  const tooltipContent = (
     <div
-      className="pointer-events-none fixed z-50 flex w-auto min-w-[12rem] flex-col overflow-hidden rounded-lg border border-white/30 bg-background-1 backdrop-blur-sm"
+      className="pointer-events-none fixed z-50 flex w-auto min-w-[12rem] flex-col overflow-hidden rounded-lg border border-white/30 bg-background-1 text-primary backdrop-blur-sm"
       style={{
         left: position.x + 15,
         top: position.y - 10,
@@ -83,4 +84,6 @@ export const MoveTooltip: React.FC<MoveTooltipProps> = ({
       </div>
     </div>
   )
+
+  return createPortal(tooltipContent, document.body)
 }
