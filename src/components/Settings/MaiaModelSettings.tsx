@@ -219,7 +219,7 @@ export const MaiaModelSettings: React.FC = () => {
               <button
                 onClick={handleDeleteModel}
                 disabled={isDeleting || status !== 'ready'}
-                className="flex items-center justify-center gap-2 rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700 disabled:opacity-50"
+                className="flex items-center justify-center gap-2 rounded bg-human-4 px-4 py-2 text-white hover:bg-human-4/80 disabled:opacity-50"
               >
                 <span className="material-symbols-outlined text-base">
                   delete
