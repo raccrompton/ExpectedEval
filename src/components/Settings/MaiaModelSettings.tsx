@@ -207,7 +207,7 @@ export const MaiaModelSettings: React.FC = () => {
             <>
               <button
                 onClick={handleRedownloadModel}
-                disabled={status === 'downloading'}
+                disabled={status !== 'ready'}
                 className="flex items-center justify-center gap-2 rounded bg-background-2 px-4 py-2 hover:bg-background-3 disabled:opacity-50"
               >
                 <span className="material-symbols-outlined text-base">
@@ -218,7 +218,7 @@ export const MaiaModelSettings: React.FC = () => {
 
               <button
                 onClick={handleDeleteModel}
-                disabled={isDeleting || status === 'downloading'}
+                disabled={isDeleting || status !== 'ready'}
                 className="flex items-center justify-center gap-2 rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700 disabled:opacity-50"
               >
                 <span className="material-symbols-outlined text-base">

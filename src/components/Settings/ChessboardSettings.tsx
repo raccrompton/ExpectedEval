@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useSettings } from 'src/contexts/SettingsContext'
-import { chessboardThemeManager } from 'src/lib/chessboardThemeManager'
+import Chessground from '@react-chess/chessground'
 
 type ChessboardTheme = 'brown' | 'cburnett'
 
@@ -26,15 +26,8 @@ const THEME_OPTIONS: ThemeOption[] = [
 export const ChessboardSettings: React.FC = () => {
   const { settings, updateSetting } = useSettings()
 
-  const handleThemeChange = async (theme: ChessboardTheme) => {
+  const handleThemeChange = (theme: ChessboardTheme) => {
     updateSetting('chessboardTheme', theme)
-
-    // Apply the theme immediately
-    try {
-      await chessboardThemeManager.applyTheme(theme)
-    } catch (error) {
-      console.error('Failed to apply theme:', error)
-    }
   }
 
   return (
@@ -48,6 +41,27 @@ export const ChessboardSettings: React.FC = () => {
           Choose your preferred chessboard style. Changes will apply to all
           chess boards across the platform.
         </p>
+
+        {/* Theme Preview */}
+        <div className="rounded-lg bg-background-2 p-4">
+          <h4 className="mb-3 font-medium">Preview</h4>
+          <div className="flex justify-center">
+            <div
+              className={`theme-preview ${settings.chessboardTheme}`}
+              style={{ width: '200px', height: '200px' }}
+            >
+              <Chessground
+                contained
+                config={{
+                  fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                  viewOnly: true,
+                  coordinates: false,
+                  resizable: false,
+                }}
+              />
+            </div>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {THEME_OPTIONS.map((theme) => (

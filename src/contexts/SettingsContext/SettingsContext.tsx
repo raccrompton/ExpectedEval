@@ -27,6 +27,17 @@ export const SettingsProvider: React.FC<Props> = ({ children }) => {
     getUserSettings(),
   )
 
+  // Apply theme on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      document.body.className = document.body.className.replace(
+        /theme-\w+/g,
+        '',
+      )
+      document.body.classList.add(`theme-${settings.chessboardTheme}`)
+    }
+  }, [])
+
   const updateSetting = <K extends keyof UserSettings>(
     key: K,
     value: UserSettings[K],
@@ -37,6 +48,15 @@ export const SettingsProvider: React.FC<Props> = ({ children }) => {
     }
     setSettings(newSettings)
     saveUserSettings(newSettings)
+
+    // Apply theme changes to DOM immediately
+    if (key === 'chessboardTheme' && typeof window !== 'undefined') {
+      document.body.className = document.body.className.replace(
+        /theme-\w+/g,
+        '',
+      )
+      document.body.classList.add(`theme-${value}`)
+    }
   }
 
   const resetSettings = () => {
