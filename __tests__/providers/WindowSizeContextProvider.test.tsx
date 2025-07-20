@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { WindowSizeContextProvider } from '../../src/providers/WindowSizeContextProvider'
-import { useContext } from 'react'
+import React, { useContext } from 'react'
 import { WindowSizeContext } from '../../src/contexts'
 
 // Mock the useWindowSize hook
@@ -154,7 +154,7 @@ describe('WindowSizeContextProvider', () => {
   })
 
   it('should memoize isMobile calculation correctly', () => {
-    const spy = jest.spyOn(jest.requireMock('react'), 'useMemo')
+    const spy = jest.spyOn(React, 'useMemo')
     mockUseWindowSize.mockReturnValue({ width: 800, height: 600 })
 
     render(

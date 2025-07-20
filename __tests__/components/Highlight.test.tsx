@@ -1,3 +1,4 @@
+import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { Highlight } from '../../src/components/Analysis/Highlight'
 
@@ -32,7 +33,6 @@ jest.mock('../../src/components/Analysis/InteractiveDescription', () => ({
 }))
 
 jest.mock('../../src/contexts', () => {
-  const React = jest.requireMock('react')
   return {
     WindowSizeContext: React.createContext({
       windowSize: { width: 1024, height: 768 },

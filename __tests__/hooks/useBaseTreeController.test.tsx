@@ -1,6 +1,6 @@
+import React from 'react'
 import { renderHook } from '@testing-library/react'
 import { useBaseTreeController } from '../../src/hooks/useBaseTreeController'
-import React from 'react'
 
 jest.mock('../../src/contexts/BaseTreeControllerContext', () => ({
   BaseTreeControllerContext: React.createContext(null),
@@ -9,7 +9,6 @@ jest.mock('../../src/contexts/BaseTreeControllerContext', () => ({
 jest.mock(
   '../../src/contexts/TreeControllerContext/TreeControllerContext',
   () => {
-    const React = jest.requireMock('react')
     const mockAnalysisContext = {
       tree: null,
       currentNode: null,
@@ -24,7 +23,6 @@ jest.mock(
 jest.mock(
   '../../src/contexts/PlayControllerContext/PlayControllerContext',
   () => {
-    const React = jest.requireMock('react')
     const mockPlayContext = {
       tree: null,
       currentNode: null,
@@ -39,7 +37,6 @@ jest.mock(
 jest.mock(
   '../../src/contexts/TuringTreeControllerContext/TuringTreeControllerContext',
   () => {
-    const React = jest.requireMock('react')
     const mockTuringContext = {
       tree: null,
       currentNode: null,
@@ -54,7 +51,6 @@ jest.mock(
 jest.mock(
   '../../src/contexts/TrainingControllerContext/TrainingControllerContext',
   () => {
-    const React = jest.requireMock('react')
     const mockTrainingContext = {
       tree: null,
       currentNode: null,

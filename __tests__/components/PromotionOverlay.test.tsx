@@ -1,10 +1,8 @@
+import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { PromotionOverlay } from '../../src/components/Board/PromotionOverlay'
-import React from 'react'
 
 jest.mock('../../src/contexts', () => {
-  const React = jest.requireMock('react')
-
   const mockTreeControllerContext = {
     orientation: 'white' as const,
   }

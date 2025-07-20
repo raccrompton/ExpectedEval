@@ -1,10 +1,8 @@
+import React from 'react'
 import { render, screen, act, waitFor } from '@testing-library/react'
 import { GameClock } from '../../src/components/Board/GameClock'
-import React from 'react'
 
 jest.mock('../../src/contexts', () => {
-  const React = jest.requireMock('react')
-
   const mockUser = {
     id: 'test-user-123',
     username: 'testuser',
