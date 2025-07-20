@@ -64,6 +64,22 @@ class ChessSoundManager {
    * Play chess move sound with debouncing and capture detection
    */
   public playMoveSound(isCapture = false): void {
+    // Check if sounds are enabled in user settings
+    if (typeof window !== 'undefined') {
+      try {
+        const settings = localStorage.getItem('maia-user-settings')
+        if (settings) {
+          const userSettings = JSON.parse(settings)
+          if (!userSettings.soundEnabled) {
+            return // Sound disabled in settings
+          }
+        }
+      } catch (error) {
+        // If settings parsing fails, continue with default behavior
+        console.warn('Failed to read sound settings:', error)
+      }
+    }
+
     const now = Date.now()
 
     // Debounce rapid sounds
