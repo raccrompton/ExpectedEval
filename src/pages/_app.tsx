@@ -21,6 +21,7 @@ import {
 } from 'src/providers'
 import { TourProvider as TourContextProvider } from 'src/contexts'
 import 'src/styles/tailwind.css'
+import 'src/styles/themes.css'
 import 'react-tooltip/dist/react-tooltip.css'
 import 'node_modules/chessground/assets/chessground.base.css'
 import 'node_modules/chessground/assets/chessground.brown.css'

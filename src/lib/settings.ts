@@ -6,7 +6,36 @@
 
 export interface UserSettings {
   soundEnabled: boolean
-  chessboardTheme: 'brown' | 'cburnett'
+  chessboardTheme:
+    | 'brown'
+    | 'blue'
+    | 'blue2'
+    | 'blue3'
+    | 'blue-marble'
+    | 'canvas2'
+    | 'wood'
+    | 'wood2'
+    | 'wood3'
+    | 'wood4'
+    | 'maple'
+    | 'maple2'
+    | 'leather'
+    | 'green'
+    | 'pink-pyramid'
+    | 'marble'
+    | 'green-plastic'
+    | 'grey'
+    | 'metal'
+    | 'olive'
+    | 'newspaper'
+    | 'purple'
+    | 'purple-diag'
+    | 'ic'
+    | 'horsey'
+    | 'wood-worn'
+    | 'putt-putt'
+    | 'cocoa'
+    | 'parchment'
 }
 
 const SETTINGS_KEY = 'maia-user-settings'
