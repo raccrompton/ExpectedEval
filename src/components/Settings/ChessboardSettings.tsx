@@ -75,7 +75,7 @@ export const ChessboardSettings: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-4 rounded bg-background-1 p-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col items-start justify-between">
         <h3 className="text-lg font-semibold">Chessboard Theme</h3>
         <p className="text-sm text-secondary">
           Choose your preferred chessboard style. Changes will apply to all
@@ -89,10 +89,10 @@ export const ChessboardSettings: React.FC = () => {
           {ALL_THEMES.map((theme) => (
             <label
               key={theme}
-              className={`flex cursor-pointer items-center justify-center rounded border-2 p-2 transition-colors ${
+              className={`flex cursor-pointer items-center justify-center rounded border p-2 transition-colors ${
                 settings.chessboardTheme === theme
                   ? 'border-human-4 bg-human-3/20'
-                  : 'border-background-3 bg-background-2 hover:border-background-3 hover:bg-background-3'
+                  : 'border-white/10 bg-background-2/60 hover:bg-background-2'
               }`}
             >
               <input

@@ -90,8 +90,8 @@ export const MaiaModelSettings: React.FC = () => {
       case 'downloading':
         return {
           icon: 'downloading',
-          text: `Downloading... ${Math.round(progress * 100)}%`,
-          color: 'text-blue-500',
+          text: `Downloading... ${Math.round(progress)}%`,
+          color: 'text-human-4',
         }
       case 'ready':
         return {
@@ -118,16 +118,14 @@ export const MaiaModelSettings: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-4 rounded-lg bg-background-1 p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start justify-between">
         <h3 className="text-lg font-semibold">Maia Neural Network Model</h3>
-      </div>
-
-      <div className="flex flex-col gap-4">
         <p className="text-sm text-secondary">
           Manage your locally stored Maia chess engine model. The model is
           downloaded once and stored in your browser for offline use.
         </p>
-
+      </div>
+      <div className="flex flex-col gap-2">
         {/* Status Display */}
         <div className="rounded-lg bg-background-2 p-4">
           <div className="flex items-center gap-3">
@@ -146,10 +144,10 @@ export const MaiaModelSettings: React.FC = () => {
 
           {status === 'downloading' && (
             <div className="mt-3">
-              <div className="h-2 w-full rounded-full bg-background-3">
+              <div className="h-2 w-full rounded-full bg-background-2">
                 <div
-                  className="h-2 rounded-full bg-primary transition-all duration-300"
-                  style={{ width: `${progress * 100}%` }}
+                  className="h-2 rounded-full bg-human-4 transition-all duration-300"
+                  style={{ width: `${progress}%` }}
                 />
               </div>
             </div>
@@ -194,7 +192,7 @@ export const MaiaModelSettings: React.FC = () => {
           {status === 'no-cache' && (
             <button
               onClick={handleRedownloadModel}
-              className="flex items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-white hover:bg-primary/90"
+              className="flex items-center justify-center gap-2 rounded bg-human-4 px-4 py-2 text-white hover:bg-human-4/80"
             >
               <span className="material-symbols-outlined text-base">
                 download
