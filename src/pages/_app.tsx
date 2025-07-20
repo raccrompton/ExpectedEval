@@ -9,7 +9,6 @@ import { Open_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import { PostHogProvider } from 'posthog-js/react'
 import { chessSoundManager } from 'src/lib/chessSoundManager'
-import { chessboardThemeManager } from 'src/lib/chessboardThemeManager'
 
 import {
   AuthContextProvider,
@@ -23,6 +22,9 @@ import {
 import { TourProvider as TourContextProvider } from 'src/contexts'
 import 'src/styles/tailwind.css'
 import 'react-tooltip/dist/react-tooltip.css'
+import 'node_modules/chessground/assets/chessground.base.css'
+import 'node_modules/chessground/assets/chessground.brown.css'
+import 'node_modules/chessground/assets/chessground.cburnett.css'
 import {
   Footer,
   Compose,
@@ -50,11 +52,9 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
     })
 
     chessSoundManager.initialize()
-    chessboardThemeManager.initialize()
 
     return () => {
       chessSoundManager.cleanup()
-      chessboardThemeManager.cleanup()
     }
   }, [])
 
@@ -68,9 +68,8 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
             WindowSizeContextProvider,
             AuthContextProvider,
             ModalContextProvider,
-            ...(isPageWithAnalysis
-              ? [MaiaEngineContextProvider, StockfishEngineContextProvider]
-              : []),
+            MaiaEngineContextProvider,
+            StockfishEngineContextProvider,
             ...(isAnalysisPage ? [AnalysisListContextProvider] : []),
           ]}
         >
