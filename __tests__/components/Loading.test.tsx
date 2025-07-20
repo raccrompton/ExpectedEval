@@ -63,9 +63,11 @@ describe('Loading Component', () => {
     // Component should render with one of the valid states
     const fen = chessboard.getAttribute('data-fen')
     expect(fen).toBeTruthy()
-    
+
     // Should be a valid chess FEN
-    expect(fen).toMatch(/^[rnbqkpRNBQKP1-8\/]+\s[wb]\s[KQkq-]+\s[a-h1-8-]+\s\d+\s\d+$/)
+    expect(fen).toMatch(
+      /^[rnbqkpRNBQKP1-8\/]+\s[wb]\s[KQkq-]+\s[a-h1-8-]+\s\d+\s\d+$/,
+    )
   })
 
   it('should loop back to first position after last one', () => {
@@ -75,11 +77,11 @@ describe('Loading Component', () => {
       'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
       'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
     ]
-    
+
     // Test the modulo logic
     expect(states[0 % states.length]).toBe(states[0])
     expect(states[3 % states.length]).toBe(states[0]) // wraps back
-    
+
     render(<Loading />)
     const chessboard = screen.getByTestId('chessground')
     expect(chessboard).toBeInTheDocument()
@@ -153,7 +155,7 @@ describe('Loading Component', () => {
 
     // Get initial chessboard
     const chessboard = screen.getByTestId('chessground')
-    
+
     // Should have data-fen attribute (showing render key works)
     expect(chessboard).toHaveAttribute('data-fen')
     expect(chessboard.getAttribute('data-fen')).toBeTruthy()

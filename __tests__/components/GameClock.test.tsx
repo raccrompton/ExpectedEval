@@ -3,7 +3,7 @@ import { GameClock } from '../../src/components/Board/GameClock'
 import React from 'react'
 
 jest.mock('../../src/contexts', () => {
-  const React = require('react')
+  const React = jest.requireMock('react')
 
   const mockUser = {
     id: 'test-user-123',
@@ -70,8 +70,7 @@ describe('GameClock Component', () => {
   })
 
   it('should show user name for player side and Maia for opponent', () => {
-    const PlayControllerContext =
-      require('../../src/contexts').PlayControllerContext
+    const { PlayControllerContext } = jest.requireMock('../../src/contexts')
 
     const CustomProvider = ({ children }: { children: React.ReactNode }) => (
       <PlayControllerContext.Provider
@@ -112,8 +111,7 @@ describe('GameClock Component', () => {
   })
 
   it('should apply inactive styling when it is not player turn', () => {
-    const PlayControllerContext =
-      require('../../src/contexts').PlayControllerContext
+    const { PlayControllerContext } = jest.requireMock('../../src/contexts')
 
     const CustomProvider = ({ children }: { children: React.ReactNode }) => (
       <PlayControllerContext.Provider
@@ -140,8 +138,7 @@ describe('GameClock Component', () => {
   })
 
   it('should format time correctly for minutes and seconds', () => {
-    const PlayControllerContext =
-      require('../../src/contexts').PlayControllerContext
+    const { PlayControllerContext } = jest.requireMock('../../src/contexts')
 
     const CustomProvider = ({ children }: { children: React.ReactNode }) => (
       <PlayControllerContext.Provider
@@ -167,8 +164,7 @@ describe('GameClock Component', () => {
   })
 
   it('should show tenths when under 20 seconds', () => {
-    const PlayControllerContext =
-      require('../../src/contexts').PlayControllerContext
+    const { PlayControllerContext } = jest.requireMock('../../src/contexts')
 
     const CustomProvider = ({ children }: { children: React.ReactNode }) => (
       <PlayControllerContext.Provider
@@ -194,8 +190,7 @@ describe('GameClock Component', () => {
   })
 
   it('should not show tenths when over 20 seconds', () => {
-    const PlayControllerContext =
-      require('../../src/contexts').PlayControllerContext
+    const { PlayControllerContext } = jest.requireMock('../../src/contexts')
 
     const CustomProvider = ({ children }: { children: React.ReactNode }) => (
       <PlayControllerContext.Provider
@@ -222,8 +217,7 @@ describe('GameClock Component', () => {
   })
 
   it('should not show tenths when over 1 minute', () => {
-    const PlayControllerContext =
-      require('../../src/contexts').PlayControllerContext
+    const { PlayControllerContext } = jest.requireMock('../../src/contexts')
 
     const CustomProvider = ({ children }: { children: React.ReactNode }) => (
       <PlayControllerContext.Provider
@@ -250,8 +244,7 @@ describe('GameClock Component', () => {
   })
 
   it('should handle zero time gracefully', () => {
-    const PlayControllerContext =
-      require('../../src/contexts').PlayControllerContext
+    const { PlayControllerContext } = jest.requireMock('../../src/contexts')
 
     const CustomProvider = ({ children }: { children: React.ReactNode }) => (
       <PlayControllerContext.Provider
@@ -281,8 +274,7 @@ describe('GameClock Component', () => {
       .mockReturnValueOnce(1000) // Initial render
       .mockReturnValueOnce(2000) // After 1 second
 
-    const PlayControllerContext =
-      require('../../src/contexts').PlayControllerContext
+    const { PlayControllerContext } = jest.requireMock('../../src/contexts')
 
     const CustomProvider = ({ children }: { children: React.ReactNode }) => (
       <PlayControllerContext.Provider
@@ -318,8 +310,7 @@ describe('GameClock Component', () => {
   })
 
   it('should handle negative clock values by showing zero', () => {
-    const PlayControllerContext =
-      require('../../src/contexts').PlayControllerContext
+    const { PlayControllerContext } = jest.requireMock('../../src/contexts')
 
     const CustomProvider = ({ children }: { children: React.ReactNode }) => (
       <PlayControllerContext.Provider
@@ -345,8 +336,7 @@ describe('GameClock Component', () => {
   })
 
   it('should display correct black clock time', () => {
-    const PlayControllerContext =
-      require('../../src/contexts').PlayControllerContext
+    const { PlayControllerContext } = jest.requireMock('../../src/contexts')
 
     const CustomProvider = ({ children }: { children: React.ReactNode }) => (
       <PlayControllerContext.Provider
@@ -372,8 +362,7 @@ describe('GameClock Component', () => {
   })
 
   it('should format single digit seconds with leading zero', () => {
-    const PlayControllerContext =
-      require('../../src/contexts').PlayControllerContext
+    const { PlayControllerContext } = jest.requireMock('../../src/contexts')
 
     const CustomProvider = ({ children }: { children: React.ReactNode }) => (
       <PlayControllerContext.Provider

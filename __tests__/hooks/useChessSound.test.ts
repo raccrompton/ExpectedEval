@@ -20,8 +20,9 @@ describe('useChessSound Hook', () => {
 
   it('should call playMoveSound from useChessSoundManager', () => {
     const mockPlayMoveSound = jest.fn()
-    const useChessSoundManager =
-      require('../../src/lib/chessSoundManager').useChessSoundManager
+    const { useChessSoundManager } = jest.requireMock(
+      '../../src/lib/chessSoundManager',
+    )
 
     useChessSoundManager.mockReturnValue({
       playMoveSound: mockPlayMoveSound,

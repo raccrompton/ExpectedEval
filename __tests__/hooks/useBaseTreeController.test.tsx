@@ -9,7 +9,7 @@ jest.mock('../../src/contexts/BaseTreeControllerContext', () => ({
 jest.mock(
   '../../src/contexts/TreeControllerContext/TreeControllerContext',
   () => {
-    const React = require('react')
+    const React = jest.requireMock('react')
     const mockAnalysisContext = {
       tree: null,
       currentNode: null,
@@ -24,7 +24,7 @@ jest.mock(
 jest.mock(
   '../../src/contexts/PlayControllerContext/PlayControllerContext',
   () => {
-    const React = require('react')
+    const React = jest.requireMock('react')
     const mockPlayContext = {
       tree: null,
       currentNode: null,
@@ -39,7 +39,7 @@ jest.mock(
 jest.mock(
   '../../src/contexts/TuringTreeControllerContext/TuringTreeControllerContext',
   () => {
-    const React = require('react')
+    const React = jest.requireMock('react')
     const mockTuringContext = {
       tree: null,
       currentNode: null,
@@ -54,7 +54,7 @@ jest.mock(
 jest.mock(
   '../../src/contexts/TrainingControllerContext/TrainingControllerContext',
   () => {
-    const React = require('react')
+    const React = jest.requireMock('react')
     const mockTrainingContext = {
       tree: null,
       currentNode: null,

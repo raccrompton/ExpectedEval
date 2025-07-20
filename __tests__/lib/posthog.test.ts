@@ -26,7 +26,7 @@ describe('PostHog Client', () => {
     process.env.NEXT_PUBLIC_POSTHOG_KEY = 'test-key'
     process.env.NEXT_PUBLIC_POSTHOG_HOST = 'https://test.posthog.com'
 
-    const { PostHog } = require('posthog-node')
+    const { PostHog } = jest.requireMock('posthog-node')
     const client = PostHogClient()
 
     expect(PostHog).toHaveBeenCalledWith('test-key', {
@@ -41,7 +41,7 @@ describe('PostHog Client', () => {
     process.env.NEXT_PUBLIC_POSTHOG_KEY = 'production-key'
     process.env.NEXT_PUBLIC_POSTHOG_HOST = 'https://app.posthog.com'
 
-    const { PostHog } = require('posthog-node')
+    const { PostHog } = jest.requireMock('posthog-node')
     PostHogClient()
 
     expect(PostHog).toHaveBeenCalledWith('production-key', {
@@ -55,7 +55,7 @@ describe('PostHog Client', () => {
     delete process.env.NEXT_PUBLIC_POSTHOG_KEY
     delete process.env.NEXT_PUBLIC_POSTHOG_HOST
 
-    const { PostHog } = require('posthog-node')
+    const { PostHog } = jest.requireMock('posthog-node')
     PostHogClient()
 
     expect(PostHog).toHaveBeenCalledWith(undefined, {
@@ -68,7 +68,7 @@ describe('PostHog Client', () => {
   it('should use flushAt=1 for immediate flushing', () => {
     process.env.NEXT_PUBLIC_POSTHOG_KEY = 'test-key'
 
-    const { PostHog } = require('posthog-node')
+    const { PostHog } = jest.requireMock('posthog-node')
     PostHogClient()
 
     expect(PostHog).toHaveBeenCalledWith(
@@ -82,7 +82,7 @@ describe('PostHog Client', () => {
   it('should use flushInterval=0 for immediate flushing', () => {
     process.env.NEXT_PUBLIC_POSTHOG_KEY = 'test-key'
 
-    const { PostHog } = require('posthog-node')
+    const { PostHog } = jest.requireMock('posthog-node')
     PostHogClient()
 
     expect(PostHog).toHaveBeenCalledWith(
@@ -115,7 +115,7 @@ describe('PostHog Client', () => {
     process.env.NEXT_PUBLIC_POSTHOG_KEY = ''
     process.env.NEXT_PUBLIC_POSTHOG_HOST = ''
 
-    const { PostHog } = require('posthog-node')
+    const { PostHog } = jest.requireMock('posthog-node')
     PostHogClient()
 
     expect(PostHog).toHaveBeenCalledWith('', {

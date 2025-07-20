@@ -3,7 +3,7 @@ import { PromotionOverlay } from '../../src/components/Board/PromotionOverlay'
 import React from 'react'
 
 jest.mock('../../src/contexts', () => {
-  const React = require('react')
+  const React = jest.requireMock('react')
 
   const mockTreeControllerContext = {
     orientation: 'white' as const,
@@ -66,8 +66,7 @@ describe('PromotionOverlay Component', () => {
   })
 
   it('should render black piece images when orientation is black', () => {
-    const TreeControllerContext =
-      require('../../src/contexts').TreeControllerContext
+    const { TreeControllerContext } = jest.requireMock('../../src/contexts')
 
     const CustomProvider = ({ children }: { children: React.ReactNode }) => (
       <TreeControllerContext.Provider
@@ -107,6 +106,7 @@ describe('PromotionOverlay Component', () => {
     render(<PromotionOverlay {...defaultProps} />)
 
     const queenButton = screen.getByAltText('q').closest('button')
+    expect(queenButton).toBeInTheDocument()
     fireEvent.click(queenButton!)
 
     expect(mockOnPlayerSelectPromotion).toHaveBeenCalledWith('q')
@@ -116,6 +116,7 @@ describe('PromotionOverlay Component', () => {
     render(<PromotionOverlay {...defaultProps} />)
 
     const knightButton = screen.getByAltText('n').closest('button')
+    expect(knightButton).toBeInTheDocument()
     fireEvent.click(knightButton!)
 
     expect(mockOnPlayerSelectPromotion).toHaveBeenCalledWith('n')
@@ -125,6 +126,7 @@ describe('PromotionOverlay Component', () => {
     render(<PromotionOverlay {...defaultProps} />)
 
     const rookButton = screen.getByAltText('r').closest('button')
+    expect(rookButton).toBeInTheDocument()
     fireEvent.click(rookButton!)
 
     expect(mockOnPlayerSelectPromotion).toHaveBeenCalledWith('r')
@@ -134,14 +136,14 @@ describe('PromotionOverlay Component', () => {
     render(<PromotionOverlay {...defaultProps} />)
 
     const bishopButton = screen.getByAltText('b').closest('button')
+    expect(bishopButton).toBeInTheDocument()
     fireEvent.click(bishopButton!)
 
     expect(mockOnPlayerSelectPromotion).toHaveBeenCalledWith('b')
   })
 
   it('should reverse piece order when orientation is black', () => {
-    const TreeControllerContext =
-      require('../../src/contexts').TreeControllerContext
+    const { TreeControllerContext } = jest.requireMock('../../src/contexts')
 
     const CustomProvider = ({ children }: { children: React.ReactNode }) => (
       <TreeControllerContext.Provider

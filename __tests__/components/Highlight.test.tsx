@@ -11,7 +11,17 @@ jest.mock('framer-motion', () => ({
 
 jest.mock('../../src/components/Analysis/MoveTooltip', () => ({
   MoveTooltip: ({ move, onClickMove }: any) => (
-    <div data-testid="move-tooltip" onClick={() => onClickMove?.(move)}>
+    <div
+      data-testid="move-tooltip"
+      onClick={() => onClickMove?.(move)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onClickMove?.(move)
+        }
+      }}
+      role="button"
+      tabIndex={0}
+    >
       Tooltip for {move}
     </div>
   ),
@@ -22,7 +32,7 @@ jest.mock('../../src/components/Analysis/InteractiveDescription', () => ({
 }))
 
 jest.mock('../../src/contexts', () => {
-  const React = require('react')
+  const React = jest.requireMock('react')
   return {
     WindowSizeContext: React.createContext({
       windowSize: { width: 1024, height: 768 },
@@ -135,12 +145,12 @@ describe('Highlight Component', () => {
     render(<Highlight {...mockProps} />)
 
     expect(screen.getByText('Human Moves')).toBeInTheDocument()
-    
+
     // Check that moves appear (there may be duplicates between Maia and Stockfish sections)
     expect(screen.getAllByText('e4')).toHaveLength(2) // Both in Maia and Stockfish sections
-    expect(screen.getAllByText('d4')).toHaveLength(2) // Both in Maia and Stockfish sections  
+    expect(screen.getAllByText('d4')).toHaveLength(2) // Both in Maia and Stockfish sections
     expect(screen.getAllByText('Nf3')).toHaveLength(2) // Both in Maia and Stockfish sections
-    
+
     // Check probabilities (unique to Maia section)
     expect(screen.getByText('45.0%')).toBeInTheDocument()
     expect(screen.getByText('35.0%')).toBeInTheDocument()

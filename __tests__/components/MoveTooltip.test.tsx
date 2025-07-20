@@ -221,15 +221,15 @@ describe('MoveTooltip', () => {
       render(<MoveTooltip {...defaultProps} onClickMove={mockOnClickMove} />)
 
       const tooltip = screen.getByText('e4').closest('div')?.parentElement
-      
+
       // Test that the event handlers are set up correctly
       expect(tooltip).toHaveAttribute('role', 'button')
       expect(tooltip).toHaveAttribute('tabIndex', '0')
-      
+
       // The preventDefault behavior is tested indirectly through the onKeyDown handler
       fireEvent.keyDown(tooltip!, { key: 'Enter' })
       expect(mockOnClickMove).toHaveBeenCalledWith('e4')
-      
+
       fireEvent.keyDown(tooltip!, { key: ' ' })
       expect(mockOnClickMove).toHaveBeenCalledWith('e4')
     })

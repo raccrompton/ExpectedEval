@@ -6,7 +6,7 @@ jest.mock('posthog-js', () => ({
 }))
 
 describe('Analytics functions', () => {
-  const mockCapture = require('posthog-js').capture
+  const { capture: mockCapture } = jest.requireMock('posthog-js')
   let consoleErrorSpy: jest.SpyInstance
 
   beforeEach(() => {

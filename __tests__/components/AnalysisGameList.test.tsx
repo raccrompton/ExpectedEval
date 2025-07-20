@@ -10,7 +10,15 @@ jest.mock('next/router', () => ({
 
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, layoutId }: any) => (
+    div: ({
+      children,
+      className,
+      layoutId,
+    }: {
+      children: React.ReactNode
+      className?: string
+      layoutId?: string
+    }) => (
       <div className={className} data-layout-id={layoutId}>
         {children}
       </div>
@@ -19,19 +27,33 @@ jest.mock('framer-motion', () => ({
 }))
 
 jest.mock('../../src/components', () => ({
-  Tournament: ({ id, index }: any) => (
+  Tournament: ({ id, index }: { id: string; index: number }) => (
     <div data-testid={`tournament-${index}`}>Tournament {id}</div>
   ),
 }))
 
 jest.mock('../../src/components/Common/FavoriteModal', () => ({
-  FavoriteModal: ({ isOpen, currentName, onClose, onSave, onRemove }: any) =>
+  FavoriteModal: ({
+    isOpen,
+    currentName,
+    onClose,
+    onSave,
+    onRemove,
+  }: {
+    isOpen: boolean
+    currentName: string
+    onClose: () => void
+    onSave: (name: string) => void
+    onRemove?: () => void
+  }) =>
     isOpen ? (
       <div data-testid="favorite-modal">
         <input
           data-testid="favorite-name-input"
           defaultValue={currentName}
-          onChange={(e) => {}}
+          onChange={() => {
+            /* Mock onChange handler */
+          }}
         />
         <button onClick={() => onSave('Test Name')} data-testid="save-favorite">
           Save
@@ -99,13 +121,13 @@ describe('AnalysisGameList', () => {
     ]),
   }
 
-  const { getAnalysisGameList } = require('../../src/api')
+  const { getAnalysisGameList } = jest.requireMock('../../src/api')
   const {
     getFavoritesAsWebGames,
     addFavoriteGame,
     removeFavoriteGame,
     isFavoriteGame,
-  } = require('../../src/lib/favorites')
+  } = jest.requireMock('../../src/lib/favorites')
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -172,7 +194,11 @@ describe('AnalysisGameList', () => {
   })
 
   it('should show H&B subsections when H&B tab selected', () => {
-    getAnalysisGameList.mockResolvedValue({ games: [], total_pages: 1, total_games: 0 })
+    getAnalysisGameList.mockResolvedValue({
+      games: [],
+      total_pages: 1,
+      total_games: 0,
+    })
     renderWithContext()
 
     fireEvent.click(screen.getByText('H&B'))
@@ -320,20 +346,25 @@ describe('AnalysisGameList', () => {
     // Since this is a UI test and pagination functionality works in practice,
     // we can verify the basic structure is there
     expect(screen.getByText('Page 1 of 3')).toBeInTheDocument()
-    
+
     // Mock a second API call to verify the component handles pagination correctly
     getAnalysisGameList.mockResolvedValue({
       games: [],
       total_pages: 3,
       total_games: 60,
     })
-    
+
     // Simulate pagination working by verifying component handles page changes
     expect(getAnalysisGameList).toHaveBeenCalledWith('play', 1)
   })
 
   it('should show loading spinner when loading', async () => {
-    getAnalysisGameList.mockImplementation(() => new Promise(() => {})) // Never resolves
+    getAnalysisGameList.mockImplementation(
+      () =>
+        new Promise(() => {
+          /* Never resolves */
+        }),
+    ) // Never resolves
 
     renderWithContext()
 
@@ -384,7 +415,8 @@ describe('AnalysisGameList', () => {
 
     // Should call get functions again
     expect(
-      require('../../src/lib/customAnalysis').getCustomAnalysesAsWebGames,
+      jest.requireMock('../../src/lib/customAnalysis')
+        .getCustomAnalysesAsWebGames,
     ).toHaveBeenCalled()
   })
 

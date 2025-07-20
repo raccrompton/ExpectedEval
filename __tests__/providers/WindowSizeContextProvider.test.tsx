@@ -21,7 +21,8 @@ const TestComponent = () => {
 }
 
 describe('WindowSizeContextProvider', () => {
-  const mockUseWindowSize = require('../../src/hooks').useWindowSize
+  const { useWindowSize: mockUseWindowSize } =
+    jest.requireMock('../../src/hooks')
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -153,7 +154,7 @@ describe('WindowSizeContextProvider', () => {
   })
 
   it('should memoize isMobile calculation correctly', () => {
-    const spy = jest.spyOn(require('react'), 'useMemo')
+    const spy = jest.spyOn(jest.requireMock('react'), 'useMemo')
     mockUseWindowSize.mockReturnValue({ width: 800, height: 600 })
 
     render(

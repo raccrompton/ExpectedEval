@@ -319,8 +319,9 @@ describe('Analysis API', () => {
   describe('getAnalyzedCustomPGN', () => {
     it('should create analyzed game from custom PGN', async () => {
       const mockPGN = '1. e4 e5'
-      const mockSaveCustomAnalysis =
-        require('../../src/lib/customAnalysis').saveCustomAnalysis
+      const { saveCustomAnalysis: mockSaveCustomAnalysis } = jest.requireMock(
+        '../../src/lib/customAnalysis',
+      )
 
       const result = await getAnalyzedCustomPGN(mockPGN, 'Test Game')
 
@@ -337,8 +338,9 @@ describe('Analysis API', () => {
   describe('getAnalyzedCustomFEN', () => {
     it('should create analyzed game from custom FEN', async () => {
       const mockFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-      const mockSaveCustomAnalysis =
-        require('../../src/lib/customAnalysis').saveCustomAnalysis
+      const { saveCustomAnalysis: mockSaveCustomAnalysis } = jest.requireMock(
+        '../../src/lib/customAnalysis',
+      )
 
       const result = await getAnalyzedCustomFEN(mockFEN, 'Test Position')
 
@@ -353,8 +355,8 @@ describe('Analysis API', () => {
 
   describe('getAnalyzedCustomGame', () => {
     it('should retrieve stored custom game', async () => {
-      const mockGetCustomAnalysisById =
-        require('../../src/lib/customAnalysis').getCustomAnalysisById
+      const { getCustomAnalysisById: mockGetCustomAnalysisById } =
+        jest.requireMock('../../src/lib/customAnalysis')
 
       const result = await getAnalyzedCustomGame('test-id')
 
@@ -363,8 +365,8 @@ describe('Analysis API', () => {
     })
 
     it('should throw error if custom analysis not found', async () => {
-      const mockGetCustomAnalysisById =
-        require('../../src/lib/customAnalysis').getCustomAnalysisById
+      const { getCustomAnalysisById: mockGetCustomAnalysisById } =
+        jest.requireMock('../../src/lib/customAnalysis')
       mockGetCustomAnalysisById.mockReturnValueOnce(null)
 
       await expect(getAnalyzedCustomGame('non-existent')).rejects.toThrow(
@@ -373,8 +375,8 @@ describe('Analysis API', () => {
     })
 
     it('should handle FEN type custom analysis', async () => {
-      const mockGetCustomAnalysisById =
-        require('../../src/lib/customAnalysis').getCustomAnalysisById
+      const { getCustomAnalysisById: mockGetCustomAnalysisById } =
+        jest.requireMock('../../src/lib/customAnalysis')
       mockGetCustomAnalysisById.mockReturnValueOnce({
         id: 'test-id',
         type: 'custom-fen',
@@ -449,7 +451,7 @@ describe('Analysis API', () => {
 
   describe('Error handling', () => {
     it('should handle invalid PGN format', async () => {
-      const mockChess = require('chess.ts').Chess
+      const { Chess: mockChess } = jest.requireMock('chess.ts')
       const mockInstance = {
         loadPgn: jest.fn().mockImplementation(() => {
           throw new Error('Invalid PGN')
@@ -463,7 +465,7 @@ describe('Analysis API', () => {
     })
 
     it('should handle invalid FEN format', async () => {
-      const mockChess = require('chess.ts').Chess
+      const { Chess: mockChess } = jest.requireMock('chess.ts')
       const mockInstance = {
         load: jest.fn().mockImplementation(() => {
           throw new Error('Invalid FEN')

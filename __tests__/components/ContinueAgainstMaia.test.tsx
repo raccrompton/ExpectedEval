@@ -8,7 +8,9 @@ jest.mock('../../src/lib/analytics', () => ({
 
 describe('ContinueAgainstMaia', () => {
   const mockLaunchContinue = jest.fn()
-  const { trackContinueAgainstMaiaClicked } = require('../../src/lib/analytics')
+  const { trackContinueAgainstMaiaClicked } = jest.requireMock(
+    '../../src/lib/analytics',
+  )
 
   beforeEach(() => {
     jest.clearAllMocks()

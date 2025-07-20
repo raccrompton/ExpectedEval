@@ -3,11 +3,13 @@ import { ErrorBoundary } from '../../src/components/Common/ErrorBoundary'
 
 // Mock dependencies
 jest.mock('next/link', () => {
-  return ({ href, children, ...props }: any) => (
+  const MockLink = ({ href, children, ...props }: any) => (
     <a href={href} {...props}>
       {children}
     </a>
   )
+  MockLink.displayName = 'MockLink'
+  return MockLink
 })
 
 jest.mock('next/font/google', () => ({
@@ -136,8 +138,8 @@ describe('ErrorBoundary Component', () => {
   })
 
   it('should call trackErrorEncountered when error occurs', () => {
-    const mockTrackErrorEncountered =
-      require('../../src/lib/analytics').trackErrorEncountered
+    const { trackErrorEncountered: mockTrackErrorEncountered } =
+      jest.requireMock('../../src/lib/analytics')
 
     render(
       <ErrorBoundary>
@@ -154,8 +156,8 @@ describe('ErrorBoundary Component', () => {
   })
 
   it('should handle tracking errors gracefully', () => {
-    const mockTrackErrorEncountered =
-      require('../../src/lib/analytics').trackErrorEncountered
+    const { trackErrorEncountered: mockTrackErrorEncountered } =
+      jest.requireMock('../../src/lib/analytics')
     mockTrackErrorEncountered.mockImplementation(() => {
       throw new Error('Tracking failed')
     })
@@ -270,8 +272,8 @@ describe('ErrorBoundary Component', () => {
       </ErrorBoundary>,
     )
 
-    const mockTrackErrorEncountered =
-      require('../../src/lib/analytics').trackErrorEncountered
+    const { trackErrorEncountered: mockTrackErrorEncountered } =
+      jest.requireMock('../../src/lib/analytics')
     expect(mockTrackErrorEncountered).toHaveBeenCalledWith(
       'Error',
       expect.any(String),
