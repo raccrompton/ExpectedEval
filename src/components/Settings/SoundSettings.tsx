@@ -33,14 +33,15 @@ export const SoundSettings: React.FC = () => {
         {/* Sound Toggle */}
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
-            <label htmlFor="sound-toggle" className="text-sm font-medium">
-              Enable Move Sounds
-            </label>
+            <span className="text-sm font-medium">Enable Move Sounds</span>
             <p className="text-xs text-secondary">
               Play sounds when chess pieces are moved or captured
             </p>
           </div>
-          <div className="relative inline-flex cursor-pointer items-center">
+          <label
+            htmlFor="sound-toggle"
+            className="relative inline-flex cursor-pointer items-center"
+          >
             <input
               id="sound-toggle"
               type="checkbox"
@@ -49,7 +50,8 @@ export const SoundSettings: React.FC = () => {
               className="peer sr-only"
             />
             <div className="peer h-6 w-11 rounded-full bg-background-3 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary peer-focus:ring-offset-2"></div>
-          </div>
+            <span className="sr-only">Toggle move sounds</span>
+          </label>
         </div>
 
         {/* Test Buttons */}
