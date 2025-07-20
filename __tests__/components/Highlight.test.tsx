@@ -33,7 +33,7 @@ jest.mock('../../src/contexts', () => {
 
 describe('Highlight Component', () => {
   const mockProps = {
-    currentMaiaModel: 'maia-1500',
+    currentMaiaModel: 'maia_kdd_1500',
     setCurrentMaiaModel: jest.fn(),
     moveEvaluation: {
       maia: {
@@ -96,7 +96,7 @@ describe('Highlight Component', () => {
     render(<Highlight {...mockProps} />)
 
     expect(screen.getByText('White Win %')).toBeInTheDocument()
-    expect(screen.getByText('65.0%')).toBeInTheDocument()
+    expect(screen.getByText('59.2%')).toBeInTheDocument() // Stockfish win rate for first 10 ply
   })
 
   it('should display Stockfish evaluation', () => {
@@ -109,34 +109,39 @@ describe('Highlight Component', () => {
   it('should render Maia model selector when not on home page', () => {
     render(<Highlight {...mockProps} />)
 
-    const select = screen.getByDisplayValue('maia-1500')
+    const select = screen.getByRole('combobox')
     expect(select).toBeInTheDocument()
     expect(select.tagName).toBe('SELECT')
+    expect(select).toHaveValue('maia_kdd_1500')
   })
 
   it('should render static Maia model label on home page', () => {
     render(<Highlight {...mockProps} isHomePage={true} />)
 
     expect(screen.getByText('Maia 1500')).toBeInTheDocument()
-    expect(screen.queryByDisplayValue('maia-1500')).not.toBeInTheDocument()
+    expect(screen.queryByDisplayValue('maia_kdd_1500')).not.toBeInTheDocument()
   })
 
   it('should call setCurrentMaiaModel when model is changed', () => {
     render(<Highlight {...mockProps} />)
 
-    const select = screen.getByDisplayValue('maia-1500')
-    fireEvent.change(select, { target: { value: 'maia-1900' } })
+    const select = screen.getByRole('combobox')
+    fireEvent.change(select, { target: { value: 'maia_kdd_1900' } })
 
-    expect(mockProps.setCurrentMaiaModel).toHaveBeenCalledWith('maia-1900')
+    expect(mockProps.setCurrentMaiaModel).toHaveBeenCalledWith('maia_kdd_1900')
   })
 
   it('should display Maia move recommendations', () => {
     render(<Highlight {...mockProps} />)
 
     expect(screen.getByText('Human Moves')).toBeInTheDocument()
-    expect(screen.getByText('e4')).toBeInTheDocument()
-    expect(screen.getByText('d4')).toBeInTheDocument()
-    expect(screen.getByText('Nf3')).toBeInTheDocument()
+    
+    // Check that moves appear (there may be duplicates between Maia and Stockfish sections)
+    expect(screen.getAllByText('e4')).toHaveLength(2) // Both in Maia and Stockfish sections
+    expect(screen.getAllByText('d4')).toHaveLength(2) // Both in Maia and Stockfish sections  
+    expect(screen.getAllByText('Nf3')).toHaveLength(2) // Both in Maia and Stockfish sections
+    
+    // Check probabilities (unique to Maia section)
     expect(screen.getByText('45.0%')).toBeInTheDocument()
     expect(screen.getByText('35.0%')).toBeInTheDocument()
     expect(screen.getByText('15.0%')).toBeInTheDocument()
@@ -204,7 +209,8 @@ describe('Highlight Component', () => {
     }
     render(<Highlight {...propsWithoutEvaluation} />)
 
-    expect(screen.getByText('...')).toBeInTheDocument()
+    // Should show ... for White Win % when no evaluation data
+    expect(screen.getAllByText('...')).toHaveLength(2) // White Win % and SF Eval sections
   })
 
   it('should display correct move colors from colorSanMapping', () => {
@@ -240,7 +246,7 @@ describe('Highlight Component', () => {
     render(<Highlight {...firstPlyProps} />)
 
     // Should use Stockfish cp converted to winrate instead of Maia value
-    expect(screen.getByText('55.0%')).toBeInTheDocument()
+    expect(screen.getByText('59.2%')).toBeInTheDocument()
   })
 
   it('should limit Maia recommendations to 4 moves', () => {

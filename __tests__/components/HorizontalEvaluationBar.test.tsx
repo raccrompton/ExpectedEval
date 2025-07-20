@@ -3,11 +3,11 @@ import { HorizontalEvaluationBar } from '../../src/components/Analysis/Horizonta
 
 describe('HorizontalEvaluationBar Component', () => {
   it('should render with default props', () => {
-    render(<HorizontalEvaluationBar />)
+    const { container } = render(<HorizontalEvaluationBar />)
 
-    const container = screen.getByRole('generic')
-    expect(container).toBeInTheDocument()
-    expect(container).toHaveClass(
+    const mainContainer = container.firstChild
+    expect(mainContainer).toBeInTheDocument()
+    expect(mainContainer).toHaveClass(
       'relative',
       'flex',
       'h-6',
@@ -183,6 +183,6 @@ describe('HorizontalEvaluationBar Component', () => {
     )
 
     const bar = container.querySelector('.absolute.bottom-0')
-    expect(bar).toHaveStyle({ width: '33.333333333333336%' })
+    expect(bar).toHaveStyle({ width: '33.33333333333333%' })
   })
 })

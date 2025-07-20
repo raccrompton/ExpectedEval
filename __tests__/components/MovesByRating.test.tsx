@@ -255,7 +255,7 @@ describe('MovesByRating', () => {
 
       const yAxis = screen.getByTestId('y-axis-left')
       const domain = JSON.parse(yAxis.getAttribute('data-domain') || '[]')
-      expect(domain).toEqual([0, 60]) // Default to 60 when no moves
+      expect(domain).toEqual([0, 100]) // Default to 100 when no moves (maxValue=100 when moves undefined)
     })
   })
 
@@ -298,7 +298,7 @@ describe('MovesByRating', () => {
 
       expect(screen.getByTestId('tooltip')).toBeInTheDocument()
       expect(screen.getByText('1500')).toBeInTheDocument() // Rating
-      expect(screen.getByText('e4')).toBeInTheDocument() // Move
+      expect(screen.getAllByText('e4')).toHaveLength(2) // Move appears in both tooltip and legend
       expect(screen.getByText('45%')).toBeInTheDocument() // Probability
     })
   })

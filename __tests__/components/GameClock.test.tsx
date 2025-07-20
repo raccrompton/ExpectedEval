@@ -4,7 +4,7 @@ import React from 'react'
 
 jest.mock('../../src/contexts', () => {
   const React = require('react')
-  
+
   const mockUser = {
     id: 'test-user-123',
     username: 'testuser',
@@ -32,7 +32,7 @@ jest.mock('../../src/contexts', () => {
     logout: jest.fn(),
     refreshUser: jest.fn(),
   }
-  
+
   return {
     AuthContext: React.createContext(mockAuthContext),
     PlayControllerContext: React.createContext(mockPlayControllerContext),
@@ -65,7 +65,7 @@ describe('GameClock Component', () => {
     render(<GameClock player="black" reversed={false} />)
 
     expect(screen.getByText('● Maia')).toBeInTheDocument()
-    // Clock shows 0:00.0 due to calculation in component  
+    // Clock shows 0:00.0 due to calculation in component
     expect(screen.getByText('0:00.0')).toBeInTheDocument()
   })
 

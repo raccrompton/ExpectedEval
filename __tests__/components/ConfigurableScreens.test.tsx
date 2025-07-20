@@ -132,16 +132,17 @@ describe('ConfigurableScreens', () => {
     render(<ConfigurableScreens {...mockProps} />)
 
     const exportTab = screen.getByText('Export').closest('div')
-    fireEvent.keyPress(exportTab!, { key: 'Enter' })
+    fireEvent.keyDown(exportTab!, { key: 'Enter' })
 
     expect(screen.getByTestId('export-game')).toBeInTheDocument()
+    expect(screen.queryByTestId('configure-analysis')).not.toBeInTheDocument()
   })
 
   it('should not switch tabs on other key presses', () => {
     render(<ConfigurableScreens {...mockProps} />)
 
     const exportTab = screen.getByText('Export').closest('div')
-    fireEvent.keyPress(exportTab!, { key: 'Space' })
+    fireEvent.keyDown(exportTab!, { key: 'Space' })
 
     expect(screen.getByTestId('configure-analysis')).toBeInTheDocument()
     expect(screen.queryByTestId('export-game')).not.toBeInTheDocument()
@@ -250,9 +251,8 @@ describe('ConfigurableScreens', () => {
     it('should have correct tab container styling', () => {
       render(<ConfigurableScreens {...mockProps} />)
 
-      const tabContainer = screen
-        .getByText('Configure')
-        .closest('.flex.flex-row')
+      const configureButton = screen.getByText('Configure').closest('div')
+      const tabContainer = configureButton?.parentElement
       expect(tabContainer).toHaveClass('border-b', 'border-white/10')
     })
 

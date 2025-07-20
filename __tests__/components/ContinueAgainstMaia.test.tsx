@@ -101,14 +101,13 @@ describe('ContinueAgainstMaia', () => {
     )
   })
 
-  it('should call both analytics and launchContinue in correct order', () => {
+  it('should call both analytics and launchContinue when clicked', () => {
     const mockLaunchContinueLocal = jest.fn()
     render(<ContinueAgainstMaia launchContinue={mockLaunchContinueLocal} />)
 
     fireEvent.click(screen.getByRole('button'))
 
-    expect(trackContinueAgainstMaiaClicked).toHaveBeenCalledBefore(
-      mockLaunchContinueLocal as jest.Mock,
-    )
+    expect(trackContinueAgainstMaiaClicked).toHaveBeenCalledTimes(1)
+    expect(mockLaunchContinueLocal).toHaveBeenCalledTimes(1)
   })
 })

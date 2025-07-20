@@ -60,6 +60,7 @@ describe('ProfileColumn Component', () => {
       data: {
         ...defaultProps.data,
         draws: 0,
+        losses: 40,
       },
     }
     render(<ProfileColumn {...propsWithoutDraws} />)
@@ -75,6 +76,7 @@ describe('ProfileColumn Component', () => {
       data: {
         ...defaultProps.data,
         draws: undefined,
+        losses: 40,
       },
     }
     render(<ProfileColumn {...propsWithUndefinedDraws} />)
@@ -146,10 +148,10 @@ describe('ProfileColumn Component', () => {
     }
     const { container } = render(<ProfileColumn {...propsWithNoLosses} />)
 
-    const lossesBar = container.querySelector(
-      '.bg-red-500\\/70:not([style*="width"])',
+    const lossesProgressBar = container.querySelector(
+      '.bg-red-500\\/70[style*="width"]',
     )
-    expect(lossesBar).not.toBeInTheDocument()
+    expect(lossesProgressBar).not.toBeInTheDocument()
   })
 
   it('should handle edge case with zero games', () => {
@@ -166,7 +168,20 @@ describe('ProfileColumn Component', () => {
     render(<ProfileColumn {...propsWithZeroGames} />)
 
     expect(screen.getByText('0')).toBeInTheDocument() // games count
-    expect(screen.getByText(/0%/)).toBeInTheDocument() // percentages should be 0%
+    expect(
+      screen.getByText((content, element) => {
+        return (
+          element?.tagName === 'P' && element?.textContent === 'Wins: 0 (0%)'
+        )
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText((content, element) => {
+        return (
+          element?.tagName === 'P' && element?.textContent === 'Losses: 0 (0%)'
+        )
+      }),
+    ).toBeInTheDocument()
   })
 
   it('should round percentages correctly', () => {
@@ -182,8 +197,27 @@ describe('ProfileColumn Component', () => {
     }
     render(<ProfileColumn {...propsWithOddNumbers} />)
 
-    expect(screen.getByText(/43%/)).toBeInTheDocument() // for wins
-    expect(screen.getByText(/14%/)).toBeInTheDocument() // for draws
+    expect(
+      screen.getByText((content, element) => {
+        return (
+          element?.tagName === 'P' && element?.textContent === 'Wins: 3 (43%)'
+        )
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText((content, element) => {
+        return (
+          element?.tagName === 'P' && element?.textContent === 'Draws: 1 (14%)'
+        )
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText((content, element) => {
+        return (
+          element?.tagName === 'P' && element?.textContent === 'Losses: 3 (43%)'
+        )
+      }),
+    ).toBeInTheDocument()
   })
 
   it('should apply correct CSS classes to main container', () => {

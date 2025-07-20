@@ -12,15 +12,25 @@ jest.mock('../../src/hooks/useBaseTreeController', () => ({
 }))
 
 jest.mock('../../src/types', () => ({
-  GameTree: jest.fn().mockImplementation((fen) => ({
-    setHeader: jest.fn(),
-    getRoot: () => ({ fen }),
-    toMoveArray: () => ['e4', 'e5'],
-    toTimeArray: () => [1000, 1000],
-    addMovesToMainLine: jest.fn(),
-    toPGN: () =>
-      '[Event "Test Game"]\n[Site "https://maiachess.com/"]\n[White "Player1"]\n[Black "Player2"]\n\n1. e4 e5 *',
-  })),
+  GameTree: jest.fn().mockImplementation((fen) => {
+    const headers = new Map()
+    return {
+      setHeader: jest.fn((key, value) => {
+        headers.set(key, value)
+      }),
+      getRoot: () => ({ fen }),
+      toMoveArray: () => ['e4', 'e5'],
+      toTimeArray: () => [1000, 1000],
+      addMovesToMainLine: jest.fn(),
+      toPGN: () => {
+        const event = headers.get('Event') || 'Test Game'
+        const site = headers.get('Site') || 'https://maiachess.com/'
+        const white = headers.get('White') || 'Player1'
+        const black = headers.get('Black') || 'Player2'
+        return `[Event "${event}"]\n[Site "${site}"]\n[White "${white}"]\n[Black "${black}"]\n\n1. e4 e5 *`
+      },
+    }
+  }),
   GameNode: jest.fn(),
 }))
 

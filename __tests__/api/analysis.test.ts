@@ -76,6 +76,11 @@ jest.mock('../../src/types', () => ({
 // Mock fetch
 global.fetch = jest.fn()
 
+// Polyfill TextEncoder for Node.js test environment
+import { TextEncoder, TextDecoder } from 'util'
+global.TextEncoder = TextEncoder
+global.TextDecoder = TextDecoder
+
 describe('Analysis API', () => {
   const mockFetch = fetch as jest.MockedFunction<typeof fetch>
 

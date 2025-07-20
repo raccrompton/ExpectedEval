@@ -96,7 +96,7 @@ export const MovesByRating: React.FC<Props> = ({
             tickFormatter={(value) => `${value}%`}
           />
           <defs>
-            {moves &&
+            {moves && moves.length > 0 &&
               Object.keys(moves[0]).map((move, i) => {
                 if (move === 'rating') {
                   return null
@@ -124,7 +124,7 @@ export const MovesByRating: React.FC<Props> = ({
                 )
               })}
           </defs>
-          {moves &&
+          {moves && moves.length > 0 &&
             // First, collect all the end points and sort them by y-position
             (() => {
               const lastIndex = moves.length - 1

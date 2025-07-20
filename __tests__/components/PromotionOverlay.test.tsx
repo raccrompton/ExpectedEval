@@ -4,11 +4,11 @@ import React from 'react'
 
 jest.mock('../../src/contexts', () => {
   const React = require('react')
-  
+
   const mockTreeControllerContext = {
     orientation: 'white' as const,
   }
-  
+
   return {
     TreeControllerContext: React.createContext(mockTreeControllerContext),
   }

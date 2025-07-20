@@ -5,7 +5,7 @@ import { Markdown } from '../../src/components/Common/Markdown'
 jest.mock('react-markdown', () => {
   return ({ children, components }: any) => {
     // Simulate the markdown parsing and component rendering
-    const lines = children.split('\n').filter((line: string) => line.trim())
+    const lines = (children || '').split('\n').filter((line: string) => line.trim())
 
     return (
       <div data-testid="markdown-content">

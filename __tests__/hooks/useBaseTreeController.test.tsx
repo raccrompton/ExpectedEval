@@ -150,10 +150,26 @@ describe('useBaseTreeController Hook', () => {
     )
 
     // Each should return the correct context structure
-    expect(analysisResult.current).toEqual({ tree: null, currentNode: null, orientation: 'white' })
-    expect(playResult.current).toEqual({ tree: null, currentNode: null, orientation: 'white' })
-    expect(turingResult.current).toEqual({ tree: null, currentNode: null, orientation: 'white' })
-    expect(trainingResult.current).toEqual({ tree: null, currentNode: null, orientation: 'white' })
+    expect(analysisResult.current).toEqual({
+      tree: null,
+      currentNode: null,
+      orientation: 'white',
+    })
+    expect(playResult.current).toEqual({
+      tree: null,
+      currentNode: null,
+      orientation: 'white',
+    })
+    expect(turingResult.current).toEqual({
+      tree: null,
+      currentNode: null,
+      orientation: 'white',
+    })
+    expect(trainingResult.current).toEqual({
+      tree: null,
+      currentNode: null,
+      orientation: 'white',
+    })
 
     // Verify they're all different instances (should be different context objects)
     expect(analysisResult.current).not.toBe(playResult.current)
@@ -168,12 +184,20 @@ describe('useBaseTreeController Hook', () => {
       useBaseTreeController(contextType),
     )
 
-    expect(result.current).toEqual({ tree: null, currentNode: null, orientation: 'white' })
+    expect(result.current).toEqual({
+      tree: null,
+      currentNode: null,
+      orientation: 'white',
+    })
 
     // Change context type
     contextType = 'play'
     rerender()
 
-    expect(result.current).toEqual({ tree: null, currentNode: null, orientation: 'white' })
+    expect(result.current).toEqual({
+      tree: null,
+      currentNode: null,
+      orientation: 'white',
+    })
   })
 })

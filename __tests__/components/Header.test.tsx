@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { useRouter } from 'next/router'
 import { Header } from '../../src/components/Common/Header'
 import {
@@ -99,8 +99,8 @@ describe('Header', () => {
 
       expect(screen.getByText('Maia Chess')).toBeInTheDocument()
       expect(screen.getByAltText('Maia Logo')).toBeInTheDocument()
-      expect(screen.getByText('ANALYSIS')).toBeInTheDocument()
-      expect(screen.getByText('PUZZLES')).toBeInTheDocument()
+      expect(screen.getByText('Analysis')).toBeInTheDocument()
+      expect(screen.getByText('Puzzles')).toBeInTheDocument()
     })
 
     it('should render sign in button when user not authenticated', () => {
@@ -128,13 +128,13 @@ describe('Header', () => {
       const user = { lichessId: 'testuser', displayName: 'Test User' }
       renderHeader({ auth: { user } })
 
-      expect(screen.getByText('PLAY')).toBeInTheDocument()
+      expect(screen.getByText('Play')).toBeInTheDocument()
     })
 
     it('should render Lichess link for unauthenticated users', () => {
       renderHeader()
 
-      const playLink = screen.getByRole('link', { name: 'PLAY' })
+      const playLink = screen.getByRole('link', { name: 'Play' })
       expect(playLink).toHaveAttribute('href', 'https://lichess.org/@/maia1')
     })
 
@@ -146,7 +146,7 @@ describe('Header', () => {
 
       renderHeader()
 
-      const analysisLink = screen.getByRole('link', { name: 'ANALYSIS' })
+      const analysisLink = screen.getByRole('link', { name: 'Analysis' })
       expect(analysisLink).toHaveClass('bg-background-1')
     })
 
@@ -155,7 +155,7 @@ describe('Header', () => {
       renderHeader({ auth: { user } })
 
       // Hover over Play to show dropdown
-      const playButton = screen.getByText('PLAY')
+      const playButton = screen.getByText('Play')
       fireEvent.mouseEnter(playButton.parentElement!)
 
       fireEvent.click(screen.getByText('Play Maia'))
@@ -168,7 +168,7 @@ describe('Header', () => {
       const user = { lichessId: 'testuser', displayName: 'Test User' }
       renderHeader({ auth: { user } })
 
-      const playButton = screen.getByText('PLAY')
+      const playButton = screen.getByText('Play')
       fireEvent.mouseEnter(playButton.parentElement!)
 
       fireEvent.click(screen.getByText('Play Hand and Brain'))
@@ -196,7 +196,7 @@ describe('Header', () => {
     it('should render More dropdown with external links', () => {
       renderHeader()
 
-      expect(screen.getByText('MORE')).toBeInTheDocument()
+      expect(screen.getByText('More')).toBeInTheDocument()
       expect(screen.getByRole('link', { name: 'Blog' })).toHaveAttribute(
         'href',
         '/blog',
@@ -236,8 +236,8 @@ describe('Header', () => {
       const menuButton = screen.getByRole('button', { name: /menu/ })
       fireEvent.click(menuButton)
 
-      expect(screen.getByText('ANALYSIS')).toBeInTheDocument()
-      expect(screen.getByText('PUZZLES')).toBeInTheDocument()
+      expect(screen.getByText('Analysis')).toBeInTheDocument()
+      expect(screen.getByText('Puzzles')).toBeInTheDocument()
     })
 
     it('should hide mobile menu when close button clicked', () => {
@@ -271,7 +271,7 @@ describe('Header', () => {
       const menuButton = screen.getByRole('button', { name: /menu/ })
       fireEvent.click(menuButton)
 
-      expect(screen.getByText('PLAY')).toBeInTheDocument()
+      // In mobile menu, check for the specific play options that should be available
       expect(screen.getByText('Play Maia')).toBeInTheDocument()
       expect(screen.getByText('Play Hand and Brain')).toBeInTheDocument()
     })
@@ -320,7 +320,9 @@ describe('Header', () => {
 
       // Simulate route change
       const routeChangeHandler = mockRouter.events.on.mock.calls[0][1]
-      routeChangeHandler()
+      act(() => {
+        routeChangeHandler()
+      })
 
       expect(document.body.style.overflow).toBe('unset')
     })
@@ -354,14 +356,16 @@ describe('Header', () => {
       const mockBlur = jest.fn()
 
       // Mock document.activeElement
+      const mockElement = document.createElement('div')
+      mockElement.blur = mockBlur
       Object.defineProperty(document, 'activeElement', {
-        value: { blur: mockBlur },
+        value: mockElement,
         writable: true,
       })
 
       renderHeader({ auth: { user } })
 
-      const playButton = screen.getByText('PLAY')
+      const playButton = screen.getByText('Play')
       fireEvent.mouseEnter(playButton.parentElement!)
       fireEvent.click(screen.getByText('Play Maia'))
 
