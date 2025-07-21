@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { GameAnalysisProgress } from 'src/hooks/useAnalysisController/useAnalysisController'
 
@@ -15,6 +15,18 @@ export const AnalysisProgressOverlay: React.FC<Props> = ({
     progress.totalMoves > 0
       ? Math.round((progress.currentMoveIndex / progress.totalMoves) * 100)
       : 0
+
+  useEffect(() => {
+    if (progress.isAnalyzing) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [progress.isAnalyzing])
 
   if (!progress.isAnalyzing) return null
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 interface Props {
@@ -15,6 +15,18 @@ export const AnalysisConfigModal: React.FC<Props> = ({
   initialDepth = 15,
 }) => {
   const [selectedDepth, setSelectedDepth] = useState(initialDepth)
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
 
   const depthOptions = [
     {

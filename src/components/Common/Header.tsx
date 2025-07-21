@@ -77,6 +77,12 @@ export const Header: React.FC = () => {
         >
           Profile
         </Link>
+        <Link
+          href="/settings"
+          className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-3"
+        >
+          Settings
+        </Link>
         <button
           onClick={logout}
           className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-3"
