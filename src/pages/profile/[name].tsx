@@ -157,6 +157,7 @@ const Profile: React.FC<Props> = (props: Props) => {
         <div className="flex flex-col">
           <h1 className="text-3xl font-semibold">{props.name}</h1>
           <a
+            target="_blank"
             href={`https://lichess.org/@/${props.name}`}
             className="text-sm text-primary"
           >
