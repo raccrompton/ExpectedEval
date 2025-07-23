@@ -19,8 +19,8 @@ export const GameClock: React.FC<Props> = (
 
   const [referenceTime, setReferenceTime] = useState<number>(Date.now())
 
-  const playerClock = props.player == 'white' ? whiteClock : blackClock
-  const active = toPlay == props.player
+  const playerClock = props.player === 'white' ? whiteClock : blackClock
+  const active = toPlay === props.player
 
   const clock = Math.max(
     active && lastMoveTime > 0
@@ -30,7 +30,7 @@ export const GameClock: React.FC<Props> = (
   )
 
   // Convert maiaVersion (e.g., "maia_kdd_1100") to display name (e.g., "Maia 1100")
-  const getMaiaDisplayName = (version: string) => {
+  const getMaiaDisplayName = (version: string): string => {
     return version.replace('maia_kdd_', 'Maia ')
   }
 
@@ -56,8 +56,8 @@ export const GameClock: React.FC<Props> = (
       className={`flex items-center justify-between bg-background-1 md:items-start md:justify-start ${active ? 'opacity-100' : 'opacity-50'} flex-row md:flex-col`}
     >
       <div className="px-4 py-2">
-        {props.player == 'black' ? '●' : '○'}{' '}
-        {player == props.player ? user?.displayName : getMaiaDisplayName(maiaVersion)}
+        {props.player === 'black' ? '●' : '○'}{' '}
+        {player === props.player ? user?.displayName : getMaiaDisplayName(maiaVersion)}
       </div>
       <div className="inline-flex self-start px-4 py-2 md:text-3xl">
         {minutes}:{('00' + seconds).slice(-2)}
