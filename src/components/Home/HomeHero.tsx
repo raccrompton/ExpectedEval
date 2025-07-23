@@ -286,16 +286,7 @@ function BetaBlurb() {
             favorite
           </span>
           <p>
-            Maia Chess is in private beta. Sign up{' '}
-            <a
-              target="_blank"
-              rel="noreferrer"
-              className="underline"
-              href="https://forms.gle/VAUKap4uwMGXJH3N8"
-            >
-              here
-            </a>{' '}
-            and sign in with{' '}
+            Maia Chess is in open beta. Sign in with{' '}
             <button
               onClick={() => {
                 trackLichessConnectionInitiated('homepage')
@@ -305,7 +296,7 @@ function BetaBlurb() {
             >
               Lichess
             </button>
-            .
+            here.
           </p>
         </motion.div>
       )}
