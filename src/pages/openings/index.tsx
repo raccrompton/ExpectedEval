@@ -629,10 +629,10 @@ const OpeningsPage: NextPage = () => {
     // No special handling needed for opening drills
   }, [])
 
-  // Don't render if user is not authenticated
-  if (user !== null && !user.lichessId) {
-    return null
-  }
+  // // Don't render if user is not authenticated
+  // if (user !== null && !user.lichessId) {
+  //   return null
+  // }
 
   // Show download modal if Maia model needs to be downloaded
   if (maiaEngine.status === 'no-cache' || maiaEngine.status === 'downloading') {
