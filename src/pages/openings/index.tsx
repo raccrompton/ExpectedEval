@@ -76,11 +76,11 @@ const OpeningsPage: NextPage = () => {
   >(null)
   const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
 
-  useEffect(() => {
-    if (user !== null && !user.lichessId) {
-      router.push('/401')
-    }
-  }, [user, router])
+  // useEffect(() => {
+  //   if (user !== null && !user.lichessId) {
+  //     router.push('/401')
+  //   }
+  // }, [user, router])
 
   useEffect(() => {
     return () => {
