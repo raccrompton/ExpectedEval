@@ -479,7 +479,7 @@ const PreviewPanel: React.FC<{
         <p className="text-xs text-secondary">Configure your drill settings</p>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 overflow-hidden p-3 md:p-4">
+      <div className="red-scrollbar flex flex-1 flex-col gap-4 overflow-y-scroll p-3 md:p-4">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-medium md:text-base">
             {previewOpening.name}
@@ -598,7 +598,7 @@ const SelectedPanel: React.FC<{
       <h2 className="text-xl font-bold">
         Selected Openings ({selections.length})
       </h2>
-      <p className="text-xs text-secondary">Click to remove an opening</p>
+      <p className="text-xs text-secondary">Click X remove an opening</p>
     </div>
 
     {/* Mobile header */}
@@ -621,16 +621,8 @@ const SelectedPanel: React.FC<{
           <div className="flex w-full flex-col">
             {selections.map((selection) => (
               <div
-                tabIndex={0}
-                role="button"
                 key={selection.id}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    removeSelection(selection.id)
-                  }
-                }}
-                onClick={() => removeSelection(selection.id)}
-                className="group flex cursor-pointer items-center justify-between border-b border-white/5 p-3 transition-colors hover:bg-human-2/10 md:px-4"
+                className="flex items-center justify-between border-b border-white/5 p-3 transition-colors md:px-4"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -657,8 +649,16 @@ const SelectedPanel: React.FC<{
                     </div>
                   </div>
                 </div>
-                <button className="ml-2 text-secondary transition-colors group-hover:text-human-4">
-                  <span className="material-symbols-outlined text-sm">
+                <button
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      removeSelection(selection.id)
+                    }
+                  }}
+                  onClick={() => removeSelection(selection.id)}
+                  className="ml-2 text-secondary transition-colors hover:text-human-4"
+                >
+                  <span className="material-symbols-outlined !text-lg">
                     close
                   </span>
                 </button>
