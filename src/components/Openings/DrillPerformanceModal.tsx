@@ -375,7 +375,7 @@ const CustomTooltip: React.FC<{
                   : 'text-yellow-400'
             }`}
           >
-            {data.classification} {data.isPlayerMove ? '(You)' : '(Maia)'}
+            {data.classification}
           </p>
         )}
     </div>
@@ -390,6 +390,11 @@ const EvaluationChart: React.FC<{
   onHoverMove?: (moveIndex: number) => void
   playerColor: 'white' | 'black'
   drill: DrillPerformanceData['drill']
+  gameNodesMap: Map<string, GameNode>
+  getChartClassification: (
+    analysis: MoveAnalysis,
+    gameNodesMap: Map<string, GameNode>,
+  ) => 'excellent' | 'good' | 'inaccuracy' | 'mistake' | 'blunder'
 }> = ({
   evaluationChart,
   moveAnalyses,
@@ -397,6 +402,8 @@ const EvaluationChart: React.FC<{
   onHoverMove,
   playerColor,
   drill,
+  gameNodesMap,
+  getChartClassification,
 }) => {
   if (evaluationChart.length === 0) {
     return (
@@ -404,11 +411,6 @@ const EvaluationChart: React.FC<{
         <p>Evaluation chart unavailable</p>
       </div>
     )
-  }
-
-  // Helper function to get move classification (use analysis data for compatibility)
-  const getChartClassification = (analysis: MoveAnalysis): string => {
-    return analysis.classification || ''
   }
 
   // Generate move numbers for chartData - create pairs first then extract chart data
@@ -486,7 +488,7 @@ const EvaluationChart: React.FC<{
     }
 
     const dynamicClassification = moveAnalysis
-      ? getChartClassification(moveAnalysis)
+      ? getChartClassification(moveAnalysis, gameNodesMap)
       : ''
 
     // Get Stockfish depth by finding the corresponding game node
@@ -658,6 +660,11 @@ const DesktopLayout: React.FC<{
   gameTree: GameTree
   playerMoveCount: number
   treeController: ReturnType<typeof useTreeController>
+  gameNodesMap: Map<string, GameNode>
+  getChartClassification: (
+    analysis: MoveAnalysis,
+    gameNodesMap: Map<string, GameNode>,
+  ) => 'excellent' | 'good' | 'inaccuracy' | 'mistake' | 'blunder'
 }> = ({
   drill,
   filteredEvaluationChart,
@@ -669,6 +676,8 @@ const DesktopLayout: React.FC<{
   gameTree,
   playerMoveCount,
   treeController,
+  gameNodesMap,
+  getChartClassification,
 }) => (
   <div className="relative flex h-[90vh] max-h-[800px] w-[95vw] max-w-[1200px] flex-col overflow-hidden rounded-lg bg-background-1 shadow-2xl">
     {/* Header */}
@@ -753,6 +762,8 @@ const DesktopLayout: React.FC<{
           }}
           playerColor={drill.selection.playerColor}
           drill={drill}
+          gameNodesMap={gameNodesMap}
+          getChartClassification={getChartClassification}
         />
 
         {/* Critical Decisions Section */}
@@ -765,15 +776,44 @@ const DesktopLayout: React.FC<{
           </div>
           <div className="flex flex-col gap-2 px-3 pb-3">
             {(() => {
-              // Get critical moves (blunders, excellent moves, inaccuracies)
-              const criticalMoves = performanceData.moveAnalyses
-                .filter((move) => move.isPlayerMove)
-                .filter(
-                  (move) =>
-                    move.classification === 'blunder' ||
-                    move.classification === 'excellent' ||
-                    move.classification === 'inaccuracy',
-                )
+              // Get critical moves directly from game tree (like MovesContainer)
+              const mainLineNodes = gameTree.getMainLine().slice(1) // Skip root
+              const criticalMoves = mainLineNodes
+                .filter((node, index) => {
+                  // Determine if this is a player move
+                  const chess = new Chess(node.fen)
+                  const isPlayerMove =
+                    drill.selection.playerColor === 'white'
+                      ? chess.turn() === 'b' // If black to move, white just played
+                      : chess.turn() === 'w' // If white to move, black just played
+                  return isPlayerMove
+                })
+                .filter((node) => {
+                  // Filter for critical moves (same logic as MovesContainer)
+                  return node.blunder || node.inaccuracy || node.excellentMove
+                })
+                .map((node) => {
+                  // Convert to MoveAnalysis format for display
+                  let classification: 'blunder' | 'inaccuracy' | 'excellent' =
+                    'excellent'
+                  if (node.blunder) {
+                    classification = 'blunder'
+                  } else if (node.inaccuracy) {
+                    classification = 'inaccuracy'
+                  }
+
+                  return {
+                    move: node.move || '',
+                    san: node.san || '',
+                    fen: node.fen,
+                    fenBeforeMove: node.parent?.fen,
+                    moveNumber: node.moveNumber,
+                    isPlayerMove: true,
+                    evaluation: 0, // Will be filled if needed
+                    classification,
+                    evaluationLoss: 0,
+                  }
+                })
                 .sort((a, b) => {
                   // Sort by move number (chronological order)
                   return a.moveNumber - b.moveNumber
@@ -919,6 +959,11 @@ const MobileLayout: React.FC<{
   gameTree: GameTree
   playerMoveCount: number
   treeController: ReturnType<typeof useTreeController>
+  gameNodesMap: Map<string, GameNode>
+  getChartClassification: (
+    analysis: MoveAnalysis,
+    gameNodesMap: Map<string, GameNode>,
+  ) => 'excellent' | 'good' | 'inaccuracy' | 'mistake' | 'blunder'
 }> = ({
   drill,
   filteredEvaluationChart,
@@ -932,6 +977,8 @@ const MobileLayout: React.FC<{
   gameTree,
   playerMoveCount,
   treeController,
+  gameNodesMap,
+  getChartClassification,
 }) => (
   <div className="relative flex h-[95vh] w-[95vw] flex-col overflow-hidden rounded-lg bg-background-1 shadow-2xl">
     {/* Header */}
@@ -1046,6 +1093,8 @@ const MobileLayout: React.FC<{
             }}
             playerColor={drill.selection.playerColor}
             drill={drill}
+            gameNodesMap={gameNodesMap}
+            getChartClassification={getChartClassification}
           />
         </div>
       )}
@@ -1156,6 +1205,43 @@ export const DrillPerformanceModal: React.FC<Props> = ({
     drill.selection.playerColor,
   )
 
+  // Create a map of FEN -> GameNode for consistent classification
+  const gameNodesMap = useMemo(() => {
+    const map = new Map<string, GameNode>()
+    const collectNodes = (node: GameNode): void => {
+      map.set(node.fen, node)
+      node.children.forEach(collectNodes)
+    }
+    collectNodes(gameTree.getRoot())
+    return map
+  }, [gameTree])
+
+  // Helper function to get move classification from GameNode (same as MovesContainer)
+  const getChartClassification = useCallback(
+    (
+      analysis: MoveAnalysis,
+      gameNodesMap: Map<string, GameNode>,
+    ): 'excellent' | 'good' | 'inaccuracy' | 'mistake' | 'blunder' => {
+      // Get the GameNode for the position after the move
+      const moveNode = gameNodesMap.get(analysis.fen)
+      if (!moveNode) {
+        return analysis.classification || 'good'
+      }
+
+      // Use the same logic as MovesContainer
+      if (moveNode.blunder) {
+        return 'blunder'
+      } else if (moveNode.inaccuracy) {
+        return 'inaccuracy'
+      } else if (moveNode.excellentMove) {
+        return 'excellent'
+      }
+
+      return 'good'
+    },
+    [],
+  )
+
   // Count player moves from move analyses for display purposes
   const playerMoveCount = useMemo(() => {
     return moveAnalyses.filter((move) => move.isPlayerMove).length
@@ -1196,6 +1282,8 @@ export const DrillPerformanceModal: React.FC<Props> = ({
           gameTree={gameTree}
           playerMoveCount={playerMoveCount}
           treeController={treeController}
+          gameNodesMap={gameNodesMap}
+          getChartClassification={getChartClassification}
         />
       ) : (
         <DesktopLayout
@@ -1209,6 +1297,8 @@ export const DrillPerformanceModal: React.FC<Props> = ({
           gameTree={gameTree}
           playerMoveCount={playerMoveCount}
           treeController={treeController}
+          gameNodesMap={gameNodesMap}
+          getChartClassification={getChartClassification}
         />
       )}
     </ModalContainer>
