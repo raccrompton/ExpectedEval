@@ -67,29 +67,15 @@ export const PlaySection = ({ id }: PlaySectionProps) => {
             Trained on millions of human games, Maia plays with human chess
             intuition and decision-making style.
           </p>
-          {user?.lichessId ? (
-            <motion.button
-              onClick={startGame}
-              className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-            >
-              Play Now
-            </motion.button>
-          ) : (
-            <motion.a
-              href="https://lichess.org/@/maia1"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-            >
-              Play on Lichess
-            </motion.a>
-          )}
+          <motion.button
+            onClick={startGame}
+            className="flex items-center justify-center rounded-md bg-human-3 px-6 py-3 font-medium text-white"
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+          >
+            Play Now
+          </motion.button>
         </div>
         <motion.div
           className="relative w-full md:w-1/2"
