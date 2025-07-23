@@ -258,48 +258,16 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
 }
 
 function BetaBlurb() {
-  const { user, connectLichess } = useContext(AuthContext)
-
   return (
     <div className="mt-2 flex items-center justify-center md:mt-8">
-      {user?.lichessId ? (
-        <motion.div className="flex flex-row items-center gap-3 bg-engine-3 p-2 px-6 transition md:mt-0 md:rounded-full">
-          <span className="material-symbols-outlined material-symbols-filled text-lg">
-            favorite
-          </span>
-          <p>
-            Thanks for testing the Maia Chess beta! Join our Discord{' '}
-            <a
-              target="_blank"
-              rel="noreferrer"
-              className="underline"
-              href="https://discord.gg/Az93GqEAs7"
-            >
-              here
-            </a>
-            .
-          </p>
-        </motion.div>
-      ) : (
-        <motion.div className="flex flex-row items-center gap-3 bg-human-4 p-2 px-6 transition md:mt-0 md:rounded-full">
-          <span className="material-symbols-outlined material-symbols-filled text-lg">
-            favorite
-          </span>
-          <p>
-            Maia Chess is in open beta. Sign in with{' '}
-            <button
-              onClick={() => {
-                trackLichessConnectionInitiated('homepage')
-                connectLichess()
-              }}
-              className="underline"
-            >
-              Lichess
-            </button>{' '}
-            here.
-          </p>
-        </motion.div>
-      )}
+      <motion.div className="flex flex-row items-center gap-3 bg-engine-3 p-2 px-6 transition md:mt-0 md:rounded-full">
+        <span className="material-symbols-outlined material-symbols-filled text-lg">
+          favorite
+        </span>
+        <p>
+          Maia Chess is in open beta. You now have full access to the platform!
+        </p>
+      </motion.div>
     </div>
   )
 }
