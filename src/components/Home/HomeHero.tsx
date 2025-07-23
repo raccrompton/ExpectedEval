@@ -295,7 +295,7 @@ function BetaBlurb() {
               className="underline"
             >
               Lichess
-            </button>
+            </button>{' '}
             here.
           </p>
         </motion.div>
