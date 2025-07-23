@@ -181,9 +181,7 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
               icon={<RegularPlayIcon />}
               title="Play Maia"
               description="Play chess against the human-like Maia engine"
-              {...(user?.lichessId
-                ? { onClick: () => startGame('againstMaia') }
-                : { href: 'https://lichess.org/@/maia1', external: true })}
+              onClick={() => startGame('againstMaia')}
               index={0}
               featureKey="play_maia"
             />
