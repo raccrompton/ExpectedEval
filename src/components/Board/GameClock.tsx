@@ -13,9 +13,8 @@ export const GameClock: React.FC<Props> = (
   props: React.PropsWithChildren<Props>,
 ) => {
   const { user } = useContext(AuthContext)
-  const { player, toPlay, whiteClock, blackClock, lastMoveTime, maiaVersion } = useContext(
-    PlayControllerContext,
-  )
+  const { player, toPlay, whiteClock, blackClock, lastMoveTime, maiaVersion } =
+    useContext(PlayControllerContext)
 
   const [referenceTime, setReferenceTime] = useState<number>(Date.now())
 
@@ -57,7 +56,9 @@ export const GameClock: React.FC<Props> = (
     >
       <div className="px-4 py-2">
         {props.player === 'black' ? '●' : '○'}{' '}
-        {player === props.player ? user?.displayName : getMaiaDisplayName(maiaVersion)}
+        {player === props.player
+          ? user?.displayName
+          : getMaiaDisplayName(maiaVersion)}
       </div>
       <div className="inline-flex self-start px-4 py-2 md:text-3xl">
         {minutes}:{('00' + seconds).slice(-2)}
