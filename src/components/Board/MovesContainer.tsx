@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useContext, useMemo, Fragment, useEffect } from 'react'
+import React, { useContext, useMemo, Fragment, useEffect, useRef } from 'react'
 import { WindowSizeContext } from 'src/contexts'
 import { GameNode, AnalyzedGame, Termination, BaseGame } from 'src/types'
 import { TuringGame } from 'src/types/turing'
@@ -68,6 +68,8 @@ export const MovesContainer: React.FC<Props> = (props) => {
     showVariations = true,
   } = props
   const { isMobile } = useContext(WindowSizeContext)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const currentMoveRef = useRef<HTMLDivElement>(null)
 
   // Helper function to determine if move indicators should be shown
   const shouldShowIndicators = (node: GameNode | null) => {
@@ -113,6 +115,17 @@ export const MovesContainer: React.FC<Props> = (props) => {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [baseController.currentNode, baseController.goToNode])
+
+  // Auto-scroll to current move
+  useEffect(() => {
+    if (currentMoveRef.current && containerRef.current) {
+      currentMoveRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest',
+      })
+    }
+  }, [baseController.currentNode])
 
   const moves = useMemo(() => {
     const nodes = mainLineNodes.slice(1)
@@ -187,7 +200,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
 
   if (isMobile) {
     return (
-      <div className="w-full overflow-x-auto px-2">
+      <div ref={containerRef} className="w-full overflow-x-auto px-2">
         <div className="flex flex-row items-center gap-1">
           {mobileMovePairs.map((pair, pairIndex) => (
             <React.Fragment key={pairIndex}>
@@ -196,6 +209,11 @@ export const MovesContainer: React.FC<Props> = (props) => {
               </div>
               {pair.whiteMove && (
                 <div
+                  ref={
+                    baseController.currentNode === pair.whiteMove
+                      ? currentMoveRef
+                      : null
+                  }
                   onClick={() =>
                     baseController.goToNode(pair.whiteMove as GameNode)
                   }
@@ -224,6 +242,11 @@ export const MovesContainer: React.FC<Props> = (props) => {
               )}
               {pair.blackMove && (
                 <div
+                  ref={
+                    baseController.currentNode === pair.blackMove
+                      ? currentMoveRef
+                      : null
+                  }
                   onClick={() =>
                     baseController.goToNode(pair.blackMove as GameNode)
                   }
@@ -272,7 +295,10 @@ export const MovesContainer: React.FC<Props> = (props) => {
   }
 
   return (
-    <div className="red-scrollbar grid h-48 auto-rows-min grid-cols-5 overflow-y-auto overflow-x-hidden whitespace-nowrap rounded-sm bg-background-1/60 md:h-full md:w-full">
+    <div
+      ref={containerRef}
+      className="red-scrollbar grid h-48 auto-rows-min grid-cols-5 overflow-y-auto overflow-x-hidden whitespace-nowrap rounded-sm bg-background-1/60 md:h-full md:w-full"
+    >
       {moves.map(([whiteNode, blackNode], index) => {
         return (
           <>
@@ -280,6 +306,9 @@ export const MovesContainer: React.FC<Props> = (props) => {
               {(whiteNode || blackNode)?.moveNumber}
             </span>
             <div
+              ref={
+                baseController.currentNode === whiteNode ? currentMoveRef : null
+              }
               onClick={() => {
                 if (whiteNode) baseController.goToNode(whiteNode)
               }}
@@ -312,6 +341,9 @@ export const MovesContainer: React.FC<Props> = (props) => {
               />
             ) : null}
             <div
+              ref={
+                baseController.currentNode === blackNode ? currentMoveRef : null
+              }
               onClick={() => {
                 if (blackNode) baseController.goToNode(blackNode)
               }}
