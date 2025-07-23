@@ -70,7 +70,6 @@ const AnalysisChessboard = ({ forceKey }: { forceKey?: number }) => {
       ref={containerRef}
       className="relative w-full"
       style={{
-        transform: 'translateZ(0)',
         aspectRatio: '1/1',
       }}
     >
@@ -129,16 +128,12 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
   })
 
   const [renderKey, setRenderKey] = useState(0)
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
+
   const [currentMaiaModel, setCurrentMaiaModel] = useState('maia_kdd_1500')
   const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
 
   useEffect(() => {
     const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      })
       setRenderKey((prev) => prev + 1)
     }
 
@@ -239,20 +234,8 @@ export const AnalysisSection = ({ id }: AnalysisSectionProps) => {
                     <div className="w-full rounded-t-sm bg-background-1/60 p-2 text-left text-sm font-medium text-primary/80">
                       Spassky, Boris V.
                     </div>
-                    <div
-                      className="relative w-full"
-                      style={{
-                        aspectRatio: '1/1',
-                        transform: 'translateZ(0)',
-                      }}
-                    >
-                      <div
-                        className="h-full w-full"
-                        style={{
-                          position: 'relative',
-                          transform: 'translateZ(0)',
-                        }}
-                      >
+                    <div className="relative aspect-square w-full">
+                      <div className="aspect-square h-full w-full">
                         <AnalysisChessboard forceKey={renderKey} />
                       </div>
                     </div>
