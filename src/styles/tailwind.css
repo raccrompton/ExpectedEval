@@ -179,3 +179,11 @@ svg {
   bottom: auto;
   height: 0.9rem;
 }
+
+.cg-wrap coords.ranks {
+  top: -4% !important;
+}
+
+.cg-wrap coords.files {
+  left: 4% !important;
+}
