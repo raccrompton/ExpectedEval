@@ -12,7 +12,9 @@ import {
   UserProfile,
   GameList,
   DelayedLoading,
+  ProfileLeaderboardBadges,
 } from 'src/components'
+import { useLeaderboardStatus } from 'src/hooks/useLeaderboardStatus'
 
 const ProfilePage: NextPage = () => {
   const router = useRouter()
@@ -101,6 +103,10 @@ interface Props {
 const Profile: React.FC<Props> = (props: Props) => {
   const { isMobile } = useContext(WindowSizeContext)
 
+  // Get leaderboard status for the viewed user
+  const { status: leaderboardStatus, loading: leaderboardLoading } =
+    useLeaderboardStatus(props.name)
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -155,7 +161,13 @@ const Profile: React.FC<Props> = (props: Props) => {
           account_circle
         </span>
         <div className="flex flex-col">
-          <h1 className="text-3xl font-semibold">{props.name}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-semibold">{props.name}</h1>
+            <ProfileLeaderboardBadges
+              status={leaderboardStatus}
+              loading={leaderboardLoading}
+            />
+          </div>
           <a
             target="_blank"
             href={`https://lichess.org/@/${props.name}`}
@@ -196,7 +208,13 @@ const Profile: React.FC<Props> = (props: Props) => {
         <span className="material-symbols-outlined text-4xl">
           account_circle
         </span>
-        <h1 className="text-3xl font-semibold">{props.name}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-semibold">{props.name}</h1>
+          <ProfileLeaderboardBadges
+            status={leaderboardStatus}
+            loading={leaderboardLoading}
+          />
+        </div>
       </motion.div>
       <motion.div
         variants={itemVariants}
