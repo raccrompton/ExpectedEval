@@ -1529,13 +1529,6 @@ const Train: React.FC<Props> = ({
                     </div>
                   </div>
                 )}
-                      </span>
-                      <p className="text-xs font-medium text-primary">
-                        Analysis Locked
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
             {gamesController}
