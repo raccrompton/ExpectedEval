@@ -69,8 +69,9 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
             WindowSizeContextProvider,
             AuthContextProvider,
             ModalContextProvider,
-            MaiaEngineContextProvider,
-            StockfishEngineContextProvider,
+            ...(isPageWithAnalysis
+              ? [MaiaEngineContextProvider, StockfishEngineContextProvider]
+              : []),
             ...(isAnalysisPage ? [AnalysisListContextProvider] : []),
           ]}
         >

@@ -134,7 +134,7 @@ const Leaderboard: React.FC = () => {
             animate="visible"
             exit="exit"
             style={{ willChange: 'transform, opacity' }}
-            className="mx-auto flex h-full w-[90%] flex-col items-start justify-center gap-4 py-[1%]"
+            className="mx-auto flex h-full w-[90%] flex-col items-start justify-center gap-3 py-[1%]"
           >
             <Head>
               <title>Leaderboard – Maia Chess</title>
@@ -147,14 +147,14 @@ const Leaderboard: React.FC = () => {
               variants={itemVariants}
               className="flex w-full flex-col items-start justify-between md:flex-row md:items-end"
             >
-              <h1 className="text-3xl font-bold">Rating Leaderboards</h1>
+              <h1 className="text-2xl font-bold">Rating Leaderboards</h1>
               <p className="text-sm text-secondary">
                 Last updated: {lastUpdated ? getTimeAgo(lastUpdated) : '...'}
               </p>
             </motion.div>
             <motion.div
               variants={itemVariants}
-              className="grid h-full w-full grid-cols-1 justify-start gap-3 md:grid-cols-2 lg:grid-cols-3"
+              className="grid h-full w-full grid-cols-1 justify-start gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
             >
               {leaderboard?.map((column, index) => (
                 <LeaderboardColumn key={index} {...column} />

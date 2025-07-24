@@ -6,7 +6,7 @@
     "build": "next build",
     "start": "next start",
     "export": "next export",
-    "lint": "eslint . --ext ts,tsx",
+    "lint": "eslint . --ext ts,tsx --fix",
     "test": "jest"
   },
   "dependencies": {
