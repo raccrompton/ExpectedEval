@@ -674,14 +674,10 @@ export interface EngineAnalysisPosition {
   }
 }
 
-export interface EngineAnalysisData {
-  positions: EngineAnalysisPosition[]
-}
-
 // Store client-side engine analysis to backend
 export const storeEngineAnalysis = async (
   gameId: string,
-  analysisData: EngineAnalysisData,
+  analysisData: EngineAnalysisPosition[],
 ): Promise<void> => {
   const res = await fetch(
     buildUrl(`analysis/store_engine_analysis/${gameId}`),
@@ -706,7 +702,7 @@ export const storeEngineAnalysis = async (
 // Retrieve stored engine analysis from backend
 export const getEngineAnalysis = async (
   gameId: string,
-): Promise<EngineAnalysisData | null> => {
+): Promise<EngineAnalysisPosition[] | null> => {
   const res = await fetch(buildUrl(`analysis/get_engine_analysis/${gameId}`))
 
   if (res.status === 401) {

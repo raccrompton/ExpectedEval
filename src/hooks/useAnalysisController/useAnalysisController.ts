@@ -94,12 +94,12 @@ export const useAnalysisController = (
       const analysisData = collectEngineAnalysisData(game.tree)
 
       // Only save if there's actually some analysis to save
-      if (analysisData.positions.length === 0) {
+      if (analysisData.length === 0) {
         return
       }
 
       // Check if we have meaningful analysis (decent depth or Maia data)
-      const hasMeaningfulAnalysis = analysisData.positions.some(
+      const hasMeaningfulAnalysis = analysisData.some(
         (pos) => (pos.stockfish && pos.stockfish.depth >= 12) || pos.maia,
       )
 
@@ -117,7 +117,7 @@ export const useAnalysisController = (
       setLastSavedCacheKey(cacheKey)
       console.log(
         'Analysis saved to backend:',
-        analysisData.positions.length,
+        analysisData.length,
         'positions',
       )
     } catch (error) {

@@ -1,15 +1,12 @@
 import { GameTree, GameNode } from 'src/types'
-import {
-  EngineAnalysisData,
-  EngineAnalysisPosition,
-} from 'src/api/analysis/analysis'
+import { EngineAnalysisPosition } from 'src/api/analysis/analysis'
 
 /**
  * Collects analysis data from a game tree to send to the backend
  */
 export const collectEngineAnalysisData = (
   gameTree: GameTree,
-): EngineAnalysisData => {
+): EngineAnalysisPosition[] => {
   const positions: EngineAnalysisPosition[] = []
   const mainLine = gameTree.getMainLine()
 
@@ -40,7 +37,7 @@ export const collectEngineAnalysisData = (
     positions.push(position)
   })
 
-  return { positions }
+  return positions
 }
 
 /**
@@ -48,11 +45,11 @@ export const collectEngineAnalysisData = (
  */
 export const applyEngineAnalysisData = (
   gameTree: GameTree,
-  analysisData: EngineAnalysisData,
+  analysisData: EngineAnalysisPosition[],
 ): void => {
   const mainLine = gameTree.getMainLine()
 
-  analysisData.positions.forEach((positionData) => {
+  analysisData.forEach((positionData) => {
     const { ply, maia, stockfish } = positionData
 
     // Find the corresponding node (ply is the index in the main line)
@@ -114,10 +111,9 @@ const calculateRelativeCp = (cpVec: {
  * Generate a unique cache key for analysis data
  */
 export const generateAnalysisCacheKey = (
-  analysisData: EngineAnalysisData,
+  analysisData: EngineAnalysisPosition[],
 ): string => {
-  // Create a hash-like key based on positions and their analysis
-  const keyData = analysisData.positions.map((pos) => ({
+  const keyData = analysisData.map((pos) => ({
     ply: pos.ply,
     fen: pos.fen,
     hasStockfish: !!pos.stockfish,
