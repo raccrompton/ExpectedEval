@@ -5,6 +5,7 @@ interface IconProps {
   tooltipId?: string
   size?: 'small' | 'medium' | 'large'
   className?: string
+  onClick?: () => void
 }
 
 const getSizeClasses = (size: 'small' | 'medium' | 'large') => {
@@ -24,15 +25,31 @@ export const BlunderIcon: React.FC<IconProps> = ({
   tooltipId = 'blunder-tooltip',
   size = 'medium',
   className = '',
+  onClick,
 }) => {
   const sizeClasses = getSizeClasses(size)
   const id = `${tooltipId}-${Math.random().toString(36).substr(2, 9)}`
 
+  const handleClick = (event: React.MouseEvent | React.KeyboardEvent) => {
+    if (onClick) {
+      event.stopPropagation()
+      onClick()
+    }
+  }
+
   return (
     <>
       <div
-        className={`ml-1 flex select-none items-center justify-center rounded-full bg-red-500 font-bold text-white ${sizeClasses} ${className}`}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleClick(e)
+          }
+        }}
+        className={`ml-1 flex select-none items-center justify-center rounded-full bg-red-500 font-bold text-white ${sizeClasses} ${className} ${onClick ? 'cursor-pointer hover:bg-red-600' : ''}`}
         data-tooltip-id={id}
+        onClick={handleClick}
       >
         ??
       </div>
@@ -51,15 +68,31 @@ export const InaccuracyIcon: React.FC<IconProps> = ({
   tooltipId = 'inaccuracy-tooltip',
   size = 'medium',
   className = '',
+  onClick,
 }) => {
   const sizeClasses = getSizeClasses(size)
   const id = `${tooltipId}-${Math.random().toString(36).substr(2, 9)}`
 
+  const handleClick = (event: React.MouseEvent | React.KeyboardEvent) => {
+    if (onClick) {
+      event.stopPropagation() // Prevent event bubbling to parent move
+      onClick()
+    }
+  }
+
   return (
     <>
       <div
-        className={`ml-1 flex select-none items-center justify-center rounded-full bg-yellow-500 font-bold text-white ${sizeClasses} ${className}`}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleClick(e)
+          }
+        }}
+        className={`ml-1 flex select-none items-center justify-center rounded-full bg-yellow-500 font-bold text-white ${sizeClasses} ${className} ${onClick ? 'cursor-pointer hover:bg-yellow-600' : ''}`}
         data-tooltip-id={id}
+        onClick={handleClick}
       >
         ?!
       </div>
@@ -78,15 +111,31 @@ export const ExcellentIcon: React.FC<IconProps> = ({
   tooltipId = 'excellent-tooltip',
   size = 'medium',
   className = '',
+  onClick,
 }) => {
   const sizeClasses = getSizeClasses(size)
   const id = `${tooltipId}-${Math.random().toString(36).substr(2, 9)}`
 
+  const handleClick = (event: React.MouseEvent | React.KeyboardEvent) => {
+    if (onClick) {
+      event.stopPropagation() // Prevent event bubbling to parent move
+      onClick()
+    }
+  }
+
   return (
     <>
       <div
-        className={`ml-1 flex select-none items-center justify-center rounded-full bg-green-500 font-bold text-white ${sizeClasses} ${className}`}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleClick(e)
+          }
+        }}
+        className={`ml-1 flex select-none items-center justify-center rounded-full bg-green-500 font-bold text-white ${sizeClasses} ${className} ${onClick ? 'cursor-pointer hover:bg-green-600' : ''}`}
         data-tooltip-id={id}
+        onClick={handleClick}
       >
         !
       </div>
@@ -101,7 +150,6 @@ export const ExcellentIcon: React.FC<IconProps> = ({
   )
 }
 
-// Unified move classification icon component
 export const MoveClassificationIcon: React.FC<{
   classification: {
     blunder: boolean
@@ -111,15 +159,18 @@ export const MoveClassificationIcon: React.FC<{
   }
   size?: 'small' | 'medium' | 'large'
   className?: string
-}> = ({ classification, size = 'medium', className = '' }) => {
+  onClick?: () => void
+}> = ({ classification, size = 'medium', className = '', onClick }) => {
   if (classification.blunder) {
-    return <BlunderIcon size={size} className={className} />
+    return <BlunderIcon size={size} className={className} onClick={onClick} />
   }
   if (classification.inaccuracy) {
-    return <InaccuracyIcon size={size} className={className} />
+    return (
+      <InaccuracyIcon size={size} className={className} onClick={onClick} />
+    )
   }
   if (classification.excellent) {
-    return <ExcellentIcon size={size} className={className} />
+    return <ExcellentIcon size={size} className={className} onClick={onClick} />
   }
   return null
 }
