@@ -100,10 +100,10 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
               : 'bg-background-2 text-secondary hover:bg-background-3'
           }`}
         >
-          <span className="material-symbols-outlined text-sm">
+          <span className="material-symbols-outlined !text-sm">
             {analysisEnabled ? 'visibility' : 'visibility_off'}
           </span>
-          {analysisEnabled ? 'Enabled' : 'Disabled'}
+          {analysisEnabled ? 'Visible' : 'Hidden'}
         </button>
       </div>
 
@@ -263,10 +263,10 @@ export const OpeningDrillAnalysis: React.FC<Props> = ({
               : 'bg-background-2 text-secondary hover:bg-background-3'
           }`}
         >
-          <span className="material-symbols-outlined text-sm">
+          <span className="material-symbols-outlined !text-sm">
             {analysisEnabled ? 'visibility' : 'visibility_off'}
           </span>
-          {analysisEnabled ? 'Enabled' : 'Disabled'}
+          {analysisEnabled ? 'Visible' : 'Hidden'}
         </button>
       </div>
 

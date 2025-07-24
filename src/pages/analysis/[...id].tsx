@@ -407,7 +407,7 @@ const Analysis: React.FC<Props> = ({
   }, [controller.gameAnalysis])
 
   const handleToggleAnalysis = useCallback(() => {
-    setAnalysisEnabled(prev => !prev)
+    setAnalysisEnabled((prev) => !prev)
   }, [])
 
   // Create empty data structures for when analysis is disabled
@@ -453,7 +453,8 @@ const Analysis: React.FC<Props> = ({
   }, [])
 
   const makeMove = (move: string) => {
-    if (!analysisEnabled || !controller.currentNode || !analyzedGame.tree) return
+    if (!analysisEnabled || !controller.currentNode || !analyzedGame.tree)
+      return
 
     const chess = new Chess(controller.currentNode.fen)
     const moveAttempt = chess.move({
@@ -698,6 +699,7 @@ const Analysis: React.FC<Props> = ({
                 game={analyzedGame}
                 termination={analyzedGame.termination}
                 type="analysis"
+                showAnnotations={analysisEnabled}
               />
               <BoardController
                 gameTree={controller.gameTree}
@@ -794,7 +796,9 @@ const Analysis: React.FC<Props> = ({
           {/* Analysis Toggle Bar */}
           <div className="flex items-center justify-between rounded bg-background-1 px-4 py-2">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-xl">analytics</span>
+              <span className="material-symbols-outlined text-xl">
+                analytics
+              </span>
               <h3 className="font-semibold">Analysis</h3>
             </div>
             <button
@@ -805,10 +809,10 @@ const Analysis: React.FC<Props> = ({
                   : 'bg-background-2 text-secondary hover:bg-background-3'
               }`}
             >
-              <span className="material-symbols-outlined text-sm">
+              <span className="material-symbols-outlined !text-sm">
                 {analysisEnabled ? 'visibility' : 'visibility_off'}
               </span>
-              {analysisEnabled ? 'Enabled' : 'Disabled'}
+              {analysisEnabled ? 'Visible' : 'Hidden'}
             </button>
           </div>
 
@@ -860,7 +864,9 @@ const Analysis: React.FC<Props> = ({
                 </div>
                 <div className="flex h-full w-full bg-background-1">
                   <MovesByRating
-                    moves={analysisEnabled ? controller.movesByRating : undefined}
+                    moves={
+                      analysisEnabled ? controller.movesByRating : undefined
+                    }
                     colorSanMapping={
                       analysisEnabled ? controller.colorSanMapping : {}
                     }
@@ -873,7 +879,9 @@ const Analysis: React.FC<Props> = ({
                     <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
                       lock
                     </span>
-                    <p className="font-medium text-primary">Analysis Disabled</p>
+                    <p className="font-medium text-primary">
+                      Analysis Disabled
+                    </p>
                     <p className="text-sm text-secondary">
                       Enable analysis to see move evaluations
                     </p>
@@ -888,7 +896,9 @@ const Analysis: React.FC<Props> = ({
                   colorSanMapping={
                     analysisEnabled ? controller.colorSanMapping : {}
                   }
-                  setHoverArrow={analysisEnabled ? setHoverArrow : mockSetHoverArrow}
+                  setHoverArrow={
+                    analysisEnabled ? setHoverArrow : mockSetHoverArrow
+                  }
                   makeMove={analysisEnabled ? makeMove : mockMakeMove}
                 />
               </div>
@@ -913,7 +923,9 @@ const Analysis: React.FC<Props> = ({
                     <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
                       lock
                     </span>
-                    <p className="font-medium text-primary">Analysis Disabled</p>
+                    <p className="font-medium text-primary">
+                      Analysis Disabled
+                    </p>
                     <p className="text-sm text-secondary">
                       Enable analysis to see position evaluation
                     </p>
@@ -994,7 +1006,9 @@ const Analysis: React.FC<Props> = ({
                     <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
                       lock
                     </span>
-                    <p className="font-medium text-primary">Analysis Disabled</p>
+                    <p className="font-medium text-primary">
+                      Analysis Disabled
+                    </p>
                     <p className="text-sm text-secondary">
                       Enable analysis to see move evaluations
                     </p>
@@ -1011,7 +1025,9 @@ const Analysis: React.FC<Props> = ({
                   colorSanMapping={
                     analysisEnabled ? controller.colorSanMapping : {}
                   }
-                  setHoverArrow={analysisEnabled ? setHoverArrow : mockSetHoverArrow}
+                  setHoverArrow={
+                    analysisEnabled ? setHoverArrow : mockSetHoverArrow
+                  }
                   makeMove={analysisEnabled ? makeMove : mockMakeMove}
                 />
               </div>
@@ -1021,7 +1037,9 @@ const Analysis: React.FC<Props> = ({
                     <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
                       lock
                     </span>
-                    <p className="font-medium text-primary">Analysis Disabled</p>
+                    <p className="font-medium text-primary">
+                      Analysis Disabled
+                    </p>
                     <p className="text-sm text-secondary">
                       Enable analysis to see position evaluation
                     </p>
@@ -1046,7 +1064,9 @@ const Analysis: React.FC<Props> = ({
                     <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
                       lock
                     </span>
-                    <p className="font-medium text-primary">Analysis Disabled</p>
+                    <p className="font-medium text-primary">
+                      Analysis Disabled
+                    </p>
                     <p className="text-sm text-secondary">
                       Enable analysis to see move evaluations
                     </p>
@@ -1186,6 +1206,7 @@ const Analysis: React.FC<Props> = ({
                   game={analyzedGame}
                   termination={analyzedGame.termination}
                   type="analysis"
+                  showAnnotations={analysisEnabled}
                 />
               </div>
             </div>
@@ -1193,7 +1214,9 @@ const Analysis: React.FC<Props> = ({
               {/* Analysis Toggle Bar */}
               <div className="flex items-center justify-between rounded bg-background-1 px-4 py-2">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-xl">analytics</span>
+                  <span className="material-symbols-outlined text-xl">
+                    analytics
+                  </span>
                   <h3 className="font-semibold">Analysis</h3>
                 </div>
                 <button
@@ -1204,10 +1227,10 @@ const Analysis: React.FC<Props> = ({
                       : 'bg-background-2 text-secondary hover:bg-background-3'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-sm">
+                  <span className="material-symbols-outlined !text-sm">
                     {analysisEnabled ? 'visibility' : 'visibility_off'}
                   </span>
-                  {analysisEnabled ? 'Enabled' : 'Disabled'}
+                  {analysisEnabled ? 'Visible' : 'Hidden'}
                 </button>
               </div>
 
@@ -1270,7 +1293,9 @@ const Analysis: React.FC<Props> = ({
                   hover={analysisEnabled ? hover : mockHover}
                   makeMove={analysisEnabled ? makeMove : mockMakeMove}
                   data={
-                    analysisEnabled ? controller.blunderMeter : emptyBlunderMeterData
+                    analysisEnabled
+                      ? controller.blunderMeter
+                      : emptyBlunderMeterData
                   }
                   colorSanMapping={
                     analysisEnabled ? controller.colorSanMapping : {}
@@ -1320,7 +1345,9 @@ const Analysis: React.FC<Props> = ({
                   colorSanMapping={
                     analysisEnabled ? controller.colorSanMapping : {}
                   }
-                  setHoverArrow={analysisEnabled ? setHoverArrow : mockSetHoverArrow}
+                  setHoverArrow={
+                    analysisEnabled ? setHoverArrow : mockSetHoverArrow
+                  }
                   makeMove={analysisEnabled ? makeMove : mockMakeMove}
                 />
                 {!analysisEnabled && (
