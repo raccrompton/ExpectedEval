@@ -30,7 +30,7 @@ export const LeaderboardNavBadge: React.FC<LeaderboardNavBadgeProps> = ({
       {/* Trophy Badge */}
       <div className="flex cursor-pointer items-center justify-center">
         <div className="relative">
-          <span className="material-symbols-outlined text-2xl text-yellow-500">
+          <span className="material-symbols-outlined material-symbols-filled !text-2xl text-yellow-500">
             trophy
           </span>
           {status.totalLeaderboards > 1 && (
@@ -49,11 +49,11 @@ export const LeaderboardNavBadge: React.FC<LeaderboardNavBadgeProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded bg-background-2 shadow-lg"
+            className="absolute right-0 top-full z-50 w-64 overflow-hidden rounded border border-white/10 bg-background-1 shadow-lg"
           >
             <div className="border-b border-background-3 px-3 py-2">
-              <h3 className="text-sm font-semibold text-primary">
-                Leaderboard Rankings
+              <h3 className="text-sm font-medium text-primary">
+                You&apos;re on the leaderboard!
               </h3>
             </div>
             <div className="flex flex-col">
@@ -61,7 +61,7 @@ export const LeaderboardNavBadge: React.FC<LeaderboardNavBadgeProps> = ({
                 <Link
                   key={position.gameType}
                   href="/leaderboard"
-                  className="flex items-center justify-between px-3 py-2 hover:bg-background-3"
+                  className="flex items-center justify-between px-3 py-2 hover:bg-background-2/60"
                 >
                   <div className="flex flex-col">
                     <span className="text-sm font-medium">
@@ -71,19 +71,15 @@ export const LeaderboardNavBadge: React.FC<LeaderboardNavBadgeProps> = ({
                       Rating: {position.elo}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-sm font-bold text-yellow-500">
-                      #{position.position}
-                    </span>
+                  <div className="flex items-center gap-2">
                     {position.position <= 3 && (
-                      <span className="material-symbols-outlined text-lg text-yellow-500">
-                        {position.position === 1
-                          ? 'military_tech'
-                          : position.position === 2
-                            ? 'workspace_premium'
-                            : 'star'}
+                      <span className="material-symbols-outlined !text-lg text-yellow-500">
+                        workspace_premium
                       </span>
                     )}
+                    <span className="text-base font-semibold text-yellow-500">
+                      #{position.position}
+                    </span>
                   </div>
                 </Link>
               ))}

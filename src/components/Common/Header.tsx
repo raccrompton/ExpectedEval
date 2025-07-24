@@ -120,7 +120,6 @@ export const Header: React.FC = () => {
               >
                 Play Maia
               </button>
-
               <button
                 onClick={() => startGame('handAndBrain')}
                 className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
@@ -137,7 +136,6 @@ export const Header: React.FC = () => {
               </a>
             </div>
           </div>
-          )
           <Link
             href="/analysis"
             className={`${router.pathname.startsWith('/analysis') && 'bg-background-1'} uppercase hover:bg-background-1`}
