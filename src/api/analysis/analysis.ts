@@ -683,13 +683,16 @@ export const storeEngineAnalysis = async (
   gameId: string,
   analysisData: EngineAnalysisData,
 ): Promise<void> => {
-  const res = await fetch(buildUrl(`analysis/store_engine_analysis/${gameId}`), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+  const res = await fetch(
+    buildUrl(`analysis/store_engine_analysis/${gameId}`),
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(analysisData),
     },
-    body: JSON.stringify(analysisData),
-  })
+  )
 
   if (res.status === 401) {
     throw new Error('Unauthorized')

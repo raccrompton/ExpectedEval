@@ -19,9 +19,9 @@ import { useMoveRecommendations } from './useMoveRecommendations'
 import { MaiaEngineContext } from 'src/contexts/MaiaEngineContext'
 import { generateColorSanMapping, calculateBlunderMeter } from './utils'
 import { StockfishEngineContext } from 'src/contexts/StockfishEngineContext'
-import { 
-  collectEngineAnalysisData, 
-  generateAnalysisCacheKey 
+import {
+  collectEngineAnalysisData,
+  generateAnalysisCacheKey,
 } from 'src/lib/analysisStorage'
 import { storeEngineAnalysis } from 'src/api/analysis/analysis'
 
@@ -92,9 +92,18 @@ export const useAnalysisController = (
 
     try {
       const analysisData = collectEngineAnalysisData(game.tree)
-      
+
       // Only save if there's actually some analysis to save
       if (analysisData.positions.length === 0) {
+        return
+      }
+
+      // Check if we have meaningful analysis (decent depth or Maia data)
+      const hasMeaningfulAnalysis = analysisData.positions.some(
+        (pos) => (pos.stockfish && pos.stockfish.depth >= 12) || pos.maia,
+      )
+
+      if (!hasMeaningfulAnalysis) {
         return
       }
 
@@ -106,7 +115,11 @@ export const useAnalysisController = (
 
       await storeEngineAnalysis(game.id, analysisData)
       setLastSavedCacheKey(cacheKey)
-      console.log('Analysis saved to backend:', analysisData.positions.length, 'positions')
+      console.log(
+        'Analysis saved to backend:',
+        analysisData.positions.length,
+        'positions',
+      )
     } catch (error) {
       console.warn('Failed to save analysis to backend:', error)
       // Don't show error to user as this is background functionality
@@ -123,11 +136,13 @@ export const useAnalysisController = (
     // Set up new timer to save every 10 seconds
     autoSaveTimerRef.current = setInterval(saveAnalysisToBackend, 10000)
 
-    // Cleanup on unmount
+    // Cleanup on unmount or game change - save one last time
     return () => {
       if (autoSaveTimerRef.current) {
         clearInterval(autoSaveTimerRef.current)
       }
+      // Final save when component unmounts or game changes
+      saveAnalysisToBackend()
     }
   }, [saveAnalysisToBackend])
 
@@ -418,6 +433,7 @@ export const useAnalysisController = (
       cancelAnalysis: cancelGameAnalysis,
       resetProgress: resetGameAnalysisProgress,
       isEnginesReady: stockfish.isReady() && maia.status === 'ready',
+      saveAnalysis: saveAnalysisToBackend,
     },
   }
 }

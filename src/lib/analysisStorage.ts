@@ -73,7 +73,10 @@ export const applyEngineAnalysisData = (
             sent: true,
             depth: stockfish.depth,
             model_move: Object.keys(stockfish.cp_vec)[0] || '',
-            model_optimal_cp: Math.max(...Object.values(stockfish.cp_vec).map(Number), 0),
+            model_optimal_cp: Math.max(
+              ...Object.values(stockfish.cp_vec).map(Number),
+              0,
+            ),
             cp_vec: stockfish.cp_vec,
             cp_relative_vec: calculateRelativeCp(stockfish.cp_vec),
           }
@@ -110,16 +113,18 @@ const calculateRelativeCp = (cpVec: {
 /**
  * Generate a unique cache key for analysis data
  */
-export const generateAnalysisCacheKey = (analysisData: EngineAnalysisData): string => {
+export const generateAnalysisCacheKey = (
+  analysisData: EngineAnalysisData,
+): string => {
   // Create a hash-like key based on positions and their analysis
-  const keyData = analysisData.positions.map(pos => ({
+  const keyData = analysisData.positions.map((pos) => ({
     ply: pos.ply,
     fen: pos.fen,
     hasStockfish: !!pos.stockfish,
     stockfishDepth: pos.stockfish?.depth || 0,
     hasMaia: !!pos.maia,
-    maiaModels: pos.maia ? Object.keys(pos.maia).sort() : []
+    maiaModels: pos.maia ? Object.keys(pos.maia).sort() : [],
   }))
-  
+
   return JSON.stringify(keyData)
 }
