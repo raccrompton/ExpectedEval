@@ -231,7 +231,10 @@ const BrowsePanel: React.FC<{
   const { isMobile } = useContext(WindowSizeContext)
 
   // Helper function to remove a selection by opening and variation
-  const removeOpeningSelection = (opening: Opening, variation: OpeningVariation | null) => {
+  const removeOpeningSelection = (
+    opening: Opening,
+    variation: OpeningVariation | null,
+  ) => {
     const selectionToRemove = selections.find(
       (selection) =>
         selection.opening.id === opening.id &&
@@ -291,7 +294,7 @@ const BrowsePanel: React.FC<{
           return (
             <div key={opening.id} className="flex flex-col">
               <div
-                className={`group mb-1 transition-colors ${
+                className={`group transition-colors ${
                   isMobile
                     ? openingIsSelected
                       ? 'bg-human-2/20'
@@ -299,7 +302,7 @@ const BrowsePanel: React.FC<{
                     : openingIsSelected
                       ? 'bg-human-2/20'
                       : openingIsBeingPreviewed
-                        ? 'bg-human-2/20'
+                        ? 'bg-human-2/10'
                         : 'hover:bg-human-2/10'
                 }`}
               >
@@ -353,7 +356,7 @@ const BrowsePanel: React.FC<{
                       className="mr-3 rounded p-1 text-human-3 transition-colors hover:text-human-4"
                       title="Remove opening from selection"
                     >
-                      <span className="material-symbols-outlined text-lg">
+                      <span className="material-symbols-outlined !text-base">
                         check
                       </span>
                     </button>
@@ -366,7 +369,7 @@ const BrowsePanel: React.FC<{
                       className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
                       title="Add opening with current settings"
                     >
-                      <span className="material-symbols-outlined text-base">
+                      <span className="material-symbols-outlined !text-base">
                         add
                       </span>
                     </button>
@@ -394,7 +397,7 @@ const BrowsePanel: React.FC<{
                         : variationIsSelected
                           ? 'bg-human-2/20'
                           : variationIsBeingPreviewed
-                            ? 'bg-human-2/20'
+                            ? 'bg-human-2/10'
                             : 'hover:bg-human-2/10'
                     }`}
                   >
@@ -447,7 +450,7 @@ const BrowsePanel: React.FC<{
                           className="mr-3 rounded p-1 text-human-3 transition-colors hover:text-human-4"
                           title="Remove variation from selection"
                         >
-                          <span className="material-symbols-outlined text-lg">
+                          <span className="material-symbols-outlined !text-base">
                             check
                           </span>
                         </button>
@@ -460,7 +463,7 @@ const BrowsePanel: React.FC<{
                           className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
                           title="Add variation with current settings"
                         >
-                          <span className="material-symbols-outlined text-base">
+                          <span className="material-symbols-outlined !text-base">
                             add
                           </span>
                         </button>
