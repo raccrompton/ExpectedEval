@@ -211,6 +211,7 @@ const BrowsePanel: React.FC<{
   setSearchTerm: (term: string) => void
   selections: OpeningSelection[]
   onOpeningClick: (opening: Opening, variation: OpeningVariation | null) => void
+  removeSelection: (id: string) => void
 }> = ({
   activeTab,
   filteredOpenings,
@@ -225,8 +226,21 @@ const BrowsePanel: React.FC<{
   setSearchTerm,
   selections,
   onOpeningClick,
+  removeSelection,
 }) => {
   const { isMobile } = useContext(WindowSizeContext)
+
+  // Helper function to remove a selection by opening and variation
+  const removeOpeningSelection = (opening: Opening, variation: OpeningVariation | null) => {
+    const selectionToRemove = selections.find(
+      (selection) =>
+        selection.opening.id === opening.id &&
+        selection.variation?.id === variation?.id,
+    )
+    if (selectionToRemove) {
+      removeSelection(selectionToRemove.id)
+    }
+  }
 
   return (
     <div
@@ -282,9 +296,11 @@ const BrowsePanel: React.FC<{
                     ? openingIsSelected
                       ? 'bg-human-2/20'
                       : ''
-                    : openingIsBeingPreviewed
+                    : openingIsSelected
                       ? 'bg-human-2/20'
-                      : 'hover:bg-human-2/10'
+                      : openingIsBeingPreviewed
+                        ? 'bg-human-2/20'
+                        : 'hover:bg-human-2/10'
                 }`}
               >
                 <div className="flex items-center">
@@ -329,9 +345,18 @@ const BrowsePanel: React.FC<{
                     </div>
                   </div>
                   {openingIsSelected ? (
-                    <span className="material-symbols-outlined mr-3 rounded p-1 text-base text-human-3">
-                      check
-                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeOpeningSelection(opening, null)
+                      }}
+                      className="mr-3 rounded p-1 text-human-3 transition-colors hover:text-human-4"
+                      title="Remove opening from selection"
+                    >
+                      <span className="material-symbols-outlined text-lg">
+                        check
+                      </span>
+                    </button>
                   ) : (
                     <button
                       onClick={(e) => {
@@ -366,9 +391,11 @@ const BrowsePanel: React.FC<{
                         ? variationIsSelected
                           ? 'bg-human-2/20'
                           : ''
-                        : variationIsBeingPreviewed
+                        : variationIsSelected
                           ? 'bg-human-2/20'
-                          : 'hover:bg-human-2/10'
+                          : variationIsBeingPreviewed
+                            ? 'bg-human-2/20'
+                            : 'hover:bg-human-2/10'
                     }`}
                   >
                     <div className="flex items-center">
@@ -412,9 +439,18 @@ const BrowsePanel: React.FC<{
                         </div>
                       </div>
                       {variationIsSelected ? (
-                        <span className="material-symbols-outlined mr-3 rounded p-1 text-base text-human-3">
-                          check
-                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            removeOpeningSelection(opening, variation)
+                          }}
+                          className="mr-3 rounded p-1 text-human-3 transition-colors hover:text-human-4"
+                          title="Remove variation from selection"
+                        >
+                          <span className="material-symbols-outlined text-lg">
+                            check
+                          </span>
+                        </button>
                       ) : (
                         <button
                           onClick={(e) => {
@@ -1165,6 +1201,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
             setSearchTerm={setSearchTerm}
             selections={selections}
             onOpeningClick={handleMobileOpeningClick}
+            removeSelection={removeSelection}
           />
           <PreviewPanel
             selections={selections}
