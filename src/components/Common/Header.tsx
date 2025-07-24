@@ -103,45 +103,35 @@ export const Header: React.FC = () => {
           <h2 className="text-2xl font-bold">Maia Chess</h2>
         </Link>
         <div className="hidden flex-row gap-1 *:px-2 *:py-1 md:flex">
-          {user?.lichessId ? (
-            <div
-              className={`${router.pathname.startsWith('/play') && 'bg-background-1'} group relative`}
-            >
-              <button className="uppercase">Play</button>
-              <div className="absolute left-0 top-[100%] z-30 hidden w-48 flex-col items-start bg-background-1 group-hover:flex">
-                <button
-                  onClick={() => startGame('againstMaia')}
-                  className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
-                >
-                  Play Maia
-                </button>
+          <div
+            className={`${router.pathname.startsWith('/play') && 'bg-background-1'} group relative`}
+          >
+            <button className="uppercase">Play</button>
+            <div className="absolute left-0 top-[100%] z-30 hidden w-48 flex-col items-start bg-background-1 group-hover:flex">
+              <button
+                onClick={() => startGame('againstMaia')}
+                className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
+              >
+                Play Maia
+              </button>
 
-                <button
-                  onClick={() => startGame('handAndBrain')}
-                  className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
-                >
-                  Play Hand and Brain
-                </button>
-                <a
-                  className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
-                  href="https://lichess.org/@/maia1"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Play Maia on Lichess
-                </a>
-              </div>
+              <button
+                onClick={() => startGame('handAndBrain')}
+                className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
+              >
+                Play Hand and Brain
+              </button>
+              <a
+                className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
+                href="https://lichess.org/@/maia1"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Play Maia on Lichess
+              </a>
             </div>
-          ) : (
-            <a
-              target="_blank"
-              rel="noreferrer"
-              href="https://lichess.org/@/maia1"
-              className="uppercase"
-            >
-              Play
-            </a>
-          )}
+          </div>
+          )
           <Link
             href="/analysis"
             className={`${router.pathname.startsWith('/analysis') && 'bg-background-1'} uppercase hover:bg-background-1`}
@@ -248,35 +238,26 @@ export const Header: React.FC = () => {
             </button>
           </div>
           <div className="flex flex-col gap-6 px-12">
-            {user?.lichessId ? (
-              <div className="flex flex-col items-start justify-center gap-6">
-                <button>PLAY</button>
-                <div className="flex flex-col items-start justify-center gap-4">
-                  <button onClick={() => startGame('againstMaia')}>
-                    Play Maia
-                  </button>
+            <div className="flex flex-col items-start justify-center gap-6">
+              <button>PLAY</button>
+              <div className="flex flex-col items-start justify-center gap-4">
+                <button onClick={() => startGame('againstMaia')}>
+                  Play Maia
+                </button>
 
-                  <button onClick={() => startGame('handAndBrain')}>
-                    Play Hand and Brain
-                  </button>
-                  <a
-                    href="https://lichess.org/@/maia1"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Play Maia on Lichess
-                  </a>
-                </div>
+                <button onClick={() => startGame('handAndBrain')}>
+                  Play Hand and Brain
+                </button>
+                <a
+                  href="https://lichess.org/@/maia1"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Play Maia on Lichess
+                </a>
               </div>
-            ) : (
-              <a
-                target="_blank"
-                rel="noreferrer"
-                href="https://lichess.org/@/maia1"
-              >
-                Play
-              </a>
-            )}
+            </div>
+
             <Link href="/analysis" className="uppercase">
               Analysis
             </Link>
