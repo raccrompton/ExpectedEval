@@ -15,7 +15,7 @@ import {
   BotOrNotIcon,
 } from 'src/components/Common/Icons'
 import { PlayType } from 'src/types'
-import { getGlobalStats } from 'src/api'
+import { getGlobalStats, getActiveUserCount } from 'src/api'
 import { AuthContext, ModalContext } from 'src/contexts'
 import { AnimatedNumber } from 'src/components/Common/AnimatedNumber'
 
@@ -120,6 +120,7 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
     puzzle_games_total: number
     turing_games_total: number
   }>()
+  const [activeUsers, setActiveUsers] = useState<number>(0)
   const { setPlaySetupModalProps } = useContext(ModalContext)
   const { user, connectLichess } = useContext(AuthContext)
 
@@ -130,11 +131,36 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
     [setPlaySetupModalProps],
   )
 
+  // Fetch global stats and set up periodic updates
   useEffect(() => {
-    ;(async () => {
+    const fetchGlobalStats = async () => {
       const data = await getGlobalStats()
       setGlobalStats(data)
-    })()
+    }
+
+    // Fetch immediately
+    fetchGlobalStats()
+
+    // Update every 20 seconds
+    const interval = setInterval(fetchGlobalStats, 20000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Fetch active users count and set up periodic updates
+  useEffect(() => {
+    const fetchActiveUsers = async () => {
+      const count = await getActiveUserCount()
+      setActiveUsers(count)
+    }
+
+    // Fetch immediately
+    fetchActiveUsers()
+
+    // Update every 20 seconds
+    const interval = setInterval(fetchActiveUsers, 20000)
+
+    return () => clearInterval(interval)
   }, [])
 
   return (
@@ -227,28 +253,43 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
             />
           </div>
         </div>
-        <motion.div className="grid grid-cols-3 gap-6 px-2 md:flex">
+        <motion.div className="grid grid-cols-2 gap-6 px-2 md:flex md:gap-6">
+          {activeUsers > 0 ? (
+            <p className="text-center text-base text-primary/80">
+              <AnimatedNumber
+                value={activeUsers}
+                className="font-bold text-human-2"
+              />{' '}
+              users online
+            </p>
+          ) : (
+            <></>
+          )}
           <p className="text-center text-base text-primary/80">
             <AnimatedNumber
               value={globalStats?.play_moves_total || 0}
-              className="font-bold"
+              className="font-bold text-human-2"
             />{' '}
             moves played
           </p>
           <p className="text-center text-base text-primary/80">
             <AnimatedNumber
               value={globalStats?.puzzle_games_total || 0}
-              className="font-bold"
+              className="font-bold text-human-2"
             />{' '}
             puzzle games solved
           </p>
-          <p className="text-center text-base text-primary/80">
-            <AnimatedNumber
-              value={globalStats?.turing_games_total || 0}
-              className="font-bold"
-            />{' '}
-            turing games played
-          </p>
+          {activeUsers <= 0 ? (
+            <p className="text-center text-base text-primary/80">
+              <AnimatedNumber
+                value={globalStats?.turing_games_total || 0}
+                className="font-bold"
+              />{' '}
+              turing games played
+            </p>
+          ) : (
+            <></>
+          )}
         </motion.div>
       </div>
     </Fragment>

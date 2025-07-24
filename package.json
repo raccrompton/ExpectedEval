@@ -6,7 +6,7 @@
     "build": "next build",
     "start": "next start",
     "export": "next export",
-    "lint": "eslint . --ext ts,tsx",
+    "lint": "eslint . --ext ts,tsx --fix",
     "test": "jest"
   },
   "dependencies": {
@@ -61,6 +61,7 @@
     "eslint-plugin-react": "^7.28.0",
     "jest": "^30.0.4",
     "jest-environment-jsdom": "^30.0.4",
+    "node-mocks-http": "^1.17.2",
     "postcss": "^8.4.45",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.6",
