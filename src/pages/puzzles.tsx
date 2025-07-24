@@ -305,44 +305,92 @@ const Train: React.FC<Props> = ({
   const [promotionFromTo, setPromotionFromTo] = useState<
     [string, string] | null
   >(null)
+  const [userAnalysisEnabled, setUserAnalysisEnabled] = useState<
+    boolean | null
+  >(null) // User's choice, null means not set
 
   const showAnalysis =
     status === 'correct' || status === 'forfeit' || status === 'archived'
 
+  // Analysis is enabled when:
+  // 1. Puzzle is complete (showAnalysis is true) AND
+  // 2. User hasn't explicitly disabled it, OR user has explicitly enabled it
+  const analysisEnabled = showAnalysis && userAnalysisEnabled !== false
+
+  const handleToggleAnalysis = useCallback(() => {
+    setUserAnalysisEnabled((prev) => {
+      // If user hasn't made a choice yet, set it to the opposite of current state
+      if (prev === null) {
+        return !analysisEnabled
+      }
+      // Otherwise, toggle the user's explicit choice
+      return !prev
+    })
+  }, [analysisEnabled])
+
+  // Create empty data structures for when analysis is disabled
+  const emptyBlunderMeterData = useMemo(
+    () => ({
+      goodMoves: { moves: [], probability: 0 },
+      okMoves: { moves: [], probability: 0 },
+      blunderMoves: { moves: [], probability: 0 },
+    }),
+    [],
+  )
+
+  const emptyRecommendations = useMemo(
+    () => ({
+      maia: undefined,
+      stockfish: undefined,
+    }),
+    [],
+  )
+
   const currentPlayer = useMemo(() => {
-    const currentNode = showAnalysis
-      ? analysisController.currentNode
-      : controller.currentNode
+    const currentNode =
+      analysisEnabled && showAnalysis
+        ? analysisController.currentNode
+        : controller.currentNode
     return getCurrentPlayer(currentNode)
-  }, [showAnalysis, analysisController.currentNode, controller.currentNode])
+  }, [
+    analysisEnabled,
+    showAnalysis,
+    analysisController.currentNode,
+    controller.currentNode,
+  ])
 
   useEffect(() => {
-    if (showAnalysis && !analysisSyncedRef.current) {
+    if (analysisEnabled && showAnalysis && !analysisSyncedRef.current) {
       // Set the analysis controller to the current training controller's node
       // Only sync once when analysis mode is first enabled
       analysisController.setCurrentNode(controller.currentNode)
       analysisSyncedRef.current = true
-    } else if (!showAnalysis) {
+    } else if (!showAnalysis || !analysisEnabled) {
       // Reset sync flag when exiting analysis mode
       analysisSyncedRef.current = false
     }
-  }, [showAnalysis, analysisController, controller.currentNode])
+  }, [
+    analysisEnabled,
+    showAnalysis,
+    analysisController,
+    controller.currentNode,
+  ])
 
   const onSelectSquare = useCallback(
     (square: Key) => {
-      if (!showAnalysis) {
+      if (!analysisEnabled && !showAnalysis) {
         controller.reset()
         setStatus('default')
       }
     },
-    [controller, showAnalysis],
+    [controller, analysisEnabled, showAnalysis],
   )
 
   const onPlayerMakeMove = useCallback(
     (playedMove: [string, string] | null) => {
       if (!playedMove) return
 
-      if (showAnalysis) {
+      if (analysisEnabled && showAnalysis) {
         const availableMoves = getAvailableMovesArray(
           analysisController.availableMoves,
         )
@@ -433,7 +481,7 @@ const Train: React.FC<Props> = ({
       setPromotionFromTo(null)
       const moveUci = promotionFromTo[0] + promotionFromTo[1] + piece
 
-      if (showAnalysis) {
+      if (analysisEnabled && showAnalysis) {
         // In analysis mode
         if (!analysisController.currentNode || !analyzedGame.tree) return
 
@@ -501,16 +549,17 @@ const Train: React.FC<Props> = ({
   }, [trainingGame.id, logGuess, setStatus, stats.rating])
 
   const launchContinue = useCallback(() => {
-    const currentNode = showAnalysis
-      ? analysisController.currentNode
-      : controller.currentNode
+    const currentNode =
+      analysisEnabled && showAnalysis
+        ? analysisController.currentNode
+        : controller.currentNode
     const url = '/play' + '?fen=' + encodeURIComponent(currentNode.fen)
     window.open(url)
-  }, [controller, analysisController, showAnalysis])
+  }, [controller, analysisController, analysisEnabled, showAnalysis])
 
   const hover = useCallback(
     (move?: string) => {
-      if (move && showAnalysis) {
+      if (move && analysisEnabled && showAnalysis) {
         setHoverArrow({
           orig: move.slice(0, 2) as Key,
           dest: move.slice(2, 4) as Key,
@@ -521,12 +570,13 @@ const Train: React.FC<Props> = ({
         setHoverArrow(null)
       }
     },
-    [showAnalysis],
+    [analysisEnabled, showAnalysis],
   )
 
   const makeMove = useCallback(
     (move: string) => {
       if (
+        !analysisEnabled ||
         !showAnalysis ||
         !analysisController.currentNode ||
         !analyzedGame.tree
@@ -668,23 +718,23 @@ const Train: React.FC<Props> = ({
             <GameBoard
               game={trainingGame}
               currentNode={
-                showAnalysis
+                analysisEnabled && showAnalysis
                   ? analysisController.currentNode
                   : controller.currentNode
               }
               orientation={
-                showAnalysis
+                analysisEnabled && showAnalysis
                   ? analysisController.orientation
                   : controller.orientation
               }
               onPlayerMakeMove={onPlayerMakeMove}
               availableMoves={
-                showAnalysis
+                analysisEnabled && showAnalysis
                   ? analysisController.availableMoves
                   : controller.availableMovesMapped
               }
               shapes={
-                showAnalysis
+                analysisEnabled && showAnalysis
                   ? hoverArrow
                     ? [...analysisController.arrows, hoverArrow]
                     : [...analysisController.arrows]
@@ -693,8 +743,14 @@ const Train: React.FC<Props> = ({
                     : []
               }
               onSelectSquare={onSelectSquare}
-              goToNode={showAnalysis ? analysisController.goToNode : undefined}
-              gameTree={showAnalysis ? analyzedGame.tree : undefined}
+              goToNode={
+                analysisEnabled && showAnalysis
+                  ? analysisController.goToNode
+                  : undefined
+              }
+              gameTree={
+                analysisEnabled && showAnalysis ? analyzedGame.tree : undefined
+              }
             />
             {promotionFromTo ? (
               <PromotionOverlay
@@ -706,43 +762,49 @@ const Train: React.FC<Props> = ({
           </div>
           <BoardController
             orientation={
-              showAnalysis
+              analysisEnabled && showAnalysis
                 ? analysisController.orientation
                 : controller.orientation
             }
             setOrientation={
-              showAnalysis
+              analysisEnabled && showAnalysis
                 ? analysisController.setOrientation
                 : controller.setOrientation
             }
             currentNode={
-              showAnalysis
+              analysisEnabled && showAnalysis
                 ? analysisController.currentNode
                 : controller.currentNode
             }
             plyCount={
-              showAnalysis ? analysisController.plyCount : controller.plyCount
+              analysisEnabled && showAnalysis
+                ? analysisController.plyCount
+                : controller.plyCount
             }
             goToNode={
-              showAnalysis ? analysisController.goToNode : controller.goToNode
+              analysisEnabled && showAnalysis
+                ? analysisController.goToNode
+                : controller.goToNode
             }
             goToNextNode={
-              showAnalysis
+              analysisEnabled && showAnalysis
                 ? analysisController.goToNextNode
                 : controller.goToNextNode
             }
             goToPreviousNode={
-              showAnalysis
+              analysisEnabled && showAnalysis
                 ? analysisController.goToPreviousNode
                 : controller.goToPreviousNode
             }
             goToRootNode={
-              showAnalysis
+              analysisEnabled && showAnalysis
                 ? analysisController.goToRootNode
                 : controller.goToRootNode
             }
             gameTree={
-              showAnalysis ? analysisController.gameTree : controller.gameTree
+              analysisEnabled && showAnalysis
+                ? analysisController.gameTree
+                : controller.gameTree
             }
           />
           <div className="flex w-full flex-1">
@@ -762,6 +824,31 @@ const Train: React.FC<Props> = ({
           variants={itemVariants}
           style={{ willChange: 'transform, opacity' }}
         >
+          {/* Analysis Toggle Bar - only show when puzzle is complete */}
+          {showAnalysis && (
+            <div className="flex items-center justify-between rounded bg-background-1 px-4 py-2">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-xl">
+                  analytics
+                </span>
+                <h3 className="font-semibold">Analysis</h3>
+              </div>
+              <button
+                onClick={handleToggleAnalysis}
+                className={`flex items-center gap-2 rounded px-3 py-1 text-sm transition-colors ${
+                  analysisEnabled
+                    ? 'bg-human-4 text-white hover:bg-human-4/80'
+                    : 'bg-background-2 text-secondary hover:bg-background-3'
+                }`}
+              >
+                <span className="material-symbols-outlined !text-sm">
+                  {analysisEnabled ? 'visibility' : 'visibility_off'}
+                </span>
+                {analysisEnabled ? 'Visible' : 'Hidden'}
+              </button>
+            </div>
+          )}
+
           <div className="relative">
             {/* Large screens (xl+): Side by side layout */}
             <div className="hidden xl:flex xl:h-[calc((55vh+4.5rem)/2)]">
@@ -770,49 +857,73 @@ const Train: React.FC<Props> = ({
                   <div className="relative w-full">
                     <Highlight
                       setCurrentMaiaModel={
-                        showAnalysis
+                        analysisEnabled && showAnalysis
                           ? analysisController.setCurrentMaiaModel
                           : () => void 0
                       }
-                      hover={showAnalysis ? hover : mockHover}
-                      makeMove={showAnalysis ? makeMove : mockMakeMove}
+                      hover={
+                        analysisEnabled && showAnalysis ? hover : mockHover
+                      }
+                      makeMove={
+                        analysisEnabled && showAnalysis
+                          ? makeMove
+                          : mockMakeMove
+                      }
                       currentMaiaModel={
-                        showAnalysis
+                        analysisEnabled && showAnalysis
                           ? analysisController.currentMaiaModel
                           : 'maia_kdd_1500'
                       }
                       recommendations={
-                        showAnalysis
+                        analysisEnabled && showAnalysis
                           ? analysisController.moveRecommendations
-                          : mockAnalysisData.recommendations
+                          : emptyRecommendations
                       }
                       moveEvaluation={
-                        showAnalysis
+                        analysisEnabled && showAnalysis
                           ? (analysisController.moveEvaluation as {
                               maia?: MaiaEvaluation
                               stockfish?: StockfishEvaluation
                             })
-                          : mockAnalysisData.moveEvaluation
+                          : {
+                              maia: undefined,
+                              stockfish: undefined,
+                            }
                       }
                       colorSanMapping={
-                        showAnalysis
+                        analysisEnabled && showAnalysis
                           ? analysisController.colorSanMapping
-                          : mockAnalysisData.colorSanMapping
+                          : {}
                       }
                       boardDescription={
-                        showAnalysis
+                        analysisEnabled && showAnalysis
                           ? analysisController.boardDescription
                           : {
                               segments: [
                                 {
                                   type: 'text',
                                   content:
-                                    'This position offers multiple strategic options. Consider central control and piece development.',
+                                    'Complete the puzzle to unlock analysis, or analysis is disabled.',
                                 },
                               ],
                             }
                       }
                     />
+                    {!analysisEnabled && showAnalysis && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                        <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                          <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                            lock
+                          </span>
+                          <p className="font-medium text-primary">
+                            Analysis Disabled
+                          </p>
+                          <p className="text-sm text-secondary">
+                            Enable analysis to see detailed evaluations
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     {!showAnalysis && (
                       <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
                         <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
@@ -833,14 +944,14 @@ const Train: React.FC<Props> = ({
                 <div className="flex h-full w-full bg-background-1">
                   <MovesByRating
                     moves={
-                      showAnalysis
+                      analysisEnabled && showAnalysis
                         ? analysisController.movesByRating
-                        : mockAnalysisData.movesByRating
+                        : undefined
                     }
                     colorSanMapping={
-                      showAnalysis
+                      analysisEnabled && showAnalysis
                         ? analysisController.colorSanMapping
-                        : mockAnalysisData.colorSanMapping
+                        : {}
                     }
                   />
                 </div>
@@ -852,44 +963,49 @@ const Train: React.FC<Props> = ({
               <div className="flex h-full w-full border-r-[0.5px] border-white/40">
                 <Highlight
                   setCurrentMaiaModel={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.setCurrentMaiaModel
                       : () => void 0
                   }
-                  hover={showAnalysis ? hover : mockHover}
-                  makeMove={showAnalysis ? makeMove : mockMakeMove}
+                  hover={analysisEnabled && showAnalysis ? hover : mockHover}
+                  makeMove={
+                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                  }
                   currentMaiaModel={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.currentMaiaModel
                       : 'maia_kdd_1500'
                   }
                   recommendations={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.moveRecommendations
-                      : mockAnalysisData.recommendations
+                      : emptyRecommendations
                   }
                   moveEvaluation={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? (analysisController.moveEvaluation as {
                           maia?: MaiaEvaluation
                           stockfish?: StockfishEvaluation
                         })
-                      : mockAnalysisData.moveEvaluation
+                      : {
+                          maia: undefined,
+                          stockfish: undefined,
+                        }
                   }
                   colorSanMapping={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.colorSanMapping
-                      : mockAnalysisData.colorSanMapping
+                      : {}
                   }
                   boardDescription={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.boardDescription
                       : {
                           segments: [
                             {
                               type: 'text',
                               content:
-                                'This position offers multiple strategic options. Consider central control and piece development.',
+                                'Complete the puzzle to unlock analysis, or analysis is disabled.',
                             },
                           ],
                         }
@@ -899,22 +1015,24 @@ const Train: React.FC<Props> = ({
               <div className="flex h-full w-auto min-w-[40%] max-w-[40%] bg-background-1 p-3">
                 <div className="h-full w-full">
                   <BlunderMeter
-                    hover={showAnalysis ? hover : mockHover}
-                    makeMove={showAnalysis ? makeMove : mockMakeMove}
+                    hover={analysisEnabled && showAnalysis ? hover : mockHover}
+                    makeMove={
+                      analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                    }
                     data={
-                      showAnalysis
+                      analysisEnabled && showAnalysis
                         ? analysisController.blunderMeter
-                        : mockAnalysisData.blunderMeter
+                        : emptyBlunderMeterData
                     }
                     colorSanMapping={
-                      showAnalysis
+                      analysisEnabled && showAnalysis
                         ? analysisController.colorSanMapping
-                        : mockAnalysisData.colorSanMapping
+                        : {}
                     }
                     moveEvaluation={
-                      showAnalysis
+                      analysisEnabled && showAnalysis
                         ? analysisController.moveEvaluation
-                        : mockAnalysisData.moveEvaluation
+                        : undefined
                     }
                     showContainer={false}
                   />
@@ -922,6 +1040,19 @@ const Train: React.FC<Props> = ({
               </div>
             </div>
 
+            {!analysisEnabled && showAnalysis && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                  <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                    lock
+                  </span>
+                  <p className="font-medium text-primary">Analysis Disabled</p>
+                  <p className="text-sm text-secondary">
+                    Enable analysis to see detailed evaluations
+                  </p>
+                </div>
+              </div>
+            )}
             {!showAnalysis && (
               <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
                 <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
@@ -943,64 +1074,114 @@ const Train: React.FC<Props> = ({
               <div className="flex h-full w-full flex-col">
                 <MoveMap
                   moveMap={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.moveMap
-                      : mockAnalysisData.moveMap
+                      : undefined
                   }
                   colorSanMapping={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.colorSanMapping
-                      : mockAnalysisData.colorSanMapping
+                      : {}
                   }
                   setHoverArrow={
-                    showAnalysis ? setHoverArrow : mockSetHoverArrow
+                    analysisEnabled && showAnalysis
+                      ? setHoverArrow
+                      : mockSetHoverArrow
                   }
-                  makeMove={showAnalysis ? makeMove : mockMakeMove}
+                  makeMove={
+                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                  }
                 />
               </div>
               <BlunderMeter
-                hover={showAnalysis ? hover : mockHover}
-                makeMove={showAnalysis ? makeMove : mockMakeMove}
+                hover={analysisEnabled && showAnalysis ? hover : mockHover}
+                makeMove={
+                  analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                }
                 data={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.blunderMeter
-                    : mockAnalysisData.blunderMeter
+                    : emptyBlunderMeterData
                 }
                 colorSanMapping={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.colorSanMapping
-                    : mockAnalysisData.colorSanMapping
+                    : {}
                 }
                 moveEvaluation={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.moveEvaluation
-                    : mockAnalysisData.moveEvaluation
+                    : undefined
                 }
               />
             </div>
+
+            {!analysisEnabled && showAnalysis && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                  <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                    lock
+                  </span>
+                  <p className="font-medium text-primary">Analysis Disabled</p>
+                  <p className="text-sm text-secondary">
+                    Enable analysis to see detailed evaluations
+                  </p>
+                </div>
+              </div>
+            )}
+            {!showAnalysis && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                  <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                    lock
+                  </span>
+                  <p className="font-medium text-primary">Analysis Locked</p>
+                  <p className="text-sm text-secondary">
+                    Complete the puzzle to unlock analysis
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Smaller screens (below xl): MoveMap full width */}
             <div className="flex h-[calc((85vh)*0.3)] w-full xl:hidden">
               <div className="h-full w-full">
                 <MoveMap
                   moveMap={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.moveMap
-                      : mockAnalysisData.moveMap
+                      : undefined
                   }
                   colorSanMapping={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.colorSanMapping
-                      : mockAnalysisData.colorSanMapping
+                      : {}
                   }
                   setHoverArrow={
-                    showAnalysis ? setHoverArrow : mockSetHoverArrow
+                    analysisEnabled && showAnalysis
+                      ? setHoverArrow
+                      : mockSetHoverArrow
                   }
-                  makeMove={showAnalysis ? makeMove : mockMakeMove}
+                  makeMove={
+                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                  }
                 />
               </div>
             </div>
 
+            {!analysisEnabled && showAnalysis && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                  <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                    lock
+                  </span>
+                  <p className="font-medium text-primary">Analysis Disabled</p>
+                  <p className="text-sm text-secondary">
+                    Enable analysis to see detailed evaluations
+                  </p>
+                </div>
+              </div>
+            )}
             {!showAnalysis && (
               <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
                 <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
@@ -1021,16 +1202,31 @@ const Train: React.FC<Props> = ({
             <div className="relative h-full w-full">
               <MovesByRating
                 moves={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.movesByRating
-                    : mockAnalysisData.movesByRating
+                    : undefined
                 }
                 colorSanMapping={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.colorSanMapping
-                    : mockAnalysisData.colorSanMapping
+                    : {}
                 }
               />
+              {!analysisEnabled && showAnalysis && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                  <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                    <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                      lock
+                    </span>
+                    <p className="font-medium text-primary">
+                      Analysis Disabled
+                    </p>
+                    <p className="text-sm text-secondary">
+                      Enable analysis to see detailed evaluations
+                    </p>
+                  </div>
+                </div>
+              )}
               {!showAnalysis && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
                   <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
@@ -1092,23 +1288,23 @@ const Train: React.FC<Props> = ({
             <GameBoard
               game={trainingGame}
               currentNode={
-                showAnalysis
+                analysisEnabled && showAnalysis
                   ? analysisController.currentNode
                   : controller.currentNode
               }
               orientation={
-                showAnalysis
+                analysisEnabled && showAnalysis
                   ? analysisController.orientation
                   : controller.orientation
               }
               availableMoves={
-                showAnalysis
+                analysisEnabled && showAnalysis
                   ? analysisController.availableMoves
                   : controller.availableMovesMapped
               }
               onPlayerMakeMove={onPlayerMakeMove}
               shapes={
-                showAnalysis
+                analysisEnabled && showAnalysis
                   ? hoverArrow
                     ? [...analysisController.arrows, hoverArrow]
                     : [...analysisController.arrows]
@@ -1117,8 +1313,14 @@ const Train: React.FC<Props> = ({
                     : []
               }
               onSelectSquare={onSelectSquare}
-              goToNode={showAnalysis ? analysisController.goToNode : undefined}
-              gameTree={showAnalysis ? analyzedGame.tree : undefined}
+              goToNode={
+                analysisEnabled && showAnalysis
+                  ? analysisController.goToNode
+                  : undefined
+              }
+              gameTree={
+                analysisEnabled && showAnalysis ? analyzedGame.tree : undefined
+              }
             />
             {promotionFromTo ? (
               <PromotionOverlay
@@ -1132,47 +1334,47 @@ const Train: React.FC<Props> = ({
             <div className="flex-none">
               <BoardController
                 orientation={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.orientation
                     : controller.orientation
                 }
                 setOrientation={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.setOrientation
                     : controller.setOrientation
                 }
                 currentNode={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.currentNode
                     : controller.currentNode
                 }
                 plyCount={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.plyCount
                     : controller.plyCount
                 }
                 goToNode={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.goToNode
                     : controller.goToNode
                 }
                 goToNextNode={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.goToNextNode
                     : controller.goToNextNode
                 }
                 goToPreviousNode={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.goToPreviousNode
                     : controller.goToPreviousNode
                 }
                 goToRootNode={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.goToRootNode
                     : controller.goToRootNode
                 }
                 gameTree={
-                  showAnalysis
+                  analysisEnabled && showAnalysis
                     ? analysisController.gameTree
                     : controller.gameTree
                 }
@@ -1198,52 +1400,94 @@ const Train: React.FC<Props> = ({
               id="analysis"
               className="flex w-full flex-col gap-1 overflow-hidden"
             >
+              {/* Analysis Toggle Bar - only show when puzzle is complete */}
+              {showAnalysis && (
+                <div className="flex items-center justify-between rounded bg-background-1 px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-xl">
+                      analytics
+                    </span>
+                    <h3 className="font-semibold">Analysis</h3>
+                  </div>
+                  <button
+                    onClick={handleToggleAnalysis}
+                    className={`flex items-center gap-2 rounded px-3 py-1 text-sm transition-colors ${
+                      analysisEnabled
+                        ? 'bg-human-4 text-white hover:bg-human-4/80'
+                        : 'bg-background-2 text-secondary hover:bg-background-3'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      {analysisEnabled ? 'visibility' : 'visibility_off'}
+                    </span>
+                    {analysisEnabled ? 'Visible' : 'Hidden'}
+                  </button>
+                </div>
+              )}
+
               <div className="relative">
                 <Highlight
                   setCurrentMaiaModel={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.setCurrentMaiaModel
                       : () => void 0
                   }
-                  hover={showAnalysis ? hover : mockHover}
-                  makeMove={showAnalysis ? makeMove : mockMakeMove}
+                  hover={analysisEnabled && showAnalysis ? hover : mockHover}
+                  makeMove={
+                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                  }
                   currentMaiaModel={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.currentMaiaModel
                       : 'maia_kdd_1500'
                   }
                   recommendations={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.moveRecommendations
-                      : mockAnalysisData.recommendations
+                      : emptyRecommendations
                   }
                   moveEvaluation={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? (analysisController.moveEvaluation as {
                           maia?: MaiaEvaluation
                           stockfish?: StockfishEvaluation
                         })
-                      : mockAnalysisData.moveEvaluation
+                      : {
+                          maia: undefined,
+                          stockfish: undefined,
+                        }
                   }
                   colorSanMapping={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.colorSanMapping
-                      : mockAnalysisData.colorSanMapping
+                      : {}
                   }
                   boardDescription={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.boardDescription
                       : {
                           segments: [
                             {
                               type: 'text',
                               content:
-                                'This position offers multiple strategic options. Consider central control and piece development.',
+                                'Complete the puzzle to unlock analysis, or analysis is disabled.',
                             },
                           ],
                         }
                   }
                 />
+                {!analysisEnabled && showAnalysis && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
+                    <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
+                      <span className="material-symbols-outlined mb-1 text-xl text-human-3">
+                        lock
+                      </span>
+                      <p className="text-xs font-medium text-primary">
+                        Analysis Disabled
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {!showAnalysis && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
                     <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
@@ -1260,24 +1504,38 @@ const Train: React.FC<Props> = ({
 
               <div className="relative">
                 <BlunderMeter
-                  hover={showAnalysis ? hover : mockHover}
-                  makeMove={showAnalysis ? makeMove : mockMakeMove}
+                  hover={analysisEnabled && showAnalysis ? hover : mockHover}
+                  makeMove={
+                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                  }
                   data={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.blunderMeter
-                      : mockAnalysisData.blunderMeter
+                      : emptyBlunderMeterData
                   }
                   colorSanMapping={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.colorSanMapping
-                      : mockAnalysisData.colorSanMapping
+                      : {}
                   }
                   moveEvaluation={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.moveEvaluation
-                      : mockAnalysisData.moveEvaluation
+                      : undefined
                   }
                 />
+                {!analysisEnabled && showAnalysis && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
+                    <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
+                      <span className="material-symbols-outlined mb-1 text-xl text-human-3">
+                        lock
+                      </span>
+                      <p className="text-xs font-medium text-primary">
+                        Analysis Disabled
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {!showAnalysis && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
                     <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
@@ -1295,20 +1553,36 @@ const Train: React.FC<Props> = ({
               <div className="relative">
                 <MoveMap
                   moveMap={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.moveMap
-                      : mockAnalysisData.moveMap
+                      : undefined
                   }
                   colorSanMapping={
-                    showAnalysis
+                    analysisEnabled && showAnalysis
                       ? analysisController.colorSanMapping
-                      : mockAnalysisData.colorSanMapping
+                      : {}
                   }
                   setHoverArrow={
-                    showAnalysis ? setHoverArrow : mockSetHoverArrow
+                    analysisEnabled && showAnalysis
+                      ? setHoverArrow
+                      : mockSetHoverArrow
                   }
-                  makeMove={showAnalysis ? makeMove : mockMakeMove}
+                  makeMove={
+                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                  }
                 />
+                {!analysisEnabled && showAnalysis && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
+                    <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
+                      <span className="material-symbols-outlined mb-1 text-xl text-human-3">
+                        lock
+                      </span>
+                      <p className="text-xs font-medium text-primary">
+                        Analysis Disabled
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {!showAnalysis && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
                     <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
@@ -1316,7 +1590,7 @@ const Train: React.FC<Props> = ({
                         lock
                       </span>
                       <p className="text-xs font-medium text-primary">
-                        Analysis Locked
+                        Analysis Disabled
                       </p>
                     </div>
                   </div>

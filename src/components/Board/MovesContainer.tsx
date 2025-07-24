@@ -236,6 +236,11 @@ export const MovesContainer: React.FC<Props> = (props) => {
                     <MoveClassificationIcon
                       classification={getMoveClassification(pair.whiteMove)}
                       size="medium"
+                      onClick={() => {
+                        if (pair.whiteMove?.parent) {
+                          baseController.goToNode(pair.whiteMove.parent)
+                        }
+                      }}
                     />
                   )}
                 </div>
@@ -269,6 +274,11 @@ export const MovesContainer: React.FC<Props> = (props) => {
                     <MoveClassificationIcon
                       classification={getMoveClassification(pair.blackMove)}
                       size="medium"
+                      onClick={() => {
+                        if (pair.blackMove?.parent) {
+                          baseController.goToNode(pair.blackMove.parent)
+                        }
+                      }}
                     />
                   )}
                 </div>
@@ -328,6 +338,11 @@ export const MovesContainer: React.FC<Props> = (props) => {
                 <MoveClassificationIcon
                   classification={getMoveClassification(whiteNode)}
                   size="medium"
+                  onClick={() => {
+                    if (whiteNode?.parent) {
+                      baseController.goToNode(whiteNode.parent)
+                    }
+                  }}
                 />
               )}
             </div>
@@ -363,6 +378,11 @@ export const MovesContainer: React.FC<Props> = (props) => {
                 <MoveClassificationIcon
                   classification={getMoveClassification(blackNode)}
                   size="medium"
+                  onClick={() => {
+                    if (blackNode?.parent) {
+                      baseController.goToNode(blackNode.parent)
+                    }
+                  }}
                 />
               )}
             </div>
@@ -473,6 +493,11 @@ function VariationTree({
               classification={getMoveClassification(node)}
               size="small"
               className="ml-0.5"
+              onClick={() => {
+                if (node.parent) {
+                  goToNode(node.parent)
+                }
+              }}
             />
           )}
         </span>
@@ -560,6 +585,11 @@ function InlineChain({
                     classification={getMoveClassification(child)}
                     size="small"
                     className="ml-0.5"
+                    onClick={() => {
+                      if (child.parent) {
+                        goToNode(child.parent)
+                      }
+                    }}
                   />
                 )}
               </span>
