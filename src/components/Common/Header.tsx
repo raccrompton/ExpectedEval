@@ -138,31 +138,31 @@ export const Header: React.FC = () => {
           </div>
           <Link
             href="/analysis"
-            className={`${router.pathname.startsWith('/analysis') && 'bg-background-1'} uppercase hover:bg-background-1`}
+            className={`${router.pathname.startsWith('/analysis') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
           >
             Analysis
           </Link>
           <Link
             href="/puzzles"
-            className={`${router.pathname.startsWith('/puzzles') && 'bg-background-1'} uppercase hover:bg-background-1`}
+            className={`${router.pathname.startsWith('/puzzles') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
           >
             Puzzles
           </Link>
           <Link
             href="/openings"
-            className={`${router.pathname.startsWith('/openings') && 'bg-background-1'} uppercase hover:bg-background-1`}
+            className={`${router.pathname.startsWith('/openings') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
           >
             Openings
           </Link>
           <Link
             href="/turing"
-            className={`${router.pathname.startsWith('/turing') && 'bg-background-1'} uppercase hover:bg-background-1`}
+            className={`${router.pathname.startsWith('/turing') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
           >
             Bot-or-Not
           </Link>
           <Link
             href="/leaderboard"
-            className={`${router.pathname.startsWith('/leaderboard') && 'bg-background-1'} uppercase hover:bg-background-1`}
+            className={`${router.pathname.startsWith('/leaderboard') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
           >
             Leaderboard
           </Link>
@@ -267,7 +267,6 @@ export const Header: React.FC = () => {
                 </a>
               </div>
             </div>
-
             <Link href="/analysis" className="uppercase">
               Analysis
             </Link>

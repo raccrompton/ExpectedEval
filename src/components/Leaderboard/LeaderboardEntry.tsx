@@ -128,51 +128,51 @@ export const LeaderboardEntry = ({
 
   return (
     <div
-      className={`relative flex w-full items-center justify-between px-4 py-1.5 ${index % 2 === 0 ? 'bg-opacity-0' : 'bg-white bg-opacity-[0.015]'}`}
+      className={`relative flex w-full items-center justify-between px-3 py-1 text-sm ${index % 2 === 0 ? 'bg-opacity-0' : 'bg-white bg-opacity-[0.015]'}`}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      <div className="flex items-center gap-2">
-        <p className="w-5">{index + 1}</p>
+      <div className="flex items-center gap-1.5">
+        <p className="w-4 text-xs">{index + 1}</p>
         <Link
           href={`/profile/${display_name}`}
-          className="flex items-center gap-2 hover:underline"
+          className="flex items-center gap-1.5 hover:underline"
         >
           <p>
             {display_name} {index == 0 && '👑'}
           </p>
         </Link>
       </div>
-      <p>{elo}</p>
+      <p className="text-sm font-medium">{elo}</p>
       {isPopupVisible && stats && (
-        <div className="absolute left-0 top-[100%] z-20 flex w-full max-w-[26rem] flex-col overflow-hidden rounded-lg border-2 border-white/20 bg-background-1 outline outline-1 outline-white/5 backdrop-blur-sm">
-          <div className="flex w-full justify-between border-b border-white/10 bg-gradient-to-r from-background-2/80 to-background-2/60 px-4 py-2">
-            <p>
+        <div className="absolute left-0 top-[100%] z-20 flex w-full max-w-[24rem] flex-col overflow-hidden rounded-lg border-2 border-white/20 bg-background-1 outline outline-1 outline-white/5 backdrop-blur-sm">
+          <div className="flex w-full justify-between border-b border-white/10 bg-gradient-to-r from-background-2/80 to-background-2/60 px-3 py-1.5">
+            <p className="text-sm">
               <span className="font-bold">{display_name}</span>&apos;s {type}{' '}
               Statistics
             </p>
             <Link href={`/profile/${display_name}`}>
-              <i className="material-symbols-outlined select-none text-lg text-primary transition-colors hover:text-human-1">
+              <i className="material-symbols-outlined select-none text-base text-primary transition-colors hover:text-human-1">
                 open_in_new
               </i>
             </Link>
           </div>
-          <div className="flex items-center justify-between bg-gradient-to-b from-background-1 to-background-1/95 px-4 py-3">
+          <div className="flex items-center justify-between bg-gradient-to-b from-background-1 to-background-1/95 px-3 py-2">
             <div className="flex flex-col items-center justify-center gap-0.5 text-human-1">
-              <p className="text-sm xl:text-base">Rating</p>
-              <b className="text-3xl xl:text-3xl">{stats[ratingKey]}</b>
+              <p className="text-xs">Rating</p>
+              <b className="text-xl">{stats[ratingKey]}</b>
             </div>
             <div className="flex flex-col items-center justify-center gap-0.5">
-              <p className="text-sm xl:text-base">Highest</p>
-              <b className="text-3xl xl:text-3xl">{stats[highestRatingKey]}</b>
+              <p className="text-xs">Highest</p>
+              <b className="text-xl">{stats[highestRatingKey]}</b>
             </div>
             <div className="flex flex-col items-center justify-center gap-0.5">
-              <p className="text-sm xl:text-base">Games</p>
-              <b className="text-3xl xl:text-3xl">{stats[gamesKey]}</b>
+              <p className="text-xs">Games</p>
+              <b className="text-xl">{stats[gamesKey]}</b>
             </div>
             <div className="flex flex-col items-center justify-center gap-0.5">
-              <p className="text-sm xl:text-base">Win %</p>
-              <b className="text-3xl xl:text-3xl">
+              <p className="text-xs">Win %</p>
+              <b className="text-xl">
                 {((stats[gamesWonKey] / stats[gamesKey]) * 100).toFixed(0)}%
               </b>
             </div>
