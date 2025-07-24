@@ -16,15 +16,9 @@ const mockLeaderboardData = {
     { display_name: 'TestPlayer1', elo: 1600 },
     { display_name: 'TestPlayer3', elo: 1550 },
   ],
-  turing_leaders: [
-    { display_name: 'TestPlayer4', elo: 1400 },
-  ],
-  hand_leaders: [
-    { display_name: 'TestPlayer1', elo: 1500 },
-  ],
-  brain_leaders: [
-    { display_name: 'TestPlayer5', elo: 1300 },
-  ],
+  turing_leaders: [{ display_name: 'TestPlayer4', elo: 1400 }],
+  hand_leaders: [{ display_name: 'TestPlayer1', elo: 1500 }],
+  brain_leaders: [{ display_name: 'TestPlayer5', elo: 1300 }],
   last_updated: '2024-01-01T00:00:00',
 }
 
@@ -35,9 +29,7 @@ describe('useLeaderboardStatus', () => {
   })
 
   it('should return correct status for player on multiple leaderboards', async () => {
-    const { result } = renderHook(() =>
-      useLeaderboardStatus('TestPlayer1'),
-    )
+    const { result } = renderHook(() => useLeaderboardStatus('TestPlayer1'))
 
     expect(result.current.loading).toBe(true)
 
@@ -48,17 +40,23 @@ describe('useLeaderboardStatus', () => {
     expect(result.current.status.isOnLeaderboard).toBe(true)
     expect(result.current.status.totalLeaderboards).toBe(3)
     expect(result.current.status.positions).toHaveLength(3)
-    
+
     // Check specific positions
-    const regularPosition = result.current.status.positions.find(p => p.gameType === 'regular')
+    const regularPosition = result.current.status.positions.find(
+      (p) => p.gameType === 'regular',
+    )
     expect(regularPosition?.position).toBe(1)
     expect(regularPosition?.elo).toBe(1800)
 
-    const trainPosition = result.current.status.positions.find(p => p.gameType === 'train')
+    const trainPosition = result.current.status.positions.find(
+      (p) => p.gameType === 'train',
+    )
     expect(trainPosition?.position).toBe(1)
     expect(trainPosition?.elo).toBe(1600)
 
-    const handPosition = result.current.status.positions.find(p => p.gameType === 'hand')
+    const handPosition = result.current.status.positions.find(
+      (p) => p.gameType === 'hand',
+    )
     expect(handPosition?.position).toBe(1)
     expect(handPosition?.elo).toBe(1500)
   })
@@ -78,9 +76,7 @@ describe('useLeaderboardStatus', () => {
   })
 
   it('should return empty status when no displayName provided', async () => {
-    const { result } = renderHook(() =>
-      useLeaderboardStatus(undefined),
-    )
+    const { result } = renderHook(() => useLeaderboardStatus(undefined))
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
@@ -95,9 +91,7 @@ describe('useLeaderboardStatus', () => {
   it('should handle API errors gracefully', async () => {
     ;(api.getLeaderboard as jest.Mock).mockRejectedValue(new Error('API Error'))
 
-    const { result } = renderHook(() =>
-      useLeaderboardStatus('TestPlayer1'),
-    )
+    const { result } = renderHook(() => useLeaderboardStatus('TestPlayer1'))
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false)

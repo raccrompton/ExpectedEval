@@ -12,7 +12,7 @@ import {
   UserProfile,
   GameList,
   DelayedLoading,
-  LeaderboardBadge,
+  ProfileLeaderboardBadges,
 } from 'src/components'
 import { useLeaderboardStatus } from 'src/hooks/useLeaderboardStatus'
 
@@ -161,7 +161,13 @@ const Profile: React.FC<Props> = (props: Props) => {
           account_circle
         </span>
         <div className="flex flex-col">
-          <h1 className="text-3xl font-semibold">{props.name}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-semibold">{props.name}</h1>
+            <ProfileLeaderboardBadges
+              status={leaderboardStatus}
+              loading={leaderboardLoading}
+            />
+          </div>
           <a
             target="_blank"
             href={`https://lichess.org/@/${props.name}`}
@@ -170,13 +176,6 @@ const Profile: React.FC<Props> = (props: Props) => {
             View on Lichess
           </a>
         </div>
-      </motion.div>
-      {/* Leaderboard badges */}
-      <motion.div variants={itemVariants}>
-        <LeaderboardBadge
-          status={leaderboardStatus}
-          loading={leaderboardLoading}
-        />
       </motion.div>
       <motion.div
         variants={itemVariants}
@@ -209,14 +208,13 @@ const Profile: React.FC<Props> = (props: Props) => {
         <span className="material-symbols-outlined text-4xl">
           account_circle
         </span>
-        <h1 className="text-3xl font-semibold">{props.name}</h1>
-      </motion.div>
-      {/* Leaderboard badges */}
-      <motion.div variants={itemVariants}>
-        <LeaderboardBadge
-          status={leaderboardStatus}
-          loading={leaderboardLoading}
-        />
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-semibold">{props.name}</h1>
+          <ProfileLeaderboardBadges
+            status={leaderboardStatus}
+            loading={leaderboardLoading}
+          />
+        </div>
       </motion.div>
       <motion.div
         variants={itemVariants}
