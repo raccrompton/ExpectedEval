@@ -95,6 +95,12 @@ export const useOpeningDrillController = (
   const [currentDrillIndex, setCurrentDrillIndex] = useState(0)
   const [allDrillsCompleted, setAllDrillsCompleted] = useState(false)
 
+  // Track which openings have been done at least once in the current cycle
+  const [openingsCompletedInCycle, setOpeningsCompletedInCycle] = useState<
+    Set<string>
+  >(new Set())
+  const [isInfiniteMode] = useState(() => configuration.drillCount === 0)
+
   const [showPerformanceModal, setShowPerformanceModal] = useState(false)
   const [showFinalModal, setShowFinalModal] = useState(false)
   const [currentPerformanceData, setCurrentPerformanceData] =
@@ -642,7 +648,7 @@ export const useOpeningDrillController = (
     setWaitingForMaiaResponse(false)
   }, [])
 
-  // Continue analyzing from final modal - just enable analysis mode
+  // Continue analyzing from final modal - just enable analysis mode (not used in infinite mode)
   const continueAnalyzingFromFinal = useCallback(() => {
     setShowFinalModal(false)
     setAnalysisEnabled(true)
@@ -888,6 +894,18 @@ export const useOpeningDrillController = (
 
   const navigateToDrill = useCallback(
     (drillIndex: number) => {
+      // In infinite mode, navigation is limited to completed drills
+      if (isInfiniteMode) {
+        if (drillIndex < 0 || drillIndex >= completedDrills.length) {
+          return
+        }
+        const completedDrill = completedDrills[drillIndex]
+        loadCompletedDrill(completedDrill)
+        setCurrentDrillIndex(drillIndex)
+        return
+      }
+
+      // Original finite mode navigation
       if (drillIndex < 0 || drillIndex >= configuration.drillSequence.length) {
         return
       }
@@ -937,13 +955,20 @@ export const useOpeningDrillController = (
 
       setRemainingDrills(configuration.drillSequence.slice(drillIndex))
     },
-    [configuration.drillSequence, completedDrills, loadCompletedDrill],
+    [
+      configuration.drillSequence,
+      completedDrills,
+      loadCompletedDrill,
+      isInfiniteMode,
+    ],
   )
 
   const overallPerformanceData = useMemo((): OverallPerformanceData => {
     if (completedDrills.length === 0) {
       return {
-        totalDrills: configuration.drillCount,
+        totalDrills: isInfiniteMode
+          ? completedDrills.length
+          : configuration.drillCount,
         completedDrills: [],
         overallAccuracy: 0,
         totalBlunders: 0,
@@ -997,7 +1022,9 @@ export const useOpeningDrillController = (
     }, completedDrills[0])
 
     return {
-      totalDrills: configuration.drillCount,
+      totalDrills: isInfiniteMode
+        ? completedDrills.length
+        : configuration.drillCount,
       completedDrills,
       overallAccuracy,
       totalBlunders,
@@ -1006,7 +1033,7 @@ export const useOpeningDrillController = (
       worstPerformance,
       averageEvaluation,
     }
-  }, [completedDrills, configuration.drillCount])
+  }, [completedDrills, configuration.drillCount, isInfiniteMode])
 
   // Helper function to update a completed drill with new moves
   const updateCompletedDrill = useCallback(
@@ -1369,11 +1396,14 @@ export const useOpeningDrillController = (
     completedDrills,
     currentDrillGame,
     currentDrillIndex,
-    totalDrills: configuration.drillCount,
+    totalDrills: isInfiniteMode
+      ? completedDrills.length
+      : configuration.drillCount,
     drillSequence: configuration.drillSequence,
     isPlayerTurn,
     isDrillComplete,
     isAtOpeningEnd,
+    isInfiniteMode,
 
     // Tree controller
     gameTree: controller.gameTree,

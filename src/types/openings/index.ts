@@ -27,7 +27,7 @@ export interface OpeningSelection {
 
 export interface DrillConfiguration {
   selections: OpeningSelection[]
-  drillCount: number
+  drillCount: number // 0 indicates infinite drills
   drillSequence: OpeningSelection[]
   sessionId?: string
 }

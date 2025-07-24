@@ -1156,14 +1156,17 @@ const OpeningsPage: NextPage = () => {
               performanceData={controller.currentPerformanceData}
               onContinueAnalyzing={controller.continueAnalyzing}
               onNextDrill={controller.moveToNextDrill}
-              isLastDrill={controller.remainingDrills.length <= 1}
+              isLastDrill={
+                !controller.isInfiniteMode &&
+                controller.remainingDrills.length <= 1
+              }
             />
           )}
       </AnimatePresence>
 
-      {/* Final Completion Modal */}
+      {/* Final Completion Modal - Only show in finite mode */}
       <AnimatePresence>
-        {controller.showFinalModal && (
+        {controller.showFinalModal && !controller.isInfiniteMode && (
           <FinalCompletionModal
             performanceData={controller.overallPerformanceData}
             onContinueAnalyzing={controller.continueAnalyzingFromFinal}
