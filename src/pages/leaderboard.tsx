@@ -134,7 +134,7 @@ const Leaderboard: React.FC = () => {
             animate="visible"
             exit="exit"
             style={{ willChange: 'transform, opacity' }}
-            className="mx-auto flex h-full w-[95%] flex-col items-start justify-center gap-3 py-[1%]"
+            className="mx-auto flex h-full w-[90%] flex-col items-start justify-center gap-3 py-[1%]"
           >
             <Head>
               <title>Leaderboard – Maia Chess</title>
