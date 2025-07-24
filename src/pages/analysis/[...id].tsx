@@ -35,7 +35,8 @@ import { DownloadModelModal } from 'src/components/Analysis/DownloadModelModal'
 import { CustomAnalysisModal } from 'src/components/Analysis/CustomAnalysisModal'
 import { ConfigurableScreens } from 'src/components/Analysis/ConfigurableScreens'
 import { AnalysisConfigModal } from 'src/components/Analysis/AnalysisConfigModal'
-import { AnalysisProgressOverlay } from 'src/components/Analysis/AnalysisProgressOverlay'
+import { AnalysisNotification } from 'src/components/Analysis/AnalysisNotification'
+import { AnalysisOverlay } from 'src/components/Analysis/AnalysisOverlay'
 import { GameBoard } from 'src/components/Board/GameBoard'
 import { MovesContainer } from 'src/components/Board/MovesContainer'
 import { BoardController } from 'src/components/Board/BoardController'
@@ -711,6 +712,9 @@ const Analysis: React.FC<Props> = ({
                 goToNextNode={controller.goToNextNode}
                 goToPreviousNode={controller.goToPreviousNode}
                 goToRootNode={controller.goToRootNode}
+                disableKeyboardNavigation={
+                  controller.gameAnalysis.progress.isAnalyzing
+                }
               />
             </div>
           </div>
@@ -1199,6 +1203,9 @@ const Analysis: React.FC<Props> = ({
                   goToNextNode={controller.goToNextNode}
                   goToPreviousNode={controller.goToPreviousNode}
                   goToRootNode={controller.goToRootNode}
+                  disableKeyboardNavigation={
+                    controller.gameAnalysis.progress.isAnalyzing
+                  }
                 />
               </div>
               <div className="relative bottom-0 h-48 max-h-48 flex-1 overflow-auto overflow-y-hidden">
@@ -1438,10 +1445,15 @@ const Analysis: React.FC<Props> = ({
       </AnimatePresence>
       <AnimatePresence>
         {controller.gameAnalysis.progress.isAnalyzing && (
-          <AnalysisProgressOverlay
-            progress={controller.gameAnalysis.progress}
-            onCancel={handleAnalysisCancel}
-          />
+          <>
+            <AnalysisOverlay
+              isActive={controller.gameAnalysis.progress.isAnalyzing}
+            />
+            <AnalysisNotification
+              progress={controller.gameAnalysis.progress}
+              onCancel={handleAnalysisCancel}
+            />
+          </>
         )}
       </AnimatePresence>
     </>
