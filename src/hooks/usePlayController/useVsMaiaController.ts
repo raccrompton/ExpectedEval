@@ -6,6 +6,7 @@ import { useStats } from 'src/hooks/useStats'
 import { usePlayController } from 'src/hooks/usePlayController'
 import { getGameMove, submitGameMove, getPlayPlayerStats } from 'src/api'
 import { chessSoundManager } from 'src/lib/chessSoundManager'
+import { safeUpdateRating } from 'src/lib/ratingUtils'
 
 const playStatsLoader = async () => {
   const stats = await getPlayPlayerStats()
@@ -127,7 +128,8 @@ export const useVsMaiaPlayController = (
       // Only update stats after final move submitted
       if (controller.game.termination) {
         const winner = controller.game.termination?.winner
-        updateRating(response.player_elo)
+        // Safely update rating - only if the response contains a valid rating
+        safeUpdateRating(response.player_elo, updateRating)
         incrementStats(1, winner == playGameConfig.player ? 1 : 0)
       }
     }
