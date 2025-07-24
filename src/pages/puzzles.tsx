@@ -305,7 +305,9 @@ const Train: React.FC<Props> = ({
   const [promotionFromTo, setPromotionFromTo] = useState<
     [string, string] | null
   >(null)
-  const [userAnalysisEnabled, setUserAnalysisEnabled] = useState<boolean | null>(null) // User's choice, null means not set
+  const [userAnalysisEnabled, setUserAnalysisEnabled] = useState<
+    boolean | null
+  >(null) // User's choice, null means not set
 
   const showAnalysis =
     status === 'correct' || status === 'forfeit' || status === 'archived'
@@ -313,10 +315,10 @@ const Train: React.FC<Props> = ({
   // Analysis is enabled when:
   // 1. Puzzle is complete (showAnalysis is true) AND
   // 2. User hasn't explicitly disabled it, OR user has explicitly enabled it
-  const analysisEnabled = showAnalysis && (userAnalysisEnabled !== false)
+  const analysisEnabled = showAnalysis && userAnalysisEnabled !== false
 
   const handleToggleAnalysis = useCallback(() => {
-    setUserAnalysisEnabled(prev => {
+    setUserAnalysisEnabled((prev) => {
       // If user hasn't made a choice yet, set it to the opposite of current state
       if (prev === null) {
         return !analysisEnabled
@@ -345,11 +347,17 @@ const Train: React.FC<Props> = ({
   )
 
   const currentPlayer = useMemo(() => {
-    const currentNode = analysisEnabled && showAnalysis
-      ? analysisController.currentNode
-      : controller.currentNode
+    const currentNode =
+      analysisEnabled && showAnalysis
+        ? analysisController.currentNode
+        : controller.currentNode
     return getCurrentPlayer(currentNode)
-  }, [analysisEnabled, showAnalysis, analysisController.currentNode, controller.currentNode])
+  }, [
+    analysisEnabled,
+    showAnalysis,
+    analysisController.currentNode,
+    controller.currentNode,
+  ])
 
   useEffect(() => {
     if (analysisEnabled && showAnalysis && !analysisSyncedRef.current) {
@@ -361,7 +369,12 @@ const Train: React.FC<Props> = ({
       // Reset sync flag when exiting analysis mode
       analysisSyncedRef.current = false
     }
-  }, [analysisEnabled, showAnalysis, analysisController, controller.currentNode])
+  }, [
+    analysisEnabled,
+    showAnalysis,
+    analysisController,
+    controller.currentNode,
+  ])
 
   const onSelectSquare = useCallback(
     (square: Key) => {
@@ -536,9 +549,10 @@ const Train: React.FC<Props> = ({
   }, [trainingGame.id, logGuess, setStatus, stats.rating])
 
   const launchContinue = useCallback(() => {
-    const currentNode = analysisEnabled && showAnalysis
-      ? analysisController.currentNode
-      : controller.currentNode
+    const currentNode =
+      analysisEnabled && showAnalysis
+        ? analysisController.currentNode
+        : controller.currentNode
     const url = '/play' + '?fen=' + encodeURIComponent(currentNode.fen)
     window.open(url)
   }, [controller, analysisController, analysisEnabled, showAnalysis])
@@ -729,8 +743,14 @@ const Train: React.FC<Props> = ({
                     : []
               }
               onSelectSquare={onSelectSquare}
-              goToNode={analysisEnabled && showAnalysis ? analysisController.goToNode : undefined}
-              gameTree={analysisEnabled && showAnalysis ? analyzedGame.tree : undefined}
+              goToNode={
+                analysisEnabled && showAnalysis
+                  ? analysisController.goToNode
+                  : undefined
+              }
+              gameTree={
+                analysisEnabled && showAnalysis ? analyzedGame.tree : undefined
+              }
             />
             {promotionFromTo ? (
               <PromotionOverlay
@@ -757,10 +777,14 @@ const Train: React.FC<Props> = ({
                 : controller.currentNode
             }
             plyCount={
-              analysisEnabled && showAnalysis ? analysisController.plyCount : controller.plyCount
+              analysisEnabled && showAnalysis
+                ? analysisController.plyCount
+                : controller.plyCount
             }
             goToNode={
-              analysisEnabled && showAnalysis ? analysisController.goToNode : controller.goToNode
+              analysisEnabled && showAnalysis
+                ? analysisController.goToNode
+                : controller.goToNode
             }
             goToNextNode={
               analysisEnabled && showAnalysis
@@ -778,7 +802,9 @@ const Train: React.FC<Props> = ({
                 : controller.goToRootNode
             }
             gameTree={
-              analysisEnabled && showAnalysis ? analysisController.gameTree : controller.gameTree
+              analysisEnabled && showAnalysis
+                ? analysisController.gameTree
+                : controller.gameTree
             }
           />
           <div className="flex w-full flex-1">
@@ -802,7 +828,9 @@ const Train: React.FC<Props> = ({
           {showAnalysis && (
             <div className="flex items-center justify-between rounded bg-background-1 px-4 py-2">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-xl">analytics</span>
+                <span className="material-symbols-outlined text-xl">
+                  analytics
+                </span>
                 <h3 className="font-semibold">Analysis</h3>
               </div>
               <button
@@ -813,10 +841,10 @@ const Train: React.FC<Props> = ({
                     : 'bg-background-2 text-secondary hover:bg-background-3'
                 }`}
               >
-                <span className="material-symbols-outlined text-sm">
+                <span className="material-symbols-outlined !text-sm">
                   {analysisEnabled ? 'visibility' : 'visibility_off'}
                 </span>
-                {analysisEnabled ? 'Enabled' : 'Disabled'}
+                {analysisEnabled ? 'Visible' : 'Hidden'}
               </button>
             </div>
           )}
@@ -833,8 +861,14 @@ const Train: React.FC<Props> = ({
                           ? analysisController.setCurrentMaiaModel
                           : () => void 0
                       }
-                      hover={analysisEnabled && showAnalysis ? hover : mockHover}
-                      makeMove={analysisEnabled && showAnalysis ? makeMove : mockMakeMove}
+                      hover={
+                        analysisEnabled && showAnalysis ? hover : mockHover
+                      }
+                      makeMove={
+                        analysisEnabled && showAnalysis
+                          ? makeMove
+                          : mockMakeMove
+                      }
                       currentMaiaModel={
                         analysisEnabled && showAnalysis
                           ? analysisController.currentMaiaModel
@@ -934,7 +968,9 @@ const Train: React.FC<Props> = ({
                       : () => void 0
                   }
                   hover={analysisEnabled && showAnalysis ? hover : mockHover}
-                  makeMove={analysisEnabled && showAnalysis ? makeMove : mockMakeMove}
+                  makeMove={
+                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                  }
                   currentMaiaModel={
                     analysisEnabled && showAnalysis
                       ? analysisController.currentMaiaModel
@@ -980,7 +1016,9 @@ const Train: React.FC<Props> = ({
                 <div className="h-full w-full">
                   <BlunderMeter
                     hover={analysisEnabled && showAnalysis ? hover : mockHover}
-                    makeMove={analysisEnabled && showAnalysis ? makeMove : mockMakeMove}
+                    makeMove={
+                      analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                    }
                     data={
                       analysisEnabled && showAnalysis
                         ? analysisController.blunderMeter
@@ -1046,14 +1084,20 @@ const Train: React.FC<Props> = ({
                       : {}
                   }
                   setHoverArrow={
-                    analysisEnabled && showAnalysis ? setHoverArrow : mockSetHoverArrow
+                    analysisEnabled && showAnalysis
+                      ? setHoverArrow
+                      : mockSetHoverArrow
                   }
-                  makeMove={analysisEnabled && showAnalysis ? makeMove : mockMakeMove}
+                  makeMove={
+                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                  }
                 />
               </div>
               <BlunderMeter
                 hover={analysisEnabled && showAnalysis ? hover : mockHover}
-                makeMove={analysisEnabled && showAnalysis ? makeMove : mockMakeMove}
+                makeMove={
+                  analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                }
                 data={
                   analysisEnabled && showAnalysis
                     ? analysisController.blunderMeter
@@ -1114,9 +1158,13 @@ const Train: React.FC<Props> = ({
                       : {}
                   }
                   setHoverArrow={
-                    analysisEnabled && showAnalysis ? setHoverArrow : mockSetHoverArrow
+                    analysisEnabled && showAnalysis
+                      ? setHoverArrow
+                      : mockSetHoverArrow
                   }
-                  makeMove={analysisEnabled && showAnalysis ? makeMove : mockMakeMove}
+                  makeMove={
+                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                  }
                 />
               </div>
             </div>
@@ -1170,7 +1218,9 @@ const Train: React.FC<Props> = ({
                     <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
                       lock
                     </span>
-                    <p className="font-medium text-primary">Analysis Disabled</p>
+                    <p className="font-medium text-primary">
+                      Analysis Disabled
+                    </p>
                     <p className="text-sm text-secondary">
                       Enable analysis to see detailed evaluations
                     </p>
@@ -1263,8 +1313,14 @@ const Train: React.FC<Props> = ({
                     : []
               }
               onSelectSquare={onSelectSquare}
-              goToNode={analysisEnabled && showAnalysis ? analysisController.goToNode : undefined}
-              gameTree={analysisEnabled && showAnalysis ? analyzedGame.tree : undefined}
+              goToNode={
+                analysisEnabled && showAnalysis
+                  ? analysisController.goToNode
+                  : undefined
+              }
+              gameTree={
+                analysisEnabled && showAnalysis ? analyzedGame.tree : undefined
+              }
             />
             {promotionFromTo ? (
               <PromotionOverlay
@@ -1348,7 +1404,9 @@ const Train: React.FC<Props> = ({
               {showAnalysis && (
                 <div className="flex items-center justify-between rounded bg-background-1 px-4 py-2">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-xl">analytics</span>
+                    <span className="material-symbols-outlined text-xl">
+                      analytics
+                    </span>
                     <h3 className="font-semibold">Analysis</h3>
                   </div>
                   <button
@@ -1362,7 +1420,7 @@ const Train: React.FC<Props> = ({
                     <span className="material-symbols-outlined text-sm">
                       {analysisEnabled ? 'visibility' : 'visibility_off'}
                     </span>
-                    {analysisEnabled ? 'Enabled' : 'Disabled'}
+                    {analysisEnabled ? 'Visible' : 'Hidden'}
                   </button>
                 </div>
               )}
@@ -1375,7 +1433,9 @@ const Train: React.FC<Props> = ({
                       : () => void 0
                   }
                   hover={analysisEnabled && showAnalysis ? hover : mockHover}
-                  makeMove={analysisEnabled && showAnalysis ? makeMove : mockMakeMove}
+                  makeMove={
+                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                  }
                   currentMaiaModel={
                     analysisEnabled && showAnalysis
                       ? analysisController.currentMaiaModel
@@ -1445,7 +1505,9 @@ const Train: React.FC<Props> = ({
               <div className="relative">
                 <BlunderMeter
                   hover={analysisEnabled && showAnalysis ? hover : mockHover}
-                  makeMove={analysisEnabled && showAnalysis ? makeMove : mockMakeMove}
+                  makeMove={
+                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                  }
                   data={
                     analysisEnabled && showAnalysis
                       ? analysisController.blunderMeter
@@ -1501,9 +1563,13 @@ const Train: React.FC<Props> = ({
                       : {}
                   }
                   setHoverArrow={
-                    analysisEnabled && showAnalysis ? setHoverArrow : mockSetHoverArrow
+                    analysisEnabled && showAnalysis
+                      ? setHoverArrow
+                      : mockSetHoverArrow
                   }
-                  makeMove={analysisEnabled && showAnalysis ? makeMove : mockMakeMove}
+                  makeMove={
+                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
+                  }
                 />
                 {!analysisEnabled && showAnalysis && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
