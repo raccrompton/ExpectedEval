@@ -249,31 +249,31 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
           <p className="text-center text-base text-primary/80">
             <AnimatedNumber
               value={activeUsers}
-              className="font-bold text-human-4"
+              className="font-bold text-human-2"
             />{' '}
             users online
           </p>
           <p className="text-center text-base text-primary/80">
             <AnimatedNumber
               value={globalStats?.play_moves_total || 0}
-              className="font-bold"
+              className="font-bold text-human-2"
             />{' '}
             moves played
           </p>
           <p className="text-center text-base text-primary/80">
             <AnimatedNumber
               value={globalStats?.puzzle_games_total || 0}
-              className="font-bold"
+              className="font-bold text-human-2"
             />{' '}
             puzzle games solved
           </p>
-          <p className="text-center text-base text-primary/80">
+          {/* <p className="text-center text-base text-primary/80">
             <AnimatedNumber
               value={globalStats?.turing_games_total || 0}
               className="font-bold"
             />{' '}
             turing games played
-          </p>
+          </p> */}
         </motion.div>
       </div>
     </Fragment>

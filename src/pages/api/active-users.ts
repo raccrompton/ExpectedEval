@@ -31,21 +31,11 @@ export default async function handler(
         success: true,
       })
     }
-
-    // Fallback to simulation if PostHog is not available
-    const simulatedUsers = getSimulatedActiveUserCount()
-    return res.status(200).json({
-      activeUsers: simulatedUsers,
-      success: true,
-    })
   } catch (error) {
     console.error('Error in active-users API:', error)
-
-    // Return simulated count as fallback
-    const simulatedUsers = getSimulatedActiveUserCount()
-    return res.status(200).json({
-      activeUsers: simulatedUsers,
-      success: true,
+    return res.status(500).json({
+      activeUsers: 0,
+      success: false,
     })
   }
 }
@@ -54,90 +44,53 @@ export default async function handler(
  * Fetch active users from PostHog Insights API (server-side only)
  */
 async function fetchActiveUsersFromPostHog(): Promise<number | null> {
+  const posthogUrl = process.env.POSTHOG_URL || 'https://us.posthog.com'
+  const projectId = process.env.POSTHOG_PROJECT_ID
+  const personalApiKey = process.env.POSTHOG_API_KEY
+
+  const url = `${posthogUrl}/api/projects/${projectId}/query/`
+
+  const now = new Date()
+  const thirtyMinutesAgo = new Date(
+    now.getTime() - 30 * 60 * 1000,
+  ).toISOString()
+
   try {
-    // Use server-side environment variables (no NEXT_PUBLIC prefix)
-    const projectId = process.env.POSTHOG_PROJECT_ID
-    const apiKey = process.env.POSTHOG_API_KEY
-    const host = process.env.POSTHOG_HOST || 'https://us.posthog.com'
-
-    if (!projectId || !apiKey) {
-      console.warn(
-        'PostHog project ID or API key not configured, using simulation',
-      )
-      return null
-    }
-
-    // Query PostHog for unique users with $pageview events in last 30 minutes
-    const response = await fetch(
-      `${host}/api/projects/${projectId}/insights/`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          events: [
-            {
-              id: '$pageview',
-              math: 'dau', // Daily active users calculation
-              properties: [],
-            },
-          ],
-          date_from: '-30m', // Last 30 minutes
-          breakdown: null,
-          display: 'ActionsTable',
-          insight: 'TRENDS',
-          interval: 'minute',
-          filter_test_accounts: true,
-        }),
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${personalApiKey}`,
       },
-    )
+      body: JSON.stringify({
+        query: {
+          kind: 'HogQLQuery',
+          query: `
+            SELECT count(DISTINCT person_id) as recent_users
+            FROM events
+            WHERE event = '$pageview'
+              AND timestamp > toDateTime('${thirtyMinutesAgo}')
+          `,
+        },
+      }),
+    })
+
+    console.log(`
+            SELECT count(DISTINCT person_id) as recent_users
+            FROM events
+            WHERE event = '$pageview'
+              AND timestamp > TIMESTAMP '${thirtyMinutesAgo}'
+          `)
 
     if (!response.ok) {
-      console.warn(
-        `PostHog API error: ${response.status} ${response.statusText}`,
-      )
-      return null
+      const errorText = await response.text()
+      throw new Error(errorText)
     }
 
     const data = await response.json()
-
-    // Extract active user count from PostHog response
-    if (data.result && data.result.length > 0 && data.result[0].data) {
-      // Sum up the unique users across the time intervals
-      const activeUserCount = data.result[0].data.reduce(
-        (sum: number, value: number) => sum + value,
-        0,
-      )
-      return Math.max(0, Math.round(activeUserCount))
-    }
-
-    return null
+    return data.results[0][0]
   } catch (error) {
-    console.warn('Error fetching from PostHog API:', error)
+    console.error('Error fetching recent users:', error)
     return null
   }
-}
-
-/**
- * Fallback simulation for when PostHog API is not available
- */
-function getSimulatedActiveUserCount(): number {
-  const now = new Date()
-  const hour = now.getHours()
-
-  // Base activity level (higher during peak hours 10-22 UTC)
-  let baseActivity = 5
-  if (hour >= 10 && hour <= 22) {
-    baseActivity = 15
-  } else if (hour >= 8 && hour <= 24) {
-    baseActivity = 10
-  }
-
-  // Add some random variation (±50%)
-  const variation = (Math.random() - 0.5) * baseActivity
-  const activeUsers = Math.max(1, Math.round(baseActivity + variation))
-
-  return activeUsers
 }
