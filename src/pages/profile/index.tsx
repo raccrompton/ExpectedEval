@@ -12,7 +12,9 @@ import {
   UserProfile,
   GameList,
   DelayedLoading,
+  LeaderboardBadge,
 } from 'src/components'
+import { useLeaderboardStatus } from 'src/hooks/useLeaderboardStatus'
 
 const ProfilePage: NextPage = () => {
   const router = useRouter()
@@ -91,6 +93,10 @@ const Profile: React.FC<Props> = (props: Props) => {
   const { user } = useContext(AuthContext)
   const { isMobile } = useContext(WindowSizeContext)
 
+  // Get leaderboard status for the current user
+  const { status: leaderboardStatus, loading: leaderboardLoading } =
+    useLeaderboardStatus(user?.displayName)
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -146,6 +152,13 @@ const Profile: React.FC<Props> = (props: Props) => {
         </span>
         <h1 className="text-3xl font-semibold">{user?.displayName}</h1>
       </motion.div>
+      {/* Leaderboard badges */}
+      <motion.div variants={itemVariants}>
+        <LeaderboardBadge
+          status={leaderboardStatus}
+          loading={leaderboardLoading}
+        />
+      </motion.div>
       <motion.div
         variants={itemVariants}
         className="flex flex-col items-start gap-6 md:flex-row"
@@ -173,6 +186,13 @@ const Profile: React.FC<Props> = (props: Props) => {
           account_circle
         </span>
         <h1 className="text-3xl font-semibold">{user?.displayName}</h1>
+      </motion.div>
+      {/* Leaderboard badges */}
+      <motion.div variants={itemVariants}>
+        <LeaderboardBadge
+          status={leaderboardStatus}
+          loading={leaderboardLoading}
+        />
       </motion.div>
       <motion.div
         variants={itemVariants}
