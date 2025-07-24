@@ -93,6 +93,17 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
 
             <meta name="apple-mobile-web-app-title" content="Maia Chess" />
             <link rel="apple-touch-icon" href="/maia-ios-icon.png" />
+
+            {/* Open Graph meta tags for social media embeds */}
+            <meta property="og:image" content="/maia-no-bg.png" />
+            <meta property="og:image:alt" content="Maia Chess Logo" />
+            <meta property="og:image:type" content="image/png" />
+            <meta property="og:site_name" content="Maia Chess" />
+
+            {/* Twitter Card meta tags */}
+            <meta name="twitter:card" content="summary" />
+            <meta name="twitter:image" content="/maia-no-bg.png" />
+            <meta name="twitter:image:alt" content="Maia Chess Logo" />
           </Head>
           <div className={`${OpenSans.className} app-container`}>
             <Header />
