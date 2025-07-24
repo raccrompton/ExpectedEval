@@ -131,12 +131,20 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
     [setPlaySetupModalProps],
   )
 
-  // Fetch initial data
+  // Fetch global stats and set up periodic updates
   useEffect(() => {
-    ;(async () => {
+    const fetchGlobalStats = async () => {
       const data = await getGlobalStats()
       setGlobalStats(data)
-    })()
+    }
+
+    // Fetch immediately
+    fetchGlobalStats()
+
+    // Update every 20 seconds
+    const interval = setInterval(fetchGlobalStats, 20000)
+
+    return () => clearInterval(interval)
   }, [])
 
   // Fetch active users count and set up periodic updates
@@ -149,8 +157,8 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
     // Fetch immediately
     fetchActiveUsers()
 
-    // Update every 30 seconds
-    const interval = setInterval(fetchActiveUsers, 30000)
+    // Update every 20 seconds
+    const interval = setInterval(fetchActiveUsers, 20000)
 
     return () => clearInterval(interval)
   }, [])
