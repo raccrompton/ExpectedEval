@@ -662,3 +662,62 @@ export const getAnalyzedUserGame = async (
     type: 'brain',
   } as AnalyzedGame
 }
+
+// Types for engine analysis storage
+export interface EngineAnalysisPosition {
+  ply: number
+  fen: string
+  maia?: { [rating: string]: MaiaEvaluation }
+  stockfish?: {
+    depth: number
+    cp_vec: { [move: string]: number }
+  }
+}
+
+export interface EngineAnalysisData {
+  positions: EngineAnalysisPosition[]
+}
+
+// Store client-side engine analysis to backend
+export const storeEngineAnalysis = async (
+  gameId: string,
+  analysisData: EngineAnalysisData,
+): Promise<void> => {
+  const res = await fetch(buildUrl(`analysis/store_engine_analysis/${gameId}`), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(analysisData),
+  })
+
+  if (res.status === 401) {
+    throw new Error('Unauthorized')
+  }
+
+  if (!res.ok) {
+    throw new Error('Failed to store engine analysis')
+  }
+}
+
+// Retrieve stored engine analysis from backend
+export const getEngineAnalysis = async (
+  gameId: string,
+): Promise<EngineAnalysisData | null> => {
+  const res = await fetch(buildUrl(`analysis/get_engine_analysis/${gameId}`))
+
+  if (res.status === 401) {
+    throw new Error('Unauthorized')
+  }
+
+  if (res.status === 404) {
+    // No stored analysis found
+    return null
+  }
+
+  if (!res.ok) {
+    throw new Error('Failed to retrieve engine analysis')
+  }
+
+  return res.json()
+}
