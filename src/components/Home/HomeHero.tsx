@@ -254,13 +254,17 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
           </div>
         </div>
         <motion.div className="grid grid-cols-2 gap-6 px-2 md:flex md:gap-6">
-          <p className="text-center text-base text-primary/80">
-            <AnimatedNumber
-              value={activeUsers}
-              className="font-bold text-human-2"
-            />{' '}
-            users online
-          </p>
+          {activeUsers > 0 ? (
+            <p className="text-center text-base text-primary/80">
+              <AnimatedNumber
+                value={activeUsers}
+                className="font-bold text-human-2"
+              />{' '}
+              users online
+            </p>
+          ) : (
+            <></>
+          )}
           <p className="text-center text-base text-primary/80">
             <AnimatedNumber
               value={globalStats?.play_moves_total || 0}
@@ -275,13 +279,17 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
             />{' '}
             puzzle games solved
           </p>
-          {/* <p className="text-center text-base text-primary/80">
-            <AnimatedNumber
-              value={globalStats?.turing_games_total || 0}
-              className="font-bold"
-            />{' '}
-            turing games played
-          </p> */}
+          {activeUsers <= 0 ? (
+            <p className="text-center text-base text-primary/80">
+              <AnimatedNumber
+                value={globalStats?.turing_games_total || 0}
+                className="font-bold"
+              />{' '}
+              turing games played
+            </p>
+          ) : (
+            <></>
+          )}
         </motion.div>
       </div>
     </Fragment>
