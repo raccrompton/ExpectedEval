@@ -88,7 +88,11 @@ const AnalysisPage: NextPage = () => {
       const storedAnalysis = await getEngineAnalysis(game.id)
       if (storedAnalysis && storedAnalysis.positions.length > 0) {
         applyEngineAnalysisData(game.tree, storedAnalysis)
-        console.log('Loaded stored analysis:', storedAnalysis.positions.length, 'positions')
+        console.log(
+          'Loaded stored analysis:',
+          storedAnalysis.positions.length,
+          'positions',
+        )
       }
     } catch (error) {
       console.warn('Failed to load stored analysis:', error)
