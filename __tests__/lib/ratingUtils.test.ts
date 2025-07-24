@@ -49,7 +49,9 @@ describe('ratingUtils', () => {
     beforeEach(() => {
       mockUpdateFunction = jest.fn()
       // Mock console.warn to avoid noise in test output
-      jest.spyOn(console, 'warn').mockImplementation(() => {})
+      jest.spyOn(console, 'warn').mockImplementation(() => {
+        // Do nothing
+      })
     })
 
     afterEach(() => {
@@ -84,9 +86,18 @@ describe('ratingUtils', () => {
       safeUpdateRating(undefined, mockUpdateFunction)
 
       expect(consoleSpy).toHaveBeenCalledTimes(3)
-      expect(consoleSpy).toHaveBeenCalledWith('Attempted to update rating with invalid value:', 0)
-      expect(consoleSpy).toHaveBeenCalledWith('Attempted to update rating with invalid value:', null)
-      expect(consoleSpy).toHaveBeenCalledWith('Attempted to update rating with invalid value:', undefined)
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Attempted to update rating with invalid value:',
+        0,
+      )
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Attempted to update rating with invalid value:',
+        null,
+      )
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Attempted to update rating with invalid value:',
+        undefined,
+      )
     })
 
     it('should handle edge cases that might come from API responses', () => {
