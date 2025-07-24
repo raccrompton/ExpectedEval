@@ -100,11 +100,16 @@ const PlayMaiaPage: NextPage = () => {
     timeControl,
     isBrain,
     sampleMoves,
+    simulateMaiaTime: simulateMaiaTimeQuery,
     startFen,
   } = router.query
 
-  // simulateMaiaTime is now managed locally instead of from query params
-  const [simulateMaiaTime, setSimulateMaiaTime] = useState<boolean>(true)
+  // simulateMaiaTime can be configured in setup modal, default to true if not specified
+  const [simulateMaiaTime, setSimulateMaiaTime] = useState<boolean>(
+    simulateMaiaTimeQuery === 'true' || simulateMaiaTimeQuery === undefined
+      ? true
+      : false,
+  )
 
   const playGameConfig: PlayGameConfig = useMemo(
     () => ({
@@ -114,10 +119,18 @@ const PlayMaiaPage: NextPage = () => {
       timeControl: (timeControl || 'unlimited') as TimeControl,
       isBrain: isBrain == 'true',
       sampleMoves: sampleMoves == 'true',
-      // simulateMaiaTime is now managed locally
+      simulateMaiaTime: simulateMaiaTime,
       startFen: typeof startFen == 'string' ? startFen : undefined,
     }),
-    [startFen, isBrain, maiaVersion, player, sampleMoves, timeControl],
+    [
+      startFen,
+      isBrain,
+      maiaVersion,
+      player,
+      sampleMoves,
+      timeControl,
+      simulateMaiaTime,
+    ],
   )
 
   useEffect(() => {
