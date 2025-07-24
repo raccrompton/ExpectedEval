@@ -7,12 +7,18 @@ import { useRouter } from 'next/router'
 import { DiscordIcon } from './Icons'
 import { useCallback, useContext, useEffect, useState } from 'react'
 import { AuthContext, ModalContext, WindowSizeContext } from 'src/contexts'
+import { LeaderboardNavBadge } from './LeaderboardNavBadge'
+import { useLeaderboardStatus } from 'src/hooks/useLeaderboardStatus'
 
 export const Header: React.FC = () => {
   const [showMenu, setShowMenu] = useState(false)
   const { isMobile } = useContext(WindowSizeContext)
 
   const { user, connectLichess, logout } = useContext(AuthContext)
+
+  // Get leaderboard status for the logged in user
+  const { status: leaderboardStatus, loading: leaderboardLoading } =
+    useLeaderboardStatus(user?.displayName)
 
   const router = useRouter()
 
@@ -114,7 +120,6 @@ export const Header: React.FC = () => {
               >
                 Play Maia
               </button>
-
               <button
                 onClick={() => startGame('handAndBrain')}
                 className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
@@ -131,7 +136,6 @@ export const Header: React.FC = () => {
               </a>
             </div>
           </div>
-
           <Link
             href="/analysis"
             className={`${router.pathname.startsWith('/analysis') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
@@ -202,6 +206,12 @@ export const Header: React.FC = () => {
         >
           {DiscordIcon}
         </a>
+        {user?.lichessId && (
+          <LeaderboardNavBadge
+            status={leaderboardStatus}
+            loading={leaderboardLoading}
+          />
+        )}
         {userInfo}
       </div>
     </div>
@@ -300,6 +310,12 @@ export const Header: React.FC = () => {
             >
               <div className="h-6 w-6">{DiscordIcon}</div>
             </a>
+            {user?.lichessId && (
+              <LeaderboardNavBadge
+                status={leaderboardStatus}
+                loading={leaderboardLoading}
+              />
+            )}
             {userInfo}
           </div>
         </div>
