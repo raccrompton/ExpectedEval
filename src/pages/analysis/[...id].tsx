@@ -340,6 +340,7 @@ const Analysis: React.FC<Props> = ({
   const [showCustomModal, setShowCustomModal] = useState(false)
   const [showAnalysisConfigModal, setShowAnalysisConfigModal] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [analysisEnabled, setAnalysisEnabled] = useState(true) // Analysis enabled by default
 
   const controller = useAnalysisController(analyzedGame)
 
@@ -405,8 +406,30 @@ const Analysis: React.FC<Props> = ({
     controller.gameAnalysis.cancelAnalysis()
   }, [controller.gameAnalysis])
 
+  const handleToggleAnalysis = useCallback(() => {
+    setAnalysisEnabled(prev => !prev)
+  }, [])
+
+  // Create empty data structures for when analysis is disabled
+  const emptyBlunderMeterData = useMemo(
+    () => ({
+      goodMoves: { moves: [], probability: 0 },
+      okMoves: { moves: [], probability: 0 },
+      blunderMoves: { moves: [], probability: 0 },
+    }),
+    [],
+  )
+
+  const emptyRecommendations = useMemo(
+    () => ({
+      maia: undefined,
+      stockfish: undefined,
+    }),
+    [],
+  )
+
   const hover = (move?: string) => {
-    if (move) {
+    if (move && analysisEnabled) {
       setHoverArrow({
         orig: move.slice(0, 2) as Key,
         dest: move.slice(2, 4) as Key,
@@ -420,8 +443,17 @@ const Analysis: React.FC<Props> = ({
     }
   }
 
+  // Mock handlers for when analysis is disabled
+  const mockHover = useCallback(() => {
+    // Intentionally empty - no interaction when analysis disabled
+  }, [])
+
+  const mockSetHoverArrow = useCallback(() => {
+    // Intentionally empty - no hover arrows when analysis disabled
+  }, [])
+
   const makeMove = (move: string) => {
-    if (!controller.currentNode || !analyzedGame.tree) return
+    if (!analysisEnabled || !controller.currentNode || !analyzedGame.tree) return
 
     const chess = new Chess(controller.currentNode.fen)
     const moveAttempt = chess.move({
@@ -468,6 +500,11 @@ const Analysis: React.FC<Props> = ({
       }
     }
   }
+
+  // Mock move handler for when analysis is disabled
+  const mockMakeMove = useCallback(() => {
+    // Intentionally empty - no moves when analysis disabled
+  }, [])
 
   const onPlayerMakeMove = useCallback(
     (playedMove: [string, string] | null) => {
@@ -754,112 +791,268 @@ const Analysis: React.FC<Props> = ({
           variants={itemVariants}
           style={{ willChange: 'transform, opacity' }}
         >
+          {/* Analysis Toggle Bar */}
+          <div className="flex items-center justify-between rounded bg-background-1 px-4 py-2">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-xl">analytics</span>
+              <h3 className="font-semibold">Analysis</h3>
+            </div>
+            <button
+              onClick={handleToggleAnalysis}
+              className={`flex items-center gap-2 rounded px-3 py-1 text-sm transition-colors ${
+                analysisEnabled
+                  ? 'bg-human-4 text-white hover:bg-human-4/80'
+                  : 'bg-background-2 text-secondary hover:bg-background-3'
+              }`}
+            >
+              <span className="material-symbols-outlined text-sm">
+                {analysisEnabled ? 'visibility' : 'visibility_off'}
+              </span>
+              {analysisEnabled ? 'Enabled' : 'Disabled'}
+            </button>
+          </div>
+
           {/* Large screens (xl+): Side by side layout */}
           <div className="hidden xl:flex xl:h-full xl:flex-col xl:gap-2">
-            <div className="flex h-[calc((55vh+4.5rem)/2)] gap-2">
+            <div className="relative flex h-[calc((55vh+4.5rem)/2)] gap-2">
               {/* Combined Highlight + MovesByRating container */}
               <div className="flex h-full w-full overflow-hidden rounded border-[0.5px] border-white/40">
                 <div className="flex h-full w-auto min-w-[40%] max-w-[40%] border-r-[0.5px] border-white/40">
                   <Highlight
-                    hover={hover}
-                    makeMove={makeMove}
+                    hover={analysisEnabled ? hover : mockHover}
+                    makeMove={analysisEnabled ? makeMove : mockMakeMove}
                     currentMaiaModel={controller.currentMaiaModel}
                     setCurrentMaiaModel={controller.setCurrentMaiaModel}
-                    recommendations={controller.moveRecommendations}
-                    moveEvaluation={
-                      controller.moveEvaluation as {
-                        maia?: MaiaEvaluation
-                        stockfish?: StockfishEvaluation
-                      }
+                    recommendations={
+                      analysisEnabled
+                        ? controller.moveRecommendations
+                        : emptyRecommendations
                     }
-                    colorSanMapping={controller.colorSanMapping}
-                    boardDescription={controller.boardDescription}
+                    moveEvaluation={
+                      analysisEnabled
+                        ? (controller.moveEvaluation as {
+                            maia?: MaiaEvaluation
+                            stockfish?: StockfishEvaluation
+                          })
+                        : {
+                            maia: undefined,
+                            stockfish: undefined,
+                          }
+                    }
+                    colorSanMapping={
+                      analysisEnabled ? controller.colorSanMapping : {}
+                    }
+                    boardDescription={
+                      analysisEnabled
+                        ? controller.boardDescription
+                        : {
+                            segments: [
+                              {
+                                type: 'text',
+                                content:
+                                  'Analysis is disabled. Enable analysis to see detailed move evaluations and recommendations.',
+                              },
+                            ],
+                          }
+                    }
                     currentNode={controller.currentNode}
                   />
                 </div>
                 <div className="flex h-full w-full bg-background-1">
                   <MovesByRating
-                    moves={controller.movesByRating}
-                    colorSanMapping={controller.colorSanMapping}
+                    moves={analysisEnabled ? controller.movesByRating : undefined}
+                    colorSanMapping={
+                      analysisEnabled ? controller.colorSanMapping : {}
+                    }
                   />
                 </div>
               </div>
+              {!analysisEnabled && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                  <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                    <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                      lock
+                    </span>
+                    <p className="font-medium text-primary">Analysis Disabled</p>
+                    <p className="text-sm text-secondary">
+                      Enable analysis to see move evaluations
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex h-[calc((55vh+4.5rem)/2)] flex-row gap-2">
+            <div className="relative flex h-[calc((55vh+4.5rem)/2)] flex-row gap-2">
               <div className="flex h-full w-full flex-col">
                 <MoveMap
-                  moveMap={controller.moveMap}
-                  colorSanMapping={controller.colorSanMapping}
-                  setHoverArrow={setHoverArrow}
-                  makeMove={makeMove}
+                  moveMap={analysisEnabled ? controller.moveMap : undefined}
+                  colorSanMapping={
+                    analysisEnabled ? controller.colorSanMapping : {}
+                  }
+                  setHoverArrow={analysisEnabled ? setHoverArrow : mockSetHoverArrow}
+                  makeMove={analysisEnabled ? makeMove : mockMakeMove}
                 />
               </div>
               <BlunderMeter
-                hover={hover}
-                makeMove={makeMove}
-                data={controller.blunderMeter}
-                colorSanMapping={controller.colorSanMapping}
-                moveEvaluation={controller.moveEvaluation}
+                hover={analysisEnabled ? hover : mockHover}
+                makeMove={analysisEnabled ? makeMove : mockMakeMove}
+                data={
+                  analysisEnabled
+                    ? controller.blunderMeter
+                    : emptyBlunderMeterData
+                }
+                colorSanMapping={
+                  analysisEnabled ? controller.colorSanMapping : {}
+                }
+                moveEvaluation={
+                  analysisEnabled ? controller.moveEvaluation : undefined
+                }
               />
+              {!analysisEnabled && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                  <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                    <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                      lock
+                    </span>
+                    <p className="font-medium text-primary">Analysis Disabled</p>
+                    <p className="text-sm text-secondary">
+                      Enable analysis to see position evaluation
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Smaller screens (below xl): 3-row stacked layout */}
           <div className="flex h-full flex-col gap-2 xl:hidden">
             {/* Row 1: Combined Highlight + BlunderMeter container */}
-            <div className="flex h-[calc((85vh)*0.4)] overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1">
+            <div className="relative flex h-[calc((85vh)*0.4)] overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1">
               <div className="flex h-full w-full border-r-[0.5px] border-white/40">
                 <Highlight
-                  hover={hover}
-                  makeMove={makeMove}
+                  hover={analysisEnabled ? hover : mockHover}
+                  makeMove={analysisEnabled ? makeMove : mockMakeMove}
                   currentMaiaModel={controller.currentMaiaModel}
                   setCurrentMaiaModel={controller.setCurrentMaiaModel}
-                  recommendations={controller.moveRecommendations}
-                  moveEvaluation={
-                    controller.moveEvaluation as {
-                      maia?: MaiaEvaluation
-                      stockfish?: StockfishEvaluation
-                    }
+                  recommendations={
+                    analysisEnabled
+                      ? controller.moveRecommendations
+                      : emptyRecommendations
                   }
-                  colorSanMapping={controller.colorSanMapping}
-                  boardDescription={controller.boardDescription}
+                  moveEvaluation={
+                    analysisEnabled
+                      ? (controller.moveEvaluation as {
+                          maia?: MaiaEvaluation
+                          stockfish?: StockfishEvaluation
+                        })
+                      : {
+                          maia: undefined,
+                          stockfish: undefined,
+                        }
+                  }
+                  colorSanMapping={
+                    analysisEnabled ? controller.colorSanMapping : {}
+                  }
+                  boardDescription={
+                    analysisEnabled
+                      ? controller.boardDescription
+                      : {
+                          segments: [
+                            {
+                              type: 'text',
+                              content:
+                                'Analysis is disabled. Enable analysis to see detailed move evaluations and recommendations.',
+                            },
+                          ],
+                        }
+                  }
                   currentNode={controller.currentNode}
                 />
               </div>
               <div className="flex h-full w-auto min-w-[40%] max-w-[40%] bg-background-1 p-3">
                 <div className="h-full w-full">
                   <BlunderMeter
-                    hover={hover}
-                    makeMove={makeMove}
-                    data={controller.blunderMeter}
-                    colorSanMapping={controller.colorSanMapping}
-                    moveEvaluation={controller.moveEvaluation}
+                    hover={analysisEnabled ? hover : mockHover}
+                    makeMove={analysisEnabled ? makeMove : mockMakeMove}
+                    data={
+                      analysisEnabled
+                        ? controller.blunderMeter
+                        : emptyBlunderMeterData
+                    }
+                    colorSanMapping={
+                      analysisEnabled ? controller.colorSanMapping : {}
+                    }
+                    moveEvaluation={
+                      analysisEnabled ? controller.moveEvaluation : undefined
+                    }
                     showContainer={false}
                   />
                 </div>
               </div>
+              {!analysisEnabled && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                  <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                    <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                      lock
+                    </span>
+                    <p className="font-medium text-primary">Analysis Disabled</p>
+                    <p className="text-sm text-secondary">
+                      Enable analysis to see move evaluations
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Row 2: MoveMap */}
-            <div className="flex h-[calc((85vh)*0.3)] w-full">
+            <div className="relative flex h-[calc((85vh)*0.3)] w-full">
               <div className="h-full w-full">
                 <MoveMap
-                  moveMap={controller.moveMap}
-                  colorSanMapping={controller.colorSanMapping}
-                  setHoverArrow={setHoverArrow}
-                  makeMove={makeMove}
+                  moveMap={analysisEnabled ? controller.moveMap : undefined}
+                  colorSanMapping={
+                    analysisEnabled ? controller.colorSanMapping : {}
+                  }
+                  setHoverArrow={analysisEnabled ? setHoverArrow : mockSetHoverArrow}
+                  makeMove={analysisEnabled ? makeMove : mockMakeMove}
                 />
               </div>
+              {!analysisEnabled && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                  <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                    <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                      lock
+                    </span>
+                    <p className="font-medium text-primary">Analysis Disabled</p>
+                    <p className="text-sm text-secondary">
+                      Enable analysis to see position evaluation
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Row 3: MovesByRating */}
-            <div className="flex h-[calc((85vh)*0.3)] w-full">
+            <div className="relative flex h-[calc((85vh)*0.3)] w-full">
               <div className="h-full w-full">
                 <MovesByRating
-                  moves={controller.movesByRating}
-                  colorSanMapping={controller.colorSanMapping}
+                  moves={analysisEnabled ? controller.movesByRating : undefined}
+                  colorSanMapping={
+                    analysisEnabled ? controller.colorSanMapping : {}
+                  }
                 />
               </div>
+              {!analysisEnabled && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
+                  <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
+                    <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
+                      lock
+                    </span>
+                    <p className="font-medium text-primary">Analysis Disabled</p>
+                    <p className="text-sm text-secondary">
+                      Enable analysis to see move evaluations
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
@@ -997,38 +1190,152 @@ const Analysis: React.FC<Props> = ({
               </div>
             </div>
             <div className="flex w-full flex-col gap-1 overflow-hidden">
-              <Highlight
-                hover={hover}
-                makeMove={makeMove}
-                currentMaiaModel={controller.currentMaiaModel}
-                setCurrentMaiaModel={controller.setCurrentMaiaModel}
-                recommendations={controller.moveRecommendations}
-                moveEvaluation={
-                  controller.moveEvaluation as {
-                    maia?: MaiaEvaluation
-                    stockfish?: StockfishEvaluation
+              {/* Analysis Toggle Bar */}
+              <div className="flex items-center justify-between rounded bg-background-1 px-4 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-xl">analytics</span>
+                  <h3 className="font-semibold">Analysis</h3>
+                </div>
+                <button
+                  onClick={handleToggleAnalysis}
+                  className={`flex items-center gap-2 rounded px-3 py-1 text-sm transition-colors ${
+                    analysisEnabled
+                      ? 'bg-human-4 text-white hover:bg-human-4/80'
+                      : 'bg-background-2 text-secondary hover:bg-background-3'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    {analysisEnabled ? 'visibility' : 'visibility_off'}
+                  </span>
+                  {analysisEnabled ? 'Enabled' : 'Disabled'}
+                </button>
+              </div>
+
+              <div className="relative">
+                <Highlight
+                  hover={analysisEnabled ? hover : mockHover}
+                  makeMove={analysisEnabled ? makeMove : mockMakeMove}
+                  currentMaiaModel={controller.currentMaiaModel}
+                  setCurrentMaiaModel={controller.setCurrentMaiaModel}
+                  recommendations={
+                    analysisEnabled
+                      ? controller.moveRecommendations
+                      : emptyRecommendations
                   }
-                }
-                colorSanMapping={controller.colorSanMapping}
-                boardDescription={controller.boardDescription}
-                currentNode={controller.currentNode}
-              />
-              <BlunderMeter
-                hover={hover}
-                makeMove={makeMove}
-                data={controller.blunderMeter}
-                colorSanMapping={controller.colorSanMapping}
-              />
-              <MovesByRating
-                moves={controller.movesByRating}
-                colorSanMapping={controller.colorSanMapping}
-              />
-              <MoveMap
-                moveMap={controller.moveMap}
-                colorSanMapping={controller.colorSanMapping}
-                setHoverArrow={setHoverArrow}
-                makeMove={makeMove}
-              />
+                  moveEvaluation={
+                    analysisEnabled
+                      ? (controller.moveEvaluation as {
+                          maia?: MaiaEvaluation
+                          stockfish?: StockfishEvaluation
+                        })
+                      : {
+                          maia: undefined,
+                          stockfish: undefined,
+                        }
+                  }
+                  colorSanMapping={
+                    analysisEnabled ? controller.colorSanMapping : {}
+                  }
+                  boardDescription={
+                    analysisEnabled
+                      ? controller.boardDescription
+                      : {
+                          segments: [
+                            {
+                              type: 'text',
+                              content:
+                                'Analysis is disabled. Enable analysis to see detailed move evaluations and recommendations.',
+                            },
+                          ],
+                        }
+                  }
+                  currentNode={controller.currentNode}
+                />
+                {!analysisEnabled && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
+                    <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
+                      <span className="material-symbols-outlined mb-1 text-xl text-human-3">
+                        lock
+                      </span>
+                      <p className="text-xs font-medium text-primary">
+                        Analysis Disabled
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative">
+                <BlunderMeter
+                  hover={analysisEnabled ? hover : mockHover}
+                  makeMove={analysisEnabled ? makeMove : mockMakeMove}
+                  data={
+                    analysisEnabled ? controller.blunderMeter : emptyBlunderMeterData
+                  }
+                  colorSanMapping={
+                    analysisEnabled ? controller.colorSanMapping : {}
+                  }
+                  moveEvaluation={
+                    analysisEnabled ? controller.moveEvaluation : undefined
+                  }
+                />
+                {!analysisEnabled && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
+                    <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
+                      <span className="material-symbols-outlined mb-1 text-xl text-human-3">
+                        lock
+                      </span>
+                      <p className="text-xs font-medium text-primary">
+                        Analysis Disabled
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative">
+                <MovesByRating
+                  moves={analysisEnabled ? controller.movesByRating : undefined}
+                  colorSanMapping={
+                    analysisEnabled ? controller.colorSanMapping : {}
+                  }
+                />
+                {!analysisEnabled && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
+                    <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
+                      <span className="material-symbols-outlined mb-1 text-xl text-human-3">
+                        lock
+                      </span>
+                      <p className="text-xs font-medium text-primary">
+                        Analysis Disabled
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative">
+                <MoveMap
+                  moveMap={analysisEnabled ? controller.moveMap : undefined}
+                  colorSanMapping={
+                    analysisEnabled ? controller.colorSanMapping : {}
+                  }
+                  setHoverArrow={analysisEnabled ? setHoverArrow : mockSetHoverArrow}
+                  makeMove={analysisEnabled ? makeMove : mockMakeMove}
+                />
+                {!analysisEnabled && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
+                    <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
+                      <span className="material-symbols-outlined mb-1 text-xl text-human-3">
+                        lock
+                      </span>
+                      <p className="text-xs font-medium text-primary">
+                        Analysis Disabled
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <ConfigurableScreens
               currentMaiaModel={controller.currentMaiaModel}
