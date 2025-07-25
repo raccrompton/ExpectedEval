@@ -149,8 +149,7 @@ export const useMoveRecommendations = (
       const importance = normalizedCp + normalizedProb
 
       // Calculate dynamic size based on importance (bigger = more important)
-      // Increased size range from 4-12 to 6-16 for better visibility
-      const size = Math.max(6, Math.min(16, 6 + importance * 6)) // 6-16px range
+      const size = 10
 
       // Get additional data for comprehensive tooltip
       const rawCp = moveEvaluation.stockfish.cp_vec[move] || 0
@@ -161,6 +160,7 @@ export const useMoveRecommendations = (
         move,
         x: cp,
         y: prob,
+        z: 100,
         opacity,
         importance,
         size,
