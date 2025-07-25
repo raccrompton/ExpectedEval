@@ -701,6 +701,9 @@ const Analysis: React.FC<Props> = ({
                 termination={analyzedGame.termination}
                 type="analysis"
                 showAnnotations={analysisEnabled}
+                disableKeyboardNavigation={
+                  controller.gameAnalysis.progress.isAnalyzing
+                }
               />
               <BoardController
                 gameTree={controller.gameTree}
@@ -1214,6 +1217,9 @@ const Analysis: React.FC<Props> = ({
                   termination={analyzedGame.termination}
                   type="analysis"
                   showAnnotations={analysisEnabled}
+                  disableKeyboardNavigation={
+                    controller.gameAnalysis.progress.isAnalyzing
+                  }
                 />
               </div>
             </div>
