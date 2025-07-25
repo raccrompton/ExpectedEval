@@ -22,8 +22,12 @@ import { StockfishEngineContext } from 'src/contexts/StockfishEngineContext'
 import {
   collectEngineAnalysisData,
   generateAnalysisCacheKey,
+  applyEngineAnalysisData,
 } from 'src/lib/analysisStorage'
-import { storeEngineAnalysis } from 'src/api/analysis/analysis'
+import {
+  storeEngineAnalysis,
+  getEngineAnalysis,
+} from 'src/api/analysis/analysis'
 
 export interface GameAnalysisProgress {
   currentMoveIndex: number
@@ -127,6 +131,51 @@ export const useAnalysisController = (
 
   const saveAnalysisToBackendRef = useRef(saveAnalysisToBackend)
   saveAnalysisToBackendRef.current = saveAnalysisToBackend
+
+  const loadStoredAnalysis = useCallback(async () => {
+    console.log(
+      'loadStoredAnalysis called for game:',
+      game.id,
+      'type:',
+      game.type,
+    )
+
+    if (
+      !game.id ||
+      game.type === 'custom-pgn' ||
+      game.type === 'custom-fen' ||
+      game.type === 'tournament'
+    ) {
+      console.log('Skipping analysis load - game not eligible')
+      return
+    }
+
+    try {
+      console.log('Fetching stored analysis for game:', game.id)
+      const storedAnalysis = await getEngineAnalysis(game.id)
+      console.log('Received stored analysis:', storedAnalysis)
+
+      if (storedAnalysis && storedAnalysis.positions.length > 0) {
+        applyEngineAnalysisData(game.tree, storedAnalysis.positions)
+        setAnalysisState((prev) => prev + 1) // Trigger UI updates
+        console.log(
+          'Loaded stored analysis:',
+          storedAnalysis.positions.length,
+          'positions',
+        )
+      } else {
+        console.log('No stored analysis found for game:', game.id)
+      }
+    } catch (error) {
+      console.warn('Failed to load stored analysis:', error)
+      // Don't show error to user as this is background functionality
+    }
+  }, [game.id, game.type])
+
+  // Load stored analysis when game changes
+  useEffect(() => {
+    loadStoredAnalysis()
+  }, [loadStoredAnalysis])
 
   // Setup auto-save timer
   useEffect(() => {
@@ -431,6 +480,7 @@ export const useAnalysisController = (
       resetProgress: resetGameAnalysisProgress,
       isEnginesReady: stockfish.isReady() && maia.status === 'ready',
       saveAnalysis: saveAnalysisToBackend,
+      loadStoredAnalysis,
     },
   }
 }

@@ -1,5 +1,7 @@
-import { GameTree, GameNode } from 'src/types'
+import { Chess } from 'chess.ts'
+import { GameTree } from 'src/types'
 import { EngineAnalysisPosition } from 'src/api/analysis/analysis'
+import { cpToWinrate } from 'src/lib/stockfish'
 
 /**
  * Collects analysis data from a game tree to send to the backend
@@ -63,18 +65,11 @@ export const applyEngineAnalysisData = (
 
         // Apply Stockfish analysis
         if (stockfish) {
-          // Create a StockfishEvaluation object with minimal required fields
-          const stockfishEval = {
-            sent: true,
-            depth: stockfish.depth,
-            model_move: Object.keys(stockfish.cp_vec)[0] || '',
-            model_optimal_cp: Math.max(
-              ...Object.values(stockfish.cp_vec).map(Number),
-              0,
-            ),
-            cp_vec: stockfish.cp_vec,
-            cp_relative_vec: calculateRelativeCp(stockfish.cp_vec),
-          }
+          const stockfishEval = reconstructStockfishEvaluation(
+            stockfish.cp_vec,
+            stockfish.depth,
+            node.fen,
+          )
 
           // Only apply if we don't have deeper analysis already
           if (
@@ -90,19 +85,87 @@ export const applyEngineAnalysisData = (
 }
 
 /**
- * Helper function to calculate relative centipawn values
+ * Reconstruct a complete StockfishEvaluation from stored cp_vec using the same logic as the engine
  */
-const calculateRelativeCp = (cpVec: {
-  [move: string]: number
-}): { [move: string]: number } => {
-  const maxCp = Math.max(...Object.values(cpVec))
-  const relativeCp: { [move: string]: number } = {}
+const reconstructStockfishEvaluation = (
+  cpVec: { [move: string]: number },
+  depth: number,
+  fen: string,
+) => {
+  const board = new Chess(fen)
+  const isBlackTurn = board.turn() === 'b'
 
-  Object.entries(cpVec).forEach(([move, cp]) => {
-    relativeCp[move] = cp - maxCp
-  })
+  // Find the best move and cp (model_move and model_optimal_cp)
+  let bestCp = isBlackTurn ? Infinity : -Infinity
+  let bestMove = ''
 
-  return relativeCp
+  for (const move in cpVec) {
+    const cp = cpVec[move]
+    if (isBlackTurn) {
+      if (cp < bestCp) {
+        bestCp = cp
+        bestMove = move
+      }
+    } else {
+      if (cp > bestCp) {
+        bestCp = cp
+        bestMove = move
+      }
+    }
+  }
+
+  // Calculate cp_relative_vec using exact same logic as engine.ts:215-217
+  const cp_relative_vec: { [move: string]: number } = {}
+  for (const move in cpVec) {
+    const cp = cpVec[move]
+    cp_relative_vec[move] = isBlackTurn
+      ? bestCp - cp // Black turn: model_optimal_cp - cp
+      : cp - bestCp // White turn: cp - model_optimal_cp
+  }
+
+  // Calculate winrate_vec using exact same logic as engine.ts:219 and 233
+  const winrate_vec: { [move: string]: number } = {}
+  for (const move in cpVec) {
+    const cp = cpVec[move]
+    // Use exact same logic as engine: cp * (isBlackTurn ? -1 : 1)
+    const winrate = cpToWinrate(cp * (isBlackTurn ? -1 : 1), false)
+    winrate_vec[move] = winrate
+  }
+
+  // Calculate winrate_loss_vec using the same logic as the engine (lines 248-264)
+  let bestWinrate = -Infinity
+  for (const move in winrate_vec) {
+    const wr = winrate_vec[move]
+    if (wr > bestWinrate) {
+      bestWinrate = wr
+    }
+  }
+
+  const winrate_loss_vec: { [move: string]: number } = {}
+  for (const move in winrate_vec) {
+    winrate_loss_vec[move] = winrate_vec[move] - bestWinrate
+  }
+
+  // Sort all vectors by winrate (descending) as done in engine.ts:267-281
+  const sortedEntries = Object.entries(winrate_vec).sort(
+    ([, a], [, b]) => b - a,
+  )
+
+  const sortedWinrateVec = Object.fromEntries(sortedEntries)
+  const sortedWinrateLossVec = Object.fromEntries(
+    sortedEntries.map(([move]) => [move, winrate_loss_vec[move]]),
+  )
+
+  return {
+    sent: true,
+    depth,
+    model_move: bestMove,
+    model_optimal_cp: bestCp,
+    cp_vec: cpVec,
+    cp_relative_vec,
+    winrate_vec: sortedWinrateVec,
+    winrate_loss_vec: sortedWinrateLossVec,
+  }
 }
 
 /**
