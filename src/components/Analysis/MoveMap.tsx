@@ -7,6 +7,7 @@ import {
   ScatterChart,
   CartesianGrid,
   ResponsiveContainer,
+  ZAxis,
 } from 'recharts'
 import { useContext, useState, useEffect } from 'react'
 import { ColorSanMapping } from 'src/types'
@@ -352,24 +353,18 @@ export const MoveMap: React.FC<Props> = ({
                 dy={getLikelyLabelDy()}
               />
             </YAxis>
-            {moveMap?.map((entry, index) => {
-              // Set minimum opacity to 0.5 to ensure visibility
-              const opacity = Math.max(entry.opacity ?? 1, 0.5)
-              const size = entry.size ?? (isMobile ? 8 : 10)
-              const baseColor = colorSanMapping[entry.move]?.color ?? '#fff'
-              const fillColor = baseColor.startsWith('#')
-                ? hexToRgba(baseColor, opacity)
-                : baseColor
+            <ZAxis dataKey="z" type="number" range={[100, 101]} />
+            <Scatter data={moveMap || []} fill="#fff">
+              {moveMap?.map((entry, index) => {
+                const opacity = Math.max(entry.opacity ?? 1, 0.5)
+                const baseColor = colorSanMapping[entry.move]?.color ?? '#fff'
+                const fillColor = baseColor.startsWith('#')
+                  ? hexToRgba(baseColor, opacity)
+                  : baseColor
 
-              return (
-                <Scatter
-                  key={`scatter-${entry.move}${index}`}
-                  name={`Move-${entry.move}`}
-                  data={[entry]}
-                  fill={fillColor}
-                  r={size}
-                >
+                return (
                   <Cell
+                    key={`cell-${entry.move}${index}`}
                     fill={fillColor}
                     onMouseEnter={(event) =>
                       onMouseEnter(entry.move, entry, event)
@@ -380,9 +375,9 @@ export const MoveMap: React.FC<Props> = ({
                     }
                     style={{ cursor: 'pointer' }}
                   />
-                </Scatter>
-              )
-            })}
+                )
+              })}
+            </Scatter>
           </ScatterChart>
         </ResponsiveContainer>
 
