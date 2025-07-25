@@ -700,7 +700,7 @@ export const storeEngineAnalysis = async (
 // Retrieve stored engine analysis from backend
 export const getEngineAnalysis = async (
   gameId: string,
-): Promise<EngineAnalysisPosition[] | null> => {
+): Promise<{ positions: EngineAnalysisPosition[] } | null> => {
   const res = await fetch(buildUrl(`analysis/get_engine_analysis/${gameId}`))
 
   if (res.status === 401) {
