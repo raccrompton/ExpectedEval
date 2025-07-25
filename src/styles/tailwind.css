@@ -101,7 +101,7 @@ svg {
 }
 
 .desktop-middle-column-container {
-  width: 28vw;
+  width: min(28vw, 50vh);
   min-width: calc(max(20rem, min(28vw, 50vh)));
   height: 85vh;
 }
