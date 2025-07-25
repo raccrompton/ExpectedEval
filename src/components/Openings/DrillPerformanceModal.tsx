@@ -405,6 +405,8 @@ const EvaluationChart: React.FC<{
   gameNodesMap,
   getChartClassification,
 }) => {
+  const [isHovering, setIsHovering] = useState(false)
+
   if (evaluationChart.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center rounded bg-background-2 p-3 text-secondary">
@@ -491,12 +493,8 @@ const EvaluationChart: React.FC<{
       ? getChartClassification(moveAnalysis, gameNodesMap)
       : ''
 
-    // Get Stockfish depth by finding the corresponding game node
-    // Since all positions are now analyzed to minimum depth 12, we can show this
-    const stockfishDepth = 12 // Minimum depth guaranteed by the analysis system
-
     return {
-      moveNumber: isWhite ? moveNumber : `...${moveNumber}`,
+      moveNumber: isWhite ? moveNumber : `${moveNumber}...`,
       evaluation: point.evaluation,
       isPlayerMove: point.isPlayerMove,
       classification: dynamicClassification,
@@ -505,7 +503,7 @@ const EvaluationChart: React.FC<{
       whiteAdvantage: point.evaluation > 0 ? point.evaluation : 0,
       blackAdvantage: point.evaluation < 0 ? point.evaluation : 0,
       zero: 0,
-      stockfishDepth,
+      stockfishDepth: 12,
     }
   })
 
@@ -533,11 +531,13 @@ const EvaluationChart: React.FC<{
           Track how evaluation value changed throughout the drill
         </p>
       </div>
-      <div className="h-64">
+      <div className="relative h-64">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
             margin={{ top: 15, right: 20, left: -20, bottom: 6 }}
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
             onMouseMove={(data) => {
               if (
                 data &&
@@ -586,7 +586,10 @@ const EvaluationChart: React.FC<{
                 },
               }}
             />
-            <Tooltip content={<CustomTooltip moveAnalyses={moveAnalyses} />} />
+            <Tooltip
+              content={<CustomTooltip moveAnalyses={moveAnalyses} />}
+              active={isHovering}
+            />
 
             {/* White advantage area (positive evaluations only) */}
             <Area
@@ -617,6 +620,17 @@ const EvaluationChart: React.FC<{
               ifOverflow="extendDomain"
             />
 
+            {/* Vertical line at current move position */}
+            {currentMoveIndex >= 0 && currentMoveIndex < chartData.length && (
+              <ReferenceLine
+                x={chartData[currentMoveIndex]?.moveNumber}
+                stroke="rgba(244, 63, 94, 0.8)"
+                strokeWidth={2}
+                strokeDasharray="4 2"
+                ifOverflow="extendDomain"
+              />
+            )}
+
             <Line
               type="monotone"
               dataKey="evaluation"
@@ -627,6 +641,66 @@ const EvaluationChart: React.FC<{
             />
           </ComposedChart>
         </ResponsiveContainer>
+
+        {/* Fixed tooltip for current move position - only show when not hovering */}
+        {!isHovering &&
+          currentMoveIndex >= 0 &&
+          currentMoveIndex < chartData.length &&
+          (() => {
+            // Get the filtered moveAnalyses that match the chart data
+            const firstPlayerMoveIndex = moveAnalyses.findIndex(
+              (move) => move.isPlayerMove,
+            )
+            const startIndex = Math.max(0, firstPlayerMoveIndex - 1)
+            const filteredMoveAnalyses = moveAnalyses.slice(startIndex)
+
+            const currentData = chartData[currentMoveIndex]
+            // Convert string move numbers (like "...5") back to numeric for the tooltip
+            const numericMoveNumber =
+              typeof currentData.moveNumber === 'string'
+                ? parseInt(currentData.moveNumber.replace('...', ''))
+                : currentData.moveNumber
+
+            // Calculate the x position of the tooltip based on the current move's position in the chart
+            // Chart width is approximately 100% - margins, and we need to map the currentMoveIndex to x position
+            const totalDataPoints = chartData.length
+            const dataPointRatio =
+              totalDataPoints > 1 ? currentMoveIndex / (totalDataPoints - 1) : 0
+
+            // Position tooltip at the calculated x position
+            const tooltipLeftPercent = Math.min(
+              Math.max(dataPointRatio * 100, 10),
+              85,
+            ) // Keep within 10%-85% range
+
+            return (
+              <div
+                className="absolute top-4 z-10"
+                style={{
+                  left: `${tooltipLeftPercent}%`,
+                  transform: 'translateX(-50%)',
+                }}
+              >
+                <CustomTooltip
+                  active={true}
+                  payload={[
+                    {
+                      payload: {
+                        san: currentData.san,
+                        evaluation: currentData.evaluation,
+                        classification: currentData.classification,
+                        isPlayerMove: currentData.isPlayerMove,
+                        moveNumber: numericMoveNumber,
+                        stockfishDepth: currentData.stockfishDepth,
+                      },
+                    },
+                  ]}
+                  label={String(currentData.moveNumber)}
+                  moveAnalyses={filteredMoveAnalyses}
+                />
+              </div>
+            )
+          })()}
       </div>
 
       {/* Legend */}
@@ -661,6 +735,7 @@ const DesktopLayout: React.FC<{
   playerMoveCount: number
   treeController: ReturnType<typeof useTreeController>
   gameNodesMap: Map<string, GameNode>
+  currentMoveIndex: number
   getChartClassification: (
     analysis: MoveAnalysis,
     gameNodesMap: Map<string, GameNode>,
@@ -677,6 +752,7 @@ const DesktopLayout: React.FC<{
   playerMoveCount,
   treeController,
   gameNodesMap,
+  currentMoveIndex,
   getChartClassification,
 }) => (
   <div className="relative flex h-[90vh] max-h-[800px] w-[95vw] max-w-[1200px] flex-col overflow-hidden rounded-lg bg-background-1 shadow-2xl">
@@ -725,10 +801,17 @@ const DesktopLayout: React.FC<{
         <EvaluationChart
           evaluationChart={filteredEvaluationChart}
           moveAnalyses={performanceData.moveAnalyses}
-          currentMoveIndex={0}
+          currentMoveIndex={currentMoveIndex}
           onHoverMove={(moveIndex) => {
             // Navigate to the corresponding move position when hovering over the chart
-            const moveAnalysis = performanceData.moveAnalyses[moveIndex]
+            // Adjust moveIndex back to the original moveAnalyses index
+            const firstPlayerMoveIndex = performanceData.moveAnalyses.findIndex(
+              (move) => move.isPlayerMove,
+            )
+            const startIndex = Math.max(0, firstPlayerMoveIndex - 1)
+            const actualMoveIndex = moveIndex + startIndex
+
+            const moveAnalysis = performanceData.moveAnalyses[actualMoveIndex]
             if (moveAnalysis) {
               // Find the node that represents the position after this move
               const targetFen = moveAnalysis.fen
@@ -960,6 +1043,7 @@ const MobileLayout: React.FC<{
   playerMoveCount: number
   treeController: ReturnType<typeof useTreeController>
   gameNodesMap: Map<string, GameNode>
+  currentMoveIndex: number
   getChartClassification: (
     analysis: MoveAnalysis,
     gameNodesMap: Map<string, GameNode>,
@@ -978,6 +1062,7 @@ const MobileLayout: React.FC<{
   playerMoveCount,
   treeController,
   gameNodesMap,
+  currentMoveIndex,
   getChartClassification,
 }) => (
   <div className="relative flex h-[95vh] w-[95vw] flex-col overflow-hidden rounded-lg bg-background-1 shadow-2xl">
@@ -1056,10 +1141,18 @@ const MobileLayout: React.FC<{
           <EvaluationChart
             evaluationChart={filteredEvaluationChart}
             moveAnalyses={performanceData.moveAnalyses}
-            currentMoveIndex={0}
+            currentMoveIndex={currentMoveIndex}
             onHoverMove={(moveIndex) => {
               // Navigate to the corresponding move position when hovering over the chart
-              const moveAnalysis = performanceData.moveAnalyses[moveIndex]
+              // Adjust moveIndex back to the original moveAnalyses index
+              const firstPlayerMoveIndex =
+                performanceData.moveAnalyses.findIndex(
+                  (move) => move.isPlayerMove,
+                )
+              const startIndex = Math.max(0, firstPlayerMoveIndex - 1)
+              const actualMoveIndex = moveIndex + startIndex
+
+              const moveAnalysis = performanceData.moveAnalyses[actualMoveIndex]
               if (moveAnalysis) {
                 // Find the node that represents the position after this move
                 const targetFen = moveAnalysis.fen
@@ -1205,6 +1298,23 @@ export const DrillPerformanceModal: React.FC<Props> = ({
     drill.selection.playerColor,
   )
 
+  // Calculate current move index from tree controller's current node
+  const currentMoveIndex = useMemo(() => {
+    if (!treeController.currentNode) return -1
+
+    // Find the index in moveAnalyses that corresponds to the current node's FEN
+    const currentFen = treeController.currentNode.fen
+    const moveIndex = moveAnalyses.findIndex((move) => move.fen === currentFen)
+
+    // Adjust for the filtered evaluation chart that starts earlier
+    const firstPlayerMoveIndex = moveAnalyses.findIndex(
+      (move) => move.isPlayerMove,
+    )
+    const startIndex = Math.max(0, firstPlayerMoveIndex - 1)
+
+    return moveIndex >= startIndex ? moveIndex - startIndex : -1
+  }, [treeController.currentNode, moveAnalyses])
+
   // Create a map of FEN -> GameNode for consistent classification
   const gameNodesMap = useMemo(() => {
     const map = new Map<string, GameNode>()
@@ -1283,6 +1393,7 @@ export const DrillPerformanceModal: React.FC<Props> = ({
           playerMoveCount={playerMoveCount}
           treeController={treeController}
           gameNodesMap={gameNodesMap}
+          currentMoveIndex={currentMoveIndex}
           getChartClassification={getChartClassification}
         />
       ) : (
@@ -1298,6 +1409,7 @@ export const DrillPerformanceModal: React.FC<Props> = ({
           playerMoveCount={playerMoveCount}
           treeController={treeController}
           gameNodesMap={gameNodesMap}
+          currentMoveIndex={currentMoveIndex}
           getChartClassification={getChartClassification}
         />
       )}

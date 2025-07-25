@@ -1137,7 +1137,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   }
 
   return (
-    <ModalContainer dismiss={onClose}>
+    <ModalContainer className="!z-10" dismiss={onClose}>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
