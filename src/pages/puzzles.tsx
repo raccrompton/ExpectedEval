@@ -667,14 +667,14 @@ const Train: React.FC<Props> = ({
 
   const desktopLayout = (
     <motion.div
-      className="flex h-full w-full flex-col items-center py-4 md:py-10"
+      className="flex h-full w-full flex-col items-center py-4"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
       exit="exit"
       style={{ willChange: 'transform, opacity' }}
     >
-      <div className="flex h-full w-[90%] flex-row gap-4">
+      <div className="flex h-full w-[90%] flex-row gap-2">
         <motion.div
           className="desktop-left-column-container flex flex-col gap-2 overflow-hidden"
           variants={itemVariants}

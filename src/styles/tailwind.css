@@ -96,7 +96,7 @@ svg {
 
 .desktop-left-column-container {
   width: 16vw;
-  min-width: 14rem;
+  min-width: max(14rem, 16vw);
   height: 85vh;
 }
 
