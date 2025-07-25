@@ -7,7 +7,7 @@ import { useRouter } from 'next/router'
 import { DiscordIcon } from './Icons'
 import { useCallback, useContext, useEffect, useState } from 'react'
 import { AuthContext, ModalContext, WindowSizeContext } from 'src/contexts'
-import { LeaderboardNavBadge } from './LeaderboardNavBadge'
+import { LeaderboardNavBadge } from '../Leaderboard/LeaderboardNavBadge'
 import { useLeaderboardStatus } from 'src/hooks/useLeaderboardStatus'
 
 export const Header: React.FC = () => {
