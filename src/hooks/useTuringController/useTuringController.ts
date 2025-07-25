@@ -81,7 +81,7 @@ export const useTuringController = () => {
   useEffect(() => {
     if (gameTree && game) {
       const mainLine = gameTree.getMainLine()
-      controller.setCurrentNode(mainLine[mainLine.length - 1])
+      controller.setCurrentNode(mainLine[0])
     }
   }, [game])
 
