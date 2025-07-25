@@ -21,12 +21,10 @@ export const collectEngineAnalysisData = (
       fen: node.fen,
     }
 
-    // Add Maia analysis if available
     if (node.analysis.maia) {
       position.maia = node.analysis.maia
     }
 
-    // Add Stockfish analysis if available
     if (node.analysis.stockfish) {
       position.stockfish = {
         depth: node.analysis.stockfish.depth,

@@ -79,26 +79,26 @@ export const useAnalysisController = (
     currentNode: null,
   })
 
-  // Auto-save analysis state
   const [lastSavedCacheKey, setLastSavedCacheKey] = useState<string>('')
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Auto-save analysis data every 10 seconds
   const saveAnalysisToBackend = useCallback(async () => {
-    // Only save for games that have a proper ID (not custom local games)
-    if (!game.id || game.type === 'custom-pgn' || game.type === 'custom-fen') {
+    if (
+      !game.id ||
+      game.type === 'custom-pgn' ||
+      game.type === 'custom-fen' ||
+      game.type === 'tournament'
+    ) {
       return
     }
 
     try {
       const analysisData = collectEngineAnalysisData(game.tree)
 
-      // Only save if there's actually some analysis to save
       if (analysisData.length === 0) {
         return
       }
 
-      // Check if we have meaningful analysis (decent depth or Maia data)
       const hasMeaningfulAnalysis = analysisData.some(
         (pos) => (pos.stockfish && pos.stockfish.depth >= 12) || pos.maia,
       )
@@ -107,10 +107,9 @@ export const useAnalysisController = (
         return
       }
 
-      // Generate a cache key to avoid unnecessary saves
       const cacheKey = generateAnalysisCacheKey(analysisData)
       if (cacheKey === lastSavedCacheKey) {
-        return // No new analysis since last save
+        return
       }
 
       await storeEngineAnalysis(game.id, analysisData)
@@ -126,6 +125,9 @@ export const useAnalysisController = (
     }
   }, [game.id, game.type, game.tree, lastSavedCacheKey])
 
+  const saveAnalysisToBackendRef = useRef(saveAnalysisToBackend)
+  saveAnalysisToBackendRef.current = saveAnalysisToBackend
+
   // Setup auto-save timer
   useEffect(() => {
     // Clear existing timer
@@ -134,7 +136,9 @@ export const useAnalysisController = (
     }
 
     // Set up new timer to save every 10 seconds
-    autoSaveTimerRef.current = setInterval(saveAnalysisToBackend, 10000)
+    autoSaveTimerRef.current = setInterval(() => {
+      saveAnalysisToBackendRef.current()
+    }, 10000)
 
     // Cleanup on unmount or game change - save one last time
     return () => {
@@ -142,16 +146,9 @@ export const useAnalysisController = (
         clearInterval(autoSaveTimerRef.current)
       }
       // Final save when component unmounts or game changes
-      saveAnalysisToBackend()
+      saveAnalysisToBackendRef.current()
     }
-  }, [saveAnalysisToBackend])
-
-  // Save immediately when analysis state changes (new analysis available)
-  useEffect(() => {
-    // Debounce the save to avoid too frequent calls
-    const timeoutId = setTimeout(saveAnalysisToBackend, 1000)
-    return () => clearTimeout(timeoutId)
-  }, [analysisState, saveAnalysisToBackend])
+  }, [game.id])
 
   // Simple batch analysis functions that reuse existing analysis infrastructure
   const startGameAnalysis = useCallback(

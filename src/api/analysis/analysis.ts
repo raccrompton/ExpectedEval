@@ -663,7 +663,6 @@ export const getAnalyzedUserGame = async (
   } as AnalyzedGame
 }
 
-// Types for engine analysis storage
 export interface EngineAnalysisPosition {
   ply: number
   fen: string
@@ -674,7 +673,6 @@ export interface EngineAnalysisPosition {
   }
 }
 
-// Store client-side engine analysis to backend
 export const storeEngineAnalysis = async (
   gameId: string,
   analysisData: EngineAnalysisPosition[],
