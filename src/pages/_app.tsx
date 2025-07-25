@@ -39,9 +39,12 @@ const OpenSans = Open_Sans({ subsets: ['latin'] })
 function MaiaPlatform({ Component, pageProps }: AppProps) {
   const router = useRouter()
   const isAnalysisPage = router.pathname.startsWith('/analysis')
-  const isPageWithAnalysis = ['/analysis', '/openings', '/puzzles'].some(
-    (path) => router.pathname.includes(path),
-  )
+  const isPageWithAnalysis = [
+    '/analysis',
+    '/openings',
+    '/puzzles',
+    '/settings',
+  ].some((path) => router.pathname.includes(path))
 
   useEffect(() => {
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {

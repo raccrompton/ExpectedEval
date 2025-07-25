@@ -6,12 +6,16 @@ import { PlayType } from 'src/types'
 import { useRouter } from 'next/router'
 import { DiscordIcon } from './Icons'
 import { useCallback, useContext, useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { AuthContext, ModalContext, WindowSizeContext } from 'src/contexts'
-import { LeaderboardNavBadge } from './LeaderboardNavBadge'
+import { LeaderboardNavBadge } from '../Leaderboard/LeaderboardNavBadge'
 import { useLeaderboardStatus } from 'src/hooks/useLeaderboardStatus'
 
 export const Header: React.FC = () => {
   const [showMenu, setShowMenu] = useState(false)
+  const [showPlayDropdown, setShowPlayDropdown] = useState(false)
+  const [showMoreDropdown, setShowMoreDropdown] = useState(false)
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const { isMobile } = useContext(WindowSizeContext)
 
   const { user, connectLichess, logout } = useContext(AuthContext)
@@ -70,32 +74,54 @@ export const Header: React.FC = () => {
   }, [showMenu])
 
   const userInfo = user?.lichessId ? (
-    <div className="group relative flex w-full items-center gap-3 rounded bg-background-1 px-3 py-2 md:w-auto">
-      <span className="material-symbols-outlined text-3xl">account_circle</span>
-      <div className="flex flex-col">
-        <p className="text-sm">{user?.displayName}</p>
-        <p className="text-xs text-secondary">View Info</p>
-      </div>
-      <div className="absolute bottom-[100%] left-0 z-50 hidden w-full overflow-hidden rounded bg-background-2 group-hover:flex group-hover:flex-col md:bottom-auto md:top-[100%]">
-        <Link
-          href="/profile"
-          className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-3"
-        >
-          Profile
-        </Link>
-        <Link
-          href="/settings"
-          className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-3"
-        >
-          Settings
-        </Link>
-        <button
-          onClick={logout}
-          className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-3"
-        >
-          Logout
-        </button>
-      </div>
+    <div
+      className="relative flex items-center gap-2 rounded-full bg-background-1/50 px-3 py-1.5 transition-all duration-200 hover:bg-background-1"
+      onMouseEnter={() => setShowProfileDropdown(true)}
+      onMouseLeave={() => setShowProfileDropdown(false)}
+    >
+      <span className="material-symbols-outlined text-xl text-primary/80">
+        account_circle
+      </span>
+      <span className="text-sm font-medium text-primary/90">
+        {user?.displayName}
+      </span>
+      <motion.i
+        className="material-symbols-outlined text-sm text-primary/60"
+        animate={{ rotate: showProfileDropdown ? 180 : 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        arrow_drop_down
+      </motion.i>
+      <AnimatePresence>
+        {showProfileDropdown && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="absolute bottom-[100%] left-0 z-50 w-full overflow-hidden rounded border border-white/10 bg-background-1 shadow-lg md:bottom-auto md:top-[100%]"
+          >
+            <Link
+              href="/profile"
+              className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
+            >
+              Profile
+            </Link>
+            <Link
+              href="/settings"
+              className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
+            >
+              Settings
+            </Link>
+            <button
+              onClick={logout}
+              className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
+            >
+              Logout
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   ) : (
     <button onClick={connectLichess}>Sign in</button>
@@ -108,93 +134,136 @@ export const Header: React.FC = () => {
           <Image src="/maia.png" width={40} height={40} alt="Maia Logo" />
           <h2 className="text-2xl font-bold">Maia Chess</h2>
         </Link>
-        <div className="hidden flex-row gap-1 *:px-2 *:py-1 md:flex">
+        <div className="hidden flex-row gap-1 text-sm tracking-wider md:flex">
           <div
-            className={`${router.pathname.startsWith('/play') && 'bg-background-1'} group relative`}
+            className="relative"
+            onMouseEnter={() => setShowPlayDropdown(true)}
+            onMouseLeave={() => setShowPlayDropdown(false)}
           >
-            <button className="uppercase">Play</button>
-            <div className="absolute left-0 top-[100%] z-30 hidden w-48 flex-col items-start bg-background-1 group-hover:flex">
-              <button
-                onClick={() => startGame('againstMaia')}
-                className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
+            <button
+              className={`-gap-1 flex items-center px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/play') ? '!text-primary' : '!text-primary/80'}`}
+            >
+              <p>PLAY</p>
+              <motion.i
+                className="material-symbols-outlined text-sm"
+                animate={{ rotate: showPlayDropdown ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
               >
-                Play Maia
-              </button>
-              <button
-                onClick={() => startGame('handAndBrain')}
-                className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
-              >
-                Play Hand and Brain
-              </button>
-              <a
-                className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
-                href="https://lichess.org/@/maia1"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Play Maia on Lichess
-              </a>
-            </div>
+                arrow_drop_down
+              </motion.i>
+            </button>
+            <AnimatePresence>
+              {showPlayDropdown && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute left-0 top-[100%] z-30 w-48 overflow-hidden rounded border border-white/10 bg-background-1 shadow-lg"
+                >
+                  <button
+                    onClick={() => startGame('againstMaia')}
+                    className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
+                  >
+                    Play Maia
+                  </button>
+                  <button
+                    onClick={() => startGame('handAndBrain')}
+                    className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
+                  >
+                    Play Hand and Brain
+                  </button>
+                  <a
+                    className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
+                    href="https://lichess.org/@/maia1"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Play Maia on Lichess
+                  </a>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
           <Link
             href="/analysis"
-            className={`${router.pathname.startsWith('/analysis') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
+            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/analysis') ? '!text-primary' : '!text-primary/80'}`}
           >
-            Analysis
+            ANALYSIS
           </Link>
           <Link
             href="/puzzles"
-            className={`${router.pathname.startsWith('/puzzles') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
+            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/puzzles') ? '!text-primary' : '!text-primary/80'}`}
           >
-            Puzzles
+            PUZZLES
           </Link>
           <Link
             href="/openings"
-            className={`${router.pathname.startsWith('/openings') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
+            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/openings') ? '!text-primary' : '!text-primary/80'}`}
           >
-            Openings
+            OPENINGS
           </Link>
           <Link
             href="/turing"
-            className={`${router.pathname.startsWith('/turing') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
+            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/turing') ? '!text-primary' : '!text-primary/80'}`}
           >
-            Bot-or-Not
+            BOT-OR-NOT
           </Link>
           <Link
             href="/leaderboard"
-            className={`${router.pathname.startsWith('/leaderboard') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
+            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/leaderboard') ? '!text-primary' : '!text-primary/80'}`}
           >
-            Leaderboard
+            LEADERBOARD
           </Link>
-          <div className="group relative">
-            <button className="-gap-1 flex items-center">
-              <p className="uppercase">More</p>
-              <i className="material-symbols-outlined">arrow_drop_down</i>
+          <div
+            className="relative"
+            onMouseEnter={() => setShowMoreDropdown(true)}
+            onMouseLeave={() => setShowMoreDropdown(false)}
+          >
+            <button className="-gap-1 flex items-center px-2 py-1 !text-primary/80 transition-all duration-200 hover:!text-primary">
+              <p>MORE</p>
+              <motion.i
+                className="material-symbols-outlined text-sm"
+                animate={{ rotate: showMoreDropdown ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                arrow_drop_down
+              </motion.i>
             </button>
-            <div className="absolute left-0 top-[100%] z-30 hidden w-32 flex-col items-start bg-background-1 group-hover:flex">
-              <Link
-                href="/blog"
-                className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
-              >
-                Blog
-              </Link>
-              <a
-                target="_blank"
-                rel="noreferrer"
-                href="https://twitch.tv/maiachess"
-                className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
-              >
-                Watch
-              </a>
-              <a
-                target="_blank"
-                rel="noreferrer"
-                href="https://forms.gle/XYeoTJF4YgUu4Vq28"
-                className="flex w-full items-center justify-start px-3 py-2 hover:bg-background-2"
-              >
-                Feedback
-              </a>
-            </div>
+            <AnimatePresence>
+              {showMoreDropdown && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute left-0 top-[100%] z-30 w-32 overflow-hidden rounded border border-white/10 bg-background-1 shadow-lg"
+                >
+                  <Link
+                    href="/blog"
+                    className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
+                  >
+                    Blog
+                  </Link>
+                  <a
+                    target="_blank"
+                    rel="noreferrer"
+                    href="https://twitch.tv/maiachess"
+                    className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
+                  >
+                    Watch
+                  </a>
+                  <a
+                    target="_blank"
+                    rel="noreferrer"
+                    href="https://forms.gle/XYeoTJF4YgUu4Vq28"
+                    className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
+                  >
+                    Feedback
+                  </a>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>

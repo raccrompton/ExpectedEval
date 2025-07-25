@@ -43,6 +43,7 @@ import {
   MoveMap,
   BlunderMeter,
   MovesByRating,
+  AnalysisSidebar,
 } from 'src/components'
 import { useTrainingController } from 'src/hooks/useTrainingController'
 import { useAnalysisController } from 'src/hooks/useAnalysisController'
@@ -666,16 +667,16 @@ const Train: React.FC<Props> = ({
 
   const desktopLayout = (
     <motion.div
-      className="flex h-full w-full flex-col items-center py-4 md:py-10"
+      className="flex h-full w-full flex-col items-center py-4"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
       exit="exit"
       style={{ willChange: 'transform, opacity' }}
     >
-      <div className="flex h-full w-[90%] flex-row gap-4">
+      <div className="flex h-full w-[90%] flex-row gap-2">
         <motion.div
-          className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72"
+          className="desktop-left-column-container flex flex-col gap-2 overflow-hidden"
           variants={itemVariants}
           style={{ willChange: 'transform, opacity' }}
         >
@@ -707,13 +708,13 @@ const Train: React.FC<Props> = ({
         </motion.div>
 
         <motion.div
-          className="flex h-[85vh] w-[45vh] flex-col gap-2 2xl:w-[55vh]"
+          className="desktop-middle-column-container flex flex-col gap-2"
           variants={itemVariants}
           style={{ willChange: 'transform, opacity' }}
         >
           <div
             id="train-page"
-            className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]"
+            className="desktop-board-container relative flex aspect-square"
           >
             <GameBoard
               game={trainingGame}
@@ -818,431 +819,15 @@ const Train: React.FC<Props> = ({
             />
           </div>
         </motion.div>
-        <motion.div
-          id="analysis"
-          className="flex h-[calc(85vh)] w-full flex-col gap-2 xl:h-[calc(55vh+4.5rem)]"
-          variants={itemVariants}
-          style={{ willChange: 'transform, opacity' }}
-        >
-          {/* Analysis Toggle Bar - only show when puzzle is complete */}
-          {showAnalysis && (
-            <div className="flex items-center justify-between rounded bg-background-1 px-4 py-2">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-xl">
-                  analytics
-                </span>
-                <h3 className="font-semibold">Analysis</h3>
-              </div>
-              <button
-                onClick={handleToggleAnalysis}
-                className={`flex items-center gap-2 rounded px-3 py-1 text-sm transition-colors ${
-                  analysisEnabled
-                    ? 'bg-human-4 text-white hover:bg-human-4/80'
-                    : 'bg-background-2 text-secondary hover:bg-background-3'
-                }`}
-              >
-                <span className="material-symbols-outlined !text-sm">
-                  {analysisEnabled ? 'visibility' : 'visibility_off'}
-                </span>
-                {analysisEnabled ? 'Visible' : 'Hidden'}
-              </button>
-            </div>
-          )}
-
-          <div className="relative">
-            {/* Large screens (xl+): Side by side layout */}
-            <div className="hidden xl:flex xl:h-[calc((55vh+4.5rem)/2)]">
-              <div className="flex h-full w-full overflow-hidden rounded border-[0.5px] border-white/40">
-                <div className="flex h-full w-auto min-w-[40%] max-w-[40%] border-r-[0.5px] border-white/40">
-                  <div className="relative w-full">
-                    <Highlight
-                      setCurrentMaiaModel={
-                        analysisEnabled && showAnalysis
-                          ? analysisController.setCurrentMaiaModel
-                          : () => void 0
-                      }
-                      hover={
-                        analysisEnabled && showAnalysis ? hover : mockHover
-                      }
-                      makeMove={
-                        analysisEnabled && showAnalysis
-                          ? makeMove
-                          : mockMakeMove
-                      }
-                      currentMaiaModel={
-                        analysisEnabled && showAnalysis
-                          ? analysisController.currentMaiaModel
-                          : 'maia_kdd_1500'
-                      }
-                      recommendations={
-                        analysisEnabled && showAnalysis
-                          ? analysisController.moveRecommendations
-                          : emptyRecommendations
-                      }
-                      moveEvaluation={
-                        analysisEnabled && showAnalysis
-                          ? (analysisController.moveEvaluation as {
-                              maia?: MaiaEvaluation
-                              stockfish?: StockfishEvaluation
-                            })
-                          : {
-                              maia: undefined,
-                              stockfish: undefined,
-                            }
-                      }
-                      colorSanMapping={
-                        analysisEnabled && showAnalysis
-                          ? analysisController.colorSanMapping
-                          : {}
-                      }
-                      boardDescription={
-                        analysisEnabled && showAnalysis
-                          ? analysisController.boardDescription
-                          : {
-                              segments: [
-                                {
-                                  type: 'text',
-                                  content:
-                                    'Complete the puzzle to unlock analysis, or analysis is disabled.',
-                                },
-                              ],
-                            }
-                      }
-                    />
-                    {!analysisEnabled && showAnalysis && (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
-                        <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
-                          <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
-                            lock
-                          </span>
-                          <p className="font-medium text-primary">
-                            Analysis Disabled
-                          </p>
-                          <p className="text-sm text-secondary">
-                            Enable analysis to see detailed evaluations
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    {!showAnalysis && (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
-                        <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
-                          <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
-                            lock
-                          </span>
-                          <p className="font-medium text-primary">
-                            Analysis Locked
-                          </p>
-                          <p className="text-sm text-secondary">
-                            Complete the puzzle to unlock analysis
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex h-full w-full bg-background-1">
-                  <MovesByRating
-                    moves={
-                      analysisEnabled && showAnalysis
-                        ? analysisController.movesByRating
-                        : undefined
-                    }
-                    colorSanMapping={
-                      analysisEnabled && showAnalysis
-                        ? analysisController.colorSanMapping
-                        : {}
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Smaller screens (below xl): Combined Highlight + BlunderMeter container */}
-            <div className="flex h-[calc((85vh)*0.4)] overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1 xl:hidden">
-              <div className="flex h-full w-full border-r-[0.5px] border-white/40">
-                <Highlight
-                  setCurrentMaiaModel={
-                    analysisEnabled && showAnalysis
-                      ? analysisController.setCurrentMaiaModel
-                      : () => void 0
-                  }
-                  hover={analysisEnabled && showAnalysis ? hover : mockHover}
-                  makeMove={
-                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
-                  }
-                  currentMaiaModel={
-                    analysisEnabled && showAnalysis
-                      ? analysisController.currentMaiaModel
-                      : 'maia_kdd_1500'
-                  }
-                  recommendations={
-                    analysisEnabled && showAnalysis
-                      ? analysisController.moveRecommendations
-                      : emptyRecommendations
-                  }
-                  moveEvaluation={
-                    analysisEnabled && showAnalysis
-                      ? (analysisController.moveEvaluation as {
-                          maia?: MaiaEvaluation
-                          stockfish?: StockfishEvaluation
-                        })
-                      : {
-                          maia: undefined,
-                          stockfish: undefined,
-                        }
-                  }
-                  colorSanMapping={
-                    analysisEnabled && showAnalysis
-                      ? analysisController.colorSanMapping
-                      : {}
-                  }
-                  boardDescription={
-                    analysisEnabled && showAnalysis
-                      ? analysisController.boardDescription
-                      : {
-                          segments: [
-                            {
-                              type: 'text',
-                              content:
-                                'Complete the puzzle to unlock analysis, or analysis is disabled.',
-                            },
-                          ],
-                        }
-                  }
-                />
-              </div>
-              <div className="flex h-full w-auto min-w-[40%] max-w-[40%] bg-background-1 p-3">
-                <div className="h-full w-full">
-                  <BlunderMeter
-                    hover={analysisEnabled && showAnalysis ? hover : mockHover}
-                    makeMove={
-                      analysisEnabled && showAnalysis ? makeMove : mockMakeMove
-                    }
-                    data={
-                      analysisEnabled && showAnalysis
-                        ? analysisController.blunderMeter
-                        : emptyBlunderMeterData
-                    }
-                    colorSanMapping={
-                      analysisEnabled && showAnalysis
-                        ? analysisController.colorSanMapping
-                        : {}
-                    }
-                    moveEvaluation={
-                      analysisEnabled && showAnalysis
-                        ? analysisController.moveEvaluation
-                        : undefined
-                    }
-                    showContainer={false}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {!analysisEnabled && showAnalysis && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
-                <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
-                  <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
-                    lock
-                  </span>
-                  <p className="font-medium text-primary">Analysis Disabled</p>
-                  <p className="text-sm text-secondary">
-                    Enable analysis to see detailed evaluations
-                  </p>
-                </div>
-              </div>
-            )}
-            {!showAnalysis && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
-                <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
-                  <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
-                    lock
-                  </span>
-                  <p className="font-medium text-primary">Analysis Locked</p>
-                  <p className="text-sm text-secondary">
-                    Complete the puzzle to unlock analysis
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="relative">
-            {/* Large screens (xl+): Side by side layout */}
-            <div className="hidden xl:flex xl:h-[calc((55vh+4.5rem)/2)] xl:flex-row xl:gap-2">
-              <div className="flex h-full w-full flex-col">
-                <MoveMap
-                  moveMap={
-                    analysisEnabled && showAnalysis
-                      ? analysisController.moveMap
-                      : undefined
-                  }
-                  colorSanMapping={
-                    analysisEnabled && showAnalysis
-                      ? analysisController.colorSanMapping
-                      : {}
-                  }
-                  setHoverArrow={
-                    analysisEnabled && showAnalysis
-                      ? setHoverArrow
-                      : mockSetHoverArrow
-                  }
-                  makeMove={
-                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
-                  }
-                />
-              </div>
-              <BlunderMeter
-                hover={analysisEnabled && showAnalysis ? hover : mockHover}
-                makeMove={
-                  analysisEnabled && showAnalysis ? makeMove : mockMakeMove
-                }
-                data={
-                  analysisEnabled && showAnalysis
-                    ? analysisController.blunderMeter
-                    : emptyBlunderMeterData
-                }
-                colorSanMapping={
-                  analysisEnabled && showAnalysis
-                    ? analysisController.colorSanMapping
-                    : {}
-                }
-                moveEvaluation={
-                  analysisEnabled && showAnalysis
-                    ? analysisController.moveEvaluation
-                    : undefined
-                }
-              />
-            </div>
-
-            {!analysisEnabled && showAnalysis && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
-                <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
-                  <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
-                    lock
-                  </span>
-                  <p className="font-medium text-primary">Analysis Disabled</p>
-                  <p className="text-sm text-secondary">
-                    Enable analysis to see detailed evaluations
-                  </p>
-                </div>
-              </div>
-            )}
-            {!showAnalysis && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
-                <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
-                  <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
-                    lock
-                  </span>
-                  <p className="font-medium text-primary">Analysis Locked</p>
-                  <p className="text-sm text-secondary">
-                    Complete the puzzle to unlock analysis
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Smaller screens (below xl): MoveMap full width */}
-            <div className="flex h-[calc((85vh)*0.3)] w-full xl:hidden">
-              <div className="h-full w-full">
-                <MoveMap
-                  moveMap={
-                    analysisEnabled && showAnalysis
-                      ? analysisController.moveMap
-                      : undefined
-                  }
-                  colorSanMapping={
-                    analysisEnabled && showAnalysis
-                      ? analysisController.colorSanMapping
-                      : {}
-                  }
-                  setHoverArrow={
-                    analysisEnabled && showAnalysis
-                      ? setHoverArrow
-                      : mockSetHoverArrow
-                  }
-                  makeMove={
-                    analysisEnabled && showAnalysis ? makeMove : mockMakeMove
-                  }
-                />
-              </div>
-            </div>
-
-            {!analysisEnabled && showAnalysis && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
-                <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
-                  <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
-                    lock
-                  </span>
-                  <p className="font-medium text-primary">Analysis Disabled</p>
-                  <p className="text-sm text-secondary">
-                    Enable analysis to see detailed evaluations
-                  </p>
-                </div>
-              </div>
-            )}
-            {!showAnalysis && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
-                <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
-                  <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
-                    lock
-                  </span>
-                  <p className="font-medium text-primary">Analysis Locked</p>
-                  <p className="text-sm text-secondary">
-                    Complete the puzzle to unlock analysis
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Smaller screens (below xl): MovesByRating full width */}
-          <div className="flex h-[calc((85vh)*0.3)] w-full xl:hidden">
-            <div className="relative h-full w-full">
-              <MovesByRating
-                moves={
-                  analysisEnabled && showAnalysis
-                    ? analysisController.movesByRating
-                    : undefined
-                }
-                colorSanMapping={
-                  analysisEnabled && showAnalysis
-                    ? analysisController.colorSanMapping
-                    : {}
-                }
-              />
-              {!analysisEnabled && showAnalysis && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
-                  <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
-                    <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
-                      lock
-                    </span>
-                    <p className="font-medium text-primary">
-                      Analysis Disabled
-                    </p>
-                    <p className="text-sm text-secondary">
-                      Enable analysis to see detailed evaluations
-                    </p>
-                  </div>
-                </div>
-              )}
-              {!showAnalysis && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded bg-background-1/80 backdrop-blur-sm">
-                  <div className="rounded bg-background-2/90 p-4 text-center shadow-lg">
-                    <span className="material-symbols-outlined mb-2 text-3xl text-human-3">
-                      lock
-                    </span>
-                    <p className="font-medium text-primary">Analysis Locked</p>
-                    <p className="text-sm text-secondary">
-                      Complete the puzzle to unlock analysis
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </motion.div>
+        <AnalysisSidebar
+          hover={hover}
+          makeMove={makeMove}
+          controller={analysisController}
+          setHoverArrow={setHoverArrow}
+          analysisEnabled={analysisEnabled}
+          handleToggleAnalysis={handleToggleAnalysis}
+          itemVariants={itemVariants}
+        />
       </div>
     </motion.div>
   )
