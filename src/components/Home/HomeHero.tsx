@@ -260,7 +260,7 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
                 value={activeUsers}
                 className="font-bold text-human-2"
               />{' '}
-              users online
+              recent users
             </p>
           ) : (
             <></>
@@ -277,13 +277,13 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
               value={globalStats?.puzzle_games_total || 0}
               className="font-bold text-human-2"
             />{' '}
-            puzzle games solved
+            puzzles solved
           </p>
           {activeUsers <= 0 ? (
             <p className="text-center text-base text-primary/80">
               <AnimatedNumber
                 value={globalStats?.turing_games_total || 0}
-                className="font-bold"
+                className="font-bold text-human-2"
               />{' '}
               turing games played
             </p>
