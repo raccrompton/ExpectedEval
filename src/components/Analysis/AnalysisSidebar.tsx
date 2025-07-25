@@ -77,34 +77,34 @@ export const AnalysisSidebar: React.FC<Props> = ({
     <motion.div
       id="analysis"
       variants={itemVariants ?? {}}
-      className="flex h-[calc(85vh)] w-full flex-col gap-2 xl:h-[calc(55vh+5rem)]"
+      className="desktop-right-column-container flex flex-col gap-2"
       style={{ willChange: 'transform, opacity' }}
     >
       {/* Analysis Toggle Bar */}
-      <div className="flex items-center justify-between rounded bg-background-1 px-4 py-2">
+      <div className="flex h-10 min-h-10 items-center justify-between rounded bg-background-1 px-4">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-xl">analytics</span>
           <h3 className="font-semibold">Analysis</h3>
         </div>
         <button
           onClick={handleToggleAnalysis}
-          className={`flex items-center gap-2 rounded px-3 py-1 text-sm transition-colors ${
+          className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors ${
             analysisEnabled
               ? 'bg-human-4 text-white hover:bg-human-4/80'
               : 'bg-background-2 text-secondary hover:bg-background-3'
           }`}
         >
-          <span className="material-symbols-outlined !text-sm">
+          <span className="material-symbols-outlined !text-xs">
             {analysisEnabled ? 'visibility' : 'visibility_off'}
           </span>
           {analysisEnabled ? 'Visible' : 'Hidden'}
         </button>
       </div>
 
-      {/* Large screens (xl+): Side by side layout */}
+      {/* Large screens : 2-row layout */}
       <div className="hidden xl:flex xl:h-full xl:flex-col xl:gap-2">
-        <div className="relative flex h-[calc((55vh+4.5rem)/2)] gap-2">
-          {/* Combined Highlight + MovesByRating container */}
+        {/* Combined Highlight + MovesByRating container */}
+        <div className="desktop-analysis-big-row-1-container relative flex gap-2">
           <div className="flex h-full w-full overflow-hidden rounded border-[0.5px] border-white/40">
             <div className="flex h-full w-auto min-w-[40%] max-w-[40%] border-r-[0.5px] border-white/40">
               <Highlight
@@ -170,7 +170,9 @@ export const AnalysisSidebar: React.FC<Props> = ({
             </div>
           )}
         </div>
-        <div className="relative flex h-[calc((55vh+4.5rem)/2)] flex-row gap-2">
+
+        {/* MoveMap + BlunderMeter container */}
+        <div className="desktop-analysis-big-row-2-container relative flex flex-row gap-2">
           <div className="flex h-full w-full flex-col">
             <MoveMap
               moveMap={analysisEnabled ? controller.moveMap : undefined}
@@ -210,10 +212,10 @@ export const AnalysisSidebar: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Smaller screens (below xl): 3-row stacked layout */}
+      {/* Smaller screens: 3-row layout */}
       <div className="flex h-full flex-col gap-2 xl:hidden">
         {/* Row 1: Combined Highlight + BlunderMeter container */}
-        <div className="relative flex h-[calc((85vh)*0.4)] overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1">
+        <div className="desktop-analysis-small-row-1-container relative flex overflow-hidden rounded border-[0.5px] border-white/40 bg-background-1">
           <div className="flex h-full w-full border-r-[0.5px] border-white/40">
             <Highlight
               hover={analysisEnabled ? hover : mockHover}
@@ -291,7 +293,7 @@ export const AnalysisSidebar: React.FC<Props> = ({
         </div>
 
         {/* Row 2: MoveMap */}
-        <div className="relative flex h-[calc((85vh)*0.3)] w-full">
+        <div className="desktop-analysis-small-row-2-container relative flex w-full">
           <div className="h-full w-full">
             <MoveMap
               moveMap={analysisEnabled ? controller.moveMap : undefined}
@@ -320,7 +322,7 @@ export const AnalysisSidebar: React.FC<Props> = ({
         </div>
 
         {/* Row 3: MovesByRating */}
-        <div className="relative flex h-[calc((85vh)*0.3)] w-full">
+        <div className="desktop-analysis-small-row-3-container relative flex w-full">
           <div className="h-full w-full">
             <MovesByRating
               moves={analysisEnabled ? controller.movesByRating : undefined}
