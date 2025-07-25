@@ -38,7 +38,7 @@ export const AnalysisOverlay: React.FC<Props> = ({ isActive }) => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
       data-testid="analysis-overlay"
-      style={{ pointerEvents: 'none' }}
+      style={{ pointerEvents: 'auto' }}
     />
   )
 }
