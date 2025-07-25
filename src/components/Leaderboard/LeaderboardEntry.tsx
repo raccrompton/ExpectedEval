@@ -34,16 +34,18 @@ export const LeaderboardEntry = ({
     | 'botNotRating'
     | 'handRating'
     | 'brainRating'
+
   let highestRatingKey:
     | 'regularMax'
     | 'trainMax'
     | 'botNotMax'
     | 'handMax'
     | 'brainMax'
+
   let gamesKey:
     | 'regularGames'
     | 'trainGames'
-    | 'botNotCorrect'
+    | 'botNotGames'
     | 'handGames'
     | 'brainGames'
 
@@ -70,7 +72,7 @@ export const LeaderboardEntry = ({
     case 'turing':
       ratingKey = 'botNotRating'
       highestRatingKey = 'botNotMax'
-      gamesKey = 'botNotCorrect'
+      gamesKey = 'botNotGames'
       gamesWonKey = 'botNotCorrect'
       break
     case 'hand':

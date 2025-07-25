@@ -19,6 +19,11 @@ import { useMoveRecommendations } from './useMoveRecommendations'
 import { MaiaEngineContext } from 'src/contexts/MaiaEngineContext'
 import { generateColorSanMapping, calculateBlunderMeter } from './utils'
 import { StockfishEngineContext } from 'src/contexts/StockfishEngineContext'
+import {
+  collectEngineAnalysisData,
+  generateAnalysisCacheKey,
+} from 'src/lib/analysisStorage'
+import { storeEngineAnalysis } from 'src/api/analysis/analysis'
 
 export interface GameAnalysisProgress {
   currentMoveIndex: number
@@ -36,6 +41,7 @@ export interface GameAnalysisConfig {
 export const useAnalysisController = (
   game: AnalyzedGame,
   initialOrientation?: 'white' | 'black',
+  enableAutoSave = true,
 ) => {
   const defaultOrientation = initialOrientation
     ? initialOrientation
@@ -73,6 +79,110 @@ export const useAnalysisController = (
     cancelled: false,
     currentNode: null,
   })
+
+  const [lastSavedCacheKey, setLastSavedCacheKey] = useState<string>('')
+  const [hasUnsavedAnalysis, setHasUnsavedAnalysis] = useState(false)
+  const [isAutoSaving, setIsAutoSaving] = useState(false)
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const saveAnalysisToBackend = useCallback(async () => {
+    if (
+      !enableAutoSave ||
+      !game.id ||
+      game.type === 'custom-pgn' ||
+      game.type === 'custom-fen' ||
+      game.type === 'tournament'
+    ) {
+      return
+    }
+
+    // Don't save if there are no unsaved changes
+    if (!hasUnsavedAnalysis) {
+      return
+    }
+
+    try {
+      setIsAutoSaving(true)
+      const analysisData = collectEngineAnalysisData(game.tree)
+
+      if (analysisData.length === 0) {
+        setIsAutoSaving(false)
+        return
+      }
+
+      const hasMeaningfulAnalysis = analysisData.some(
+        (pos) => (pos.stockfish && pos.stockfish.depth >= 12) || pos.maia,
+      )
+
+      if (!hasMeaningfulAnalysis) {
+        setIsAutoSaving(false)
+        return
+      }
+
+      const cacheKey = generateAnalysisCacheKey(analysisData)
+      if (cacheKey === lastSavedCacheKey) {
+        setIsAutoSaving(false)
+        return
+      }
+
+      await storeEngineAnalysis(game.id, analysisData)
+      setLastSavedCacheKey(cacheKey)
+      setHasUnsavedAnalysis(false) // Mark as saved
+      console.log(
+        'Analysis saved to backend:',
+        analysisData.length,
+        'positions',
+      )
+    } catch (error) {
+      console.warn('Failed to save analysis to backend:', error)
+      // Don't show error to user as this is background functionality
+    } finally {
+      setIsAutoSaving(false)
+    }
+  }, [
+    enableAutoSave,
+    game.id,
+    game.type,
+    game.tree,
+    lastSavedCacheKey,
+    hasUnsavedAnalysis,
+  ])
+
+  const saveAnalysisToBackendRef = useRef(saveAnalysisToBackend)
+  saveAnalysisToBackendRef.current = saveAnalysisToBackend
+
+  useEffect(() => {
+    setHasUnsavedAnalysis(false)
+    setIsAutoSaving(false)
+    setLastSavedCacheKey('')
+  }, [game.id, game.type])
+
+  useEffect(() => {
+    if (analysisState > 0) {
+      setHasUnsavedAnalysis(true)
+    }
+  }, [analysisState])
+
+  useEffect(() => {
+    if (!enableAutoSave) {
+      return
+    }
+
+    if (autoSaveTimerRef.current) {
+      clearInterval(autoSaveTimerRef.current)
+    }
+
+    autoSaveTimerRef.current = setInterval(() => {
+      saveAnalysisToBackendRef.current()
+    }, 10000)
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearInterval(autoSaveTimerRef.current)
+      }
+      saveAnalysisToBackendRef.current()
+    }
+  }, [game.id, enableAutoSave])
 
   // Simple batch analysis functions that reuse existing analysis infrastructure
   const startGameAnalysis = useCallback(
@@ -362,6 +472,16 @@ export const useAnalysisController = (
       cancelAnalysis: cancelGameAnalysis,
       resetProgress: resetGameAnalysisProgress,
       isEnginesReady: stockfish.isReady() && maia.status === 'ready',
+      saveAnalysis: saveAnalysisToBackend,
+      autoSave: {
+        hasUnsavedChanges: hasUnsavedAnalysis,
+        isSaving: isAutoSaving,
+        status: isAutoSaving
+          ? ('saving' as const)
+          : hasUnsavedAnalysis
+            ? ('unsaved' as const)
+            : ('saved' as const),
+      },
     },
   }
 }

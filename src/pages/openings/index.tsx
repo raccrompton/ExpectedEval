@@ -284,6 +284,7 @@ const OpeningsPage: NextPage = () => {
       type: 'play' as const,
     },
     controller.currentDrill?.playerColor || 'white',
+    false, // Disable auto-saving on openings page
   )
 
   // Function to ensure all positions have sufficient analysis

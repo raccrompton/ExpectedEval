@@ -75,13 +75,6 @@ async function fetchActiveUsersFromPostHog(): Promise<number | null> {
       }),
     })
 
-    console.log(`
-            SELECT count(DISTINCT person_id) as recent_users
-            FROM events
-            WHERE event = '$pageview'
-              AND timestamp > TIMESTAMP '${twentyFourHoursAgo}'
-          `)
-
     if (!response.ok) {
       const errorText = await response.text()
       throw new Error(errorText)

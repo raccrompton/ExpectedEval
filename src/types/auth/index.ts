@@ -39,6 +39,7 @@ export interface PlayerStats {
   botNotRating: number
   botNotCorrect: number
   botNotWrong: number
+  botNotGames: number
   botNotMax: number
   botNotMin: number
   botNotHours: number
