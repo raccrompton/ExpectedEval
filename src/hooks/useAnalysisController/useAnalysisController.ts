@@ -22,12 +22,8 @@ import { StockfishEngineContext } from 'src/contexts/StockfishEngineContext'
 import {
   collectEngineAnalysisData,
   generateAnalysisCacheKey,
-  applyEngineAnalysisData,
 } from 'src/lib/analysisStorage'
-import {
-  storeEngineAnalysis,
-  getEngineAnalysis,
-} from 'src/api/analysis/analysis'
+import { storeEngineAnalysis } from 'src/api/analysis/analysis'
 
 export interface GameAnalysisProgress {
   currentMoveIndex: number
@@ -146,80 +142,31 @@ export const useAnalysisController = (
   const saveAnalysisToBackendRef = useRef(saveAnalysisToBackend)
   saveAnalysisToBackendRef.current = saveAnalysisToBackend
 
-  const loadStoredAnalysis = useCallback(async () => {
-    console.log(
-      'loadStoredAnalysis called for game:',
-      game.id,
-      'type:',
-      game.type,
-    )
-
-    if (
-      !game.id ||
-      game.type === 'custom-pgn' ||
-      game.type === 'custom-fen' ||
-      game.type === 'tournament'
-    ) {
-      console.log('Skipping analysis load - game not eligible')
-      return
-    }
-
-    try {
-      console.log('Fetching stored analysis for game:', game.id)
-      const storedAnalysis = await getEngineAnalysis(game.id)
-      console.log('Received stored analysis:', storedAnalysis)
-
-      if (storedAnalysis && storedAnalysis.positions.length > 0) {
-        applyEngineAnalysisData(game.tree, storedAnalysis.positions)
-        setAnalysisState((prev) => prev + 1) // Trigger UI updates
-        console.log(
-          'Loaded stored analysis:',
-          storedAnalysis.positions.length,
-          'positions',
-        )
-      } else {
-        console.log('No stored analysis found for game:', game.id)
-      }
-    } catch (error) {
-      console.warn('Failed to load stored analysis:', error)
-      // Don't show error to user as this is background functionality
-    }
-  }, [game.id, game.type])
-
-  // Load stored analysis when game changes
   useEffect(() => {
-    // Reset states for new game
     setHasUnsavedAnalysis(false)
     setIsAutoSaving(false)
     setLastSavedCacheKey('')
-    loadStoredAnalysis()
-  }, [loadStoredAnalysis])
+  }, [game.id, game.type])
 
-  // Mark analysis as unsaved when new analysis comes in
   useEffect(() => {
     if (analysisState > 0) {
       setHasUnsavedAnalysis(true)
     }
   }, [analysisState])
 
-  // Setup auto-save timer
   useEffect(() => {
-    // Clear existing timer
     if (autoSaveTimerRef.current) {
       clearInterval(autoSaveTimerRef.current)
     }
 
-    // Set up new timer to save every 10 seconds
     autoSaveTimerRef.current = setInterval(() => {
       saveAnalysisToBackendRef.current()
     }, 10000)
 
-    // Cleanup on unmount or game change - save one last time
     return () => {
       if (autoSaveTimerRef.current) {
         clearInterval(autoSaveTimerRef.current)
       }
-      // Final save when component unmounts or game changes
       saveAnalysisToBackendRef.current()
     }
   }, [game.id])
@@ -505,15 +452,14 @@ export const useAnalysisController = (
       resetProgress: resetGameAnalysisProgress,
       isEnginesReady: stockfish.isReady() && maia.status === 'ready',
       saveAnalysis: saveAnalysisToBackend,
-      loadStoredAnalysis,
       autoSave: {
         hasUnsavedChanges: hasUnsavedAnalysis,
         isSaving: isAutoSaving,
         status: isAutoSaving
-          ? 'saving'
+          ? ('saving' as const)
           : hasUnsavedAnalysis
-            ? 'unsaved'
-            : 'saved',
+            ? ('unsaved' as const)
+            : ('saved' as const),
       },
     },
   }

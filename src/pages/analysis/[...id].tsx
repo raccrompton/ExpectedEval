@@ -77,17 +77,20 @@ const AnalysisPage: NextPage = () => {
   }, [initialTourCheck, startTour, tourState.ready])
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
 
-  // Helper function to load and apply stored analysis
   const loadStoredAnalysis = useCallback(async (game: AnalyzedGame) => {
-    // Only load for games that have a proper ID (not custom local games)
-    if (!game.id || game.type === 'custom-pgn' || game.type === 'custom-fen') {
+    if (
+      !game.id ||
+      game.type === 'custom-pgn' ||
+      game.type === 'custom-fen' ||
+      game.type === 'tournament'
+    ) {
       return
     }
 
     try {
       const storedAnalysis = await getEngineAnalysis(game.id)
       if (storedAnalysis && storedAnalysis.positions.length > 0) {
-        applyEngineAnalysisData(game.tree, storedAnalysis)
+        applyEngineAnalysisData(game.tree, storedAnalysis.positions)
         console.log(
           'Loaded stored analysis:',
           storedAnalysis.positions.length,
@@ -96,7 +99,6 @@ const AnalysisPage: NextPage = () => {
       }
     } catch (error) {
       console.warn('Failed to load stored analysis:', error)
-      // Don't show error to user as this is background functionality
     }
   }, [])
 
