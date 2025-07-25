@@ -676,7 +676,7 @@ const Train: React.FC<Props> = ({
     >
       <div className="flex h-full w-[90%] flex-row gap-4">
         <motion.div
-          className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72"
+          className="desktop-left-column-container flex flex-col gap-2 overflow-hidden"
           variants={itemVariants}
           style={{ willChange: 'transform, opacity' }}
         >
@@ -708,13 +708,13 @@ const Train: React.FC<Props> = ({
         </motion.div>
 
         <motion.div
-          className="flex h-[85vh] w-[45vh] flex-col gap-2 2xl:w-[55vh]"
+          className="desktop-middle-column-container flex flex-col gap-2"
           variants={itemVariants}
           style={{ willChange: 'transform, opacity' }}
         >
           <div
             id="train-page"
-            className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]"
+            className="desktop-board-container relative flex aspect-square"
           >
             <GameBoard
               game={trainingGame}

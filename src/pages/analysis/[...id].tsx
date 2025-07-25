@@ -659,17 +659,17 @@ const Analysis: React.FC<Props> = ({
 
   const desktopLayout = (
     <motion.div
-      className="flex h-full w-full flex-col items-center py-4 md:py-10"
+      className="flex h-full w-full flex-col items-center py-4"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
       exit="exit"
       style={{ willChange: 'transform, opacity' }}
     >
-      <div className="flex h-full w-[90%] flex-row gap-4">
+      <div className="flex h-full w-[90%] flex-row gap-2">
         <motion.div
           id="navigation"
-          className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72"
+          className="desktop-left-column-container flex flex-col gap-2 overflow-hidden 2xl:min-w-72"
           variants={itemVariants}
           style={{ willChange: 'transform, opacity' }}
         >
@@ -724,7 +724,7 @@ const Analysis: React.FC<Props> = ({
           </div>
         </motion.div>
         <motion.div
-          className="flex h-[85vh] w-[45vh] flex-col gap-2 2xl:w-[55vh]"
+          className="desktop-middle-column-container flex flex-col gap-2"
           variants={itemVariants}
           style={{ willChange: 'transform, opacity' }}
         >
@@ -743,7 +743,7 @@ const Analysis: React.FC<Props> = ({
               color={controller.orientation === 'white' ? 'black' : 'white'}
               termination={analyzedGame.termination.winner}
             />
-            <div className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]">
+            <div className="desktop-board-container relative flex aspect-square">
               <GameBoard
                 game={analyzedGame}
                 availableMoves={controller.availableMoves}

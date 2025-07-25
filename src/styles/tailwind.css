@@ -94,6 +94,57 @@ svg {
   fill: rgb(var(--color-text-primary));
 }
 
+.desktop-left-column-container {
+  width: 16vw;
+  min-width: 14rem;
+  height: 85vh;
+}
+
+.desktop-middle-column-container {
+  width: 28vw;
+  min-width: calc(max(20rem, min(28vw, 50vh)));
+  height: 85vh;
+}
+
+.desktop-board-container {
+  min-width: calc(max(20rem, min(28vw, 50vh)));
+  min-height: calc(max(20rem, min(28vw, 50vh)));
+  width: min(28vw, 50vh);
+  height: min(28vw, 50vh);
+}
+
+.desktop-right-column-container {
+  width: 100%;
+  min-width: 40vw;
+  height: 85vh;
+}
+
+@media (min-width: 1280px) {
+  .desktop-right-column-container {
+    height: 85vh;
+  }
+}
+
+.desktop-analysis-big-row-1-container {
+  height: calc((85vh - 2.5rem - 1rem) / 2);
+}
+
+.desktop-analysis-big-row-2-container {
+  height: calc((85vh - 2.5rem - 1rem) / 2);
+}
+
+.desktop-analysis-small-row-1-container {
+  height: calc((85vh - 2.5rem - 1.5rem) * 0.4);
+}
+
+.desktop-analysis-small-row-2-container {
+  height: calc((85vh - 2.5rem - 1.5rem) * 0.3);
+}
+
+.desktop-analysis-small-row-3-container {
+  height: calc((85vh - 2.5rem - 1.5rem) * 0.3);
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

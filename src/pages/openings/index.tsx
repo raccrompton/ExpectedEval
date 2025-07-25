@@ -686,7 +686,7 @@ const OpeningsPage: NextPage = () => {
     <div className="flex h-full w-full flex-col items-center py-4 md:py-10">
       <div className="flex h-full w-[90%] flex-row gap-4">
         {/* Left Sidebar */}
-        <div className="flex h-[85vh] w-72 min-w-60 max-w-72 flex-col gap-2 overflow-hidden 2xl:min-w-72">
+        <div className="desktop-left-column-container flex flex-col gap-2 overflow-hidden">
           <div className="flex w-full flex-col">
             <OpeningDrillSidebar
               currentDrill={controller.currentDrill}
@@ -743,10 +743,10 @@ const OpeningsPage: NextPage = () => {
         </div>
 
         {/* Center - Board */}
-        <div className="flex h-[85vh] w-[45vh] flex-col gap-2 2xl:w-[55vh]">
+        <div className="desktop-middle-column-container flex flex-col gap-2">
           <div className="flex w-full flex-col overflow-hidden rounded">
             <PlayerInfo name={topPlayer.name} color={topPlayer.color} />
-            <div className="relative flex aspect-square w-[45vh] 2xl:w-[55vh]">
+            <div className="desktop-board-container relative flex aspect-square">
               <GameBoard
                 currentNode={controller.currentNode}
                 orientation={controller.orientation}
@@ -838,7 +838,7 @@ const OpeningsPage: NextPage = () => {
         {/* Right Panel - Analysis */}
         <div
           id="analysis"
-          className="flex h-[85vh] w-full flex-col gap-2 xl:h-[calc(55vh+4.5rem)]"
+          className="desktop-right-column-container flex flex-col gap-2"
         >
           <Suspense
             fallback={
