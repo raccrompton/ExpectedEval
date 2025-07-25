@@ -14,6 +14,7 @@ interface AnalysisProps {
   type: 'analysis'
   showAnnotations?: boolean
   showVariations?: boolean
+  disableKeyboardNavigation?: boolean
 }
 
 interface TuringProps {
@@ -23,6 +24,7 @@ interface TuringProps {
   type: 'turing'
   showAnnotations?: boolean
   showVariations?: boolean
+  disableKeyboardNavigation?: boolean
 }
 
 interface PlayProps {
@@ -32,6 +34,7 @@ interface PlayProps {
   type: 'play'
   showAnnotations?: boolean
   showVariations?: boolean
+  disableKeyboardNavigation?: boolean
 }
 
 type Props = AnalysisProps | TuringProps | PlayProps
@@ -66,6 +69,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
     type,
     showAnnotations = true,
     showVariations = true,
+    disableKeyboardNavigation = false,
   } = props
   const { isMobile } = useContext(WindowSizeContext)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -91,6 +95,8 @@ export const MovesContainer: React.FC<Props> = (props) => {
   }, [game, type, baseController.gameTree, baseController.currentNode])
 
   useEffect(() => {
+    if (disableKeyboardNavigation) return
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!baseController.currentNode) return
 
@@ -114,7 +120,11 @@ export const MovesContainer: React.FC<Props> = (props) => {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [baseController.currentNode, baseController.goToNode])
+  }, [
+    baseController.currentNode,
+    baseController.goToNode,
+    disableKeyboardNavigation,
+  ])
 
   // Auto-scroll to current move
   useEffect(() => {
