@@ -55,6 +55,7 @@ const ProfilePage: NextPage = () => {
     botNotRating: 0,
     botNotCorrect: 0,
     botNotWrong: 0,
+    botNotGames: 0,
     botNotMax: 0,
     botNotMin: 0,
     botNotHours: 0,
