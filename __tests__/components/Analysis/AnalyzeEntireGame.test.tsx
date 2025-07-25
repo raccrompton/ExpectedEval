@@ -1,7 +1,7 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import { AnalysisConfigModal } from 'src/components/Analysis/AnalysisConfigModal'
-import { AnalysisProgressOverlay } from 'src/components/Analysis/AnalysisProgressOverlay'
+import { AnalysisNotification } from 'src/components/Analysis/AnalysisNotification'
 import '@testing-library/jest-dom'
 
 // Mock framer-motion to avoid animation issues in tests
@@ -54,7 +54,7 @@ describe('Analyze Entire Game Components', () => {
     })
   })
 
-  describe('AnalysisProgressOverlay', () => {
+  describe('AnalysisNotification', () => {
     const mockProgress = {
       currentMoveIndex: 5,
       totalMoves: 20,
@@ -69,28 +69,26 @@ describe('Analyze Entire Game Components', () => {
       onCancel: jest.fn(),
     }
 
-    it('renders progress overlay when analyzing', () => {
-      render(<AnalysisProgressOverlay {...defaultProps} />)
+    it('renders notification when analyzing', () => {
+      render(<AnalysisNotification {...defaultProps} />)
 
       expect(screen.getByText('Analyzing Game')).toBeInTheDocument()
-      expect(
-        screen.getByText('Deep analysis in progress...'),
-      ).toBeInTheDocument()
       expect(screen.getByText('Position 5 of 20')).toBeInTheDocument()
       expect(screen.getByText('25%')).toBeInTheDocument()
     })
 
     it('renders current move being analyzed', () => {
-      render(<AnalysisProgressOverlay {...defaultProps} />)
+      render(<AnalysisNotification {...defaultProps} />)
 
-      expect(screen.getByText('Currently analyzing:')).toBeInTheDocument()
+      expect(screen.getByText('Current:')).toBeInTheDocument()
       expect(screen.getByText('e4')).toBeInTheDocument()
     })
 
     it('renders cancel button', () => {
-      render(<AnalysisProgressOverlay {...defaultProps} />)
+      render(<AnalysisNotification {...defaultProps} />)
 
-      expect(screen.getByText('Cancel Analysis')).toBeInTheDocument()
+      const cancelButton = screen.getByTitle('Cancel Analysis')
+      expect(cancelButton).toBeInTheDocument()
     })
 
     it('does not render when not analyzing', () => {
@@ -100,7 +98,7 @@ describe('Analyze Entire Game Components', () => {
       }
 
       render(
-        <AnalysisProgressOverlay
+        <AnalysisNotification
           {...defaultProps}
           progress={notAnalyzingProgress}
         />,
