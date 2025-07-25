@@ -84,6 +84,8 @@ export const useAnalysisController = (
   })
 
   const [lastSavedCacheKey, setLastSavedCacheKey] = useState<string>('')
+  const [hasUnsavedAnalysis, setHasUnsavedAnalysis] = useState(false)
+  const [isAutoSaving, setIsAutoSaving] = useState(false)
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const saveAnalysisToBackend = useCallback(async () => {
@@ -96,10 +98,17 @@ export const useAnalysisController = (
       return
     }
 
+    // Don't save if there are no unsaved changes
+    if (!hasUnsavedAnalysis) {
+      return
+    }
+
     try {
+      setIsAutoSaving(true)
       const analysisData = collectEngineAnalysisData(game.tree)
 
       if (analysisData.length === 0) {
+        setIsAutoSaving(false)
         return
       }
 
@@ -108,16 +117,19 @@ export const useAnalysisController = (
       )
 
       if (!hasMeaningfulAnalysis) {
+        setIsAutoSaving(false)
         return
       }
 
       const cacheKey = generateAnalysisCacheKey(analysisData)
       if (cacheKey === lastSavedCacheKey) {
+        setIsAutoSaving(false)
         return
       }
 
       await storeEngineAnalysis(game.id, analysisData)
       setLastSavedCacheKey(cacheKey)
+      setHasUnsavedAnalysis(false) // Mark as saved
       console.log(
         'Analysis saved to backend:',
         analysisData.length,
@@ -126,8 +138,10 @@ export const useAnalysisController = (
     } catch (error) {
       console.warn('Failed to save analysis to backend:', error)
       // Don't show error to user as this is background functionality
+    } finally {
+      setIsAutoSaving(false)
     }
-  }, [game.id, game.type, game.tree, lastSavedCacheKey])
+  }, [game.id, game.type, game.tree, lastSavedCacheKey, hasUnsavedAnalysis])
 
   const saveAnalysisToBackendRef = useRef(saveAnalysisToBackend)
   saveAnalysisToBackendRef.current = saveAnalysisToBackend
@@ -174,8 +188,19 @@ export const useAnalysisController = (
 
   // Load stored analysis when game changes
   useEffect(() => {
+    // Reset states for new game
+    setHasUnsavedAnalysis(false)
+    setIsAutoSaving(false)
+    setLastSavedCacheKey('')
     loadStoredAnalysis()
   }, [loadStoredAnalysis])
+
+  // Mark analysis as unsaved when new analysis comes in
+  useEffect(() => {
+    if (analysisState > 0) {
+      setHasUnsavedAnalysis(true)
+    }
+  }, [analysisState])
 
   // Setup auto-save timer
   useEffect(() => {
@@ -481,6 +506,15 @@ export const useAnalysisController = (
       isEnginesReady: stockfish.isReady() && maia.status === 'ready',
       saveAnalysis: saveAnalysisToBackend,
       loadStoredAnalysis,
+      autoSave: {
+        hasUnsavedChanges: hasUnsavedAnalysis,
+        isSaving: isAutoSaving,
+        status: isAutoSaving
+          ? 'saving'
+          : hasUnsavedAnalysis
+            ? 'unsaved'
+            : 'saved',
+      },
     },
   }
 }

@@ -819,6 +819,7 @@ const Analysis: React.FC<Props> = ({
             onDeleteCustomGame={handleDeleteCustomGame}
             onAnalyzeEntireGame={handleAnalyzeEntireGame}
             isAnalysisInProgress={controller.gameAnalysis.progress.isAnalyzing}
+            autoSave={controller.gameAnalysis.autoSave}
           />
         </motion.div>
         <motion.div
@@ -1409,6 +1410,7 @@ const Analysis: React.FC<Props> = ({
               isAnalysisInProgress={
                 controller.gameAnalysis.progress.isAnalyzing
               }
+              autoSave={controller.gameAnalysis.autoSave}
               currentNode={controller.currentNode as GameNode}
             />
           </motion.div>

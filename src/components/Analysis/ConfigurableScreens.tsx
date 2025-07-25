@@ -14,6 +14,11 @@ interface Props {
   onDeleteCustomGame?: () => void
   onAnalyzeEntireGame?: () => void
   isAnalysisInProgress?: boolean
+  autoSave?: {
+    hasUnsavedChanges: boolean
+    isSaving: boolean
+    status: 'saving' | 'unsaved' | 'saved'
+  }
 }
 
 export const ConfigurableScreens: React.FC<Props> = ({
@@ -26,6 +31,7 @@ export const ConfigurableScreens: React.FC<Props> = ({
   onDeleteCustomGame,
   onAnalyzeEntireGame,
   isAnalysisInProgress,
+  autoSave,
 }) => {
   const screens = [
     {
@@ -82,6 +88,7 @@ export const ConfigurableScreens: React.FC<Props> = ({
             onDeleteCustomGame={onDeleteCustomGame}
             onAnalyzeEntireGame={onAnalyzeEntireGame}
             isAnalysisInProgress={isAnalysisInProgress}
+            autoSave={autoSave}
           />
         ) : screen.id === 'export' ? (
           <div className="flex w-full flex-col p-3">
