@@ -41,6 +41,8 @@ export const getPlayerStats = async (name?: string): Promise<PlayerStats> => {
     botNotRating: data.turing_elo as number,
     botNotCorrect: data.turing_guesses_correct as number,
     botNotWrong: data.turing_guesses_wrong as number,
+    botNotGames: (data.turing_guesses_correct +
+      data.turing_guesses_wrong) as number,
     botNotMax: data.turing_elo_max as number,
     botNotMin: data.turing_elo_min as number,
     botNotHours: data.turing_game_time as number,
