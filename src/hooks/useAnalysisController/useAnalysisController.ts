@@ -41,6 +41,7 @@ export interface GameAnalysisConfig {
 export const useAnalysisController = (
   game: AnalyzedGame,
   initialOrientation?: 'white' | 'black',
+  enableAutoSave = true,
 ) => {
   const defaultOrientation = initialOrientation
     ? initialOrientation
@@ -86,6 +87,7 @@ export const useAnalysisController = (
 
   const saveAnalysisToBackend = useCallback(async () => {
     if (
+      !enableAutoSave ||
       !game.id ||
       game.type === 'custom-pgn' ||
       game.type === 'custom-fen' ||
@@ -137,7 +139,14 @@ export const useAnalysisController = (
     } finally {
       setIsAutoSaving(false)
     }
-  }, [game.id, game.type, game.tree, lastSavedCacheKey, hasUnsavedAnalysis])
+  }, [
+    enableAutoSave,
+    game.id,
+    game.type,
+    game.tree,
+    lastSavedCacheKey,
+    hasUnsavedAnalysis,
+  ])
 
   const saveAnalysisToBackendRef = useRef(saveAnalysisToBackend)
   saveAnalysisToBackendRef.current = saveAnalysisToBackend
@@ -155,6 +164,10 @@ export const useAnalysisController = (
   }, [analysisState])
 
   useEffect(() => {
+    if (!enableAutoSave) {
+      return
+    }
+
     if (autoSaveTimerRef.current) {
       clearInterval(autoSaveTimerRef.current)
     }
@@ -169,7 +182,7 @@ export const useAnalysisController = (
       }
       saveAnalysisToBackendRef.current()
     }
-  }, [game.id])
+  }, [game.id, enableAutoSave])
 
   // Simple batch analysis functions that reuse existing analysis infrastructure
   const startGameAnalysis = useCallback(
