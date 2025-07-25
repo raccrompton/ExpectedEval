@@ -297,6 +297,7 @@ const Train: React.FC<Props> = ({
   const analysisController = useAnalysisController(
     analyzedGame,
     controller.orientation,
+    false, // Disable auto-saving on puzzles page
   )
 
   const { width } = useContext(WindowSizeContext)
