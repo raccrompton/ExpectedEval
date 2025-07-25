@@ -75,15 +75,23 @@ export const Header: React.FC = () => {
 
   const userInfo = user?.lichessId ? (
     <div
-      className="relative flex w-full items-center gap-3 rounded bg-background-1 px-3 py-2 md:w-auto"
+      className="relative flex items-center gap-2 rounded-full bg-background-1/50 px-3 py-1.5 transition-all duration-200 hover:bg-background-1"
       onMouseEnter={() => setShowProfileDropdown(true)}
       onMouseLeave={() => setShowProfileDropdown(false)}
     >
-      <span className="material-symbols-outlined text-3xl">account_circle</span>
-      <div className="flex flex-col">
-        <p className="text-sm">{user?.displayName}</p>
-        <p className="text-xs text-secondary">View Info</p>
-      </div>
+      <span className="material-symbols-outlined text-xl text-primary/80">
+        account_circle
+      </span>
+      <span className="text-sm font-medium text-primary/90">
+        {user?.displayName}
+      </span>
+      <motion.i
+        className="material-symbols-outlined text-sm text-primary/60"
+        animate={{ rotate: showProfileDropdown ? 180 : 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        arrow_drop_down
+      </motion.i>
       <AnimatePresence>
         {showProfileDropdown && (
           <motion.div
@@ -126,13 +134,24 @@ export const Header: React.FC = () => {
           <Image src="/maia.png" width={40} height={40} alt="Maia Logo" />
           <h2 className="text-2xl font-bold">Maia Chess</h2>
         </Link>
-        <div className="hidden flex-row gap-1 *:px-2 *:py-1 md:flex">
+        <div className="hidden flex-row gap-1 text-sm tracking-wider md:flex">
           <div
-            className={`${router.pathname.startsWith('/play') && 'bg-background-1'} relative`}
+            className="relative"
             onMouseEnter={() => setShowPlayDropdown(true)}
             onMouseLeave={() => setShowPlayDropdown(false)}
           >
-            <button className="uppercase">Play</button>
+            <button
+              className={`-gap-1 flex items-center px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/play') ? '!text-primary' : '!text-primary/80'}`}
+            >
+              <p>PLAY</p>
+              <motion.i
+                className="material-symbols-outlined text-sm"
+                animate={{ rotate: showPlayDropdown ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                arrow_drop_down
+              </motion.i>
+            </button>
             <AnimatePresence>
               {showPlayDropdown && (
                 <motion.div
@@ -168,43 +187,43 @@ export const Header: React.FC = () => {
           </div>
           <Link
             href="/analysis"
-            className={`${router.pathname.startsWith('/analysis') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
+            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/analysis') ? '!text-primary' : '!text-primary/80'}`}
           >
-            Analysis
+            ANALYSIS
           </Link>
           <Link
             href="/puzzles"
-            className={`${router.pathname.startsWith('/puzzles') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
+            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/puzzles') ? '!text-primary' : '!text-primary/80'}`}
           >
-            Puzzles
+            PUZZLES
           </Link>
           <Link
             href="/openings"
-            className={`${router.pathname.startsWith('/openings') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
+            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/openings') ? '!text-primary' : '!text-primary/80'}`}
           >
-            Openings
+            OPENINGS
           </Link>
           <Link
             href="/turing"
-            className={`${router.pathname.startsWith('/turing') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
+            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/turing') ? '!text-primary' : '!text-primary/80'}`}
           >
-            Bot-or-Not
+            BOT-OR-NOT
           </Link>
           <Link
             href="/leaderboard"
-            className={`${router.pathname.startsWith('/leaderboard') ? 'bg-background-1' : ''} uppercase hover:bg-background-1`}
+            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/leaderboard') ? '!text-primary' : '!text-primary/80'}`}
           >
-            Leaderboard
+            LEADERBOARD
           </Link>
           <div
             className="relative"
             onMouseEnter={() => setShowMoreDropdown(true)}
             onMouseLeave={() => setShowMoreDropdown(false)}
           >
-            <button className="-gap-1 flex items-center">
-              <p className="uppercase">More</p>
+            <button className="-gap-1 flex items-center px-2 py-1 !text-primary/80 transition-all duration-200 hover:!text-primary">
+              <p>MORE</p>
               <motion.i
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-sm"
                 animate={{ rotate: showMoreDropdown ? 180 : 0 }}
                 transition={{ duration: 0.2 }}
               >
