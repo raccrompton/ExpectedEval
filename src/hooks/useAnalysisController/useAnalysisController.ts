@@ -139,18 +139,26 @@ export const useAnalysisController = (
           currentMove: moveDisplay,
         }))
 
-        // Wait for analysis to reach target depth (the useEngineAnalysis will handle this)
-        let analysisRetries = 0
-        const maxAnalysisRetries = 600 // 60 seconds max per position
+        // Skip analysis if this is a terminal position (checkmate/stalemate)
+        const chess = new Chess(node.fen)
+        const isTerminalPosition = chess.gameOver()
 
-        while (
-          analysisRetries < maxAnalysisRetries &&
-          !gameAnalysisController.current.cancelled &&
-          (!node.analysis.stockfish ||
-            node.analysis.stockfish.depth < targetDepth)
-        ) {
-          await new Promise((resolve) => setTimeout(resolve, 100))
-          analysisRetries++
+        if (!isTerminalPosition) {
+          // Wait for analysis to reach target depth or complete (mate, etc.)
+          let analysisRetries = 0
+          const maxAnalysisRetries = 600 // 60 seconds max per position
+
+          while (
+            analysisRetries < maxAnalysisRetries &&
+            !gameAnalysisController.current.cancelled &&
+            (!node.analysis.stockfish ||
+              (node.analysis.stockfish.depth < targetDepth &&
+                node.analysis.stockfish.model_optimal_cp !== 10000 &&
+                node.analysis.stockfish.model_optimal_cp !== -10000))
+          ) {
+            await new Promise((resolve) => setTimeout(resolve, 100))
+            analysisRetries++
+          }
         }
       }
 

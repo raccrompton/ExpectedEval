@@ -16,6 +16,7 @@ interface Props {
   setCurrentMove?: (move: [string, string] | null) => void
   disableFlip?: boolean
   disablePrevious?: boolean
+  disableKeyboardNavigation?: boolean
 }
 
 export const BoardController: React.FC<Props> = ({
@@ -31,6 +32,7 @@ export const BoardController: React.FC<Props> = ({
   setCurrentMove,
   disableFlip = false,
   disablePrevious = false,
+  disableKeyboardNavigation = false,
 }: Props) => {
   const { width } = useWindowSize()
 
@@ -80,7 +82,7 @@ export const BoardController: React.FC<Props> = ({
   }, [currentNode, goToNode, setCurrentMove])
 
   useEffect(() => {
-    if (width <= 670) return
+    if (width <= 670 || disableKeyboardNavigation) return
 
     const onKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
@@ -119,6 +121,7 @@ export const BoardController: React.FC<Props> = ({
     getLast,
     toggleBoardOrientation,
     disablePrevious,
+    disableKeyboardNavigation,
   ])
 
   return (
