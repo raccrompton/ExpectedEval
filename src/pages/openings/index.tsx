@@ -683,10 +683,10 @@ const OpeningsPage: NextPage = () => {
   }
 
   const desktopLayout = () => (
-    <div className="flex h-full w-full flex-col items-center py-4 md:py-10">
-      <div className="flex h-full w-[90%] flex-row gap-4">
+    <div className="flex h-full w-full flex-col items-center py-4">
+      <div className="flex h-full w-[90%] flex-row gap-2">
         {/* Left Sidebar */}
-        <div className="desktop-left-column-container flex flex-col gap-2 overflow-hidden">
+        <div className="desktop-left-column-container flex flex-col gap-2 overflow-hidden rounded">
           <div className="flex w-full flex-col">
             <OpeningDrillSidebar
               currentDrill={controller.currentDrill}
