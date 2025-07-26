@@ -39,6 +39,7 @@ import { ConfigurableScreens } from 'src/components/Analysis/ConfigurableScreens
 import { AnalysisConfigModal } from 'src/components/Analysis/AnalysisConfigModal'
 import { AnalysisNotification } from 'src/components/Analysis/AnalysisNotification'
 import { AnalysisOverlay } from 'src/components/Analysis/AnalysisOverlay'
+import { LearnFromMistakes } from 'src/components/Analysis/LearnFromMistakes'
 import { GameBoard } from 'src/components/Board/GameBoard'
 import { MovesContainer } from 'src/components/Board/MovesContainer'
 import { BoardController } from 'src/components/Board/BoardController'
@@ -379,6 +380,9 @@ const Analysis: React.FC<Props> = ({
   const [showAnalysisConfigModal, setShowAnalysisConfigModal] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [analysisEnabled, setAnalysisEnabled] = useState(true) // Analysis enabled by default
+  const [lastMoveResult, setLastMoveResult] = useState<
+    'correct' | 'incorrect' | 'not-learning'
+  >('not-learning')
 
   const controller = useAnalysisController(analyzedGame)
 
@@ -448,6 +452,24 @@ const Analysis: React.FC<Props> = ({
     setAnalysisEnabled((prev) => !prev)
   }, [])
 
+  const handleLearnFromMistakes = useCallback(() => {
+    controller.learnFromMistakes.start()
+  }, [controller.learnFromMistakes])
+
+  const handleStopLearnFromMistakes = useCallback(() => {
+    controller.learnFromMistakes.stop()
+    setLastMoveResult('not-learning')
+  }, [controller.learnFromMistakes])
+
+  const handleShowSolution = useCallback(() => {
+    controller.learnFromMistakes.showSolution()
+  }, [controller.learnFromMistakes])
+
+  const handleNextMistake = useCallback(() => {
+    controller.learnFromMistakes.goToNext()
+    setLastMoveResult('not-learning')
+  }, [controller.learnFromMistakes])
+
   // Create empty data structures for when analysis is disabled
   const emptyBlunderMeterData = useMemo(
     () => ({
@@ -494,6 +516,10 @@ const Analysis: React.FC<Props> = ({
     if (!analysisEnabled || !controller.currentNode || !analyzedGame.tree)
       return
 
+    // Check if we're in learn from mistakes mode
+    const learnResult = controller.learnFromMistakes.checkMove(move)
+    setLastMoveResult(learnResult)
+
     const chess = new Chess(controller.currentNode.fen)
     const moveAttempt = chess.move({
       from: move.slice(0, 2),
@@ -509,6 +535,15 @@ const Analysis: React.FC<Props> = ({
         moveAttempt.to +
         (moveAttempt.promotion ? moveAttempt.promotion : '')
       const san = moveAttempt.san
+
+      // In learn from mistakes mode, if the move is incorrect, don't actually make it and return to original position
+      if (learnResult === 'incorrect') {
+        // Return to the original position after a brief delay so the user can see what happened
+        setTimeout(() => {
+          controller.learnFromMistakes.returnToOriginalPosition()
+        }, 100)
+        return
+      }
 
       if (controller.currentNode.mainChild?.move === moveString) {
         // Existing main line move - navigate to it
@@ -828,7 +863,11 @@ const Analysis: React.FC<Props> = ({
             currentNode={controller.currentNode as GameNode}
             onDeleteCustomGame={handleDeleteCustomGame}
             onAnalyzeEntireGame={handleAnalyzeEntireGame}
+            onLearnFromMistakes={handleLearnFromMistakes}
             isAnalysisInProgress={controller.gameAnalysis.progress.isAnalyzing}
+            isLearnFromMistakesActive={
+              controller.learnFromMistakes.state.isActive
+            }
             autoSave={controller.gameAnalysis.autoSave}
           />
         </motion.div>
@@ -837,7 +876,9 @@ const Analysis: React.FC<Props> = ({
           makeMove={makeMove}
           controller={controller}
           setHoverArrow={setHoverArrow}
-          analysisEnabled={analysisEnabled}
+          analysisEnabled={
+            analysisEnabled && !controller.learnFromMistakes.state.isActive
+          }
           handleToggleAnalysis={handleToggleAnalysis}
           itemVariants={itemVariants}
         />
@@ -1007,17 +1048,29 @@ const Analysis: React.FC<Props> = ({
 
               <div className="relative">
                 <Highlight
-                  hover={analysisEnabled ? hover : mockHover}
-                  makeMove={analysisEnabled ? makeMove : mockMakeMove}
+                  hover={
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
+                      ? hover
+                      : mockHover
+                  }
+                  makeMove={
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
+                      ? makeMove
+                      : mockMakeMove
+                  }
                   currentMaiaModel={controller.currentMaiaModel}
                   setCurrentMaiaModel={controller.setCurrentMaiaModel}
                   recommendations={
-                    analysisEnabled
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
                       ? controller.moveRecommendations
                       : emptyRecommendations
                   }
                   moveEvaluation={
-                    analysisEnabled
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
                       ? (controller.moveEvaluation as {
                           maia?: MaiaEvaluation
                           stockfish?: StockfishEvaluation
@@ -1028,31 +1081,40 @@ const Analysis: React.FC<Props> = ({
                         }
                   }
                   colorSanMapping={
-                    analysisEnabled ? controller.colorSanMapping : {}
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
+                      ? controller.colorSanMapping
+                      : {}
                   }
                   boardDescription={
-                    analysisEnabled
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
                       ? controller.boardDescription
                       : {
                           segments: [
                             {
                               type: 'text',
-                              content:
-                                'Analysis is disabled. Enable analysis to see detailed move evaluations and recommendations.',
+                              content: controller.learnFromMistakes.state
+                                .isActive
+                                ? 'Analysis is hidden during Learn from Mistakes mode.'
+                                : 'Analysis is disabled. Enable analysis to see detailed move evaluations and recommendations.',
                             },
                           ],
                         }
                   }
                   currentNode={controller.currentNode}
                 />
-                {!analysisEnabled && (
+                {(!analysisEnabled ||
+                  controller.learnFromMistakes.state.isActive) && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
                     <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
                       <span className="material-symbols-outlined mb-1 text-xl text-human-3">
                         lock
                       </span>
                       <p className="text-xs font-medium text-primary">
-                        Analysis Disabled
+                        {controller.learnFromMistakes.state.isActive
+                          ? 'Learning Mode Active'
+                          : 'Analysis Disabled'}
                       </p>
                     </div>
                   </div>
@@ -1061,28 +1123,48 @@ const Analysis: React.FC<Props> = ({
 
               <div className="relative">
                 <BlunderMeter
-                  hover={analysisEnabled ? hover : mockHover}
-                  makeMove={analysisEnabled ? makeMove : mockMakeMove}
+                  hover={
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
+                      ? hover
+                      : mockHover
+                  }
+                  makeMove={
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
+                      ? makeMove
+                      : mockMakeMove
+                  }
                   data={
-                    analysisEnabled
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
                       ? controller.blunderMeter
                       : emptyBlunderMeterData
                   }
                   colorSanMapping={
-                    analysisEnabled ? controller.colorSanMapping : {}
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
+                      ? controller.colorSanMapping
+                      : {}
                   }
                   moveEvaluation={
-                    analysisEnabled ? controller.moveEvaluation : undefined
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
+                      ? controller.moveEvaluation
+                      : undefined
                   }
                 />
-                {!analysisEnabled && (
+                {(!analysisEnabled ||
+                  controller.learnFromMistakes.state.isActive) && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
                     <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
                       <span className="material-symbols-outlined mb-1 text-xl text-human-3">
                         lock
                       </span>
                       <p className="text-xs font-medium text-primary">
-                        Analysis Disabled
+                        {controller.learnFromMistakes.state.isActive
+                          ? 'Learning Mode Active'
+                          : 'Analysis Disabled'}
                       </p>
                     </div>
                   </div>
@@ -1091,19 +1173,30 @@ const Analysis: React.FC<Props> = ({
 
               <div className="relative">
                 <MovesByRating
-                  moves={analysisEnabled ? controller.movesByRating : undefined}
+                  moves={
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
+                      ? controller.movesByRating
+                      : undefined
+                  }
                   colorSanMapping={
-                    analysisEnabled ? controller.colorSanMapping : {}
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
+                      ? controller.colorSanMapping
+                      : {}
                   }
                 />
-                {!analysisEnabled && (
+                {(!analysisEnabled ||
+                  controller.learnFromMistakes.state.isActive) && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
                     <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
                       <span className="material-symbols-outlined mb-1 text-xl text-human-3">
                         lock
                       </span>
                       <p className="text-xs font-medium text-primary">
-                        Analysis Disabled
+                        {controller.learnFromMistakes.state.isActive
+                          ? 'Learning Mode Active'
+                          : 'Analysis Disabled'}
                       </p>
                     </div>
                   </div>
@@ -1112,23 +1205,42 @@ const Analysis: React.FC<Props> = ({
 
               <div className="relative">
                 <MoveMap
-                  moveMap={analysisEnabled ? controller.moveMap : undefined}
+                  moveMap={
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
+                      ? controller.moveMap
+                      : undefined
+                  }
                   colorSanMapping={
-                    analysisEnabled ? controller.colorSanMapping : {}
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
+                      ? controller.colorSanMapping
+                      : {}
                   }
                   setHoverArrow={
-                    analysisEnabled ? setHoverArrow : mockSetHoverArrow
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
+                      ? setHoverArrow
+                      : mockSetHoverArrow
                   }
-                  makeMove={analysisEnabled ? makeMove : mockMakeMove}
+                  makeMove={
+                    analysisEnabled &&
+                    !controller.learnFromMistakes.state.isActive
+                      ? makeMove
+                      : mockMakeMove
+                  }
                 />
-                {!analysisEnabled && (
+                {(!analysisEnabled ||
+                  controller.learnFromMistakes.state.isActive) && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-background-1/80 backdrop-blur-sm">
                     <div className="rounded bg-background-2/90 p-2 text-center shadow-lg">
                       <span className="material-symbols-outlined mb-1 text-xl text-human-3">
                         lock
                       </span>
                       <p className="text-xs font-medium text-primary">
-                        Analysis Disabled
+                        {controller.learnFromMistakes.state.isActive
+                          ? 'Learning Mode Active'
+                          : 'Analysis Disabled'}
                       </p>
                     </div>
                   </div>
@@ -1143,8 +1255,12 @@ const Analysis: React.FC<Props> = ({
               game={analyzedGame}
               onDeleteCustomGame={handleDeleteCustomGame}
               onAnalyzeEntireGame={handleAnalyzeEntireGame}
+              onLearnFromMistakes={handleLearnFromMistakes}
               isAnalysisInProgress={
                 controller.gameAnalysis.progress.isAnalyzing
+              }
+              isLearnFromMistakesActive={
+                controller.learnFromMistakes.state.isActive
               }
               autoSave={controller.gameAnalysis.autoSave}
               currentNode={controller.currentNode as GameNode}
@@ -1221,6 +1337,14 @@ const Analysis: React.FC<Props> = ({
           </>
         )}
       </AnimatePresence>
+      <LearnFromMistakes
+        state={controller.learnFromMistakes.state}
+        currentInfo={controller.learnFromMistakes.getCurrentInfo()}
+        onShowSolution={handleShowSolution}
+        onNext={handleNextMistake}
+        onStop={handleStopLearnFromMistakes}
+        lastMoveResult={lastMoveResult}
+      />
     </>
   )
 }
