@@ -454,6 +454,7 @@ const Analysis: React.FC<Props> = ({
 
   const handleLearnFromMistakes = useCallback(() => {
     controller.learnFromMistakes.start()
+    setAnalysisEnabled(false) // Auto-disable analysis when starting learn mode
   }, [controller.learnFromMistakes])
 
   const handleStopLearnFromMistakes = useCallback(() => {
@@ -463,11 +464,13 @@ const Analysis: React.FC<Props> = ({
 
   const handleShowSolution = useCallback(() => {
     controller.learnFromMistakes.showSolution()
+    setAnalysisEnabled(true) // Auto-enable analysis when showing solution
   }, [controller.learnFromMistakes])
 
   const handleNextMistake = useCallback(() => {
     controller.learnFromMistakes.goToNext()
     setLastMoveResult('not-learning')
+    setAnalysisEnabled(false) // Auto-disable analysis when going to next mistake
   }, [controller.learnFromMistakes])
 
   // Create empty data structures for when analysis is disabled
@@ -513,12 +516,14 @@ const Analysis: React.FC<Props> = ({
   }, [])
 
   const makeMove = (move: string) => {
-    if (!analysisEnabled || !controller.currentNode || !analyzedGame.tree)
-      return
+    if (!controller.currentNode || !analyzedGame.tree) return
 
     // Check if we're in learn from mistakes mode
     const learnResult = controller.learnFromMistakes.checkMove(move)
     setLastMoveResult(learnResult)
+
+    // If analysis is disabled and we're not in learn mode, don't allow moves
+    if (!analysisEnabled && learnResult === 'not-learning') return
 
     const chess = new Chess(controller.currentNode.fen)
     const moveAttempt = chess.move({
@@ -538,11 +543,18 @@ const Analysis: React.FC<Props> = ({
 
       // In learn from mistakes mode, if the move is incorrect, don't actually make it and return to original position
       if (learnResult === 'incorrect') {
-        // Return to the original position after a brief delay so the user can see what happened
+        // Return to the original position after a half-second delay so the user can process what happened
         setTimeout(() => {
           controller.learnFromMistakes.returnToOriginalPosition()
-        }, 100)
+        }, 500)
+        // Clear the incorrect feedback after a longer delay so user can read it
+        setTimeout(() => {
+          setLastMoveResult('not-learning')
+        }, 3000)
         return
+      } else if (learnResult === 'correct') {
+        // Auto-enable analysis when player gets the correct move
+        setAnalysisEnabled(true)
       }
 
       if (controller.currentNode.mainChild?.move === moveString) {
@@ -772,9 +784,13 @@ const Analysis: React.FC<Props> = ({
                 game={analyzedGame}
                 termination={analyzedGame.termination}
                 type="analysis"
-                showAnnotations={analysisEnabled}
+                showAnnotations={true}
                 disableKeyboardNavigation={
-                  controller.gameAnalysis.progress.isAnalyzing
+                  controller.gameAnalysis.progress.isAnalyzing ||
+                  controller.learnFromMistakes.state.isActive
+                }
+                disableMoveClicking={
+                  controller.learnFromMistakes.state.isActive
                 }
               />
               <BoardController
@@ -788,7 +804,8 @@ const Analysis: React.FC<Props> = ({
                 goToPreviousNode={controller.goToPreviousNode}
                 goToRootNode={controller.goToRootNode}
                 disableKeyboardNavigation={
-                  controller.gameAnalysis.progress.isAnalyzing
+                  controller.gameAnalysis.progress.isAnalyzing ||
+                  controller.learnFromMistakes.state.isActive
                 }
               />
             </div>
@@ -869,6 +886,12 @@ const Analysis: React.FC<Props> = ({
               controller.learnFromMistakes.state.isActive
             }
             autoSave={controller.gameAnalysis.autoSave}
+            learnFromMistakesState={controller.learnFromMistakes.state}
+            learnFromMistakesCurrentInfo={controller.learnFromMistakes.getCurrentInfo()}
+            onShowSolution={handleShowSolution}
+            onNextMistake={handleNextMistake}
+            onStopLearnFromMistakes={handleStopLearnFromMistakes}
+            lastMoveResult={lastMoveResult}
           />
         </motion.div>
         <AnalysisSidebar
@@ -1006,7 +1029,8 @@ const Analysis: React.FC<Props> = ({
                   goToPreviousNode={controller.goToPreviousNode}
                   goToRootNode={controller.goToRootNode}
                   disableKeyboardNavigation={
-                    controller.gameAnalysis.progress.isAnalyzing
+                    controller.gameAnalysis.progress.isAnalyzing ||
+                    controller.learnFromMistakes.state.isActive
                   }
                 />
               </div>
@@ -1015,9 +1039,13 @@ const Analysis: React.FC<Props> = ({
                   game={analyzedGame}
                   termination={analyzedGame.termination}
                   type="analysis"
-                  showAnnotations={analysisEnabled}
+                  showAnnotations={true}
                   disableKeyboardNavigation={
-                    controller.gameAnalysis.progress.isAnalyzing
+                    controller.gameAnalysis.progress.isAnalyzing ||
+                    controller.learnFromMistakes.state.isActive
+                  }
+                  disableMoveClicking={
+                    controller.learnFromMistakes.state.isActive
                   }
                 />
               </div>
@@ -1264,6 +1292,12 @@ const Analysis: React.FC<Props> = ({
               }
               autoSave={controller.gameAnalysis.autoSave}
               currentNode={controller.currentNode as GameNode}
+              learnFromMistakesState={controller.learnFromMistakes.state}
+              learnFromMistakesCurrentInfo={controller.learnFromMistakes.getCurrentInfo()}
+              onShowSolution={handleShowSolution}
+              onNextMistake={handleNextMistake}
+              onStopLearnFromMistakes={handleStopLearnFromMistakes}
+              lastMoveResult={lastMoveResult}
             />
           </motion.div>
         )}
@@ -1337,14 +1371,6 @@ const Analysis: React.FC<Props> = ({
           </>
         )}
       </AnimatePresence>
-      <LearnFromMistakes
-        state={controller.learnFromMistakes.state}
-        currentInfo={controller.learnFromMistakes.getCurrentInfo()}
-        onShowSolution={handleShowSolution}
-        onNext={handleNextMistake}
-        onStop={handleStopLearnFromMistakes}
-        lastMoveResult={lastMoveResult}
-      />
     </>
   )
 }

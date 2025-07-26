@@ -29,8 +29,8 @@ export const LearnFromMistakes: React.FC<Props> = ({
   const { mistake, progress, isLastMistake } = currentInfo
 
   const getMoveDisplay = () => {
-    const moveNumber = Math.ceil((mistake.moveIndex + 1) / 2)
-    const isWhiteMove = mistake.moveIndex % 2 === 0
+    const moveNumber = Math.ceil(mistake.moveIndex / 2)
+    const isWhiteMove = mistake.playerColor === 'white'
 
     if (isWhiteMove) {
       return `${moveNumber}. ${mistake.san}`
@@ -49,7 +49,11 @@ export const LearnFromMistakes: React.FC<Props> = ({
 
   const getFeedbackText = () => {
     if (state.showSolution) {
-      return `Correct! ${mistake.bestMoveSan} was the best move.`
+      if (lastMoveResult === 'correct') {
+        return `Correct! ${mistake.bestMoveSan} was the best move.`
+      } else {
+        return `The best move was ${mistake.bestMoveSan}.`
+      }
     }
 
     if (lastMoveResult === 'incorrect') {
@@ -62,7 +66,7 @@ export const LearnFromMistakes: React.FC<Props> = ({
   }
 
   return (
-    <div className="fixed bottom-4 left-1/2 z-50 w-full max-w-2xl -translate-x-1/2 transform rounded-lg border border-white/10 bg-background-1 p-4 shadow-lg">
+    <div className="flex w-full flex-col gap-3">
       <div className="flex flex-col gap-3">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -83,7 +87,7 @@ export const LearnFromMistakes: React.FC<Props> = ({
         </div>
 
         {/* Main prompt */}
-        <div className="rounded bg-background-2/50 p-3">
+        <div>
           <p className="text-sm text-primary">{getPromptText()}</p>
           {getFeedbackText() && (
             <p
@@ -102,16 +106,29 @@ export const LearnFromMistakes: React.FC<Props> = ({
 
         {/* Action buttons */}
         <div className="flex gap-2">
-          {!state.showSolution ? (
-            <button
-              onClick={onShowSolution}
-              className="flex items-center gap-1.5 rounded bg-human-4/60 px-3 py-1.5 text-sm text-primary/70 transition duration-200 hover:bg-human-4/80 hover:text-primary"
-            >
-              <span className="material-symbols-outlined !text-sm">
-                lightbulb
-              </span>
-              Show me the solution
-            </button>
+          {!state.showSolution && lastMoveResult !== 'correct' ? (
+            <>
+              <button
+                onClick={onShowSolution}
+                className="flex items-center gap-1.5 rounded bg-human-4/60 px-3 py-1.5 text-sm text-primary/70 transition duration-200 hover:bg-human-4/80 hover:text-primary"
+              >
+                <span className="material-symbols-outlined !text-sm">
+                  lightbulb
+                </span>
+                Show me the solution
+              </button>
+              {!isLastMistake && (
+                <button
+                  onClick={onNext}
+                  className="flex items-center gap-1.5 rounded bg-background-2 px-3 py-1.5 text-sm text-secondary transition duration-200 hover:bg-background-3 hover:text-primary"
+                >
+                  <span className="material-symbols-outlined !text-sm">
+                    skip_next
+                  </span>
+                  Skip to next mistake
+                </button>
+              )}
+            </>
           ) : (
             <button
               onClick={onNext}
@@ -121,18 +138,6 @@ export const LearnFromMistakes: React.FC<Props> = ({
                 {isLastMistake ? 'check' : 'arrow_forward'}
               </span>
               {isLastMistake ? 'Finish' : 'Next mistake'}
-            </button>
-          )}
-
-          {state.showSolution && !isLastMistake && (
-            <button
-              onClick={onNext}
-              className="flex items-center gap-1.5 rounded bg-background-2 px-3 py-1.5 text-sm text-secondary transition duration-200 hover:bg-background-3 hover:text-primary"
-            >
-              <span className="material-symbols-outlined !text-sm">
-                skip_next
-              </span>
-              Skip to next
             </button>
           )}
         </div>
