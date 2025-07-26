@@ -15,6 +15,7 @@ interface AnalysisProps {
   showAnnotations?: boolean
   showVariations?: boolean
   disableKeyboardNavigation?: boolean
+  disableMoveClicking?: boolean
 }
 
 interface TuringProps {
@@ -25,6 +26,7 @@ interface TuringProps {
   showAnnotations?: boolean
   showVariations?: boolean
   disableKeyboardNavigation?: boolean
+  disableMoveClicking?: boolean
 }
 
 interface PlayProps {
@@ -35,6 +37,7 @@ interface PlayProps {
   showAnnotations?: boolean
   showVariations?: boolean
   disableKeyboardNavigation?: boolean
+  disableMoveClicking?: boolean
 }
 
 type Props = AnalysisProps | TuringProps | PlayProps
@@ -70,6 +73,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
     showAnnotations = true,
     showVariations = true,
     disableKeyboardNavigation = false,
+    disableMoveClicking = false,
   } = props
   const { isMobile } = useContext(WindowSizeContext)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -224,9 +228,11 @@ export const MovesContainer: React.FC<Props> = (props) => {
                       ? currentMoveRef
                       : null
                   }
-                  onClick={() =>
-                    baseController.goToNode(pair.whiteMove as GameNode)
-                  }
+                  onClick={() => {
+                    if (!disableMoveClicking) {
+                      baseController.goToNode(pair.whiteMove as GameNode)
+                    }
+                  }}
                   className={`flex min-w-fit cursor-pointer flex-row items-center rounded px-2 py-1 text-sm ${
                     baseController.currentNode === pair.whiteMove
                       ? 'bg-human-4/20'
@@ -262,9 +268,11 @@ export const MovesContainer: React.FC<Props> = (props) => {
                       ? currentMoveRef
                       : null
                   }
-                  onClick={() =>
-                    baseController.goToNode(pair.blackMove as GameNode)
-                  }
+                  onClick={() => {
+                    if (!disableMoveClicking) {
+                      baseController.goToNode(pair.blackMove as GameNode)
+                    }
+                  }}
                   className={`flex min-w-fit cursor-pointer flex-row items-center rounded px-2 py-1 text-sm ${
                     baseController.currentNode === pair.blackMove
                       ? 'bg-human-4/20'
@@ -298,9 +306,13 @@ export const MovesContainer: React.FC<Props> = (props) => {
           {termination && (
             <div
               className="min-w-fit cursor-pointer border border-primary/10 bg-background-1/90 px-4 py-1 text-sm opacity-90"
-              onClick={() =>
-                baseController.goToNode(mainLineNodes[mainLineNodes.length - 1])
-              }
+              onClick={() => {
+                if (!disableMoveClicking) {
+                  baseController.goToNode(
+                    mainLineNodes[mainLineNodes.length - 1],
+                  )
+                }
+              }}
             >
               {termination.result}
               {', '}
@@ -330,7 +342,9 @@ export const MovesContainer: React.FC<Props> = (props) => {
                 baseController.currentNode === whiteNode ? currentMoveRef : null
               }
               onClick={() => {
-                if (whiteNode) baseController.goToNode(whiteNode)
+                if (whiteNode && !disableMoveClicking) {
+                  baseController.goToNode(whiteNode)
+                }
               }}
               data-index={index * 2 + 1}
               className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${baseController.currentNode === whiteNode && 'bg-human-4/10'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
@@ -363,6 +377,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
                 currentNode={baseController.currentNode}
                 goToNode={baseController.goToNode}
                 showAnnotations={showAnnotations}
+                disableMoveClicking={disableMoveClicking}
               />
             ) : null}
             <div
@@ -370,7 +385,9 @@ export const MovesContainer: React.FC<Props> = (props) => {
                 baseController.currentNode === blackNode ? currentMoveRef : null
               }
               onClick={() => {
-                if (blackNode) baseController.goToNode(blackNode)
+                if (blackNode && !disableMoveClicking) {
+                  baseController.goToNode(blackNode)
+                }
               }}
               data-index={index * 2 + 2}
               className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${baseController.currentNode === blackNode && 'bg-human-4/10'} ${highlightSet.has(index * 2 + 2) && 'bg-human-3/80'}`}
@@ -403,6 +420,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
                 currentNode={baseController.currentNode}
                 goToNode={baseController.goToNode}
                 showAnnotations={showAnnotations}
+                disableMoveClicking={disableMoveClicking}
               />
             ) : null}
           </>
@@ -411,9 +429,11 @@ export const MovesContainer: React.FC<Props> = (props) => {
       {termination && !isMobile && (
         <div
           className="col-span-5 cursor-pointer rounded-sm border border-primary/10 bg-background-1/90 p-5 text-center opacity-90"
-          onClick={() =>
-            baseController.goToNode(mainLineNodes[mainLineNodes.length - 1])
-          }
+          onClick={() => {
+            if (!disableMoveClicking) {
+              baseController.goToNode(mainLineNodes[mainLineNodes.length - 1])
+            }
+          }}
         >
           {termination.result}
           {', '}
@@ -432,12 +452,14 @@ function FirstVariation({
   currentNode,
   goToNode,
   showAnnotations,
+  disableMoveClicking = false,
 }: {
   node: GameNode
   color: 'white' | 'black'
   currentNode: GameNode | undefined
   goToNode: (node: GameNode) => void
   showAnnotations: boolean
+  disableMoveClicking?: boolean
 }) {
   return (
     <>
@@ -452,6 +474,7 @@ function FirstVariation({
               goToNode={goToNode}
               level={0}
               showAnnotations={showAnnotations}
+              disableMoveClicking={disableMoveClicking}
             />
           ))}
         </ul>
@@ -487,7 +510,11 @@ function VariationTree({
   return (
     <li className={`tree-li ${level === 0 ? 'no-tree-connector' : ''}`}>
       <span
-        onClick={() => goToNode(node)}
+        onClick={() => {
+          if (!disableMoveClicking) {
+            goToNode(node)
+          }
+        }}
         className={`cursor-pointer px-0.5 text-xs ${
           currentNode?.fen === node?.fen
             ? 'rounded bg-human-4/20 text-primary'
@@ -520,6 +547,7 @@ function VariationTree({
             goToNode={goToNode}
             level={level}
             showAnnotations={showAnnotations}
+            disableMoveClicking={disableMoveClicking}
           />
         </span>
       ) : variations.length > 1 ? (
@@ -532,6 +560,7 @@ function VariationTree({
               goToNode={goToNode}
               level={level + 1}
               showAnnotations={showAnnotations}
+              disableMoveClicking={disableMoveClicking}
             />
           ))}
         </ul>
@@ -577,7 +606,11 @@ function InlineChain({
         {chain.map((child) => (
           <Fragment key={child.move}>
             <span
-              onClick={() => goToNode(child)}
+              onClick={() => {
+                if (!disableMoveClicking) {
+                  goToNode(child)
+                }
+              }}
               className={`cursor-pointer px-0.5 text-xs ${
                 currentNode?.fen === child?.fen
                   ? 'rounded bg-human-4/50 text-primary'
@@ -617,6 +650,7 @@ function InlineChain({
               goToNode={goToNode}
               level={level + 1}
               showAnnotations={showAnnotations}
+              disableMoveClicking={disableMoveClicking}
             />
           ))}
         </ul>
