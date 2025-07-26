@@ -24,6 +24,9 @@ import {
   generateAnalysisCacheKey,
 } from 'src/lib/analysisStorage'
 import { storeEngineAnalysis } from 'src/api/analysis/analysis'
+import { extractPlayerMistakes, isBestMove } from 'src/lib/analysis'
+import { LearnFromMistakesState, MistakePosition } from 'src/types/analysis'
+import { LEARN_FROM_MISTAKES_DEPTH } from 'src/constants/analysis'
 
 export interface GameAnalysisProgress {
   currentMoveIndex: number
@@ -313,6 +316,231 @@ export const useAnalysisController = (
     })
   }, [])
 
+  // Learn from mistakes state
+  const [learnFromMistakesState, setLearnFromMistakesState] =
+    useState<LearnFromMistakesState>({
+      isActive: false,
+      currentMistakeIndex: 0,
+      mistakes: [],
+      hasCompletedAnalysis: false,
+      showSolution: false,
+      currentAttempt: 1,
+      maxAttempts: Infinity, // Infinite attempts
+      originalPosition: null,
+    })
+
+  // Learn from mistakes functions
+  const startLearnFromMistakes = useCallback(async () => {
+    // First, ensure the entire game is analyzed at the required depth
+    if (!gameAnalysisProgress.isComplete) {
+      // Start analysis first
+      await startGameAnalysis(LEARN_FROM_MISTAKES_DEPTH)
+
+      // Wait for analysis to complete
+      return new Promise<void>((resolve) => {
+        const checkComplete = () => {
+          if (
+            gameAnalysisProgress.isComplete ||
+            gameAnalysisProgress.isCancelled
+          ) {
+            if (gameAnalysisProgress.isComplete) {
+              initializeLearnFromMistakes()
+            }
+            resolve()
+          } else {
+            setTimeout(checkComplete, 500)
+          }
+        }
+        checkComplete()
+      })
+    } else {
+      initializeLearnFromMistakes()
+    }
+  }, [gameAnalysisProgress, startGameAnalysis])
+
+  const initializeLearnFromMistakes = useCallback(() => {
+    // Determine which player to analyze based on the current user
+    // For now, we'll analyze the user playing as white by default
+    // This could be enhanced to detect which player is the user
+    const playerColor: 'white' | 'black' = 'white' // This could be made configurable
+
+    const mistakes = extractPlayerMistakes(game.tree, playerColor)
+
+    if (mistakes.length === 0) {
+      // No mistakes found - could show a message
+      return
+    }
+
+    // Navigate to the first mistake position (the position where the player needs to move)
+    const firstMistake = mistakes[0]
+    const mistakeNode = game.tree.getMainLine()[firstMistake.moveIndex]
+    const originalPosition =
+      mistakeNode && mistakeNode.parent ? mistakeNode.parent.fen : null
+
+    setLearnFromMistakesState({
+      isActive: true,
+      currentMistakeIndex: 0,
+      mistakes,
+      hasCompletedAnalysis: true,
+      showSolution: false,
+      currentAttempt: 1,
+      maxAttempts: Infinity,
+      originalPosition,
+    })
+
+    if (mistakeNode && mistakeNode.parent) {
+      controller.setCurrentNode(mistakeNode.parent)
+    }
+  }, [game.tree, controller])
+
+  const stopLearnFromMistakes = useCallback(() => {
+    setLearnFromMistakesState({
+      isActive: false,
+      currentMistakeIndex: 0,
+      mistakes: [],
+      hasCompletedAnalysis: false,
+      showSolution: false,
+      currentAttempt: 1,
+      maxAttempts: Infinity,
+      originalPosition: null,
+    })
+  }, [])
+
+  const showSolution = useCallback(() => {
+    if (
+      !learnFromMistakesState.isActive ||
+      learnFromMistakesState.mistakes.length === 0
+    )
+      return
+
+    const currentMistake =
+      learnFromMistakesState.mistakes[
+        learnFromMistakesState.currentMistakeIndex
+      ]
+    if (!currentMistake || !controller.currentNode) return
+
+    // Make the best move on the board (this will create a variation)
+    const chess = new Chess(controller.currentNode.fen)
+    const moveResult = chess.move(currentMistake.bestMove, { sloppy: true })
+
+    if (moveResult) {
+      const newVariation = game.tree.addVariation(
+        controller.currentNode,
+        chess.fen(),
+        currentMistake.bestMove,
+        currentMistake.bestMoveSan,
+        controller.currentMaiaModel,
+      )
+      controller.goToNode(newVariation)
+    }
+
+    setLearnFromMistakesState((prev) => ({
+      ...prev,
+      showSolution: true,
+    }))
+  }, [learnFromMistakesState, controller, game.tree])
+
+  const goToNextMistake = useCallback(() => {
+    if (
+      !learnFromMistakesState.isActive ||
+      learnFromMistakesState.mistakes.length === 0
+    )
+      return
+
+    const nextIndex = learnFromMistakesState.currentMistakeIndex + 1
+
+    if (nextIndex >= learnFromMistakesState.mistakes.length) {
+      // No more mistakes - end the session
+      stopLearnFromMistakes()
+      return
+    }
+
+    const nextMistake = learnFromMistakesState.mistakes[nextIndex]
+    const mistakeNode = game.tree.getMainLine()[nextMistake.moveIndex]
+    const newOriginalPosition =
+      mistakeNode && mistakeNode.parent ? mistakeNode.parent.fen : null
+
+    if (mistakeNode && mistakeNode.parent) {
+      controller.setCurrentNode(mistakeNode.parent)
+    }
+
+    setLearnFromMistakesState((prev) => ({
+      ...prev,
+      currentMistakeIndex: nextIndex,
+      showSolution: false,
+      currentAttempt: 1,
+      originalPosition: newOriginalPosition,
+    }))
+  }, [learnFromMistakesState, controller, game.tree, stopLearnFromMistakes])
+
+  const checkMoveInLearnMode = useCallback(
+    (moveUci: string): 'correct' | 'incorrect' | 'not-learning' => {
+      if (!learnFromMistakesState.isActive || !controller.currentNode)
+        return 'not-learning'
+
+      const currentMistake =
+        learnFromMistakesState.mistakes[
+          learnFromMistakesState.currentMistakeIndex
+        ]
+      if (!currentMistake) return 'not-learning'
+
+      const isCorrect = isBestMove(controller.currentNode, moveUci)
+
+      if (isCorrect) {
+        setLearnFromMistakesState((prev) => ({
+          ...prev,
+          showSolution: true,
+        }))
+        return 'correct'
+      } else {
+        setLearnFromMistakesState((prev) => ({
+          ...prev,
+          currentAttempt: prev.currentAttempt + 1,
+        }))
+        return 'incorrect'
+      }
+    },
+    [learnFromMistakesState, controller],
+  )
+
+  // Function to return to the original position when a move is incorrect
+  const returnToOriginalPosition = useCallback(() => {
+    if (!learnFromMistakesState.originalPosition) return
+
+    // Find the node with the original FEN
+    const mainLine = game.tree.getMainLine()
+    const originalNode = mainLine.find(
+      (node) => node.fen === learnFromMistakesState.originalPosition,
+    )
+
+    if (originalNode) {
+      controller.setCurrentNode(originalNode)
+    }
+  }, [learnFromMistakesState.originalPosition, game.tree, controller])
+
+  const getCurrentMistakeInfo = useCallback(() => {
+    if (
+      !learnFromMistakesState.isActive ||
+      learnFromMistakesState.mistakes.length === 0
+    ) {
+      return null
+    }
+
+    const currentMistake =
+      learnFromMistakesState.mistakes[
+        learnFromMistakesState.currentMistakeIndex
+      ]
+    const totalMistakes = learnFromMistakesState.mistakes.length
+    const currentIndex = learnFromMistakesState.currentMistakeIndex + 1
+
+    return {
+      mistake: currentMistake,
+      progress: `${currentIndex} of ${totalMistakes}`,
+      isLastMistake:
+        learnFromMistakesState.currentMistakeIndex === totalMistakes - 1,
+    }
+  }, [learnFromMistakesState])
+
   const [currentMove, setCurrentMove] = useState<[string, string] | null>()
   const [currentMaiaModel, setCurrentMaiaModel] = useLocalStorage(
     'currentMaiaModel',
@@ -482,6 +710,16 @@ export const useAnalysisController = (
             ? ('unsaved' as const)
             : ('saved' as const),
       },
+    },
+    learnFromMistakes: {
+      state: learnFromMistakesState,
+      start: startLearnFromMistakes,
+      stop: stopLearnFromMistakes,
+      showSolution,
+      goToNext: goToNextMistake,
+      checkMove: checkMoveInLearnMode,
+      getCurrentInfo: getCurrentMistakeInfo,
+      returnToOriginalPosition,
     },
   }
 }

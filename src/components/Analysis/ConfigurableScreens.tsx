@@ -13,7 +13,9 @@ interface Props {
   currentNode: GameNode
   onDeleteCustomGame?: () => void
   onAnalyzeEntireGame?: () => void
+  onLearnFromMistakes?: () => void
   isAnalysisInProgress?: boolean
+  isLearnFromMistakesActive?: boolean
   autoSave?: {
     hasUnsavedChanges: boolean
     isSaving: boolean
@@ -30,7 +32,9 @@ export const ConfigurableScreens: React.FC<Props> = ({
   currentNode,
   onDeleteCustomGame,
   onAnalyzeEntireGame,
+  onLearnFromMistakes,
   isAnalysisInProgress,
+  isLearnFromMistakesActive,
   autoSave,
 }) => {
   const screens = [
@@ -87,7 +91,9 @@ export const ConfigurableScreens: React.FC<Props> = ({
             game={game}
             onDeleteCustomGame={onDeleteCustomGame}
             onAnalyzeEntireGame={onAnalyzeEntireGame}
+            onLearnFromMistakes={onLearnFromMistakes}
             isAnalysisInProgress={isAnalysisInProgress}
+            isLearnFromMistakesActive={isLearnFromMistakesActive}
             autoSave={autoSave}
           />
         ) : screen.id === 'export' ? (
