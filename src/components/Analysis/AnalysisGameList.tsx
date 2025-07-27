@@ -681,17 +681,11 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
             getCurrentGames().length === 0 &&
             !loading && (
               <div className="flex flex-1 items-start justify-center gap-1 py-2 md:items-center">
-                <span
-                  className={`material-symbols-outlined !text-xs ${selected === 'favorites' ? 'material-symbols-filled' : ''}`}
-                >
-                  star
-                </span>
-                <p className="text-xs text-secondary">
+                <p className="text-center text-xs text-secondary">
                   {selected === 'favorites'
-                    ? 'Hit the star to favorite games...'
-                    : 'Play more games...'}
+                    ? ' ⭐ Hit the star to favourite games...'
+                    : 'Play more games... ^. .^₎⟆'}
                 </p>
-                <p className="ml-2 text-xs text-secondary">₍^. .^₎⟆</p>
               </div>
             )}
         </div>
