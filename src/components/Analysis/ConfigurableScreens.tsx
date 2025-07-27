@@ -81,7 +81,7 @@ export const ConfigurableScreens: React.FC<Props> = ({
   ) {
     return (
       <div className="flex w-full flex-1 flex-col overflow-hidden bg-background-1/60 md:w-auto md:rounded">
-        <div className="red-scrollbar flex flex-1 flex-col items-start justify-start overflow-y-scroll bg-backdrop/30 p-3">
+        <div className="red-scrollbar background-1/60 flex flex-1 flex-col items-start justify-start overflow-y-scroll">
           <LearnFromMistakes
             state={learnFromMistakesState}
             currentInfo={learnFromMistakesCurrentInfo}
