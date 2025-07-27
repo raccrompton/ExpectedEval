@@ -1,8 +1,14 @@
 import { motion } from 'framer-motion'
 import React, { useState } from 'react'
 import { ConfigureAnalysis } from 'src/components/Analysis/ConfigureAnalysis'
+import { LearnFromMistakes } from 'src/components/Analysis/LearnFromMistakes'
 import { ExportGame } from 'src/components/Common/ExportGame'
-import { AnalyzedGame, GameNode } from 'src/types'
+import {
+  AnalyzedGame,
+  GameNode,
+  LearnFromMistakesState,
+  MistakePosition,
+} from 'src/types'
 
 interface Props {
   currentMaiaModel: string
@@ -13,12 +19,26 @@ interface Props {
   currentNode: GameNode
   onDeleteCustomGame?: () => void
   onAnalyzeEntireGame?: () => void
+  onLearnFromMistakes?: () => void
   isAnalysisInProgress?: boolean
+  isLearnFromMistakesActive?: boolean
   autoSave?: {
     hasUnsavedChanges: boolean
     isSaving: boolean
     status: 'saving' | 'unsaved' | 'saved'
   }
+  // Learn from mistakes props
+  learnFromMistakesState?: LearnFromMistakesState
+  learnFromMistakesCurrentInfo?: {
+    mistake: MistakePosition
+    progress: string
+    isLastMistake: boolean
+  } | null
+  onShowSolution?: () => void
+  onNextMistake?: () => void
+  onStopLearnFromMistakes?: () => void
+  onSelectPlayer?: (color: 'white' | 'black') => void
+  lastMoveResult?: 'correct' | 'incorrect' | 'not-learning'
 }
 
 export const ConfigurableScreens: React.FC<Props> = ({
@@ -30,8 +50,17 @@ export const ConfigurableScreens: React.FC<Props> = ({
   currentNode,
   onDeleteCustomGame,
   onAnalyzeEntireGame,
+  onLearnFromMistakes,
   isAnalysisInProgress,
+  isLearnFromMistakesActive,
   autoSave,
+  learnFromMistakesState,
+  learnFromMistakesCurrentInfo,
+  onShowSolution,
+  onNextMistake,
+  onStopLearnFromMistakes,
+  onSelectPlayer,
+  lastMoveResult,
 }) => {
   const screens = [
     {
@@ -46,6 +75,50 @@ export const ConfigurableScreens: React.FC<Props> = ({
 
   const [screen, setScreen] = useState(screens[0])
 
+  // If learn from mistakes is active, show only the learning interface
+  if (
+    isLearnFromMistakesActive &&
+    learnFromMistakesState &&
+    (learnFromMistakesCurrentInfo || learnFromMistakesState.showPlayerSelection)
+  ) {
+    return (
+      <div className="flex w-full flex-1 flex-col overflow-hidden bg-background-1/60 md:w-auto md:rounded">
+        <div className="red-scrollbar background-1/60 flex flex-1 flex-col items-start justify-start overflow-y-scroll">
+          <LearnFromMistakes
+            state={learnFromMistakesState}
+            currentInfo={learnFromMistakesCurrentInfo || null}
+            onShowSolution={
+              onShowSolution ||
+              (() => {
+                /* no-op */
+              })
+            }
+            onNext={
+              onNextMistake ||
+              (() => {
+                /* no-op */
+              })
+            }
+            onStop={
+              onStopLearnFromMistakes ||
+              (() => {
+                /* no-op */
+              })
+            }
+            onSelectPlayer={
+              onSelectPlayer ||
+              (() => {
+                /* no-op */
+              })
+            }
+            lastMoveResult={lastMoveResult || 'not-learning'}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // Normal state with configure/export tabs
   return (
     <div className="flex w-full flex-1 flex-col overflow-hidden bg-background-1/60 md:w-auto md:rounded">
       <div className="flex flex-row border-b border-white/10">
@@ -87,7 +160,9 @@ export const ConfigurableScreens: React.FC<Props> = ({
             game={game}
             onDeleteCustomGame={onDeleteCustomGame}
             onAnalyzeEntireGame={onAnalyzeEntireGame}
+            onLearnFromMistakes={onLearnFromMistakes}
             isAnalysisInProgress={isAnalysisInProgress}
+            isLearnFromMistakesActive={isLearnFromMistakesActive}
             autoSave={autoSave}
           />
         ) : screen.id === 'export' ? (

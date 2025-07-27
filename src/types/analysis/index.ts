@@ -141,3 +141,28 @@ export type MaiaStatus =
   | 'error'
 
 export type StockfishStatus = 'loading' | 'ready' | 'error'
+
+export interface MistakePosition {
+  nodeId: string
+  moveIndex: number
+  fen: string
+  playedMove: string
+  san: string
+  type: 'blunder' | 'inaccuracy'
+  bestMove: string
+  bestMoveSan: string
+  playerColor: 'white' | 'black'
+}
+
+export interface LearnFromMistakesState {
+  isActive: boolean
+  showPlayerSelection: boolean
+  selectedPlayerColor: 'white' | 'black' | null
+  currentMistakeIndex: number
+  mistakes: MistakePosition[]
+  hasCompletedAnalysis: boolean
+  showSolution: boolean
+  currentAttempt: number
+  maxAttempts: number
+  originalPosition: string | null // FEN of the position where the player should make a move
+}

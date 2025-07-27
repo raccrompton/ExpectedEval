@@ -33,8 +33,8 @@ export const LeaderboardNavBadge: React.FC<LeaderboardNavBadgeProps> = ({
           <span className="material-symbols-outlined material-symbols-filled !text-2xl text-yellow-500">
             trophy
           </span>
-          {status.totalLeaderboards > 1 && (
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+          {status.totalLeaderboards > 0 && (
+            <span className="absolute right-0 top-0 flex h-3 w-3 items-center justify-center rounded-full bg-green-500 text-[8px] font-semibold text-white">
               {status.totalLeaderboards}
             </span>
           )}
