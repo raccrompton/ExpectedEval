@@ -490,12 +490,14 @@ function VariationTree({
   goToNode,
   level,
   showAnnotations,
+  disableMoveClicking = false,
 }: {
   node: GameNode
   currentNode: GameNode | undefined
   goToNode: (node: GameNode) => void
   level: number
   showAnnotations: boolean
+  disableMoveClicking?: boolean
 }) {
   const variations = node.getVariations()
 
@@ -575,12 +577,14 @@ function InlineChain({
   goToNode,
   level,
   showAnnotations,
+  disableMoveClicking = false,
 }: {
   node: GameNode
   currentNode: GameNode | undefined
   goToNode: (node: GameNode) => void
   level: number
   showAnnotations: boolean
+  disableMoveClicking?: boolean
 }) {
   const chain: GameNode[] = []
   let current = node

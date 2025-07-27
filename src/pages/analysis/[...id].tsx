@@ -460,6 +460,7 @@ const Analysis: React.FC<Props> = ({
   const handleStopLearnFromMistakes = useCallback(() => {
     controller.learnFromMistakes.stop()
     setLastMoveResult('not-learning')
+    setAnalysisEnabled(true) // Auto-enable analysis when stopping learn mode
   }, [controller.learnFromMistakes])
 
   const handleShowSolution = useCallback(() => {
@@ -522,8 +523,11 @@ const Analysis: React.FC<Props> = ({
     const learnResult = controller.learnFromMistakes.checkMove(move)
     setLastMoveResult(learnResult)
 
-    // If analysis is disabled and we're not in learn mode, don't allow moves
+    // Don't allow moves if:
+    // 1. Analysis is disabled and we're not in learn mode, OR
+    // 2. We're in learn mode and puzzle is solved (analysis enabled)
     if (!analysisEnabled && learnResult === 'not-learning') return
+    if (controller.learnFromMistakes.state.isActive && analysisEnabled) return
 
     const chess = new Chess(controller.currentNode.fen)
     const moveAttempt = chess.move({
@@ -546,11 +550,7 @@ const Analysis: React.FC<Props> = ({
         // Return to the original position after a half-second delay so the user can process what happened
         setTimeout(() => {
           controller.learnFromMistakes.returnToOriginalPosition()
-        }, 500)
-        // Clear the incorrect feedback after a longer delay so user can read it
-        setTimeout(() => {
-          setLastMoveResult('not-learning')
-        }, 3000)
+        }, 750)
         return
       } else if (learnResult === 'correct') {
         // Auto-enable analysis when player gets the correct move
@@ -807,6 +807,7 @@ const Analysis: React.FC<Props> = ({
                   controller.gameAnalysis.progress.isAnalyzing ||
                   controller.learnFromMistakes.state.isActive
                 }
+                disableNavigation={controller.learnFromMistakes.state.isActive}
               />
             </div>
           </div>
@@ -834,13 +835,45 @@ const Analysis: React.FC<Props> = ({
             <div className="desktop-board-container relative flex aspect-square">
               <GameBoard
                 game={analyzedGame}
-                availableMoves={controller.availableMoves}
-                setCurrentSquare={setCurrentSquare}
-                shapes={
-                  hoverArrow
-                    ? [...controller.arrows, hoverArrow]
-                    : [...controller.arrows]
+                availableMoves={
+                  controller.learnFromMistakes.state.isActive && analysisEnabled
+                    ? new Map() // Empty moves when puzzle is solved
+                    : controller.availableMoves
                 }
+                setCurrentSquare={setCurrentSquare}
+                shapes={(() => {
+                  const baseShapes = []
+
+                  // Add analysis arrows only when analysis is enabled
+                  if (analysisEnabled) {
+                    baseShapes.push(...controller.arrows)
+                  }
+
+                  // Add mistake arrow during learn mode when analysis is disabled
+                  if (
+                    controller.learnFromMistakes.state.isActive &&
+                    !analysisEnabled
+                  ) {
+                    const currentInfo =
+                      controller.learnFromMistakes.getCurrentInfo()
+                    if (currentInfo) {
+                      const mistake = currentInfo.mistake
+                      baseShapes.push({
+                        brush: 'paleGrey',
+                        orig: mistake.playedMove.slice(0, 2) as Key,
+                        dest: mistake.playedMove.slice(2, 4) as Key,
+                        modifiers: { lineWidth: 8 },
+                      })
+                    }
+                  }
+
+                  // Add hover arrow if present
+                  if (hoverArrow) {
+                    baseShapes.push(hoverArrow)
+                  }
+
+                  return baseShapes
+                })()}
                 currentNode={controller.currentNode as GameNode}
                 orientation={controller.orientation}
                 onPlayerMakeMove={onPlayerMakeMove}
@@ -899,9 +932,7 @@ const Analysis: React.FC<Props> = ({
           makeMove={makeMove}
           controller={controller}
           setHoverArrow={setHoverArrow}
-          analysisEnabled={
-            analysisEnabled && !controller.learnFromMistakes.state.isActive
-          }
+          analysisEnabled={analysisEnabled}
           handleToggleAnalysis={handleToggleAnalysis}
           itemVariants={itemVariants}
         />
@@ -995,13 +1026,45 @@ const Analysis: React.FC<Props> = ({
             <div id="analysis" className="relative flex h-[100vw] w-screen">
               <GameBoard
                 game={analyzedGame}
-                availableMoves={controller.availableMoves}
-                setCurrentSquare={setCurrentSquare}
-                shapes={
-                  hoverArrow
-                    ? [...controller.arrows, hoverArrow]
-                    : [...controller.arrows]
+                availableMoves={
+                  controller.learnFromMistakes.state.isActive && analysisEnabled
+                    ? new Map() // Empty moves when puzzle is solved
+                    : controller.availableMoves
                 }
+                setCurrentSquare={setCurrentSquare}
+                shapes={(() => {
+                  const baseShapes = []
+
+                  // Add analysis arrows only when analysis is enabled
+                  if (analysisEnabled) {
+                    baseShapes.push(...controller.arrows)
+                  }
+
+                  // Add mistake arrow during learn mode when analysis is disabled
+                  if (
+                    controller.learnFromMistakes.state.isActive &&
+                    !analysisEnabled
+                  ) {
+                    const currentInfo =
+                      controller.learnFromMistakes.getCurrentInfo()
+                    if (currentInfo) {
+                      const mistake = currentInfo.mistake
+                      baseShapes.push({
+                        brush: 'paleGrey',
+                        orig: mistake.playedMove.slice(0, 2) as Key,
+                        dest: mistake.playedMove.slice(2, 4) as Key,
+                        modifiers: { lineWidth: 8 },
+                      })
+                    }
+                  }
+
+                  // Add hover arrow if present
+                  if (hoverArrow) {
+                    baseShapes.push(hoverArrow)
+                  }
+
+                  return baseShapes
+                })()}
                 currentNode={controller.currentNode as GameNode}
                 orientation={controller.orientation}
                 onPlayerMakeMove={onPlayerMakeMove}
@@ -1030,6 +1093,9 @@ const Analysis: React.FC<Props> = ({
                   goToRootNode={controller.goToRootNode}
                   disableKeyboardNavigation={
                     controller.gameAnalysis.progress.isAnalyzing ||
+                    controller.learnFromMistakes.state.isActive
+                  }
+                  disableNavigation={
                     controller.learnFromMistakes.state.isActive
                   }
                 />
