@@ -8,6 +8,7 @@ import {
   useCallback,
   useRef,
 } from 'react'
+import toast from 'react-hot-toast'
 
 import { AnalyzedGame, GameNode } from 'src/types'
 import type { DrawShape } from 'chessground/draw'
@@ -320,6 +321,8 @@ export const useAnalysisController = (
   const [learnFromMistakesState, setLearnFromMistakesState] =
     useState<LearnFromMistakesState>({
       isActive: false,
+      showPlayerSelection: false,
+      selectedPlayerColor: null,
       currentMistakeIndex: 0,
       mistakes: [],
       hasCompletedAnalysis: false,
@@ -331,132 +334,124 @@ export const useAnalysisController = (
 
   // Learn from mistakes functions
   const startLearnFromMistakes = useCallback(async () => {
-    // Check if we have sufficient analysis for learn from mistakes
-    const mainLine = game.tree.getMainLine()
-    // For learn from mistakes, we need reasonable analysis (depth >= 12) rather than requiring exact depth 15
-    // Most games are analyzed at depth 18 by default, so this should work
-    const minimumDepthForMistakeDetection = 12
-    const hasEnoughAnalysis = mainLine.every(
-      (node) => {
+    // Show player selection dialog first
+    setLearnFromMistakesState((prev) => ({
+      ...prev,
+      showPlayerSelection: true,
+      isActive: true,
+    }))
+  }, [])
+
+  const startLearnFromMistakesWithColor = useCallback(
+    async (playerColor: 'white' | 'black') => {
+      // Check if we have sufficient analysis for learn from mistakes
+      const mainLine = game.tree.getMainLine()
+      // For learn from mistakes, we need reasonable analysis (depth >= 12) rather than requiring exact depth 15
+      // Most games are analyzed at depth 18 by default, so this should work
+      const minimumDepthForMistakeDetection = 12
+      const hasEnoughAnalysis = mainLine.every((node) => {
         // Skip root node (no move)
         if (!node.move) return true
-        
+
         // Skip terminal positions (checkmate/stalemate) - they don't need analysis
         const chess = new Chess(node.fen)
         if (chess.gameOver()) return true
-        
+
         // Check if this position has sufficient analysis depth
-        return (node.analysis.stockfish?.depth ?? 0) >= minimumDepthForMistakeDetection
-      }
-    )
-
-    console.log('Learn from mistakes debug:', {
-      mainLineLength: mainLine.length,
-      hasEnoughAnalysis,
-      requiredDepth: minimumDepthForMistakeDetection,
-      allNodeDepths: mainLine.map((node, i) => {
-        const chess = new Chess(node.fen)
-        const isTerminal = chess.gameOver()
-        return {
-          index: i,
-          move: node.move || 'root',
-          depth: node.analysis.stockfish?.depth ?? 0,
-          hasStockfish: !!node.analysis.stockfish,
-          isTerminal,
-          meetsCriteria: !node.move || isTerminal || (node.analysis.stockfish?.depth ?? 0) >= minimumDepthForMistakeDetection
-        }
-      }),
-      terminalPositions: mainLine.filter(node => {
-        if (!node.move) return false
-        const chess = new Chess(node.fen)
-        return chess.gameOver()
-      }).length,
-      nodesMissingDepth: mainLine.filter(node => {
-        if (!node.move) return false
-        const chess = new Chess(node.fen)
-        if (chess.gameOver()) return false
-        return (node.analysis.stockfish?.depth ?? 0) < minimumDepthForMistakeDetection
-      }).length
-    })
-
-    if (hasEnoughAnalysis) {
-      // Game already has enough analysis, initialize immediately
-      console.log('Initializing learn from mistakes immediately')
-      initializeLearnFromMistakes()
-      return Promise.resolve()
-    } else {
-      // Need to analyze the game first
-      console.log('Starting game analysis first')
-      await startGameAnalysis(LEARN_FROM_MISTAKES_DEPTH)
-
-      // Wait for analysis to complete
-      return new Promise<void>((resolve) => {
-        const checkComplete = () => {
-          if (
-            gameAnalysisProgress.isComplete ||
-            gameAnalysisProgress.isCancelled
-          ) {
-            if (gameAnalysisProgress.isComplete) {
-              initializeLearnFromMistakes()
-            }
-            resolve()
-          } else {
-            setTimeout(checkComplete, 500)
-          }
-        }
-        checkComplete()
+        return (
+          (node.analysis.stockfish?.depth ?? 0) >=
+          minimumDepthForMistakeDetection
+        )
       })
-    }
-  }, [gameAnalysisProgress, startGameAnalysis, game.tree])
 
-  const initializeLearnFromMistakes = useCallback(() => {
-    console.log('initializeLearnFromMistakes called')
-    // Determine which player to analyze based on the current user
-    // For now, we'll analyze the user playing as white by default
-    // This could be enhanced to detect which player is the user
-    const playerColor: 'white' | 'black' = 'white' // This could be made configurable
+      if (hasEnoughAnalysis) {
+        // Game already has enough analysis, initialize immediately
+        initializeLearnFromMistakesWithColor(playerColor)
+        return Promise.resolve()
+      } else {
+        // Need to analyze the game first
+        await startGameAnalysis(LEARN_FROM_MISTAKES_DEPTH)
 
-    const mistakes = extractPlayerMistakes(game.tree, playerColor)
-    console.log('Extracted mistakes:', mistakes.length, mistakes)
+        // Wait for analysis to complete
+        return new Promise<void>((resolve) => {
+          const checkComplete = () => {
+            if (
+              gameAnalysisProgress.isComplete ||
+              gameAnalysisProgress.isCancelled
+            ) {
+              if (gameAnalysisProgress.isComplete) {
+                initializeLearnFromMistakesWithColor(playerColor)
+              }
+              resolve()
+            } else {
+              setTimeout(checkComplete, 500)
+            }
+          }
+          checkComplete()
+        })
+      }
+    },
+    [gameAnalysisProgress, startGameAnalysis, game.tree],
+  )
 
-    if (mistakes.length === 0) {
-      // No mistakes found - could show a message
-      console.log('No mistakes found for player:', playerColor)
-      return
-    }
+  const initializeLearnFromMistakesWithColor = useCallback(
+    (playerColor: 'white' | 'black') => {
+      const mistakes = extractPlayerMistakes(game.tree, playerColor)
 
-    // Navigate to the first mistake position (the position where the player needs to move)
-    const firstMistake = mistakes[0]
-    const mistakeNode = game.tree.getMainLine()[firstMistake.moveIndex]
-    const originalPosition =
-      mistakeNode && mistakeNode.parent ? mistakeNode.parent.fen : null
+      if (mistakes.length === 0) {
+        // No mistakes found - show toast and reset state
+        const colorName = playerColor === 'white' ? 'White' : 'Black'
+        toast(`No clear mistakes made by ${colorName}`, {
+          icon: '👑',
+          duration: 3000,
+        })
 
-    console.log('Setting up first mistake:', {
-      firstMistake,
-      mistakeNode: mistakeNode?.move,
-      originalPosition: originalPosition?.slice(0, 20) + '...'
-    })
+        setLearnFromMistakesState({
+          isActive: false,
+          showPlayerSelection: false,
+          selectedPlayerColor: null,
+          currentMistakeIndex: 0,
+          mistakes: [],
+          hasCompletedAnalysis: false,
+          showSolution: false,
+          currentAttempt: 1,
+          maxAttempts: Infinity,
+          originalPosition: null,
+        })
+        return
+      }
 
-    setLearnFromMistakesState({
-      isActive: true,
-      currentMistakeIndex: 0,
-      mistakes,
-      hasCompletedAnalysis: true,
-      showSolution: false,
-      currentAttempt: 1,
-      maxAttempts: Infinity,
-      originalPosition,
-    })
+      // Navigate to the first mistake position (the position where the player needs to move)
+      const firstMistake = mistakes[0]
+      const mistakeNode = game.tree.getMainLine()[firstMistake.moveIndex]
+      const originalPosition =
+        mistakeNode && mistakeNode.parent ? mistakeNode.parent.fen : null
 
-    if (mistakeNode && mistakeNode.parent) {
-      console.log('Navigating to mistake parent position')
-      controller.setCurrentNode(mistakeNode.parent)
-    }
-  }, [game.tree, controller])
+      setLearnFromMistakesState({
+        isActive: true,
+        showPlayerSelection: false,
+        selectedPlayerColor: playerColor,
+        currentMistakeIndex: 0,
+        mistakes,
+        hasCompletedAnalysis: true,
+        showSolution: false,
+        currentAttempt: 1,
+        maxAttempts: Infinity,
+        originalPosition,
+      })
+
+      if (mistakeNode && mistakeNode.parent) {
+        controller.setCurrentNode(mistakeNode.parent)
+      }
+    },
+    [game.tree, controller],
+  )
 
   const stopLearnFromMistakes = useCallback(() => {
     setLearnFromMistakesState({
       isActive: false,
+      showPlayerSelection: false,
+      selectedPlayerColor: null,
       currentMistakeIndex: 0,
       mistakes: [],
       hasCompletedAnalysis: false,
@@ -775,6 +770,7 @@ export const useAnalysisController = (
     learnFromMistakes: {
       state: learnFromMistakesState,
       start: startLearnFromMistakes,
+      startWithColor: startLearnFromMistakesWithColor,
       stop: stopLearnFromMistakes,
       showSolution,
       goToNext: goToNextMistake,

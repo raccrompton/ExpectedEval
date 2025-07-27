@@ -37,6 +37,7 @@ interface Props {
   onShowSolution?: () => void
   onNextMistake?: () => void
   onStopLearnFromMistakes?: () => void
+  onSelectPlayer?: (color: 'white' | 'black') => void
   lastMoveResult?: 'correct' | 'incorrect' | 'not-learning'
 }
 
@@ -58,6 +59,7 @@ export const ConfigurableScreens: React.FC<Props> = ({
   onShowSolution,
   onNextMistake,
   onStopLearnFromMistakes,
+  onSelectPlayer,
   lastMoveResult,
 }) => {
   const screens = [
@@ -77,14 +79,14 @@ export const ConfigurableScreens: React.FC<Props> = ({
   if (
     isLearnFromMistakesActive &&
     learnFromMistakesState &&
-    learnFromMistakesCurrentInfo
+    (learnFromMistakesCurrentInfo || learnFromMistakesState.showPlayerSelection)
   ) {
     return (
       <div className="flex w-full flex-1 flex-col overflow-hidden bg-background-1/60 md:w-auto md:rounded">
         <div className="red-scrollbar background-1/60 flex flex-1 flex-col items-start justify-start overflow-y-scroll">
           <LearnFromMistakes
             state={learnFromMistakesState}
-            currentInfo={learnFromMistakesCurrentInfo}
+            currentInfo={learnFromMistakesCurrentInfo || null}
             onShowSolution={
               onShowSolution ||
               (() => {
@@ -99,6 +101,12 @@ export const ConfigurableScreens: React.FC<Props> = ({
             }
             onStop={
               onStopLearnFromMistakes ||
+              (() => {
+                /* no-op */
+              })
+            }
+            onSelectPlayer={
+              onSelectPlayer ||
               (() => {
                 /* no-op */
               })

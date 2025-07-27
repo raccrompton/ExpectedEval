@@ -474,6 +474,14 @@ const Analysis: React.FC<Props> = ({
     setAnalysisEnabled(false) // Auto-disable analysis when going to next mistake
   }, [controller.learnFromMistakes])
 
+  const handleSelectPlayer = useCallback(
+    (color: 'white' | 'black') => {
+      controller.learnFromMistakes.startWithColor(color)
+      setAnalysisEnabled(false) // Auto-disable analysis when starting learn mode
+    },
+    [controller.learnFromMistakes],
+  )
+
   // Create empty data structures for when analysis is disabled
   const emptyBlunderMeterData = useMemo(
     () => ({
@@ -924,6 +932,7 @@ const Analysis: React.FC<Props> = ({
             onShowSolution={handleShowSolution}
             onNextMistake={handleNextMistake}
             onStopLearnFromMistakes={handleStopLearnFromMistakes}
+            onSelectPlayer={handleSelectPlayer}
             lastMoveResult={lastMoveResult}
           />
         </motion.div>
@@ -1363,6 +1372,7 @@ const Analysis: React.FC<Props> = ({
               onShowSolution={handleShowSolution}
               onNextMistake={handleNextMistake}
               onStopLearnFromMistakes={handleStopLearnFromMistakes}
+              onSelectPlayer={handleSelectPlayer}
               lastMoveResult={lastMoveResult}
             />
           </motion.div>
