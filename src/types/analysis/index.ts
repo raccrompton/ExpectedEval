@@ -156,6 +156,8 @@ export interface MistakePosition {
 
 export interface LearnFromMistakesState {
   isActive: boolean
+  showPlayerSelection: boolean
+  selectedPlayerColor: 'white' | 'black' | null
   currentMistakeIndex: number
   mistakes: MistakePosition[]
   hasCompletedAnalysis: boolean
