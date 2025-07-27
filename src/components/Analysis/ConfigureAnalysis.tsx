@@ -11,7 +11,9 @@ interface Props {
   game: AnalyzedGame
   onDeleteCustomGame?: () => void
   onAnalyzeEntireGame?: () => void
+  onLearnFromMistakes?: () => void
   isAnalysisInProgress?: boolean
+  isLearnFromMistakesActive?: boolean
   autoSave?: {
     hasUnsavedChanges: boolean
     isSaving: boolean
@@ -27,7 +29,9 @@ export const ConfigureAnalysis: React.FC<Props> = ({
   game,
   onDeleteCustomGame,
   onAnalyzeEntireGame,
+  onLearnFromMistakes,
   isAnalysisInProgress = false,
+  isLearnFromMistakesActive = false,
   autoSave,
 }: Props) => {
   const isCustomGame = game.type === 'custom-pgn' || game.type === 'custom-fen'
@@ -55,8 +59,8 @@ export const ConfigureAnalysis: React.FC<Props> = ({
       {onAnalyzeEntireGame && (
         <button
           onClick={onAnalyzeEntireGame}
-          disabled={isAnalysisInProgress}
-          className="flex w-full items-center gap-1.5 rounded-sm bg-human-4/60 !px-2 !py-1 !text-sm text-primary/70 transition duration-200 hover:bg-human-4/80 hover:text-primary"
+          disabled={isAnalysisInProgress || isLearnFromMistakesActive}
+          className="flex w-full items-center gap-1.5 rounded-sm bg-human-4/60 !px-2 !py-1 !text-sm text-primary/70 transition duration-200 hover:bg-human-4/80 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           <div className="flex items-center justify-center gap-1.5">
             <span className="material-symbols-outlined !text-sm">
@@ -66,6 +70,22 @@ export const ConfigureAnalysis: React.FC<Props> = ({
               {isAnalysisInProgress
                 ? 'Analysis in progress...'
                 : 'Analyze entire game'}
+            </span>
+          </div>
+        </button>
+      )}
+      {onLearnFromMistakes && (
+        <button
+          onClick={onLearnFromMistakes}
+          disabled={isAnalysisInProgress || isLearnFromMistakesActive}
+          className="flex w-full items-center gap-1.5 rounded-sm bg-human-4/60 !px-2 !py-1 !text-sm text-primary/70 transition duration-200 hover:bg-human-4/80 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <div className="flex items-center justify-center gap-1.5">
+            <span className="material-symbols-outlined !text-sm">school</span>
+            <span className="text-xs">
+              {isLearnFromMistakesActive
+                ? 'Learning in progress...'
+                : 'Learn from mistakes'}
             </span>
           </div>
         </button>

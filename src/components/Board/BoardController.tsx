@@ -17,6 +17,7 @@ interface Props {
   disableFlip?: boolean
   disablePrevious?: boolean
   disableKeyboardNavigation?: boolean
+  disableNavigation?: boolean
 }
 
 export const BoardController: React.FC<Props> = ({
@@ -33,6 +34,7 @@ export const BoardController: React.FC<Props> = ({
   disableFlip = false,
   disablePrevious = false,
   disableKeyboardNavigation = false,
+  disableNavigation = false,
 }: Props) => {
   const { width } = useWindowSize()
 
@@ -134,29 +136,29 @@ export const BoardController: React.FC<Props> = ({
         {FlipIcon}
       </button>
       <button
-        onClick={getFirst}
-        disabled={!hasPrevious || disablePrevious}
+        onClick={disableNavigation ? undefined : getFirst}
+        disabled={!hasPrevious || disablePrevious || disableNavigation}
         className="flex h-7 flex-1 items-center justify-center bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40 md:rounded-sm"
       >
         &#8249;&#8249;&#8249;
       </button>
       <button
-        onClick={getPrevious}
-        disabled={!hasPrevious || disablePrevious}
+        onClick={disableNavigation ? undefined : getPrevious}
+        disabled={!hasPrevious || disablePrevious || disableNavigation}
         className="flex h-7 flex-1 items-center justify-center bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40 md:rounded-sm"
       >
         &#8249;
       </button>
       <button
-        onClick={getNext}
-        disabled={!hasNext}
+        onClick={disableNavigation ? undefined : getNext}
+        disabled={!hasNext || disableNavigation}
         className="flex h-7 flex-1 items-center justify-center bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40 md:rounded-sm"
       >
         &#8250;
       </button>
       <button
-        onClick={getLast}
-        disabled={!hasNext}
+        onClick={disableNavigation ? undefined : getLast}
+        disabled={!hasNext || disableNavigation}
         className="flex h-7 flex-1 items-center justify-center bg-button-secondary transition duration-200 hover:bg-human-3 disabled:bg-button-secondary/40 md:rounded-sm"
       >
         &#8250;&#8250;&#8250;
