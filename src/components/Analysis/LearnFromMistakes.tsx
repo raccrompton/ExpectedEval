@@ -66,56 +66,59 @@ export const LearnFromMistakes: React.FC<Props> = ({
   }
 
   return (
-    <div className="flex w-full flex-col gap-3">
-      <div className="flex flex-col gap-3">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-xl text-human-4">
-              school
-            </span>
-            <h3 className="font-semibold text-primary">Learn from Mistakes</h3>
-            <span className="text-xs text-secondary">({progress})</span>
-          </div>
-          <button
-            onClick={onStop}
-            className="flex items-center gap-1 rounded bg-background-2 px-2 py-1 text-xs text-secondary transition duration-200 hover:bg-background-3 hover:text-primary"
-          >
-            <span className="material-symbols-outlined !text-sm">close</span>
-            Stop
-          </button>
-        </div>
-
-        {/* Main prompt */}
-        <div>
-          <p className="text-sm text-primary">{getPromptText()}</p>
-          {getFeedbackText() && (
-            <p
-              className={`mt-2 text-sm ${
-                state.showSolution
-                  ? 'text-green-400'
-                  : lastMoveResult === 'incorrect'
-                    ? 'text-orange-400'
-                    : 'text-primary'
-              }`}
+    <div className="flex h-full w-full flex-col gap-2">
+      <div className="flex h-full flex-col justify-between">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined !text-sm text-primary">
+                school
+              </span>
+              <h3 className="text-sm font-medium text-primary">
+                Learn from your mistakes
+              </h3>
+              <span className="mt-1 text-xxs text-secondary">({progress})</span>
+            </div>
+            <button
+              onClick={onStop}
+              className="flex items-center gap-1 rounded bg-background-1 px-2 py-1 text-xxs text-secondary transition duration-200 hover:bg-background-2/60 hover:text-primary"
             >
-              {getFeedbackText()}
-            </p>
-          )}
+              <span className="material-symbols-outlined !text-xxs">close</span>
+              Stop
+            </button>
+          </div>
+
+          {/* Main prompt */}
+          <div className="flex flex-col gap-2 px-3 py-1">
+            <p className="text-xs text-secondary">{getPromptText()}</p>
+            {getFeedbackText() && (
+              <p
+                className={`text-xs ${
+                  state.showSolution
+                    ? 'text-green-400'
+                    : lastMoveResult === 'incorrect'
+                      ? 'text-orange-400/80'
+                      : 'text-primary'
+                }`}
+              >
+                {getFeedbackText()}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-2">
+        <div className="flex w-full gap-2 p-3">
           {!state.showSolution && lastMoveResult !== 'correct' ? (
             <>
               <button
                 onClick={onShowSolution}
-                className="flex items-center gap-1.5 rounded bg-human-4/60 px-3 py-1.5 text-sm text-primary/70 transition duration-200 hover:bg-human-4/80 hover:text-primary"
+                className="flex items-center gap-1.5 rounded bg-human-4/80 px-3 py-1.5 text-sm text-primary/70 transition duration-200 hover:bg-human-4 hover:text-primary"
               >
                 <span className="material-symbols-outlined !text-sm">
                   lightbulb
                 </span>
-                Show me the solution
+                See solution
               </button>
               {!isLastMistake && (
                 <button
@@ -125,7 +128,7 @@ export const LearnFromMistakes: React.FC<Props> = ({
                   <span className="material-symbols-outlined !text-sm">
                     skip_next
                   </span>
-                  Skip to next mistake
+                  Skip
                 </button>
               )}
             </>
@@ -134,7 +137,7 @@ export const LearnFromMistakes: React.FC<Props> = ({
               onClick={onNext}
               className="flex items-center gap-1.5 rounded bg-human-4/60 px-3 py-1.5 text-sm text-primary/70 transition duration-200 hover:bg-human-4/80 hover:text-primary"
             >
-              <span className="material-symbols-outlined !text-sm">
+              <span className="material-symbols-outlined !text-base">
                 {isLastMistake ? 'check' : 'arrow_forward'}
               </span>
               {isLastMistake ? 'Finish' : 'Next mistake'}

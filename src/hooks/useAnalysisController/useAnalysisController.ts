@@ -331,9 +331,62 @@ export const useAnalysisController = (
 
   // Learn from mistakes functions
   const startLearnFromMistakes = useCallback(async () => {
-    // First, ensure the entire game is analyzed at the required depth
-    if (!gameAnalysisProgress.isComplete) {
-      // Start analysis first
+    // Check if we have sufficient analysis for learn from mistakes
+    const mainLine = game.tree.getMainLine()
+    // For learn from mistakes, we need reasonable analysis (depth >= 12) rather than requiring exact depth 15
+    // Most games are analyzed at depth 18 by default, so this should work
+    const minimumDepthForMistakeDetection = 12
+    const hasEnoughAnalysis = mainLine.every(
+      (node) => {
+        // Skip root node (no move)
+        if (!node.move) return true
+        
+        // Skip terminal positions (checkmate/stalemate) - they don't need analysis
+        const chess = new Chess(node.fen)
+        if (chess.gameOver()) return true
+        
+        // Check if this position has sufficient analysis depth
+        return (node.analysis.stockfish?.depth ?? 0) >= minimumDepthForMistakeDetection
+      }
+    )
+
+    console.log('Learn from mistakes debug:', {
+      mainLineLength: mainLine.length,
+      hasEnoughAnalysis,
+      requiredDepth: minimumDepthForMistakeDetection,
+      allNodeDepths: mainLine.map((node, i) => {
+        const chess = new Chess(node.fen)
+        const isTerminal = chess.gameOver()
+        return {
+          index: i,
+          move: node.move || 'root',
+          depth: node.analysis.stockfish?.depth ?? 0,
+          hasStockfish: !!node.analysis.stockfish,
+          isTerminal,
+          meetsCriteria: !node.move || isTerminal || (node.analysis.stockfish?.depth ?? 0) >= minimumDepthForMistakeDetection
+        }
+      }),
+      terminalPositions: mainLine.filter(node => {
+        if (!node.move) return false
+        const chess = new Chess(node.fen)
+        return chess.gameOver()
+      }).length,
+      nodesMissingDepth: mainLine.filter(node => {
+        if (!node.move) return false
+        const chess = new Chess(node.fen)
+        if (chess.gameOver()) return false
+        return (node.analysis.stockfish?.depth ?? 0) < minimumDepthForMistakeDetection
+      }).length
+    })
+
+    if (hasEnoughAnalysis) {
+      // Game already has enough analysis, initialize immediately
+      console.log('Initializing learn from mistakes immediately')
+      initializeLearnFromMistakes()
+      return Promise.resolve()
+    } else {
+      // Need to analyze the game first
+      console.log('Starting game analysis first')
       await startGameAnalysis(LEARN_FROM_MISTAKES_DEPTH)
 
       // Wait for analysis to complete
@@ -353,21 +406,22 @@ export const useAnalysisController = (
         }
         checkComplete()
       })
-    } else {
-      initializeLearnFromMistakes()
     }
-  }, [gameAnalysisProgress, startGameAnalysis])
+  }, [gameAnalysisProgress, startGameAnalysis, game.tree])
 
   const initializeLearnFromMistakes = useCallback(() => {
+    console.log('initializeLearnFromMistakes called')
     // Determine which player to analyze based on the current user
     // For now, we'll analyze the user playing as white by default
     // This could be enhanced to detect which player is the user
     const playerColor: 'white' | 'black' = 'white' // This could be made configurable
 
     const mistakes = extractPlayerMistakes(game.tree, playerColor)
+    console.log('Extracted mistakes:', mistakes.length, mistakes)
 
     if (mistakes.length === 0) {
       // No mistakes found - could show a message
+      console.log('No mistakes found for player:', playerColor)
       return
     }
 
@@ -376,6 +430,12 @@ export const useAnalysisController = (
     const mistakeNode = game.tree.getMainLine()[firstMistake.moveIndex]
     const originalPosition =
       mistakeNode && mistakeNode.parent ? mistakeNode.parent.fen : null
+
+    console.log('Setting up first mistake:', {
+      firstMistake,
+      mistakeNode: mistakeNode?.move,
+      originalPosition: originalPosition?.slice(0, 20) + '...'
+    })
 
     setLearnFromMistakesState({
       isActive: true,
@@ -389,6 +449,7 @@ export const useAnalysisController = (
     })
 
     if (mistakeNode && mistakeNode.parent) {
+      console.log('Navigating to mistake parent position')
       controller.setCurrentNode(mistakeNode.parent)
     }
   }, [game.tree, controller])
@@ -429,7 +490,7 @@ export const useAnalysisController = (
         chess.fen(),
         currentMistake.bestMove,
         currentMistake.bestMoveSan,
-        controller.currentMaiaModel,
+        currentMaiaModel,
       )
       controller.goToNode(newVariation)
     }
