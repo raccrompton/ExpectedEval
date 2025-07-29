@@ -60,14 +60,10 @@ const PlayMaia: React.FC<Props> = ({
             game={controller.game}
             playerActive={controller.playerActive}
             gameOver={!!controller.game.termination}
-            resign={
-              controller.playerActive
-                ? () => {
-                    controller.updateClock()
-                    controller.setResigned(true)
-                  }
-                : undefined
-            }
+            resign={() => {
+              controller.updateClock()
+              controller.setResigned(true)
+            }}
             playAgain={playAgain}
             simulateMaiaTime={simulateMaiaTime}
             setSimulateMaiaTime={setSimulateMaiaTime}
