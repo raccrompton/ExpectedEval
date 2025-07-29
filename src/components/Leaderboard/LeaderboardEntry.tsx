@@ -7,8 +7,8 @@ import { useLeaderboardContext } from './LeaderboardContext'
 
 interface Props {
   index: number
-  typeId: 'regular' | 'train' | 'turing' | 'hand' | 'brain'
-  type: 'Regular' | 'Train' | 'Bot/Not' | 'Hand' | 'Brain'
+  typeId: 'regular' | 'puzzles' | 'turing' | 'hand' | 'brain'
+  type: 'Regular' | 'Puzzles' | 'Bot/Not' | 'Hand' | 'Brain'
   display_name: string
   elo: number
 }
@@ -63,7 +63,7 @@ export const LeaderboardEntry = ({
       gamesKey = 'regularGames'
       gamesWonKey = 'regularWins'
       break
-    case 'train':
+    case 'puzzles':
       ratingKey = 'trainRating'
       highestRatingKey = 'trainMax'
       gamesKey = 'trainGames'

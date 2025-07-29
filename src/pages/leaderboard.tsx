@@ -20,8 +20,8 @@ const Leaderboard: React.FC = () => {
     {
       icon: React.JSX.Element
       ranking: { display_name: string; elo: number }[]
-      name: 'Regular' | 'Train' | 'Bot/Not' | 'Hand' | 'Brain'
-      id: 'regular' | 'train' | 'turing' | 'hand' | 'brain'
+      name: 'Regular' | 'Puzzles' | 'Bot/Not' | 'Hand' | 'Brain'
+      id: 'regular' | 'puzzles' | 'turing' | 'hand' | 'brain'
     }[]
   >()
 
@@ -55,9 +55,9 @@ const Leaderboard: React.FC = () => {
         ranking: lb.play_leaders,
       },
       {
-        id: 'train',
+        id: 'puzzles',
         icon: <TrainIcon />,
-        name: 'Train',
+        name: 'Puzzles',
         ranking: lb.puzzles_leaders,
       },
       {
