@@ -84,6 +84,9 @@ const TrainPage: NextPage = () => {
   >([])
   const [initialTourCheck, setInitialTourCheck] = useState(false)
   const [loadingGame, setLoadingGame] = useState(false)
+  const [lastAttemptedMove, setLastAttemptedMove] = useState<string | null>(
+    null,
+  )
 
   useEffect(() => {
     if (!initialTourCheck && tourState.ready) {
@@ -108,6 +111,7 @@ const TrainPage: NextPage = () => {
 
     setStatus('default')
     setUserGuesses([])
+    setLastAttemptedMove(null)
     setCurrentIndex(trainingGames.length)
     setTrainingGames(trainingGames.concat([game]))
     setPreviousGameResults(previousGameResults.concat([{ ...game }]))
@@ -242,6 +246,8 @@ const TrainPage: NextPage = () => {
         stats={stats}
         getNewGame={getNewGame}
         logGuess={logGuess}
+        lastAttemptedMove={lastAttemptedMove}
+        setLastAttemptedMove={setLastAttemptedMove}
         gamesController={
           <>
             <div className="relative bottom-0 flex h-full min-h-[38px] flex-1 flex-col justify-end overflow-auto">
@@ -277,6 +283,8 @@ interface Props {
     setStatus: Dispatch<SetStateAction<Status>>,
     rating: number,
   ) => void
+  lastAttemptedMove: string | null
+  setLastAttemptedMove: Dispatch<SetStateAction<string | null>>
 }
 
 const Train: React.FC<Props> = ({
@@ -287,6 +295,8 @@ const Train: React.FC<Props> = ({
   setStatus,
   getNewGame,
   logGuess,
+  lastAttemptedMove,
+  setLastAttemptedMove,
 }: Props) => {
   const controller = useTrainingController(trainingGame)
 
@@ -382,10 +392,11 @@ const Train: React.FC<Props> = ({
     (square: Key) => {
       if (!analysisEnabled && !showAnalysis) {
         controller.reset()
+        setLastAttemptedMove(null)
         setStatus('default')
       }
     },
-    [controller, analysisEnabled, showAnalysis],
+    [controller, analysisEnabled, showAnalysis, setLastAttemptedMove],
   )
 
   const onPlayerMakeMove = useCallback(
@@ -449,6 +460,19 @@ const Train: React.FC<Props> = ({
         }
 
         const moveUci = playedMove[0] + playedMove[1]
+
+        // Capture the SAN notation before making the move
+        const chess = new Chess(controller.currentNode.fen)
+        const moveAttempt = chess.move({
+          from: moveUci.slice(0, 2),
+          to: moveUci.slice(2, 4),
+          promotion: moveUci[4] ? (moveUci[4] as PieceSymbol) : undefined,
+        })
+
+        if (moveAttempt) {
+          setLastAttemptedMove(moveAttempt.san)
+        }
+
         controller.onPlayerGuess(moveUci)
 
         const currentStatus = status as Status
@@ -516,6 +540,18 @@ const Train: React.FC<Props> = ({
         }
       } else {
         // In puzzle mode
+        // Capture the SAN notation before making the move
+        const chess = new Chess(controller.currentNode.fen)
+        const moveAttempt = chess.move({
+          from: moveUci.slice(0, 2),
+          to: moveUci.slice(2, 4),
+          promotion: piece as PieceSymbol,
+        })
+
+        if (moveAttempt) {
+          setLastAttemptedMove(moveAttempt.san)
+        }
+
         controller.onPlayerGuess(moveUci)
 
         const currentStatus = status as Status
@@ -817,6 +853,8 @@ const Train: React.FC<Props> = ({
               setAndGiveUp={setAndGiveUp}
               controller={controller}
               getNewGame={getNewGame}
+              lastAttemptedMove={lastAttemptedMove}
+              setLastAttemptedMove={setLastAttemptedMove}
             />
           </div>
         </motion.div>
@@ -974,6 +1012,8 @@ const Train: React.FC<Props> = ({
                 controller={controller}
                 setAndGiveUp={setAndGiveUp}
                 getNewGame={getNewGame}
+                lastAttemptedMove={lastAttemptedMove}
+                setLastAttemptedMove={setLastAttemptedMove}
               />
             </div>
             <StatsDisplay stats={stats} />
