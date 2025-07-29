@@ -12,6 +12,8 @@ interface Props {
   getNewGame: () => Promise<void>
   setStatus: Dispatch<SetStateAction<Status>>
   controller: ReturnType<typeof useTrainingController>
+  lastAttemptedMove: string | null
+  setLastAttemptedMove: Dispatch<SetStateAction<string | null>>
 }
 
 export const Feedback: React.FC<Props> = ({
@@ -21,6 +23,8 @@ export const Feedback: React.FC<Props> = ({
   getNewGame,
   setAndGiveUp,
   controller: controller,
+  lastAttemptedMove,
+  setLastAttemptedMove,
 }: Props) => {
   const { targetIndex } = game
 
@@ -37,12 +41,12 @@ export const Feedback: React.FC<Props> = ({
   Find the best move for **${turn}**!
   `
   const incorrectContent = `
-  ##### ${controller.currentNode.san} is incorrect
+  ##### ${lastAttemptedMove || 'Move'} is incorrect
   Try again or give up to analyze the board and see the best move.
   `
 
   const correctContent = `
-  ##### Correct! ${controller.currentNode.san} is the best move.
+  ##### Correct! ${lastAttemptedMove || 'Move'} is the best move.
   You can now explore and analyze the position by making moves, or train on another position.
   `
 
@@ -93,6 +97,7 @@ export const Feedback: React.FC<Props> = ({
               <button
                 onClick={() => {
                   setStatus('default')
+                  setLastAttemptedMove(null)
                   controller.reset()
                 }}
                 className="flex w-full justify-center rounded-sm bg-engine-3 py-1.5 text-sm font-medium text-primary transition duration-300 hover:bg-engine-4 disabled:bg-backdrop disabled:text-secondary"
