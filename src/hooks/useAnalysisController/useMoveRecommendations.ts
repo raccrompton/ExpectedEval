@@ -68,9 +68,14 @@ export const useMoveRecommendations = (
     if (!maia) return
 
     // Get top 3 Maia moves from selected rating level
-    for (const move of Object.keys(maia[currentMaiaModel].policy).slice(0, 3)) {
-      if (candidates.find((c) => c[0] === move)) continue
-      candidates.push([move, move])
+    if (maia[currentMaiaModel]?.policy) {
+      for (const move of Object.keys(maia[currentMaiaModel].policy).slice(
+        0,
+        3,
+      )) {
+        if (candidates.find((c) => c[0] === move)) continue
+        candidates.push([move, move])
+      }
     }
 
     // Get top 3 Stockfish moves
@@ -83,9 +88,12 @@ export const useMoveRecommendations = (
 
     // Get top Maia move from each rating level
     for (const rating of MAIA_MODELS) {
-      const move = Object.keys(maia[rating].policy)[0]
-      if (candidates.find((c) => c[0] === move)) continue
-      candidates.push([move, move])
+      if (maia[rating]?.policy) {
+        const move = Object.keys(maia[rating].policy)[0]
+        if (move && !candidates.find((c) => c[0] === move)) {
+          candidates.push([move, move])
+        }
+      }
     }
 
     const data = []
@@ -95,7 +103,7 @@ export const useMoveRecommendations = (
       }
 
       for (const move of candidates) {
-        const probability = maia[rating].policy[move[0]] * 100
+        const probability = (maia[rating]?.policy?.[move[0]] || 0) * 100
         entry[move[1]] = probability
       }
 

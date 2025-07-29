@@ -51,7 +51,8 @@ export const useEngineAnalysis = (
     const attemptMaiaAnalysis = async () => {
       if (
         !currentNode ||
-        currentNode.analysis.maia ||
+        (currentNode.analysis.maia &&
+          Object.keys(currentNode.analysis.maia).length > 0) ||
         inProgressAnalyses.has(nodeFen)
       )
         return
