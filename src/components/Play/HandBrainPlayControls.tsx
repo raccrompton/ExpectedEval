@@ -149,21 +149,29 @@ export const HandBrainPlayControls: React.FC<Props> = ({
             {offerDraw ? (
               <button
                 onClick={offerDraw}
-                className="flex w-full justify-center rounded bg-engine-3 py-2 text-primary transition duration-200 hover:bg-engine-4"
+                disabled={!playerActive}
+                className={`flex w-full justify-center rounded px-4 py-2 text-primary transition duration-200 ${
+                  playerActive
+                    ? 'bg-engine-3 hover:bg-engine-4'
+                    : 'cursor-not-allowed bg-background-2 text-primary/50'
+                }`}
               >
                 <p className="font-medium uppercase tracking-wide">
                   Offer draw
                 </p>
               </button>
             ) : null}
-            {resign ? (
-              <button
-                onClick={resign}
-                className="flex w-full justify-center rounded bg-human-3 px-4 py-1.5 text-primary transition duration-200 hover:bg-human-4"
-              >
-                <p className="text-sm font-medium">Resign</p>
-              </button>
-            ) : null}
+            <button
+              onClick={resign}
+              disabled={!resign || !playerActive}
+              className={`flex w-full justify-center rounded px-4 py-1.5 text-primary transition duration-200 ${
+                resign && playerActive
+                  ? 'bg-human-3 hover:bg-human-4'
+                  : 'cursor-not-allowed bg-background-2 text-primary/50'
+              }`}
+            >
+              <p className="text-sm font-medium">Resign</p>
+            </button>
           </div>
         )}
       </div>
