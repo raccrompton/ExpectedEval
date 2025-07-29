@@ -2,8 +2,8 @@ import React from 'react'
 import { LeaderboardEntry } from 'src/components'
 
 interface Props {
-  id: 'regular' | 'train' | 'turing' | 'hand' | 'brain'
-  name: 'Regular' | 'Train' | 'Bot/Not' | 'Hand' | 'Brain'
+  id: 'regular' | 'puzzles' | 'turing' | 'hand' | 'brain'
+  name: 'Regular' | 'Puzzles' | 'Bot/Not' | 'Hand' | 'Brain'
   icon: React.JSX.Element
   ranking: {
     display_name: string
