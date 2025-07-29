@@ -38,6 +38,7 @@ const PlayHandBrain: React.FC<Props> = ({
     <PlayControllerContext.Provider value={controller}>
       <GameplayInterface boardShapes={controller.boardShapes}>
         <HandBrainPlayControls
+          game={controller.game}
           playerActive={controller.playerActive}
           gameOver={!!controller.game.termination}
           isBrain={playGameConfig.isBrain}

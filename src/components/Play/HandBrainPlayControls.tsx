@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/alt-text */
 import { PieceSymbol } from 'chess.ts'
 
-import { Color } from 'src/types'
+import { BaseGame, Color } from 'src/types'
 
 const pieceTypes: PieceSymbol[] = ['k', 'q', 'r', 'b', 'n', 'p']
 
@@ -22,6 +22,7 @@ const pieceColorMap: { [key: string]: string } = {
 }
 
 interface Props {
+  game: BaseGame
   isBrain: boolean
   color: Color
   movablePieceTypes: PieceSymbol[]
@@ -37,6 +38,7 @@ interface Props {
 }
 
 export const HandBrainPlayControls: React.FC<Props> = ({
+  game,
   playerActive,
   gameOver,
   isBrain,
@@ -61,110 +63,175 @@ export const HandBrainPlayControls: React.FC<Props> = ({
     : 'Waiting for opponent'
 
   return (
-    <div>
-      <div
-        id="play-controls"
-        className="flex flex-col items-center justify-center p-6"
-      >
+    <div className="flex h-full w-full flex-col border-white/40 bg-background-1">
+      <div id="play-controls" className="flex h-full flex-col">
         {gameOver ? (
-          <>
+          <div className="flex flex-col gap-2 p-4">
+            {game.id ? (
+              <button
+                onClick={() => {
+                  window.open(
+                    `/analysis/${game.id}/${isBrain ? 'brain' : 'hand'}`,
+                    '_blank',
+                  )
+                }}
+                className="flex items-center justify-center rounded border border-engine-2/20 bg-engine-3/5 px-4 py-2 text-sm font-semibold text-engine-1 transition-colors duration-200 hover:border-engine-2/50 hover:bg-engine-3/10"
+              >
+                ANALYZE GAME
+              </button>
+            ) : null}
             {playAgain ? (
               <button
                 onClick={playAgain}
-                className="flex w-full justify-center rounded bg-human-3 py-2 text-primary transition duration-200 hover:bg-human-4"
+                className="flex w-full items-center justify-center rounded border border-human-2/20 bg-human-3/5 px-4 py-2 text-sm font-semibold tracking-wider text-human-1 transition-colors duration-200 hover:border-human-2/50 hover:bg-human-3/10"
               >
-                Play again
-              </button>
-            ) : null}
-          </>
-        ) : (
-          <div className="flex w-full flex-col items-center justify-center gap-4">
-            <div className="flex flex-col items-center justify-center">
-              <p className="font-bold">{status}</p>
-              <h2 className="text-base">
-                {isBrain ? 'You are the brain' : 'You are the hand'}
-              </h2>
-            </div>
-            {isBrain ? (
-              <div className="flex w-full flex-wrap items-start justify-center gap-2">
-                {pieceTypes.map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => selectPiece(p)}
-                    disabled={
-                      movablePieceTypes.indexOf(p) == -1 ||
-                      !playerActive ||
-                      !!selectedPiece
-                    }
-                    className="flex h-16 w-16 items-center justify-center rounded border border-primary/10 bg-[#f0d9b5] disabled:bg-background-1"
-                  >
-                    <img
-                      src={`/assets/pieces/${pieceColorMap[color[0] + p]}.svg`}
-                    />
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="h-30 w-30 flex items-center justify-center">
-                {selectedPiece ? (
-                  <img
-                    src={`/assets/pieces/${pieceColorMap[color[0] + selectedPiece]}.svg`}
-                    className="h-20 w-20 rounded bg-[#f0d9b5] bg-contain"
-                  />
-                ) : null}
-              </div>
-            )}
-
-            {/* Maia timing toggle */}
-            {simulateMaiaTime !== undefined && setSimulateMaiaTime && (
-              <div className="w-full">
-                <div className="mb-2 text-center text-xs font-medium text-primary/70">
-                  Maia thinking time
-                </div>
-                <div className="flex w-full overflow-hidden rounded border border-primary/10">
-                  <button
-                    className={`flex-1 px-3 py-1 text-xs font-medium transition-all duration-200 ${
-                      !simulateMaiaTime
-                        ? 'bg-human-3 text-white'
-                        : 'bg-background-1 text-primary hover:bg-background-2'
-                    }`}
-                    onClick={() => setSimulateMaiaTime(false)}
-                  >
-                    Instant
-                  </button>
-                  <button
-                    className={`flex-1 px-3 py-1 text-xs font-medium transition-all duration-200 ${
-                      simulateMaiaTime
-                        ? 'bg-human-3 text-white'
-                        : 'bg-background-1 text-primary hover:bg-background-2'
-                    }`}
-                    onClick={() => setSimulateMaiaTime(true)}
-                  >
-                    Human-like
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {offerDraw ? (
-              <button
-                onClick={offerDraw}
-                className="flex w-full justify-center rounded bg-engine-3 py-2 text-primary transition duration-200 hover:bg-engine-4"
-              >
-                <p className="font-medium uppercase tracking-wide">
-                  Offer draw
-                </p>
-              </button>
-            ) : null}
-            {resign ? (
-              <button
-                onClick={resign}
-                className="flex w-full justify-center rounded bg-human-3 px-4 py-1.5 text-primary transition duration-200 hover:bg-human-4"
-              >
-                <p className="text-sm font-medium">Resign</p>
+                PLAY AGAIN
               </button>
             ) : null}
           </div>
+        ) : (
+          <>
+            {/* Status Section */}
+            <div className="border-b border-white/10 bg-background-1 p-3">
+              <div className="space-y-1 text-center">
+                <p
+                  className={`text-sm font-semibold uppercase tracking-wider ${
+                    playerActive ? 'text-human-1' : 'text-secondary'
+                  }`}
+                >
+                  {status}
+                </p>
+                <p className="text-xs font-medium text-secondary/70">
+                  {isBrain ? 'You are the brain' : 'You are the hand'}
+                </p>
+              </div>
+            </div>
+
+            {/* Piece Selection or Display */}
+            <div className="border-b border-white/5 bg-human-3/5 p-4">
+              {isBrain ? (
+                <div className="flex flex-col gap-3">
+                  <p className="text-center text-xs font-semibold uppercase tracking-wide text-human-2">
+                    SELECT PIECE
+                  </p>
+                  <div className="mx-auto grid max-w-48 grid-cols-3 gap-2">
+                    {pieceTypes.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => selectPiece(p)}
+                        disabled={
+                          movablePieceTypes.indexOf(p) == -1 ||
+                          !playerActive ||
+                          !!selectedPiece
+                        }
+                        className={`flex h-12 w-12 items-center justify-center border transition-colors duration-200 ${
+                          movablePieceTypes.indexOf(p) !== -1 &&
+                          playerActive &&
+                          !selectedPiece
+                            ? 'border-white/20 bg-[#f0d9b5] hover:border-white/30 hover:bg-[#e6d0a6]'
+                            : 'cursor-not-allowed border-white/5 bg-background-2 opacity-50'
+                        }`}
+                      >
+                        <img
+                          src={`/assets/pieces/${pieceColorMap[color[0] + p]}.svg`}
+                          className="h-6 w-6"
+                          alt={pieceColorMap[color[0] + p]}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-center text-xs font-semibold uppercase tracking-wide text-human-2">
+                    SELECTED PIECE
+                  </p>
+                  <div className="flex h-16 w-16 items-center justify-center">
+                    {selectedPiece ? (
+                      <div className="border border-white/20 bg-[#f0d9b5] p-2">
+                        <img
+                          src={`/assets/pieces/${pieceColorMap[color[0] + selectedPiece]}.svg`}
+                          className="h-12 w-12"
+                          alt={pieceColorMap[color[0] + selectedPiece]}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center border border-dashed border-white/20 bg-background-2">
+                        <span className="text-xs text-secondary/50">...</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Maia Timing Toggle */}
+            {simulateMaiaTime !== undefined && setSimulateMaiaTime && (
+              <div className="border-b border-white/5 bg-human-3/5 p-3">
+                <div className="flex flex-col gap-2">
+                  <p className="text-center text-xs font-semibold tracking-wider text-human-2">
+                    MAIA THINKING TIME
+                  </p>
+                  <div className="flex overflow-hidden border border-white/10 bg-background-1">
+                    <button
+                      className={`flex-1 px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
+                        !simulateMaiaTime
+                          ? 'bg-human-3 text-white'
+                          : 'text-primary hover:bg-background-2'
+                      }`}
+                      onClick={() => setSimulateMaiaTime(false)}
+                    >
+                      Instant
+                    </button>
+                    <button
+                      className={`flex-1 px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
+                        simulateMaiaTime
+                          ? 'bg-human-3 text-white'
+                          : 'text-primary hover:bg-background-2'
+                      }`}
+                      onClick={() => setSimulateMaiaTime(true)}
+                    >
+                      Human-like
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex-1 p-3">
+              <div className="flex flex-col gap-2">
+                {offerDraw && (
+                  <button
+                    onClick={offerDraw}
+                    disabled={!playerActive}
+                    className={`w-full border px-4 py-2 text-sm font-semibold transition-colors duration-200 ${
+                      playerActive
+                        ? 'border-white/10 bg-engine-3/5 text-engine-1 hover:border-white/20 hover:bg-engine-3/10'
+                        : 'cursor-not-allowed border-white/5 bg-background-2 text-secondary/40'
+                    }`}
+                  >
+                    OFFER DRAW
+                  </button>
+                )}
+
+                {/* Resign Button - Smaller and Less Prominent */}
+                <div className="flex justify-center">
+                  <button
+                    onClick={resign}
+                    disabled={!resign || !playerActive}
+                    className={`rounded px-3 py-1 text-xs font-medium transition-colors duration-200 ${
+                      resign && playerActive
+                        ? 'text-red-400/80 hover:bg-red-500/5 hover:text-red-300'
+                        : 'cursor-not-allowed text-secondary/30'
+                    }`}
+                  >
+                    Resign
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>
