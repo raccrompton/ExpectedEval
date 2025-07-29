@@ -18,6 +18,7 @@ import { PlayType } from 'src/types'
 import { getGlobalStats, getActiveUserCount } from 'src/api'
 import { AuthContext, ModalContext } from 'src/contexts'
 import { AnimatedNumber } from 'src/components/Common/AnimatedNumber'
+import { LiveChessWidget } from 'src/components/Home/LiveChessWidget'
 
 interface Props {
   scrollHandler: () => void
@@ -201,6 +202,17 @@ export const HomeHero: React.FC<Props> = ({ scrollHandler }: Props) => {
                 </motion.button>
               )}
             </motion.div>
+          </div>
+          <div className="flex w-full flex-col items-center justify-center gap-4 md:w-auto">
+            <div className="flex flex-col items-center gap-2">
+              <h3 className="text-sm font-medium text-secondary">
+                Watch Live Analysis
+              </h3>
+              <LiveChessWidget />
+              <p className="max-w-[200px] text-center text-xs text-secondary">
+                Real-time Maia analysis of top-rated games from Lichess
+              </p>
+            </div>
           </div>
           <div className="grid w-full flex-1 grid-cols-1 gap-2 md:grid-cols-3 md:gap-4">
             <FeatureCard
