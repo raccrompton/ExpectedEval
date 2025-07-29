@@ -67,10 +67,10 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
       <TourContextProvider>
         <Compose
           components={[
-            ErrorBoundary,
             SettingsProvider,
             WindowSizeContextProvider,
             AuthContextProvider,
+            ErrorBoundary,
             ModalContextProvider,
             ...(isPageWithAnalysis
               ? [MaiaEngineContextProvider, StockfishEngineContextProvider]
