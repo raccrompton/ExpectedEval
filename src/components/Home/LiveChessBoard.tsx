@@ -37,7 +37,6 @@ export const LiveChessBoard: React.FC = () => {
   const abortController = useRef<AbortController | null>(null)
 
   const handleGameStart = useCallback((gameData: StreamedGame) => {
-    console.log('Live board - Game started:', gameData)
     if (gameData.fen) {
       setCurrentFen(gameData.fen)
     }
@@ -51,7 +50,6 @@ export const LiveChessBoard: React.FC = () => {
   }, [])
 
   const handleMove = useCallback((moveData: StreamedMove) => {
-    console.log('Live board - New move:', moveData)
     if (moveData.fen) {
       setCurrentFen(moveData.fen)
     }
@@ -59,7 +57,6 @@ export const LiveChessBoard: React.FC = () => {
 
   const handleStreamComplete = useCallback(() => {
     console.log('Live board - Stream completed')
-    // Try to get a new live game
     fetchNewGame()
   }, [])
 
@@ -83,7 +80,6 @@ export const LiveChessBoard: React.FC = () => {
         isLive: true,
       })
 
-      // Start streaming the new game
       streamLichessGame(
         tvGame.gameId,
         handleGameStart,

@@ -67,13 +67,11 @@ export const getLichessGameInfo = async (gameId: string) => {
 
 export const streamLichessGame = async (
   gameId: string,
-  onGameStart: (data: StreamedGame) => void,
+  onGameInfo: (data: StreamedGame) => void,
   onMove: (data: StreamedMove) => void,
   onComplete: () => void,
   abortSignal?: AbortSignal,
 ) => {
-  console.log(`Starting stream for game ${gameId}`)
-
   const stream = fetch(`https://lichess.org/api/stream/game/${gameId}`, {
     signal: abortSignal,
     headers: {
@@ -83,10 +81,8 @@ export const streamLichessGame = async (
 
   const onMessage = (message: any) => {
     if (message.id) {
-      console.log('Game start message:', message)
-      onGameStart(message as StreamedGame)
+      onGameInfo(message as StreamedGame)
     } else if (message.uci || message.lm) {
-      console.log('Move message:', message)
       onMove({
         fen: message.fen,
         uci: message.uci || message.lm,

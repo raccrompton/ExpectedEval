@@ -84,14 +84,11 @@ export const useLichessStreamController = (): LichessStreamController => {
     })
   }, [clearReconnectTimeout])
 
-  const handleGameStart = useCallback(
+  const handleStreamedGameInfo = useCallback(
     (gameData: StreamedGame) => {
       setGame((prev) => {
-        console.log('CHECKING FOR GAME END', prev?.id, gameData.id)
         // if the game is already loaded, this is a game termination message
         if (prev?.id === gameData.id) {
-          console.log('GAME ENDED')
-
           setStreamState((prev) => ({
             ...prev,
             gameEnded: true,
@@ -123,8 +120,6 @@ export const useLichessStreamController = (): LichessStreamController => {
 
   const handleMove = useCallback(
     (moveData: StreamedMove) => {
-      console.log('HANDLE MOVE:', moveData)
-
       streamMoves.current.push(moveData)
 
       if (moveData.wc !== undefined && moveData.bc !== undefined) {
@@ -154,12 +149,6 @@ export const useLichessStreamController = (): LichessStreamController => {
         try {
           const newGame = parseLichessStreamMove(moveData, prev)
 
-          if (!newGame.loaded) {
-            if (newGame.loadedFen === moveData.fen) {
-              console.log('LOADED GAME')
-            }
-          }
-
           return {
             ...newGame,
             loaded: newGame.loaded
@@ -176,8 +165,6 @@ export const useLichessStreamController = (): LichessStreamController => {
   )
 
   const handleStreamComplete = useCallback(() => {
-    console.log('Stream completed')
-
     setStreamState((prev) => ({
       ...prev,
       isConnected: false,
@@ -207,16 +194,14 @@ export const useLichessStreamController = (): LichessStreamController => {
 
       try {
         // Start streaming directly - the stream API will handle invalid game IDs
-        // Note: isConnected will be set when we receive the first data (in handleGameStart or handleMove)
+        // Note: isConnected will be set when we receive the first data (in handleStreamedGameInfo or handleMove)
         await streamLichessGame(
           gameId,
-          handleGameStart,
+          handleStreamedGameInfo,
           handleMove,
           handleStreamComplete,
           abortController.current.signal,
         )
-
-        console.log('Stream completed')
       } catch (error) {
         console.error('Stream error:', error)
 
@@ -235,7 +220,7 @@ export const useLichessStreamController = (): LichessStreamController => {
         abortController.current = null
       }
     },
-    [handleGameStart, handleMove, handleStreamComplete],
+    [handleStreamedGameInfo, handleMove, handleStreamComplete],
   )
 
   useEffect(() => {
