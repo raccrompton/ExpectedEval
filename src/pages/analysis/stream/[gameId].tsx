@@ -105,9 +105,9 @@ const StreamAnalysisPage: NextPage = () => {
     }
   }, [streamController.game, analysisController])
 
+  // When we finish streaming and load the game, we want to set the current node to the last move
   useEffect(() => {
     if (streamController.game?.loaded) {
-      console.log('GAME LOADED')
       analysisController.setCurrentNode(
         streamController.game.tree.getMainLine()[
           streamController.game.tree.getMainLine().length - 1
@@ -116,48 +116,48 @@ const StreamAnalysisPage: NextPage = () => {
     }
   }, [streamController.game?.loaded])
 
-  if (
-    streamController.streamState.isConnecting &&
-    !streamController.streamState.gameStarted
-  ) {
-    return (
-      <>
-        <Head>
-          <title>Connecting to Live Game – Maia Chess</title>
-          <meta
-            name="description"
-            content="Connecting to live chess game stream for real-time analysis with Maia AI."
-          />
-        </Head>
-        <DelayedLoading isLoading={true}>
-          <div className="flex flex-col items-center justify-center gap-4">
-            <div className="text-center">
-              <h2 className="mb-2 text-xl font-semibold">
-                {streamController.streamState.error
-                  ? 'Connection Error'
-                  : 'Connecting to Live Game'}
-              </h2>
-              {streamController.streamState.error ? (
-                <div className="mb-4 text-red-400">
-                  <p>{streamController.streamState.error}</p>
-                  <button
-                    onClick={streamController.reconnect}
-                    className="mt-2 rounded bg-human-4 px-4 py-2 text-white transition hover:bg-human-4/80"
-                  >
-                    Try Again
-                  </button>
-                </div>
-              ) : (
-                <p className="text-secondary">
-                  Establishing connection to Lichess game {gameId}...
-                </p>
-              )}
-            </div>
-          </div>
-        </DelayedLoading>
-      </>
-    )
-  }
+  // if (
+  //   streamController.streamState.isConnecting &&
+  //   !streamController.streamState.gameStarted
+  // ) {
+  //   return (
+  //     <>
+  //       <Head>
+  //         <title>Connecting to Live Game – Maia Chess</title>
+  //         <meta
+  //           name="description"
+  //           content="Connecting to live chess game stream for real-time analysis with Maia AI."
+  //         />
+  //       </Head>
+  //       <DelayedLoading isLoading={true}>
+  //         <div className="flex flex-col items-center justify-center gap-4">
+  //           <div className="text-center">
+  //             <h2 className="mb-2 text-xl font-semibold">
+  //               {streamController.streamState.error
+  //                 ? 'Connection Error'
+  //                 : 'Connecting to Live Game'}
+  //             </h2>
+  //             {streamController.streamState.error ? (
+  //               <div className="mb-4 text-red-400">
+  //                 <p>{streamController.streamState.error}</p>
+  //                 <button
+  //                   onClick={streamController.reconnect}
+  //                   className="mt-2 rounded bg-human-4 px-4 py-2 text-white transition hover:bg-human-4/80"
+  //                 >
+  //                   Try Again
+  //                 </button>
+  //               </div>
+  //             ) : (
+  //               <p className="text-secondary">
+  //                 Establishing connection to Lichess game {gameId}...
+  //               </p>
+  //             )}
+  //           </div>
+  //         </div>
+  //       </DelayedLoading>
+  //     </>
+  //   )
+  // }
 
   return (
     <>
@@ -184,13 +184,15 @@ const StreamAnalysisPage: NextPage = () => {
       </AnimatePresence>
 
       <TreeControllerContext.Provider value={analysisController}>
-        {!streamController.game?.loaded && streamController.game && (
+        {!streamController.game?.loaded &&
+        streamController.game &&
+        !streamController.streamState.gameEnded ? (
           <div className="absolute left-0 top-0 z-50">
             <DelayedLoading transparent isLoading={true}>
               <p>Loading...</p>
             </DelayedLoading>
           </div>
-        )}
+        ) : null}
         {analysisController && (
           <StreamAnalysis
             game={streamController.game || dummyGame}

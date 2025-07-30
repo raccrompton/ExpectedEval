@@ -183,6 +183,19 @@ export const StreamAnalysis: React.FC<Props> = ({
             )}
           </div>
         ))}
+        <div className="mt-1 flex items-center justify-center gap-1">
+          <span className="text-xxs text-secondary">
+            Watch on{' '}
+            <a
+              href={`https://lichess.org/${game.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary/60 underline hover:text-primary"
+            >
+              Lichess
+            </a>
+          </span>
+        </div>
       </div>
       <div className="flex w-full items-center justify-between text-xs md:hidden">
         <div className="flex items-center gap-1">
@@ -273,14 +286,10 @@ export const StreamAnalysis: React.FC<Props> = ({
           style={{ willChange: 'transform, opacity' }}
         >
           <GameInfo
-            title="Live Analysis"
+            title="Analysis"
             icon="live_tv"
             type="analysis"
-            streamState={{
-              isLive: streamState.isLive,
-              isConnected: streamState.isConnected,
-              error: streamState.error,
-            }}
+            streamState={streamState}
           >
             <NestedGameInfo />
           </GameInfo>
@@ -445,17 +454,13 @@ export const StreamAnalysis: React.FC<Props> = ({
           style={{ willChange: 'transform, opacity' }}
         >
           <GameInfo
-            title="Live Analysis"
+            title="Analysis"
             icon="live_tv"
             type="analysis"
             currentMaiaModel={analysisController.currentMaiaModel}
             setCurrentMaiaModel={analysisController.setCurrentMaiaModel}
             MAIA_MODELS={MAIA_MODELS}
-            streamState={{
-              isLive: streamState.isLive,
-              isConnected: streamState.isConnected,
-              error: streamState.error,
-            }}
+            streamState={streamState}
           >
             <NestedGameInfo />
           </GameInfo>

@@ -16,6 +16,7 @@ interface Props {
     isLive: boolean
     isConnected: boolean
     error: string | null
+    gameEnded: boolean
   }
 }
 
@@ -60,9 +61,11 @@ export const GameInfo: React.FC<Props> = ({
                   ? 'LIVE'
                   : streamState.isConnected
                     ? 'Connected'
-                    : streamState.error
-                      ? 'Disconnected'
-                      : 'Connecting...'}
+                    : streamState.gameEnded
+                      ? 'Game Ended'
+                      : streamState.error
+                        ? 'Disconnected'
+                        : 'Connecting...'}
               </span>
             </div>
           )}

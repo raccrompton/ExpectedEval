@@ -152,7 +152,7 @@ export const createAnalyzedGameFromLichessStream = (
   const tree = new GameTree(startingFen)
 
   return {
-    id: `stream-${id}`,
+    id,
     blackPlayer,
     whitePlayer,
     gameType: 'stream',

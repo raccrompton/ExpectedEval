@@ -59,8 +59,11 @@ export const PlayerInfo: React.FC<PlayerInfoProps> = ({
         <div
           className={`h-2.5 w-2.5 rounded-full ${color === 'white' ? 'bg-white' : 'border bg-black'}`}
         />
-        <p>
-          {name ?? 'Unknown'} {rating ? `(${rating})` : null}
+        <p className="text-sm">
+          {name ?? 'Unknown'}{' '}
+          <span className="text-xs text-secondary">
+            {rating ? `(${rating})` : null}
+          </span>
         </p>
       </div>
       <div className="flex items-center gap-4">
@@ -85,7 +88,7 @@ export const PlayerInfo: React.FC<PlayerInfoProps> = ({
             <span
               className={`font-mono text-xs font-medium ${
                 clock.isActive ? 'text-black' : 'text-black/60'
-              } ${currentTime < 60 ? 'text-red-500' : ''}`}
+              } ${currentTime < 60 ? 'text-red-700' : ''}`}
             >
               {formatTime(currentTime)}
             </span>

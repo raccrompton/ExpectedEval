@@ -29,6 +29,7 @@ export const useLichessStreamController = (): LichessStreamController => {
     isLive: false,
     error: null,
     gameStarted: false,
+    gameEnded: false,
   })
   const [clockState, setClockState] = useState<ClockState>({
     whiteTime: 0,
@@ -67,6 +68,7 @@ export const useLichessStreamController = (): LichessStreamController => {
       isLive: false,
       error: null,
       gameStarted: false,
+      gameEnded: false,
     })
 
     currentGameId.current = null
@@ -84,25 +86,28 @@ export const useLichessStreamController = (): LichessStreamController => {
 
   const handleGameStart = useCallback(
     (gameData: StreamedGame) => {
-      if (game?.id === gameData.id) {
+      setGame((prev) => {
+        console.log('CHECKING FOR GAME END', prev?.id, gameData.id)
         // if the game is already loaded, this is a game termination message
-        setGame((prev) => {
-          if (!prev) return prev
+        if (prev?.id === gameData.id) {
+          console.log('GAME ENDED')
+
+          setStreamState((prev) => ({
+            ...prev,
+            gameEnded: true,
+          }))
 
           return {
             ...prev,
             termination: {
-              winner: gameData.winner ?? 'none',
-              result: gameData.winner ?? 'none',
+              winner: gameData.winner,
+              result: gameData.status?.name ?? 'none',
             },
           }
-        })
-        return
-      }
+        }
 
-      const parsedGame = createAnalyzedGameFromLichessStream(gameData)
-
-      setGame(parsedGame)
+        return createAnalyzedGameFromLichessStream(gameData)
+      })
 
       setStreamState((prev) => ({
         ...prev,
@@ -177,6 +182,7 @@ export const useLichessStreamController = (): LichessStreamController => {
       ...prev,
       isConnected: false,
       isLive: false,
+      gameEnded: true,
     }))
 
     // DO NOT automatically reconnect when stream completes
@@ -223,6 +229,7 @@ export const useLichessStreamController = (): LichessStreamController => {
           isLive: false,
           error: errorMessage,
           gameStarted: false,
+          gameEnded: false,
         })
 
         abortController.current = null

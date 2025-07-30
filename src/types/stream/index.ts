@@ -18,7 +18,7 @@ export interface StreamedGame {
       }
     }
   }
-  winner?: 'white' | 'black' | 'none'
+  winner?: 'white' | 'black'
   status?: {
     id: number
     name: string
@@ -38,6 +38,7 @@ export interface StreamState {
   isLive: boolean
   error: string | null
   gameStarted: boolean
+  gameEnded: boolean
 }
 
 export interface ClockState {
