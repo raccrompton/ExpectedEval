@@ -94,6 +94,12 @@ export const useLichessStreamController = (): LichessStreamController => {
             gameEnded: true,
           }))
 
+          setClockState((prev) => ({
+            ...prev,
+            activeColor: null,
+            lastUpdateTime: Date.now(),
+          }))
+
           return {
             ...prev,
             termination: {
