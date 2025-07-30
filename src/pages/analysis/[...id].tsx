@@ -659,10 +659,10 @@ const Analysis: React.FC<Props> = ({
                   {player.rating ? <>({player.rating})</> : null}
                 </span>
               </div>
-              {analyzedGame.termination.winner ===
+              {analyzedGame.termination?.winner ===
               (index == 0 ? 'white' : 'black') ? (
                 <p className="text-xs text-engine-3">1</p>
-              ) : analyzedGame.termination.winner !== 'none' ? (
+              ) : analyzedGame.termination?.winner !== 'none' ? (
                 <p className="text-xs text-human-3">0</p>
               ) : analyzedGame.termination === undefined ? (
                 <></>
@@ -684,16 +684,16 @@ const Analysis: React.FC<Props> = ({
           )}
         </div>
         <div className="flex items-center gap-1">
-          {analyzedGame.termination.winner === 'none' ? (
+          {analyzedGame.termination?.winner === 'none' ? (
             <span className="font-medium text-primary/80">½-½</span>
           ) : (
             <span className="font-medium">
               <span className="text-primary/70">
-                {analyzedGame.termination.winner === 'white' ? '1' : '0'}
+                {analyzedGame.termination?.winner === 'white' ? '1' : '0'}
               </span>
               <span className="text-primary/70">-</span>
               <span className="text-primary/70">
-                {analyzedGame.termination.winner === 'black' ? '1' : '0'}
+                {analyzedGame.termination?.winner === 'black' ? '1' : '0'}
               </span>
             </span>
           )}
@@ -837,7 +837,7 @@ const Analysis: React.FC<Props> = ({
                   : analyzedGame.whitePlayer.rating
               }
               color={controller.orientation === 'white' ? 'black' : 'white'}
-              termination={analyzedGame.termination.winner}
+              termination={analyzedGame.termination?.winner}
             />
             <div className="desktop-board-container relative flex aspect-square">
               <GameBoard
@@ -907,7 +907,7 @@ const Analysis: React.FC<Props> = ({
                   : analyzedGame.blackPlayer.rating
               }
               color={controller.orientation === 'white' ? 'white' : 'black'}
-              termination={analyzedGame.termination.winner}
+              termination={analyzedGame.termination?.winner}
               showArrowLegend={true}
             />
           </div>

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Chess } from 'chess.ts'
 import Chessground from '@react-chess/chessground'
 import { getLichessTVGame, streamLichessGame } from 'src/api/lichess/streaming'
+import { StreamedGame, StreamedMove } from 'src/types/stream'
 
 interface LiveGameData {
   gameId: string
@@ -35,21 +36,21 @@ export const LiveChessBoard: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const abortController = useRef<AbortController | null>(null)
 
-  const handleGameStart = useCallback((gameData: any) => {
+  const handleGameStart = useCallback((gameData: StreamedGame) => {
     console.log('Live board - Game started:', gameData)
     if (gameData.fen) {
       setCurrentFen(gameData.fen)
     }
     setLiveGame({
-      gameId: gameData.id || gameData.gameId,
-      white: gameData.players?.white || gameData.white,
-      black: gameData.players?.black || gameData.black,
+      gameId: gameData.id,
+      white: gameData.players?.white,
+      black: gameData.players?.black,
       currentFen: gameData.fen,
       isLive: true,
     })
   }, [])
 
-  const handleMove = useCallback((moveData: any) => {
+  const handleMove = useCallback((moveData: StreamedMove) => {
     console.log('Live board - New move:', moveData)
     if (moveData.fen) {
       setCurrentFen(moveData.fen)
