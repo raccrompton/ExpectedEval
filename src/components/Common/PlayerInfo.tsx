@@ -4,7 +4,14 @@ interface PlayerInfoProps {
   rating?: number
   termination?: string
   showArrowLegend?: boolean
+  clock?: {
+    timeInSeconds: number
+    isActive: boolean
+    lastUpdateTime: number
+  }
 }
+
+import { useState, useEffect } from 'react'
 
 export const PlayerInfo: React.FC<PlayerInfoProps> = ({
   name,
@@ -12,7 +19,40 @@ export const PlayerInfo: React.FC<PlayerInfoProps> = ({
   color,
   termination,
   showArrowLegend = false,
+  clock,
 }) => {
+  const [currentTime, setCurrentTime] = useState<number>(
+    clock?.timeInSeconds || 0,
+  )
+
+  // Update clock countdown every second if this clock is active
+  useEffect(() => {
+    if (!clock || !clock.isActive) return
+
+    const interval = setInterval(() => {
+      const now = Date.now()
+      const elapsedSinceUpdate = (now - clock.lastUpdateTime) / 1000
+      const newTime = Math.max(0, clock.timeInSeconds - elapsedSinceUpdate)
+      setCurrentTime(newTime)
+    }, 100) // Update every 100ms for smooth countdown
+
+    return () => clearInterval(interval)
+  }, [clock])
+
+  // Update current time when clock prop changes (new move received)
+  useEffect(() => {
+    if (clock) {
+      setCurrentTime(clock.timeInSeconds)
+    }
+  }, [clock?.timeInSeconds, clock?.lastUpdateTime])
+
+  // Format time as MM:SS
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
   return (
     <div className="flex h-10 w-full items-center justify-between bg-background-1 px-4">
       <div className="flex items-center gap-1.5">
@@ -23,7 +63,16 @@ export const PlayerInfo: React.FC<PlayerInfoProps> = ({
           {name ?? 'Unknown'} {rating ? `(${rating})` : null}
         </p>
       </div>
-      <div className="flex items-center gap-10">
+      <div className="flex items-center gap-4">
+        {clock && (
+          <div
+            className={`font-mono text-sm font-medium ${
+              clock.isActive ? 'text-primary' : 'text-secondary'
+            } ${currentTime < 60 ? 'text-red-400' : ''}`}
+          >
+            {formatTime(currentTime)}
+          </div>
+        )}
         {showArrowLegend && (
           <div className="flex flex-col items-start">
             <div className="flex items-center gap-0.5">

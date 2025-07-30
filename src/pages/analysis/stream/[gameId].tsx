@@ -175,6 +175,7 @@ const StreamAnalysisPage: NextPage = () => {
           <StreamAnalysis
             game={streamController.game || dummyGame}
             streamState={streamController.streamState}
+            clockState={streamController.clockState}
             onReconnect={streamController.reconnect}
             onStopStream={streamController.stopStream}
             analysisController={analysisController}

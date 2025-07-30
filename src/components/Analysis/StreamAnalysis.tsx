@@ -18,7 +18,7 @@ import {
   StockfishEvaluation,
   GameNode,
 } from 'src/types'
-import { StreamState } from 'src/hooks/useLichessStreamController'
+import { StreamState, ClockState } from 'src/hooks/useLichessStreamController'
 import { WindowSizeContext } from 'src/contexts'
 import { PlayerInfo } from 'src/components/Common/PlayerInfo'
 import { GameBoard } from 'src/components/Board/GameBoard'
@@ -33,6 +33,7 @@ import { MAIA_MODELS } from 'src/constants/common'
 interface Props {
   game: AnalyzedGame
   streamState: StreamState
+  clockState: ClockState
   onReconnect: () => void
   onStopStream: () => void
   analysisController: any // This should be typed properly based on your analysis controller
@@ -41,6 +42,7 @@ interface Props {
 export const StreamAnalysis: React.FC<Props> = ({
   game,
   streamState,
+  clockState,
   onReconnect,
   onStopStream,
   analysisController,
@@ -353,6 +355,21 @@ export const StreamAnalysis: React.FC<Props> = ({
                 analysisController.orientation === 'white' ? 'black' : 'white'
               }
               termination={game.termination.winner}
+              clock={
+                clockState
+                  ? analysisController.orientation === 'white'
+                    ? {
+                        timeInSeconds: clockState.blackTime,
+                        isActive: clockState.activeColor === 'black',
+                        lastUpdateTime: clockState.lastUpdateTime,
+                      }
+                    : {
+                        timeInSeconds: clockState.whiteTime,
+                        isActive: clockState.activeColor === 'white',
+                        lastUpdateTime: clockState.lastUpdateTime,
+                      }
+                  : undefined
+              }
             />
             <div className="desktop-board-container relative flex aspect-square">
               <GameBoard
@@ -396,6 +413,21 @@ export const StreamAnalysis: React.FC<Props> = ({
               }
               termination={game.termination.winner}
               showArrowLegend={true}
+              clock={
+                clockState
+                  ? analysisController.orientation === 'white'
+                    ? {
+                        timeInSeconds: clockState.whiteTime,
+                        isActive: clockState.activeColor === 'white',
+                        lastUpdateTime: clockState.lastUpdateTime,
+                      }
+                    : {
+                        timeInSeconds: clockState.blackTime,
+                        isActive: clockState.activeColor === 'black',
+                        lastUpdateTime: clockState.lastUpdateTime,
+                      }
+                  : undefined
+              }
             />
           </div>
           <ConfigurableScreens

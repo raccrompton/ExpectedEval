@@ -14,9 +14,17 @@ export interface StreamState {
   gameStarted: boolean
 }
 
+export interface ClockState {
+  whiteTime: number // seconds
+  blackTime: number // seconds
+  activeColor: 'white' | 'black' | null
+  lastUpdateTime: number // timestamp when clocks were last updated
+}
+
 export interface LichessStreamController {
   game: AnalyzedGame | null
   streamState: StreamState
+  clockState: ClockState
   startStream: (gameId: string) => void
   stopStream: () => void
   reconnect: () => void
@@ -30,6 +38,12 @@ export const useLichessStreamController = (): LichessStreamController => {
     isLive: false,
     error: null,
     gameStarted: false,
+  })
+  const [clockState, setClockState] = useState<ClockState>({
+    whiteTime: 0,
+    blackTime: 0,
+    activeColor: null,
+    lastUpdateTime: Date.now(),
   })
 
   const abortController = useRef<AbortController | null>(null)
@@ -68,6 +82,14 @@ export const useLichessStreamController = (): LichessStreamController => {
     currentGameId.current = null
     streamMoves.current = []
     reconnectAttempts.current = 0
+
+    // Reset clock state
+    setClockState({
+      whiteTime: 0,
+      blackTime: 0,
+      activeColor: null,
+      lastUpdateTime: Date.now(),
+    })
   }, [clearReconnectTimeout])
 
   const handleGameStart = useCallback((gameData: any) => {
@@ -95,6 +117,20 @@ export const useLichessStreamController = (): LichessStreamController => {
 
     // Add move to our tracking array
     streamMoves.current.push(moveData)
+
+    // Update clock state if clock data is available
+    if (moveData.wc !== undefined && moveData.bc !== undefined) {
+      const currentFen = moveData.fen
+      // Determine whose turn it is from the FEN (w = white, b = black)
+      const activeColor = currentFen?.includes(' w ') ? 'white' : 'black'
+
+      setClockState({
+        whiteTime: moveData.wc,
+        blackTime: moveData.bc,
+        activeColor,
+        lastUpdateTime: Date.now(),
+      })
+    }
 
     // Update the game state with the new move
     setGame((currentGame) => {
@@ -265,10 +301,11 @@ export const useLichessStreamController = (): LichessStreamController => {
     () => ({
       game,
       streamState,
+      clockState,
       startStream,
       stopStream,
       reconnect,
     }),
-    [game, streamState], // Only depend on actual state, not functions
+    [game, streamState, clockState], // Only depend on actual state, not functions
   )
 }
