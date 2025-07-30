@@ -17,6 +17,7 @@ interface Props {
     isConnected: boolean
     error: string | null
   }
+  additionalActions?: React.ReactNode
 }
 
 export const GameInfo: React.FC<Props> = ({
@@ -30,6 +31,7 @@ export const GameInfo: React.FC<Props> = ({
   showGameListButton,
   onGameListClick,
   streamState,
+  additionalActions,
 }: Props) => {
   const { startTour } = useTour()
 
@@ -64,6 +66,7 @@ export const GameInfo: React.FC<Props> = ({
                       ? 'Disconnected'
                       : 'Connecting...'}
               </span>
+              {additionalActions}
             </div>
           )}
           {currentMaiaModel && setCurrentMaiaModel && (

@@ -8,11 +8,17 @@ import { getLichessTVGame, streamLichessGame } from 'src/api/lichess/streaming'
 interface LiveGameData {
   gameId: string
   white?: {
-    name: string
+    user: {
+      id: string
+      name: string
+    }
     rating?: number
   }
   black?: {
-    name: string
+    user: {
+      id: string
+      name: string
+    }
     rating?: number
   }
   currentFen?: string
@@ -36,8 +42,8 @@ export const LiveChessBoard: React.FC = () => {
     }
     setLiveGame({
       gameId: gameData.id || gameData.gameId,
-      white: gameData.players?.white?.user || gameData.white,
-      black: gameData.players?.black?.user || gameData.black,
+      white: gameData.players?.white || gameData.white,
+      black: gameData.players?.black || gameData.black,
       currentFen: gameData.fen,
       isLive: true,
     })
@@ -158,9 +164,9 @@ export const LiveChessBoard: React.FC = () => {
       <div className="relative">
         {/* Live indicator */}
         {liveGame?.isLive && (
-          <div className="absolute -right-4 -top-4 z-10 flex items-center gap-1 rounded-full bg-red-500 px-2 py-1">
+          <div className="absolute -right-5 -top-3 z-10 flex items-center gap-1 rounded-full bg-red-500 px-1.5 py-0.5">
             <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-            <span className="text-xs font-semibold text-white">LIVE</span>
+            <span className="text-xxs font-semibold text-white">LIVE</span>
           </div>
         )}
 
@@ -191,7 +197,7 @@ export const LiveChessBoard: React.FC = () => {
           {/* Game info on hover */}
           {isHovered && liveGame && (
             <motion.div
-              className="absolute left-[calc(100%+0.5rem)] top-3 flex w-48 flex-col items-center justify-center rounded border border-white/10 bg-background-1/60"
+              className="absolute left-[calc(100%+0.5rem)] top-0 flex w-48 flex-col items-center justify-center rounded border border-white/10 bg-background-1/60"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
@@ -202,26 +208,26 @@ export const LiveChessBoard: React.FC = () => {
                   Lichess TV Analysis
                 </span>
               </div>
-              <div className="flex flex-row items-center gap-1 px-2 pt-2 text-xxs">
+              <div className="flex flex-col items-center gap-1 px-2 pt-2 text-xxs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <div className="h-2 w-2 rounded-full border bg-white" />
                     <span className="font-medium">
-                      {liveGame.white?.name || 'White'}
+                      {liveGame.white?.user?.id.slice(0, 10) || 'White'}
                     </span>
                     {liveGame.white?.rating && (
                       <span className="text-secondary">
                         ({liveGame.white.rating})
                       </span>
-                    )}
+                    )}{' '}
+                    vs.
                   </div>
                 </div>
-                <span className="text-secondary">vs.</span>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <div className="h-2 w-2 rounded-full bg-black" />
                     <span className="font-medium">
-                      {liveGame.black?.name || 'Black'}
+                      {liveGame.black?.user?.id.slice(0, 10) || 'Black'}
                     </span>
                     {liveGame.black?.rating && (
                       <span className="text-secondary">

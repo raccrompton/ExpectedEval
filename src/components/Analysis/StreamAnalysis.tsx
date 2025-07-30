@@ -37,6 +37,8 @@ interface Props {
   onReconnect: () => void
   onStopStream: () => void
   analysisController: any // This should be typed properly based on your analysis controller
+  userNavigatedAway?: boolean
+  onSyncWithLive?: () => void
 }
 
 export const StreamAnalysis: React.FC<Props> = ({
@@ -46,6 +48,8 @@ export const StreamAnalysis: React.FC<Props> = ({
   onReconnect,
   onStopStream,
   analysisController,
+  userNavigatedAway = false,
+  onSyncWithLive,
 }) => {
   const router = useRouter()
   const { width } = useContext(WindowSizeContext)
@@ -98,21 +102,9 @@ export const StreamAnalysis: React.FC<Props> = ({
       if (analysisController.currentNode.mainChild?.move === moveString) {
         // Existing main line move - navigate to it
         analysisController.goToNode(analysisController.currentNode.mainChild)
-      } else if (
-        !analysisController.currentNode.mainChild &&
-        analysisController.currentNode.isMainline
-      ) {
-        // No main child exists AND we're on main line - create main line move
-        const newMainMove = game.tree.addMainMove(
-          analysisController.currentNode,
-          newFen,
-          moveString,
-          san,
-          analysisController.currentMaiaModel,
-        )
-        analysisController.goToNode(newMainMove)
       } else {
-        // Either main child exists but different move, OR we're in a variation - create variation
+        // For stream analysis, ALWAYS create variations for player moves
+        // This preserves the live game mainline and allows exploration
         const newVariation = game.tree.addVariation(
           analysisController.currentNode,
           newFen,
@@ -178,9 +170,6 @@ export const StreamAnalysis: React.FC<Props> = ({
     const chess = new Chess(analysisController.currentNode.fen)
     return chess.turn() === 'w' ? 'white' : 'black'
   }, [analysisController.currentNode])
-
-  // Check if we're using dummy game data (waiting for real game data)
-  const isWaitingForGameData = game.id === ''
 
   const NestedGameInfo = () => (
     <div className="flex w-full flex-col">
