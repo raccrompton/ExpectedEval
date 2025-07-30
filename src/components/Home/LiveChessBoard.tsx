@@ -213,7 +213,7 @@ export const LiveChessBoard: React.FC = () => {
                   <div className="flex items-center gap-1">
                     <div className="h-2 w-2 rounded-full border bg-white" />
                     <span className="font-medium">
-                      {liveGame.white?.user?.id.slice(0, 10) || 'White'}
+                      {liveGame.white?.user?.name || 'White'}
                     </span>
                     {liveGame.white?.rating && (
                       <span className="text-secondary">
@@ -227,7 +227,7 @@ export const LiveChessBoard: React.FC = () => {
                   <div className="flex items-center gap-1">
                     <div className="h-2 w-2 rounded-full bg-black" />
                     <span className="font-medium">
-                      {liveGame.black?.user?.id.slice(0, 10) || 'Black'}
+                      {liveGame.black?.user?.name || 'Black'}
                     </span>
                     {liveGame.black?.rating && (
                       <span className="text-secondary">

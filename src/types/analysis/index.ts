@@ -86,6 +86,11 @@ export interface AnalyzedGame extends Game {
   pgn?: string
 }
 
+export interface LiveGame extends AnalyzedGame {
+  loadedFen: string
+  loaded: boolean
+}
+
 export interface CustomAnalysisInput {
   type: 'custom-pgn' | 'custom-fen'
   data: string // PGN string or FEN string
@@ -182,19 +187,4 @@ export interface LiveGameData {
   }
   lastMoveFen?: string
   isLive: boolean
-}
-
-export interface StreamState {
-  isConnected: boolean
-  isConnecting: boolean
-  isLive: boolean
-  error: string | null
-  gameStarted: boolean
-}
-
-export interface LichessStreamMove {
-  uci: string
-  san: string
-  fen: string
-  check?: boolean
 }

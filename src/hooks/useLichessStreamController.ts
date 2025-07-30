@@ -1,28 +1,19 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { AnalyzedGame } from 'src/types'
+import {
+  ClockState,
+  LiveGame,
+  StreamState,
+  StreamedMove,
+  StreamedGame,
+} from 'src/types'
 import {
   streamLichessGame,
   createAnalyzedGameFromLichessStream,
   parseLichessStreamMove,
 } from 'src/api/lichess/streaming'
 
-export interface StreamState {
-  isConnected: boolean
-  isConnecting: boolean
-  isLive: boolean
-  error: string | null
-  gameStarted: boolean
-}
-
-export interface ClockState {
-  whiteTime: number // seconds
-  blackTime: number // seconds
-  activeColor: 'white' | 'black' | null
-  lastUpdateTime: number // timestamp when clocks were last updated
-}
-
 export interface LichessStreamController {
-  game: AnalyzedGame | null
+  game: LiveGame | undefined
   streamState: StreamState
   clockState: ClockState
   startStream: (gameId: string) => void
@@ -31,7 +22,7 @@ export interface LichessStreamController {
 }
 
 export const useLichessStreamController = (): LichessStreamController => {
-  const [game, setGame] = useState<AnalyzedGame | null>(null)
+  const [game, setGame] = useState<LiveGame>()
   const [streamState, setStreamState] = useState<StreamState>({
     isConnected: false,
     isConnecting: false,
@@ -48,10 +39,9 @@ export const useLichessStreamController = (): LichessStreamController => {
 
   const abortController = useRef<AbortController | null>(null)
   const currentGameId = useRef<string | null>(null)
-  const streamMoves = useRef<any[]>([])
+  const streamMoves = useRef<StreamedMove[]>([])
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const reconnectAttempts = useRef(0)
-  const maxReconnectAttempts = 3
   const startStreamInternalRef = useRef<
     ((gameId: string) => Promise<void>) | null
   >(null)
@@ -92,109 +82,93 @@ export const useLichessStreamController = (): LichessStreamController => {
     })
   }, [clearReconnectTimeout])
 
-  const handleGameStart = useCallback((gameData: any) => {
-    console.log('Game started:', gameData)
+  const handleGameStart = useCallback(
+    (gameData: StreamedGame) => {
+      if (game?.id === gameData.id) {
+        // if the game is already loaded, this is a game termination message
+        setGame((prev) => {
+          if (!prev) return prev
 
-    // Create initial analyzed game from stream data
-    const initialGame = createAnalyzedGameFromLichessStream(gameData)
-    setGame(initialGame)
+          return {
+            ...prev,
+            termination: {
+              winner: gameData.winner ?? 'none',
+              result: gameData.winner ?? 'none',
+            },
+          }
+        })
+        return
+      }
 
-    setStreamState((prev) => ({
-      ...prev,
-      gameStarted: true,
-      isLive: true,
-      isConnected: true, // Set connected as soon as we receive game data
-      isConnecting: false,
-      error: null,
-    }))
+      const parsedGame = createAnalyzedGameFromLichessStream(gameData)
 
-    // Reset reconnect attempts on successful connection
-    reconnectAttempts.current = 0
-  }, [])
+      setGame(parsedGame)
 
-  const handleMove = useCallback((moveData: any) => {
-    console.log('New move:', moveData)
+      setStreamState((prev) => ({
+        ...prev,
+        gameStarted: true,
+        isLive: true,
+        isConnected: true,
+        isConnecting: false,
+        error: null,
+      }))
+    },
+    [game],
+  )
 
-    // Add move to our tracking array
-    streamMoves.current.push(moveData)
+  const handleMove = useCallback(
+    (moveData: StreamedMove) => {
+      console.log('HANDLE MOVE:', moveData)
 
-    // Update clock state if clock data is available
-    if (moveData.wc !== undefined && moveData.bc !== undefined) {
-      const currentFen = moveData.fen
-      // Determine whose turn it is from the FEN (w = white, b = black)
-      const activeColor = currentFen?.includes(' w ') ? 'white' : 'black'
+      streamMoves.current.push(moveData)
 
-      setClockState({
-        whiteTime: moveData.wc,
-        blackTime: moveData.bc,
-        activeColor,
-        lastUpdateTime: Date.now(),
-      })
-    }
+      if (moveData.wc !== undefined && moveData.bc !== undefined) {
+        const currentFen = moveData.fen
+        const activeColor = currentFen?.includes(' w ') ? 'white' : 'black'
 
-    // Update the game state with the new move
-    setGame((currentGame) => {
-      // If we don't have a game yet, we need to wait for the initial game state
-      // But sometimes Lichess doesn't send the initial state for ongoing games
-      // So let's try to create a minimal game state if we have enough data
-      if (!currentGame && moveData.fen) {
-        console.log(
-          'Creating minimal game from move data since no initial game received',
-        )
+        setClockState({
+          whiteTime: moveData.wc,
+          blackTime: moveData.bc,
+          activeColor,
+          lastUpdateTime: Date.now(),
+        })
+      }
 
-        // Create a minimal game object to process moves
-        const minimalGameData = {
-          id: `live-${Date.now()}`,
-          players: {
-            white: { user: { name: 'White' } },
-            black: { user: { name: 'Black' } },
-          },
-          fen: moveData.fen,
+      setGame((prev) => {
+        if (!prev) return prev
+
+        if (prev.loaded) {
+          try {
+            const audio = new Audio('/assets/sound/move.mp3')
+            audio
+              .play()
+              .catch((e) => console.log('Could not play move sound:', e))
+          } catch (e) {}
         }
 
-        const newGame = createAnalyzedGameFromLichessStream(minimalGameData)
-
-        // Set stream as connected since we're receiving data
-        setStreamState((prev) => ({
-          ...prev,
-          isConnected: true,
-          isConnecting: false,
-          gameStarted: true,
-          isLive: true,
-          error: null,
-        }))
-
-        // Try to parse the current move
         try {
-          return parseLichessStreamMove(moveData, newGame)
-        } catch (error) {
-          console.error('Error parsing move on minimal game:', error)
-          return newGame
+          const newGame = parseLichessStreamMove(moveData, prev)
+
+          if (!newGame.loaded) {
+            if (newGame.loadedFen === moveData.fen) {
+              console.log('LOADED GAME')
+            }
+          }
+
+          return {
+            ...newGame,
+            loaded: newGame.loaded
+              ? newGame.loaded
+              : prev.loadedFen === moveData.fen,
+          }
+        } catch (e) {
+          console.error('Error parsing move:', e)
+          return prev
         }
-      }
-
-      if (!currentGame) return currentGame
-
-      try {
-        return parseLichessStreamMove(moveData, currentGame)
-      } catch (error) {
-        console.error('Error parsing move:', error)
-        setStreamState((prev) => ({
-          ...prev,
-          error: `Failed to parse move: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        }))
-        return currentGame
-      }
-    })
-
-    // Play move sound (reuse existing audio)
-    try {
-      const audio = new Audio('/assets/sound/move.mp3')
-      audio.play().catch((e) => console.log('Could not play move sound:', e))
-    } catch (e) {
-      // Ignore audio errors
-    }
-  }, [])
+      })
+    },
+    [game],
+  )
 
   const handleStreamComplete = useCallback(() => {
     console.log('Stream completed')
@@ -236,7 +210,6 @@ export const useLichessStreamController = (): LichessStreamController => {
           abortController.current.signal,
         )
 
-        // Stream completed normally - this happens when the game ends or connection closes
         console.log('Stream completed')
       } catch (error) {
         console.error('Stream error:', error)
@@ -258,14 +231,12 @@ export const useLichessStreamController = (): LichessStreamController => {
     [handleGameStart, handleMove, handleStreamComplete],
   )
 
-  // Update the ref whenever the function changes
   useEffect(() => {
     startStreamInternalRef.current = startStreamInternal
   }, [startStreamInternal])
 
   const startStream = useCallback(
     (gameId: string) => {
-      // Reset state when starting a new stream
       streamMoves.current = []
       reconnectAttempts.current = 0
       clearReconnectTimeout()
@@ -279,18 +250,20 @@ export const useLichessStreamController = (): LichessStreamController => {
 
   const reconnect = useCallback(() => {
     if (currentGameId.current && startStreamInternalRef.current) {
+      const startRef = startStreamInternalRef.current
+      const gameId = currentGameId.current
+
       // Check connecting state at call time instead of dependency
       setStreamState((prevState) => {
         if (!prevState.isConnecting) {
           reconnectAttempts.current = 0
-          startStreamInternalRef.current!(currentGameId.current!)
+          startRef(gameId)
         }
         return prevState
       })
     }
   }, [])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopStream()
@@ -306,6 +279,6 @@ export const useLichessStreamController = (): LichessStreamController => {
       stopStream,
       reconnect,
     }),
-    [game, streamState, clockState], // Only depend on actual state, not functions
+    [game, streamState, clockState],
   )
 }

@@ -5,30 +5,23 @@ import React, {
   useCallback,
   useContext,
 } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useRouter } from 'next/router'
+import { motion } from 'framer-motion'
 import type { Key } from 'chessground/types'
 import { Chess, PieceSymbol } from 'chess.ts'
 import type { DrawShape } from 'chessground/draw'
-import toast from 'react-hot-toast'
 
-import {
-  AnalyzedGame,
-  MaiaEvaluation,
-  StockfishEvaluation,
-  GameNode,
-} from 'src/types'
-import { StreamState, ClockState } from 'src/hooks/useLichessStreamController'
 import { WindowSizeContext } from 'src/contexts'
-import { PlayerInfo } from 'src/components/Common/PlayerInfo'
+import { MAIA_MODELS } from 'src/constants/common'
+import { GameInfo } from 'src/components/Common/GameInfo'
 import { GameBoard } from 'src/components/Board/GameBoard'
+import { PlayerInfo } from 'src/components/Common/PlayerInfo'
 import { MovesContainer } from 'src/components/Board/MovesContainer'
+import { AnalyzedGame, GameNode, StreamState, ClockState } from 'src/types'
 import { BoardController } from 'src/components/Board/BoardController'
 import { PromotionOverlay } from 'src/components/Board/PromotionOverlay'
-import { GameInfo } from 'src/components/Common/GameInfo'
 import { AnalysisSidebar } from 'src/components/Analysis'
 import { ConfigurableScreens } from 'src/components/Analysis/ConfigurableScreens'
-import { MAIA_MODELS } from 'src/constants/common'
+import { useAnalysisController } from 'src/hooks/useAnalysisController'
 
 interface Props {
   game: AnalyzedGame
@@ -36,9 +29,7 @@ interface Props {
   clockState: ClockState
   onReconnect: () => void
   onStopStream: () => void
-  analysisController: any // This should be typed properly based on your analysis controller
-  userNavigatedAway?: boolean
-  onSyncWithLive?: () => void
+  analysisController: ReturnType<typeof useAnalysisController>
 }
 
 export const StreamAnalysis: React.FC<Props> = ({
@@ -48,10 +39,7 @@ export const StreamAnalysis: React.FC<Props> = ({
   onReconnect,
   onStopStream,
   analysisController,
-  userNavigatedAway = false,
-  onSyncWithLive,
 }) => {
-  const router = useRouter()
   const { width } = useContext(WindowSizeContext)
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
 
@@ -61,7 +49,6 @@ export const StreamAnalysis: React.FC<Props> = ({
     [string, string] | null
   >(null)
 
-  // Reset hover arrow when current node changes
   useEffect(() => {
     setHoverArrow(null)
   }, [analysisController.currentNode])
@@ -185,9 +172,9 @@ export const StreamAnalysis: React.FC<Props> = ({
                 {player.rating ? <>({player.rating})</> : null}
               </span>
             </div>
-            {game.termination.winner === (index == 0 ? 'white' : 'black') ? (
+            {game.termination?.winner === (index == 0 ? 'white' : 'black') ? (
               <p className="text-xs text-engine-3">1</p>
-            ) : game.termination.winner !== 'none' ? (
+            ) : game.termination?.winner !== 'none' ? (
               <p className="text-xs text-human-3">0</p>
             ) : game.termination === undefined ? (
               <></>
@@ -208,16 +195,16 @@ export const StreamAnalysis: React.FC<Props> = ({
         <div className="flex items-center gap-1">
           {streamState.isLive ? (
             <span className="font-medium text-red-400">LIVE</span>
-          ) : game.termination.winner === 'none' ? (
+          ) : game.termination?.winner === 'none' ? (
             <span className="font-medium text-primary/80">½-½</span>
           ) : (
             <span className="font-medium">
               <span className="text-primary/70">
-                {game.termination.winner === 'white' ? '1' : '0'}
+                {game.termination?.winner === 'white' ? '1' : '0'}
               </span>
               <span className="text-primary/70">-</span>
               <span className="text-primary/70">
-                {game.termination.winner === 'black' ? '1' : '0'}
+                {game.termination?.winner === 'black' ? '1' : '0'}
               </span>
             </span>
           )}
@@ -343,7 +330,7 @@ export const StreamAnalysis: React.FC<Props> = ({
               color={
                 analysisController.orientation === 'white' ? 'black' : 'white'
               }
-              termination={game.termination.winner}
+              termination={game.termination?.winner}
               clock={
                 clockState
                   ? analysisController.orientation === 'white'
@@ -400,7 +387,7 @@ export const StreamAnalysis: React.FC<Props> = ({
               color={
                 analysisController.orientation === 'white' ? 'white' : 'black'
               }
-              termination={game.termination.winner}
+              termination={game.termination?.winner}
               showArrowLegend={true}
               clock={
                 clockState

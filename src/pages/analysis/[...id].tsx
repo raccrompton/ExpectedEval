@@ -131,8 +131,7 @@ const AnalysisPage: NextPage = () => {
       setAnalyzedGame({ ...game, type: 'tournament' })
       setCurrentId(newId)
 
-      // Load stored analysis
-      await loadStoredAnalysis({ ...game, type: 'tournament' })
+      // await loadStoredAnalysis({ ...game, type: 'tournament' })
 
       if (updateUrl) {
         router.push(`/analysis/${newId.join('/')}`, undefined, {

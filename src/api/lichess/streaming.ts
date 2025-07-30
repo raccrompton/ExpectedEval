@@ -1,10 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Chess } from 'chess.ts'
-import { AnalyzedGame, Player, StockfishEvaluation } from 'src/types'
 import { GameTree } from 'src/types/base/tree'
 import { AvailableMoves } from 'src/types/training'
+import {
+  LiveGame,
+  Player,
+  StockfishEvaluation,
+  StreamedGame,
+  StreamedMove,
+} from 'src/types'
 
-// Re-use the readStream utility from analysis.ts
 const readStream = (processLine: (data: any) => void) => (response: any) => {
   const stream = response.body.getReader()
   const matcher = /\r?\n/
@@ -32,7 +37,6 @@ const readStream = (processLine: (data: any) => void) => (response: any) => {
   return loop()
 }
 
-// Get current Lichess TV game information
 export const getLichessTVGame = async () => {
   const res = await fetch('https://lichess.org/api/tv/channels')
   if (!res.ok) {
@@ -40,7 +44,7 @@ export const getLichessTVGame = async () => {
   }
   const data = await res.json()
 
-  // Return the best game (highest rated players)
+  // Return the best rapid game (highest rated players)
   const bestChannel = data.rapid
   if (!bestChannel?.gameId) {
     throw new Error('No TV game available')
@@ -53,7 +57,6 @@ export const getLichessTVGame = async () => {
   }
 }
 
-// Get basic game information from Lichess API
 export const getLichessGameInfo = async (gameId: string) => {
   const res = await fetch(`https://lichess.org/api/game/${gameId}`)
   if (!res.ok) {
@@ -62,11 +65,10 @@ export const getLichessGameInfo = async (gameId: string) => {
   return res.json()
 }
 
-// Stream live moves from a Lichess game
 export const streamLichessGame = async (
   gameId: string,
-  onGameStart: (data: any) => void,
-  onMove: (data: any) => void,
+  onGameStart: (data: StreamedGame) => void,
+  onMove: (data: StreamedMove) => void,
   onComplete: () => void,
   abortSignal?: AbortSignal,
 ) => {
@@ -79,55 +81,18 @@ export const streamLichessGame = async (
     },
   })
 
-  let gameStarted = false
-
   const onMessage = (message: any) => {
-    console.log('Raw message received:', message)
-
     if (message.id) {
-      // This is the initial game state with full game info
       console.log('Game start message:', message)
-      onGameStart(message)
-      gameStarted = true
+      onGameStart(message as StreamedGame)
     } else if (message.uci || message.lm) {
-      // This is a move - handle both formats: {"fen":"...", "uci":"e2e4"} or {"fen":"...", "lm":"e2e4"}
-      // If we haven't received the initial game state yet, trigger game start with a minimal state
-      if (!gameStarted) {
-        console.log(
-          'First move received without initial game state, creating minimal game',
-        )
-        onGameStart({
-          id: gameId, // Use the gameId we're streaming
-          players: {
-            white: { user: { name: 'White' } },
-            black: { user: { name: 'Black' } },
-          },
-          fen: message.fen,
-        })
-        gameStarted = true
-      }
-
+      console.log('Move message:', message)
       onMove({
         fen: message.fen,
         uci: message.uci || message.lm,
         wc: message.wc,
         bc: message.bc,
       })
-    } else if (message.fen && !message.uci && !message.lm) {
-      // This is the initial position - could be the first message for a starting game
-      console.log('Initial position received:', message)
-      if (!gameStarted) {
-        console.log('Initial position message, creating game')
-        onGameStart({
-          id: gameId,
-          players: {
-            white: { user: { name: 'White' } },
-            black: { user: { name: 'Black' } },
-          },
-          fen: message.fen,
-        })
-        gameStarted = true
-      }
     } else {
       console.log('Unknown message format:', message)
     }
@@ -155,27 +120,25 @@ export const streamLichessGame = async (
   }
 }
 
-// Convert Lichess game data to our AnalyzedGame format for live streaming
 export const createAnalyzedGameFromLichessStream = (
   gameData: any,
-): AnalyzedGame => {
+): LiveGame => {
   const { players, id } = gameData
 
   const whitePlayer: Player = {
-    name: players?.white?.user?.name || 'White',
+    name: players?.white?.user?.id || 'White',
     rating: players?.white?.rating,
   }
 
   const blackPlayer: Player = {
-    name: players?.black?.user?.name || 'Black',
+    name: players?.black?.user?.id || 'Black',
     rating: players?.black?.rating,
   }
 
-  // Use the starting position as our tree root - we'll build moves incrementally
-  const startingFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+  const startingFen =
+    gameData.initialFen ||
+    'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
-  // Build moves array with just the initial position for now
-  // Moves will be added as they come in via the stream
   const gameStates = [
     {
       board: startingFen,
@@ -186,35 +149,28 @@ export const createAnalyzedGameFromLichessStream = (
     },
   ]
 
-  // Create game tree starting from the beginning
   const tree = new GameTree(startingFen)
 
   return {
     id: `stream-${id}`,
     blackPlayer,
     whitePlayer,
+    gameType: 'stream',
+    type: 'stream' as const,
     moves: gameStates,
     availableMoves: new Array(gameStates.length).fill({}) as AvailableMoves[],
-    gameType: 'blitz', // Default to blitz, could be detected from game data
-    termination: {
-      result: '*', // Live game in progress
-      winner: undefined,
-      condition: 'Live',
-    },
-    maiaEvaluations: new Array(gameStates.length).fill({}),
-    stockfishEvaluations: new Array(gameStates.length).fill(undefined) as (
-      | StockfishEvaluation
-      | undefined
-    )[],
+    termination: undefined,
+    maiaEvaluations: [],
+    stockfishEvaluations: [],
+    loadedFen: gameData.fen,
+    loaded: false,
     tree,
-    type: 'stream' as const, // Use stream type for live streams
-  } as AnalyzedGame
+  } as LiveGame
 }
 
-// Parse a move from the Lichess stream format and update game state
 export const parseLichessStreamMove = (
-  moveData: any,
-  currentGame: AnalyzedGame,
+  moveData: StreamedMove,
+  currentGame: LiveGame,
 ) => {
   const { uci, fen } = moveData
 

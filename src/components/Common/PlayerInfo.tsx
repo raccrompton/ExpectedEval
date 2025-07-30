@@ -64,15 +64,6 @@ export const PlayerInfo: React.FC<PlayerInfoProps> = ({
         </p>
       </div>
       <div className="flex items-center gap-4">
-        {clock && (
-          <div
-            className={`font-mono text-sm font-medium ${
-              clock.isActive ? 'text-primary' : 'text-secondary'
-            } ${currentTime < 60 ? 'text-red-400' : ''}`}
-          >
-            {formatTime(currentTime)}
-          </div>
-        )}
         {showArrowLegend && (
           <div className="flex flex-col items-start">
             <div className="flex items-center gap-0.5">
@@ -89,6 +80,18 @@ export const PlayerInfo: React.FC<PlayerInfoProps> = ({
             </div>
           </div>
         )}
+        {clock && (
+          <div className="flex items-center bg-primary px-2 py-0.5">
+            <span
+              className={`font-mono text-xs font-medium ${
+                clock.isActive ? 'text-black' : 'text-black/60'
+              } ${currentTime < 60 ? 'text-red-500' : ''}`}
+            >
+              {formatTime(currentTime)}
+            </span>
+          </div>
+        )}
+
         {termination === color ? (
           <p className="text-engine-3">1</p>
         ) : termination === undefined ? (

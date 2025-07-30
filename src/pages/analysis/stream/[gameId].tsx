@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useMemo, useRef } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
@@ -19,18 +19,14 @@ const StreamAnalysisPage: NextPage = () => {
   const { gameId } = router.query as { gameId: string }
 
   const streamController = useLichessStreamController()
-  const [isReady, setIsReady] = useState(false)
 
-  // Start streaming when gameId is available
   useEffect(() => {
     if (gameId && typeof gameId === 'string') {
       console.log('Starting stream for game:', gameId)
       streamController.startStream(gameId)
-      setIsReady(true)
     }
-  }, [gameId]) // Remove streamController dependency to prevent re-renders
+  }, [gameId])
 
-  // Cleanup stream on unmount - use ref to avoid dependency on streamController
   const streamControllerRef = useRef(streamController)
   streamControllerRef.current = streamController
 
@@ -40,8 +36,6 @@ const StreamAnalysisPage: NextPage = () => {
     }
   }, [])
 
-  // Get analysis controller for the current game (if available)
-  // Create a dummy game for the controller when no game is loaded yet
   const dummyGame: AnalyzedGame = useMemo(() => {
     const startingFen =
       'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
@@ -70,8 +64,6 @@ const StreamAnalysisPage: NextPage = () => {
     }
   }, [])
 
-  // Use the current streaming game or dummy game for analysis controller
-  // Disable backend analysis saving for stream page since this is live data
   const currentGame = streamController.game || dummyGame
   const analysisController = useAnalysisController(
     currentGame,
@@ -79,8 +71,7 @@ const StreamAnalysisPage: NextPage = () => {
     false,
   )
 
-  // Set current node to follow live moves only if user hasn't manually navigated
-  const [userNavigatedAway, setUserNavigatedAway] = useState(false)
+  // Auto-follow live moves only when user is at the last node
   const lastGameMoveCount = useRef(0)
 
   useEffect(() => {
@@ -93,66 +84,38 @@ const StreamAnalysisPage: NextPage = () => {
         if (currentMoveCount > lastGameMoveCount.current) {
           lastGameMoveCount.current = currentMoveCount
 
-          // Only auto-follow if user hasn't manually navigated away
-          if (!userNavigatedAway) {
-            // Find the last node in the main line
-            let currentNode = streamController.game.tree.getRoot()
-            while (currentNode.mainChild) {
-              currentNode = currentNode.mainChild
-            }
+          // Find the last node in the main line
+          let lastNode = streamController.game.tree.getRoot()
+          while (lastNode.mainChild) {
+            lastNode = lastNode.mainChild
+          }
 
-            if (currentNode) {
-              analysisController.setCurrentNode(currentNode)
-            }
+          // Only auto-follow if user is currently at the previous last node
+          // This means they're following the live game
+          if (
+            analysisController.currentNode &&
+            lastNode.parent === analysisController.currentNode
+          ) {
+            analysisController.setCurrentNode(lastNode)
           }
         }
       } catch (error) {
         console.error('Error setting current node:', error)
       }
     }
-  }, [streamController.game, analysisController, userNavigatedAway])
-
-  // Track when user manually navigates
-  const originalGoToNode = analysisController?.goToNode
-  useEffect(() => {
-    if (analysisController && originalGoToNode) {
-      // Wrap the goToNode function to track manual navigation
-      analysisController.goToNode = (node: any) => {
-        setUserNavigatedAway(true)
-        originalGoToNode(node)
-      }
-    }
-  }, [analysisController, originalGoToNode])
-
-  // Function to re-sync with live game
-  const syncWithLiveGame = useCallback(() => {
-    if (streamController.game?.tree && analysisController) {
-      try {
-        // Find the last node in the main line
-        let currentNode = streamController.game.tree.getRoot()
-        while (currentNode.mainChild) {
-          currentNode = currentNode.mainChild
-        }
-
-        if (currentNode) {
-          analysisController.setCurrentNode(currentNode)
-          setUserNavigatedAway(false) // Reset the navigation flag
-        }
-      } catch (error) {
-        console.error('Error syncing with live game:', error)
-      }
-    }
   }, [streamController.game, analysisController])
 
-  // if (!isReady || !gameId) {
-  //   return (
-  //     <DelayedLoading isLoading={true}>
-  //       <div></div>
-  //     </DelayedLoading>
-  //   )
-  // }
+  useEffect(() => {
+    if (streamController.game?.loaded) {
+      console.log('GAME LOADED')
+      analysisController.setCurrentNode(
+        streamController.game.tree.getMainLine()[
+          streamController.game.tree.getMainLine().length - 1
+        ],
+      )
+    }
+  }, [streamController.game?.loaded])
 
-  // Show loading only while actively connecting AND no data has been received yet
   if (
     streamController.streamState.isConnecting &&
     !streamController.streamState.gameStarted
@@ -221,6 +184,13 @@ const StreamAnalysisPage: NextPage = () => {
       </AnimatePresence>
 
       <TreeControllerContext.Provider value={analysisController}>
+        {!streamController.game?.loaded && streamController.game && (
+          <div className="absolute left-0 top-0 z-50">
+            <DelayedLoading transparent isLoading={true}>
+              <p>Loading...</p>
+            </DelayedLoading>
+          </div>
+        )}
         {analysisController && (
           <StreamAnalysis
             game={streamController.game || dummyGame}
@@ -229,8 +199,6 @@ const StreamAnalysisPage: NextPage = () => {
             onReconnect={streamController.reconnect}
             onStopStream={streamController.stopStream}
             analysisController={analysisController}
-            userNavigatedAway={userNavigatedAway}
-            onSyncWithLive={syncWithLiveGame}
           />
         )}
       </TreeControllerContext.Provider>

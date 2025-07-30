@@ -4,12 +4,14 @@ import { Loading } from './Loading'
 
 interface DelayedLoadingProps {
   isLoading: boolean
+  transparent?: boolean
   delay?: number
   children: React.ReactNode
 }
 
 export const DelayedLoading: React.FC<DelayedLoadingProps> = ({
   isLoading,
+  transparent = false,
   delay = 1000,
   children,
 }) => {
@@ -44,7 +46,7 @@ export const DelayedLoading: React.FC<DelayedLoadingProps> = ({
           transition={{ duration: 0.3 }}
           className="my-auto"
         >
-          <Loading />
+          <Loading transparent={transparent} />
         </motion.div>
       ) : !isLoading ? (
         <motion.div

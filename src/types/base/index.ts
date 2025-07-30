@@ -26,7 +26,7 @@ export interface Game extends BaseGame {
   gameType: string
   blackPlayer: Player
   whitePlayer: Player
-  termination: Termination
+  termination?: Termination
 }
 
 export interface DataNode {
