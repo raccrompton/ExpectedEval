@@ -41,7 +41,7 @@ export const getLichessTVGame = async () => {
   const data = await res.json()
 
   // Return the best game (highest rated players)
-  const bestChannel = data.best
+  const bestChannel = data.rapid
   if (!bestChannel?.gameId) {
     throw new Error('No TV game available')
   }
@@ -79,6 +79,8 @@ export const streamLichessGame = async (
     },
   })
 
+  let gameStarted = false
+
   const onMessage = (message: any) => {
     console.log('Raw message received:', message)
 
@@ -86,8 +88,25 @@ export const streamLichessGame = async (
       // This is the initial game state with full game info
       console.log('Game start message:', message)
       onGameStart(message)
+      gameStarted = true
     } else if (message.uci || message.lm) {
       // This is a move - handle both formats: {"fen":"...", "uci":"e2e4"} or {"fen":"...", "lm":"e2e4"}
+      // If we haven't received the initial game state yet, trigger game start with a minimal state
+      if (!gameStarted) {
+        console.log(
+          'First move received without initial game state, creating minimal game',
+        )
+        onGameStart({
+          id: gameId, // Use the gameId we're streaming
+          players: {
+            white: { user: { name: 'White' } },
+            black: { user: { name: 'Black' } },
+          },
+          fen: message.fen,
+        })
+        gameStarted = true
+      }
+
       onMove({
         fen: message.fen,
         uci: message.uci || message.lm,
@@ -95,8 +114,20 @@ export const streamLichessGame = async (
         bc: message.bc,
       })
     } else if (message.fen && !message.uci && !message.lm) {
-      // This is the initial position - ignore this message
+      // This is the initial position - could be the first message for a starting game
       console.log('Initial position received:', message)
+      if (!gameStarted) {
+        console.log('Initial position message, creating game')
+        onGameStart({
+          id: gameId,
+          players: {
+            white: { user: { name: 'White' } },
+            black: { user: { name: 'Black' } },
+          },
+          fen: message.fen,
+        })
+        gameStarted = true
+      }
     } else {
       console.log('Unknown message format:', message)
     }
@@ -128,24 +159,23 @@ export const streamLichessGame = async (
 export const createAnalyzedGameFromLichessStream = (
   gameData: any,
 ): AnalyzedGame => {
-  const { players, fen, id } = gameData
+  const { players, id } = gameData
 
   const whitePlayer: Player = {
-    name: players.white?.user?.name || 'White',
-    rating: players.white?.rating,
+    name: players?.white?.user?.name || 'White',
+    rating: players?.white?.rating,
   }
 
   const blackPlayer: Player = {
-    name: players.black?.user?.name || 'Black',
-    rating: players.black?.rating,
+    name: players?.black?.user?.name || 'Black',
+    rating: players?.black?.rating,
   }
 
-  // Use the current FEN from the game data (this is the current position)
+  // Use the starting position as our tree root - we'll build moves incrementally
   const startingFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-  const currentFen = fen || startingFen
 
-  // Build moves array - start with just the initial position
-  // We'll build up the game tree as moves come in via the stream
+  // Build moves array with just the initial position for now
+  // Moves will be added as they come in via the stream
   const gameStates = [
     {
       board: startingFen,
@@ -155,25 +185,6 @@ export const createAnalyzedGameFromLichessStream = (
       maia_values: {},
     },
   ]
-
-  // If we have the current position FEN and it's different from starting position,
-  // we know the game is in progress, but we don't have the move history
-  if (currentFen !== startingFen) {
-    // Game is in progress - we'll show the current position
-    // but we won't have move history until new moves come in
-    gameStates.push({
-      board: currentFen,
-      lastMove: gameData.lastMove
-        ? ([gameData.lastMove.slice(0, 2), gameData.lastMove.slice(2, 4)] as [
-            string,
-            string,
-          ])
-        : undefined,
-      san: gameData.lastMove || '', // We don't have SAN notation from Lichess stream initially
-      check: false as const,
-      maia_values: {},
-    })
-  }
 
   // Create game tree starting from the beginning
   const tree = new GameTree(startingFen)

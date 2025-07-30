@@ -127,17 +127,16 @@ export const StreamAnalysis: React.FC<Props> = ({
       if (!playedMove) return
 
       // Check for promotions in available moves
-      const availableMoves = Array.from(
-        analysisController.availableMoves.entries(),
-      ).flatMap(([from, tos]) =>
-        (tos as string[]).map((to: string) => ({ from, to })),
-      )
+      const availableMoves: { from: string; to: string }[] = []
+      for (const [from, tos] of analysisController.availableMoves.entries()) {
+        for (const to of tos as string[]) {
+          availableMoves.push({ from, to })
+        }
+      }
 
-      const matching = availableMoves.filter(
-        (m: { from: string; to: string }) => {
-          return m.from === playedMove[0] && m.to === playedMove[1]
-        },
-      )
+      const matching = availableMoves.filter((m) => {
+        return m.from === playedMove[0] && m.to === playedMove[1]
+      })
 
       if (matching.length > 1) {
         // Multiple matching moves (i.e. promotion)
@@ -177,6 +176,9 @@ export const StreamAnalysis: React.FC<Props> = ({
     return chess.turn() === 'w' ? 'white' : 'black'
   }, [analysisController.currentNode])
 
+  // Check if we're using dummy game data (waiting for real game data)
+  const isWaitingForGameData = game.id === ''
+
   // Stream status component
   const StreamStatus = () => (
     <div className="mb-2 flex items-center justify-between rounded bg-background-1 px-4 py-2">
@@ -191,13 +193,15 @@ export const StreamAnalysis: React.FC<Props> = ({
           }`}
         />
         <span className="text-sm font-medium">
-          {streamState.isLive
-            ? 'LIVE'
-            : streamState.isConnected
-              ? 'Connected'
-              : streamState.error
-                ? 'Disconnected'
-                : 'Connecting...'}
+          {isWaitingForGameData && streamState.isConnected
+            ? 'Waiting for game data...'
+            : streamState.isLive
+              ? 'LIVE'
+              : streamState.isConnected
+                ? 'Connected'
+                : streamState.error
+                  ? 'Disconnected'
+                  : 'Connecting...'}
         </span>
         {streamState.error && (
           <span className="text-xs text-red-400">({streamState.error})</span>

@@ -81,6 +81,8 @@ export const useLichessStreamController = (): LichessStreamController => {
       ...prev,
       gameStarted: true,
       isLive: true,
+      isConnected: true, // Set connected as soon as we receive game data
+      isConnecting: false,
       error: null,
     }))
 
@@ -115,6 +117,16 @@ export const useLichessStreamController = (): LichessStreamController => {
         }
 
         const newGame = createAnalyzedGameFromLichessStream(minimalGameData)
+
+        // Set stream as connected since we're receiving data
+        setStreamState((prev) => ({
+          ...prev,
+          isConnected: true,
+          isConnecting: false,
+          gameStarted: true,
+          isLive: true,
+          error: null,
+        }))
 
         // Try to parse the current move
         try {
@@ -179,6 +191,7 @@ export const useLichessStreamController = (): LichessStreamController => {
 
       try {
         // Start streaming directly - the stream API will handle invalid game IDs
+        // Note: isConnected will be set when we receive the first data (in handleGameStart or handleMove)
         await streamLichessGame(
           gameId,
           handleGameStart,
@@ -187,11 +200,8 @@ export const useLichessStreamController = (): LichessStreamController => {
           abortController.current.signal,
         )
 
-        setStreamState((prev) => ({
-          ...prev,
-          isConnected: true,
-          isConnecting: false,
-        }))
+        // Stream completed normally - this happens when the game ends or connection closes
+        console.log('Stream completed')
       } catch (error) {
         console.error('Stream error:', error)
 

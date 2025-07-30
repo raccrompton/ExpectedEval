@@ -94,16 +94,19 @@ const StreamAnalysisPage: NextPage = () => {
     }
   }, [streamController.game, analysisController])
 
-  if (!isReady || !gameId) {
-    return (
-      <DelayedLoading isLoading={true}>
-        <div></div>
-      </DelayedLoading>
-    )
-  }
+  // if (!isReady || !gameId) {
+  //   return (
+  //     <DelayedLoading isLoading={true}>
+  //       <div></div>
+  //     </DelayedLoading>
+  //   )
+  // }
 
-  // Show loading while connecting or if no game data yet
-  if (streamController.streamState.isConnecting || !streamController.game) {
+  // Show loading only while actively connecting AND no data has been received yet
+  if (
+    streamController.streamState.isConnecting &&
+    !streamController.streamState.gameStarted
+  ) {
     return (
       <>
         <Head>
@@ -147,12 +150,12 @@ const StreamAnalysisPage: NextPage = () => {
     <>
       <Head>
         <title>
-          Live Analysis: {streamController.game.whitePlayer.name} vs{' '}
-          {streamController.game.blackPlayer.name} – Maia Chess
+          Live Analysis: {streamController.game?.whitePlayer.name || 'Unknown'}{' '}
+          vs {streamController.game?.blackPlayer.name || 'Unknown'} – Maia Chess
         </title>
         <meta
           name="description"
-          content={`Watch live analysis of ${streamController.game.whitePlayer.name} vs ${streamController.game.blackPlayer.name} with real-time Maia AI insights.`}
+          content={`Watch live analysis of ${streamController.game?.whitePlayer.name || 'Unknown'} vs ${streamController.game?.blackPlayer.name || 'Unknown'} with real-time Maia AI insights.`}
         />
       </Head>
 
@@ -168,9 +171,9 @@ const StreamAnalysisPage: NextPage = () => {
       </AnimatePresence>
 
       <TreeControllerContext.Provider value={analysisController}>
-        {streamController.game && analysisController && (
+        {analysisController && (
           <StreamAnalysis
-            game={streamController.game}
+            game={streamController.game || dummyGame}
             streamState={streamController.streamState}
             onReconnect={streamController.reconnect}
             onStopStream={streamController.stopStream}
