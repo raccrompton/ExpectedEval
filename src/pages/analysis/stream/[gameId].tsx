@@ -71,8 +71,9 @@ const StreamAnalysisPage: NextPage = () => {
   }, [])
 
   // Use the current streaming game or dummy game for analysis controller
+  // Disable backend analysis saving for stream page since this is live data
   const currentGame = streamController.game || dummyGame
-  const analysisController = useAnalysisController(currentGame)
+  const analysisController = useAnalysisController(currentGame, undefined, false)
 
   // Set current node to follow live moves
   useEffect(() => {
