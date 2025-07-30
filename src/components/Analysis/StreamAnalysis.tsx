@@ -27,6 +27,7 @@ import { BoardController } from 'src/components/Board/BoardController'
 import { PromotionOverlay } from 'src/components/Board/PromotionOverlay'
 import { GameInfo } from 'src/components/Common/GameInfo'
 import { AnalysisSidebar } from 'src/components/Analysis'
+import { ConfigurableScreens } from 'src/components/Analysis/ConfigurableScreens'
 import { MAIA_MODELS } from 'src/constants/common'
 
 interface Props {
@@ -179,56 +180,6 @@ export const StreamAnalysis: React.FC<Props> = ({
   // Check if we're using dummy game data (waiting for real game data)
   const isWaitingForGameData = game.id === ''
 
-  // Stream status component
-  const StreamStatus = () => (
-    <div className="mb-2 flex items-center justify-between rounded bg-background-1 px-4 py-2">
-      <div className="flex items-center gap-2">
-        <div
-          className={`h-2 w-2 rounded-full ${
-            streamState.isLive
-              ? 'animate-pulse bg-red-500'
-              : streamState.isConnected
-                ? 'bg-green-500'
-                : 'bg-gray-500'
-          }`}
-        />
-        <span className="text-sm font-medium">
-          {isWaitingForGameData && streamState.isConnected
-            ? 'Waiting for game data...'
-            : streamState.isLive
-              ? 'LIVE'
-              : streamState.isConnected
-                ? 'Connected'
-                : streamState.error
-                  ? 'Disconnected'
-                  : 'Connecting...'}
-        </span>
-        {streamState.error && (
-          <span className="text-xs text-red-400">({streamState.error})</span>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
-        {streamState.error && (
-          <button
-            onClick={onReconnect}
-            className="rounded bg-human-4 px-2 py-1 text-xs text-white transition hover:bg-human-4/80"
-          >
-            Reconnect
-          </button>
-        )}
-        <button
-          onClick={() => {
-            onStopStream()
-            router.push('/analysis')
-          }}
-          className="rounded bg-background-2 px-2 py-1 text-xs text-secondary transition hover:bg-background-3"
-        >
-          Exit Stream
-        </button>
-      </div>
-    </div>
-  )
-
   const NestedGameInfo = () => (
     <div className="flex w-full flex-col">
       <div className="hidden md:block">
@@ -336,123 +287,137 @@ export const StreamAnalysis: React.FC<Props> = ({
       exit="exit"
       style={{ willChange: 'transform, opacity' }}
     >
-      <div className="flex h-full w-[90%] flex-col gap-2">
-        <StreamStatus />
-        <div className="flex h-full flex-row gap-2">
-          <motion.div
-            id="navigation"
-            className="desktop-left-column-container flex flex-col gap-2 overflow-hidden"
-            variants={itemVariants}
-            style={{ willChange: 'transform, opacity' }}
-          >
-            <GameInfo title="Live Analysis" icon="live_tv" type="analysis">
-              <NestedGameInfo />
-            </GameInfo>
-            <div className="flex h-1/2 w-full flex-1 flex-col gap-2">
-              <div className="flex h-full flex-col overflow-y-scroll">
-                <MovesContainer
-                  game={game}
-                  termination={game.termination}
-                  type="analysis"
-                  showAnnotations={true}
-                  disableKeyboardNavigation={false}
-                  disableMoveClicking={false}
-                />
-                <BoardController
-                  gameTree={analysisController.gameTree}
-                  orientation={analysisController.orientation}
-                  setOrientation={analysisController.setOrientation}
-                  currentNode={analysisController.currentNode}
-                  plyCount={analysisController.plyCount}
-                  goToNode={analysisController.goToNode}
-                  goToNextNode={analysisController.goToNextNode}
-                  goToPreviousNode={analysisController.goToPreviousNode}
-                  goToRootNode={analysisController.goToRootNode}
-                  disableKeyboardNavigation={false}
-                  disableNavigation={false}
-                />
-              </div>
-            </div>
-          </motion.div>
-          <motion.div
-            className="desktop-middle-column-container flex flex-col gap-2"
-            variants={itemVariants}
-            style={{ willChange: 'transform, opacity' }}
-          >
-            <div className="flex w-full flex-col overflow-hidden rounded">
-              <PlayerInfo
-                name={
-                  analysisController.orientation === 'white'
-                    ? game.blackPlayer.name
-                    : game.whitePlayer.name
-                }
-                rating={
-                  analysisController.orientation === 'white'
-                    ? game.blackPlayer.rating
-                    : game.whitePlayer.rating
-                }
-                color={
-                  analysisController.orientation === 'white' ? 'black' : 'white'
-                }
-                termination={game.termination.winner}
-              />
-              <div className="desktop-board-container relative flex aspect-square">
-                <GameBoard
-                  game={game}
-                  availableMoves={analysisController.availableMoves}
-                  setCurrentSquare={setCurrentSquare}
-                  shapes={(() => {
-                    const baseShapes = [...analysisController.arrows]
-                    if (hoverArrow) {
-                      baseShapes.push(hoverArrow)
-                    }
-                    return baseShapes
-                  })()}
-                  currentNode={analysisController.currentNode as GameNode}
-                  orientation={analysisController.orientation}
-                  onPlayerMakeMove={onPlayerMakeMove}
-                  goToNode={analysisController.goToNode}
-                  gameTree={game.tree}
-                />
-                {promotionFromTo ? (
-                  <PromotionOverlay
-                    player={currentPlayer}
-                    file={promotionFromTo[1].slice(0, 1)}
-                    onPlayerSelectPromotion={onPlayerSelectPromotion}
-                  />
-                ) : null}
-              </div>
-              <PlayerInfo
-                name={
-                  analysisController.orientation === 'white'
-                    ? game.whitePlayer.name
-                    : game.blackPlayer.name
-                }
-                rating={
-                  analysisController.orientation === 'white'
-                    ? game.whitePlayer.rating
-                    : game.blackPlayer.rating
-                }
-                color={
-                  analysisController.orientation === 'white' ? 'white' : 'black'
-                }
-                termination={game.termination.winner}
-                showArrowLegend={true}
-              />
-            </div>
-          </motion.div>
-          <AnalysisSidebar
-            hover={hover}
-            makeMove={makeMove}
-            controller={analysisController}
-            setHoverArrow={setHoverArrow}
-            analysisEnabled={true}
-            handleToggleAnalysis={() => {
-              // Analysis toggle not needed for stream - always enabled
+      <div className="flex h-full w-[90%] flex-row gap-2">
+        <motion.div
+          id="navigation"
+          className="desktop-left-column-container flex flex-col gap-2 overflow-hidden"
+          variants={itemVariants}
+          style={{ willChange: 'transform, opacity' }}
+        >
+          <GameInfo
+            title="Live Analysis"
+            icon="live_tv"
+            type="analysis"
+            streamState={{
+              isLive: streamState.isLive,
+              isConnected: streamState.isConnected,
+              error: streamState.error,
             }}
-            itemVariants={itemVariants}
+          >
+            <NestedGameInfo />
+          </GameInfo>
+          <div className="flex h-1/2 w-full flex-1 flex-col gap-2">
+            <div className="flex h-full flex-col overflow-y-scroll">
+              <MovesContainer
+                game={game}
+                termination={game.termination}
+                type="analysis"
+                showAnnotations={true}
+                disableKeyboardNavigation={false}
+                disableMoveClicking={false}
+              />
+              <BoardController
+                gameTree={analysisController.gameTree}
+                orientation={analysisController.orientation}
+                setOrientation={analysisController.setOrientation}
+                currentNode={analysisController.currentNode}
+                plyCount={analysisController.plyCount}
+                goToNode={analysisController.goToNode}
+                goToNextNode={analysisController.goToNextNode}
+                goToPreviousNode={analysisController.goToPreviousNode}
+                goToRootNode={analysisController.goToRootNode}
+                disableKeyboardNavigation={false}
+                disableNavigation={false}
+              />
+            </div>
+          </div>
+        </motion.div>
+        <motion.div
+          className="desktop-middle-column-container flex flex-col gap-2"
+          variants={itemVariants}
+          style={{ willChange: 'transform, opacity' }}
+        >
+          <div className="flex w-full flex-col overflow-hidden rounded">
+            <PlayerInfo
+              name={
+                analysisController.orientation === 'white'
+                  ? game.blackPlayer.name
+                  : game.whitePlayer.name
+              }
+              rating={
+                analysisController.orientation === 'white'
+                  ? game.blackPlayer.rating
+                  : game.whitePlayer.rating
+              }
+              color={
+                analysisController.orientation === 'white' ? 'black' : 'white'
+              }
+              termination={game.termination.winner}
+            />
+            <div className="desktop-board-container relative flex aspect-square">
+              <GameBoard
+                game={game}
+                availableMoves={analysisController.availableMoves}
+                setCurrentSquare={setCurrentSquare}
+                shapes={(() => {
+                  const baseShapes = [...analysisController.arrows]
+                  if (hoverArrow) {
+                    baseShapes.push(hoverArrow)
+                  }
+                  return baseShapes
+                })()}
+                currentNode={analysisController.currentNode as GameNode}
+                orientation={analysisController.orientation}
+                onPlayerMakeMove={onPlayerMakeMove}
+                goToNode={analysisController.goToNode}
+                gameTree={game.tree}
+              />
+              {promotionFromTo ? (
+                <PromotionOverlay
+                  player={currentPlayer}
+                  file={promotionFromTo[1].slice(0, 1)}
+                  onPlayerSelectPromotion={onPlayerSelectPromotion}
+                />
+              ) : null}
+            </div>
+            <PlayerInfo
+              name={
+                analysisController.orientation === 'white'
+                  ? game.whitePlayer.name
+                  : game.blackPlayer.name
+              }
+              rating={
+                analysisController.orientation === 'white'
+                  ? game.whitePlayer.rating
+                  : game.blackPlayer.rating
+              }
+              color={
+                analysisController.orientation === 'white' ? 'white' : 'black'
+              }
+              termination={game.termination.winner}
+              showArrowLegend={true}
+            />
+          </div>
+          <ConfigurableScreens
+            currentMaiaModel={analysisController.currentMaiaModel}
+            setCurrentMaiaModel={analysisController.setCurrentMaiaModel}
+            launchContinue={launchContinue}
+            MAIA_MODELS={MAIA_MODELS}
+            game={game}
+            currentNode={analysisController.currentNode as GameNode}
           />
-        </div>
+        </motion.div>
+        <AnalysisSidebar
+          hover={hover}
+          makeMove={makeMove}
+          controller={analysisController}
+          setHoverArrow={setHoverArrow}
+          analysisEnabled={true}
+          handleToggleAnalysis={() => {
+            // Analysis toggle not needed for stream - always enabled
+          }}
+          itemVariants={itemVariants}
+        />
       </div>
     </motion.div>
   )
@@ -466,7 +431,6 @@ export const StreamAnalysis: React.FC<Props> = ({
       style={{ willChange: 'transform, opacity' }}
     >
       <div className="flex h-full flex-1 flex-col justify-center gap-1">
-        <StreamStatus />
         <motion.div
           className="flex w-full flex-col items-start justify-start gap-1"
           variants={itemVariants}
@@ -479,6 +443,11 @@ export const StreamAnalysis: React.FC<Props> = ({
             currentMaiaModel={analysisController.currentMaiaModel}
             setCurrentMaiaModel={analysisController.setCurrentMaiaModel}
             MAIA_MODELS={MAIA_MODELS}
+            streamState={{
+              isLive: streamState.isLive,
+              isConnected: streamState.isConnected,
+              error: streamState.error,
+            }}
           >
             <NestedGameInfo />
           </GameInfo>
@@ -535,6 +504,14 @@ export const StreamAnalysis: React.FC<Props> = ({
               />
             </div>
           </div>
+          <ConfigurableScreens
+            currentMaiaModel={analysisController.currentMaiaModel}
+            setCurrentMaiaModel={analysisController.setCurrentMaiaModel}
+            launchContinue={launchContinue}
+            MAIA_MODELS={MAIA_MODELS}
+            game={game}
+            currentNode={analysisController.currentNode as GameNode}
+          />
         </motion.div>
       </div>
     </motion.div>
