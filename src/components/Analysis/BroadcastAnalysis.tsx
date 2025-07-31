@@ -279,8 +279,20 @@ export const BroadcastAnalysis: React.FC<Props> = ({
             <NestedGameInfo />
           </GameInfo>
           <div className="flex h-1/2 w-full flex-1 flex-col gap-2">
-            <div className="flex h-full flex-col overflow-y-scroll">
-              <BroadcastGameList broadcastController={broadcastController} />
+            <div className="flex h-full flex-col">
+              <div className="flex-1 overflow-hidden">
+                <BroadcastGameList broadcastController={broadcastController} />
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <MovesContainer
+                  game={game}
+                  termination={game.termination}
+                  type="analysis"
+                  showAnnotations={true}
+                  disableKeyboardNavigation={false}
+                  disableMoveClicking={false}
+                />
+              </div>
             </div>
           </div>
         </motion.div>

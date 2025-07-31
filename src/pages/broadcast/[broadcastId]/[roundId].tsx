@@ -51,7 +51,8 @@ const BroadcastAnalysisPage: NextPage = () => {
         }
 
         if (!broadcast) {
-          throw new Error('Broadcast not found')
+          // throw new Error('Broadcast not found')
+          return
         }
 
         // Find the round

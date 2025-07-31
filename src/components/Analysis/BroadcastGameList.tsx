@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { BroadcastStreamController, BroadcastGame } from 'src/types'
 
@@ -15,6 +15,16 @@ export const BroadcastGameList: React.FC<BroadcastGameListProps> = ({
     broadcastController.currentRound?.id || '',
   )
 
+  // Sync selectedRoundId when currentRound changes
+  useEffect(() => {
+    if (
+      broadcastController.currentRound?.id &&
+      broadcastController.currentRound.id !== selectedRoundId
+    ) {
+      setSelectedRoundId(broadcastController.currentRound.id)
+    }
+  }, [broadcastController.currentRound?.id, selectedRoundId])
+
   const handleRoundChange = (roundId: string) => {
     setSelectedRoundId(roundId)
     broadcastController.selectRound(roundId)
@@ -26,8 +36,18 @@ export const BroadcastGameList: React.FC<BroadcastGameListProps> = ({
   }
 
   const currentGames = useMemo(() => {
-    if (!broadcastController.roundData?.games) return []
-    return Array.from(broadcastController.roundData.games.values())
+    if (!broadcastController.roundData?.games) {
+      console.log('No round data games available')
+      return []
+    }
+    const games = Array.from(broadcastController.roundData.games.values())
+    console.log(
+      'BroadcastGameList displaying',
+      games.length,
+      'games:',
+      games.map((g) => `${g.white} vs ${g.black}`),
+    )
+    return games
   }, [broadcastController.roundData?.games])
 
   const getGameStatus = (game: BroadcastGame) => {

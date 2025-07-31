@@ -16,6 +16,7 @@ import {
   getLichessBroadcasts,
   getLichessTopBroadcasts,
   convertTopBroadcastToBroadcast,
+  getBroadcastRoundPGN,
   streamBroadcastRound,
   parsePGNData,
 } from 'src/api/lichess/broadcasts'
@@ -311,34 +312,41 @@ export const useBroadcastController = (): BroadcastStreamController => {
       }
 
       lastPGNData.current = pgnData
+      console.log('Processing PGN update with length:', pgnData.length)
 
       const parseResult = parsePGNData(pgnData)
+      console.log('Parsed games count:', parseResult.games.length)
+      console.log(
+        'Game IDs:',
+        parseResult.games.map((g) => `${g.white} vs ${g.black}`),
+      )
 
       if (parseResult.errors.length > 0) {
         console.warn('PGN parsing errors:', parseResult.errors)
       }
 
       if (parseResult.games.length === 0) {
+        console.warn('No games found in PGN data')
         return
       }
 
-      // Update round data
-      const newGames = new Map<string, BroadcastGame>()
-      const updatedGameStates = new Map<string, LiveGame>()
-      let hasNewMoves = false
+      // Determine if this is initial load (multiple games) or update (single game)
+      const isInitialLoad = parseResult.games.length > 1
+      console.log('Is initial load:', isInitialLoad)
 
-      for (const game of parseResult.games) {
-        newGames.set(game.id, game)
+      setRoundData((prevRoundData) => {
+        // Start with existing games
+        const existingGames =
+          prevRoundData?.games || new Map<string, BroadcastGame>()
+        const updatedGames = new Map(existingGames)
 
-        // Check if this game has new moves compared to our stored state
-        const existingGameState = gameStates.current.get(game.id)
-        const newLiveGame = createLiveGameFromBroadcastGame(game)
+        // Process new/updated games
+        for (const game of parseResult.games) {
+          updatedGames.set(game.id, game)
 
-        if (
-          !existingGameState ||
-          existingGameState.moves.length !== newLiveGame.moves.length
-        ) {
-          hasNewMoves = true
+          // Update game states
+          const existingGameState = gameStates.current.get(game.id)
+          const newLiveGame = createLiveGameFromBroadcastGame(game)
 
           // Play sound for new moves if game was already loaded
           if (
@@ -352,18 +360,16 @@ export const useBroadcastController = (): BroadcastStreamController => {
                 .catch((e) => console.log('Could not play move sound:', e))
             } catch (e) {}
           }
+
+          gameStates.current.set(game.id, newLiveGame)
         }
 
-        updatedGameStates.set(game.id, newLiveGame)
-      }
+        console.log('Updated games map, now has', updatedGames.size, 'games')
 
-      gameStates.current = updatedGameStates
-
-      setRoundData((prev) => {
         const newRoundData: BroadcastRoundData = {
           roundId: currentRoundId.current || '',
           broadcastId: currentBroadcast?.tour.id || '',
-          games: newGames,
+          games: updatedGames,
           lastUpdate: Date.now(),
         }
         return newRoundData
@@ -371,9 +377,11 @@ export const useBroadcastController = (): BroadcastStreamController => {
 
       // Update current game if it exists in the new data
       if (currentGame) {
-        const updatedCurrentGame = newGames.get(currentGame.id)
-        if (updatedCurrentGame) {
-          setCurrentGame(updatedCurrentGame)
+        const updatedGame = parseResult.games.find(
+          (g) => g.id === currentGame.id,
+        )
+        if (updatedGame) {
+          setCurrentGame(updatedGame)
         }
       } else if (parseResult.games.length > 0) {
         // Auto-select first game if none selected
@@ -419,6 +427,7 @@ export const useBroadcastController = (): BroadcastStreamController => {
       }))
 
       try {
+        // Start streaming - this will send all games initially, then updates
         await streamBroadcastRound(
           roundId,
           handlePGNUpdate,
