@@ -1,4 +1,10 @@
-import { Broadcast, BroadcastGame, PGNParseResult } from 'src/types'
+import {
+  Broadcast,
+  BroadcastGame,
+  PGNParseResult,
+  TopBroadcastsResponse,
+  TopBroadcastItem,
+} from 'src/types'
 
 const readStream = (processLine: (data: any) => void) => (response: any) => {
   const stream = response.body.getReader()
@@ -59,6 +65,31 @@ export const getLichessBroadcasts = async (): Promise<Broadcast[]> => {
 
     readStream(onMessage)(response).then(onComplete).catch(reject)
   })
+}
+
+export const getLichessTopBroadcasts =
+  async (): Promise<TopBroadcastsResponse> => {
+    const response = await fetch('https://lichess.org/api/broadcast/top', {
+      headers: {
+        Accept: 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    return response.json()
+  }
+
+export const convertTopBroadcastToBroadcast = (
+  item: TopBroadcastItem,
+): Broadcast => {
+  return {
+    tour: item.tour,
+    rounds: [item.round],
+    defaultRoundId: item.round.id,
+  }
 }
 
 export const streamBroadcastRound = async (
@@ -202,7 +233,7 @@ const parseSinglePGN = (pgnString: string): BroadcastGame | null => {
 
   // Parse moves from moves section
   const moves = parseMovesFromPGN(movesSection)
-  const fen = extractFENFromMoves(moves)
+  const fen = extractFENFromMoves()
 
   const game: BroadcastGame = {
     id: generateGameId(white, black, event, site),
@@ -229,12 +260,8 @@ const parseSinglePGN = (pgnString: string): BroadcastGame | null => {
     utcTime: headers.UTCTime,
   }
 
-  // Extract last move if available
-  if (moves.length > 0) {
-    const lastMove = moves[moves.length - 1]
-    // This would need proper move parsing to convert SAN to UCI
-    // For now, we'll leave it undefined and handle in the controller
-  }
+  // Note: Last move extraction would need proper move parsing to convert SAN to UCI
+  // For now, we'll leave it undefined and handle in the controller
 
   return game
 }
@@ -276,7 +303,7 @@ const parseMovesFromPGN = (movesSection: string): string[] => {
   return moves
 }
 
-const extractFENFromMoves = (moves: string[]): string | null => {
+const extractFENFromMoves = (): string | null => {
   // This would require a full chess engine to calculate the FEN from moves
   // For now, return null and handle in the controller with chess.js
   return null
@@ -289,7 +316,12 @@ const generateGameId = (
   site: string,
 ): string => {
   const baseString = `${white}-${black}-${event}-${site}`
-  return btoa(baseString)
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .substring(0, 12)
+  // Use a simple hash instead of deprecated btoa for better compatibility
+  let hash = 0
+  for (let i = 0; i < baseString.length; i++) {
+    const char = baseString.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36).substring(0, 12)
 }
