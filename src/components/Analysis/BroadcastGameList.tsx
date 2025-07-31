@@ -70,42 +70,28 @@ export const BroadcastGameList: React.FC<BroadcastGameListProps> = ({
 
   return (
     <div className="flex h-full flex-col items-start justify-start overflow-hidden bg-background-1 md:rounded">
-      <div className="w-full border-b-2 border-white border-opacity-10 p-3">
-        <div className="mb-3">
-          <h3 className="text-sm font-semibold text-primary">
+      <div className="flex w-full flex-col items-start justify-start gap-2 border-b-2 border-white border-opacity-10 p-3">
+        <div className="w-full overflow-hidden">
+          <h3 className="truncate text-sm font-semibold text-primary">
             {broadcastController.currentBroadcast?.tour.name ||
               'Live Broadcast'}
           </h3>
-          {broadcastController.broadcastState.isLive && (
-            <div className="mt-1 flex items-center gap-1">
-              <div className="h-2 w-2 animate-pulse rounded-full bg-red-500"></div>
-              <span className="text-xs font-medium text-red-400">LIVE</span>
-            </div>
-          )}
         </div>
 
         {/* Round Selector */}
         {broadcastController.currentBroadcast && (
-          <div className="mb-3">
-            <label
-              htmlFor="round-selector"
-              className="mb-1 block text-xs text-secondary"
-            >
-              Round
-            </label>
-            <select
-              id="round-selector"
-              value={selectedRoundId}
-              onChange={(e) => handleRoundChange(e.target.value)}
-              className="w-full rounded bg-background-2 px-2 py-1 text-xs text-primary focus:outline-none focus:ring-1 focus:ring-human-4"
-            >
-              {broadcastController.currentBroadcast.rounds.map((round) => (
-                <option key={round.id} value={round.id}>
-                  {round.name} {round.ongoing ? '(Live)' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
+          <select
+            id="round-selector"
+            value={selectedRoundId}
+            onChange={(e) => handleRoundChange(e.target.value)}
+            className="w-full rounded bg-background-2 px-2 py-1 text-xs text-primary focus:outline-none focus:ring-1 focus:ring-human-4"
+          >
+            {broadcastController.currentBroadcast.rounds.map((round) => (
+              <option key={round.id} value={round.id}>
+                {round.name} {round.ongoing ? '(Live)' : ''}
+              </option>
+            ))}
+          </select>
         )}
 
         {/* Connection Status */}
@@ -133,7 +119,7 @@ export const BroadcastGameList: React.FC<BroadcastGameListProps> = ({
         )}
       </div>
 
-      <div className="red-scrollbar flex h-full flex-col overflow-y-scroll">
+      <div className="red-scrollbar flex w-full flex-col overflow-y-scroll">
         {currentGames.length === 0 ? (
           <div className="flex flex-1 items-center justify-center py-8 text-center">
             <div>
@@ -203,13 +189,6 @@ export const BroadcastGameList: React.FC<BroadcastGameListProps> = ({
                         )}
                       </div>
                     </div>
-                    {(game.opening || game.eco) && (
-                      <div className="mt-1 w-full text-left">
-                        <span className="text-xs text-secondary">
-                          {game.eco} {game.opening}
-                        </span>
-                      </div>
-                    )}
                   </button>
                 </div>
               )

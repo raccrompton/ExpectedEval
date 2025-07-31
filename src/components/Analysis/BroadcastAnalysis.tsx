@@ -157,7 +157,9 @@ export const BroadcastAnalysis: React.FC<Props> = ({
               <div
                 className={`h-2 w-2 rounded-full ${index === 0 ? 'bg-white' : 'border-[0.5px] bg-black'}`}
               />
-              <p className="text-sm">{player.name}</p>
+              <p className="truncate whitespace-nowrap text-sm">
+                {player.name}
+              </p>
               <span className="text-xs">
                 {player.rating ? <>({player.rating})</> : null}
               </span>
@@ -174,7 +176,7 @@ export const BroadcastAnalysis: React.FC<Props> = ({
           </div>
         ))}
         <div className="mt-1 flex items-center justify-center gap-1">
-          <span className="text-xxs text-secondary">
+          <span className="truncate whitespace-nowrap text-xxs text-secondary">
             {broadcastController.currentBroadcast?.tour.name}
             {broadcastController.currentRound && (
               <> • {broadcastController.currentRound.name}</>
