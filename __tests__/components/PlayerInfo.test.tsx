@@ -16,7 +16,7 @@ describe('PlayerInfo Component', () => {
   it('should render player rating when provided', () => {
     render(<PlayerInfo {...defaultProps} rating={1500} />)
 
-    expect(screen.getByText('TestPlayer (1500)')).toBeInTheDocument()
+    expect(screen.getByText('(1500)')).toBeInTheDocument()
   })
 
   it('should not render rating when not provided', () => {

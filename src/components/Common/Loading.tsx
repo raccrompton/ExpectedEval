@@ -12,7 +12,11 @@ const states = [
   'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R b KQkq - 0 4',
 ]
 
-export const Loading: React.FC = () => {
+interface LoadingProps {
+  transparent?: boolean
+}
+
+export const Loading: React.FC<LoadingProps> = ({ transparent = false }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [renderKey, setRenderKey] = useState(0)
 
@@ -33,9 +37,19 @@ export const Loading: React.FC = () => {
   }, [currentIndex])
 
   return (
-    <div className="my-40 flex w-screen items-center justify-center bg-backdrop md:my-auto">
+    <div
+      className={`my-40 flex w-screen items-center justify-center ${
+        transparent
+          ? 'absolute left-0 top-0 h-screen bg-backdrop/90'
+          : 'bg-backdrop'
+      } md:my-auto`}
+    >
       <div className="flex flex-col items-center gap-4">
-        <div className="h-[50vw] w-[50vw] opacity-50 md:h-[30vh] md:w-[30vh]">
+        <div
+          className={`h-[50vw] w-[50vw] md:h-[30vh] md:w-[30vh] ${
+            !transparent ? 'opacity-50' : 'opacity-100'
+          }`}
+        >
           <div className="h-full w-full">
             <Chessground
               key={renderKey}

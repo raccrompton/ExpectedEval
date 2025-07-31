@@ -12,6 +12,12 @@ interface Props {
   MAIA_MODELS?: string[]
   showGameListButton?: boolean
   onGameListClick?: () => void
+  streamState?: {
+    isLive: boolean
+    isConnected: boolean
+    error: string | null
+    gameEnded: boolean
+  }
 }
 
 export const GameInfo: React.FC<Props> = ({
@@ -24,6 +30,7 @@ export const GameInfo: React.FC<Props> = ({
   MAIA_MODELS,
   showGameListButton,
   onGameListClick,
+  streamState,
 }: Props) => {
   const { startTour } = useTour()
 
@@ -38,6 +45,30 @@ export const GameInfo: React.FC<Props> = ({
             {icon}
           </span>
           <h2 className="text-lg font-semibold md:text-xl">{title}</h2>
+          {streamState && (
+            <div className="flex items-center gap-1.5">
+              <div
+                className={`h-2 w-2 rounded-full ${
+                  streamState.isLive
+                    ? 'animate-pulse bg-red-500'
+                    : streamState.isConnected
+                      ? 'bg-green-500'
+                      : 'bg-gray-500'
+                }`}
+              />
+              <span className="text-xs font-medium text-secondary">
+                {streamState.isLive
+                  ? 'LIVE'
+                  : streamState.isConnected
+                    ? 'Connected'
+                    : streamState.gameEnded
+                      ? 'Game Ended'
+                      : streamState.error
+                        ? 'Disconnected'
+                        : 'Connecting...'}
+              </span>
+            </div>
+          )}
           {currentMaiaModel && setCurrentMaiaModel && (
             <div className="flex items-center gap-1 text-sm md:hidden">
               using

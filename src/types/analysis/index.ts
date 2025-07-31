@@ -45,6 +45,7 @@ type EvaluationType =
   | 'brain'
   | 'custom-pgn'
   | 'custom-fen'
+  | 'stream'
 
 type StockfishEvaluations<T extends EvaluationType> = T extends 'tournament'
   ? MoveMap[]
@@ -71,6 +72,7 @@ export interface AnalysisWebGame {
     | 'brain'
     | 'custom-pgn'
     | 'custom-fen'
+    | 'stream'
   label: string
   result: string
   pgn?: string
@@ -82,6 +84,11 @@ export interface AnalyzedGame extends Game {
   availableMoves: AvailableMoves[]
   type: EvaluationType
   pgn?: string
+}
+
+export interface LiveGame extends AnalyzedGame {
+  loadedFen: string
+  loaded: boolean
 }
 
 export interface CustomAnalysisInput {
@@ -165,4 +172,19 @@ export interface LearnFromMistakesState {
   currentAttempt: number
   maxAttempts: number
   originalPosition: string | null // FEN of the position where the player should make a move
+}
+
+// Streaming-related types
+export interface LiveGameData {
+  gameId: string
+  white: {
+    name: string
+    rating?: number
+  }
+  black: {
+    name: string
+    rating?: number
+  }
+  lastMoveFen?: string
+  isLive: boolean
 }
