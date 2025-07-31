@@ -103,8 +103,8 @@ const BroadcastsPage: NextPage = () => {
         <Head>
           <title>Live Broadcasts – Maia Chess</title>
         </Head>
-        <div className="flex min-h-screen items-center justify-center bg-background-1">
-          <div className="text-center">
+        <div className="flex min-h-screen items-center justify-center bg-backdrop">
+          <div className="rounded-lg border border-white/10 bg-background-1 p-6 text-center">
             <h2 className="mb-4 text-xl font-semibold text-red-400">
               Error Loading Broadcasts
             </h2>
@@ -113,7 +113,7 @@ const BroadcastsPage: NextPage = () => {
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="rounded bg-human-4 px-4 py-2 text-white transition hover:bg-human-4/80"
+              className="rounded border border-human-4/30 bg-human-4 px-4 py-2 text-white transition-all duration-200 hover:border-human-4/50 hover:bg-human-4/80"
             >
               Try Again
             </button>
@@ -133,9 +133,9 @@ const BroadcastsPage: NextPage = () => {
         />
       </Head>
 
-      <div className="min-h-screen bg-background-1">
+      <div className="min-h-screen bg-backdrop">
         <motion.div
-          className="container mx-auto px-4 py-8"
+          className="container mx-auto px-6 py-8"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -165,24 +165,24 @@ const BroadcastsPage: NextPage = () => {
               </p>
               <button
                 onClick={() => broadcastController.loadBroadcasts()}
-                className="mt-4 rounded bg-human-4 px-4 py-2 text-white transition hover:bg-human-4/80"
+                className="mt-4 rounded border border-human-4/30 bg-human-4 px-4 py-2 text-white transition-all duration-200 hover:border-human-4/50 hover:bg-human-4/80"
               >
                 Refresh
               </button>
             </motion.div>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-6">
               {broadcastController.broadcastSections.map(
                 (section, sectionIndex) => (
                   <motion.div
                     key={section.type}
                     variants={itemVariants}
-                    className="space-y-4"
+                    className="space-y-3"
                   >
                     <h2 className="flex items-center gap-2 text-xl font-semibold text-primary">
                       {section.title}
                       {(section.type === 'official-active' ||
-                        section.type === 'unofficial-active') && (
+                        section.type === 'community-active') && (
                         <div className="flex items-center gap-1">
                           <div className="h-2 w-2 animate-pulse rounded-full bg-red-500"></div>
                           <span className="text-xs font-medium text-red-400">
@@ -192,25 +192,27 @@ const BroadcastsPage: NextPage = () => {
                       )}
                     </h2>
 
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                       {section.broadcasts.map((broadcast, index) => {
                         const ongoingRounds = broadcast.rounds.filter(
                           (r) => r.ongoing,
                         )
                         const hasOngoingRounds = ongoingRounds.length > 0
-                        const isActive = section.type.includes('active')
+                        const isActive =
+                          section.type.includes('active') ||
+                          section.type.includes('community')
                         const isPast = section.type === 'past'
 
                         return (
                           <motion.div
                             key={broadcast.tour.id}
                             variants={itemVariants}
-                            className="overflow-hidden rounded-lg bg-background-2 shadow-lg transition-transform hover:scale-105"
+                            className="overflow-hidden rounded-lg border border-white/10 bg-background-1 transition-all duration-200 hover:border-white/20 hover:bg-background-1/80"
                           >
-                            <div className="p-6">
-                              <div className="mb-4 flex items-start justify-between">
+                            <div className="p-3">
+                              <div className="mb-3 flex items-start justify-between">
                                 <div className="flex-1">
-                                  <h3 className="mb-1 line-clamp-2 text-lg font-semibold text-primary">
+                                  <h3 className="mb-1 line-clamp-2 text-base font-semibold text-primary">
                                     {broadcast.tour.name}
                                   </h3>
                                   {hasOngoingRounds && isActive && (
@@ -234,8 +236,8 @@ const BroadcastsPage: NextPage = () => {
                                 </div>
                               </div>
 
-                              <div className="mb-4">
-                                <div className="mb-2 text-sm font-medium text-primary">
+                              <div className="mb-3 border-t border-white/10 pt-2">
+                                <div className="mb-1.5 text-xs font-medium text-primary">
                                   Rounds ({broadcast.rounds.length})
                                 </div>
                                 <div className="space-y-1">
@@ -252,7 +254,7 @@ const BroadcastsPage: NextPage = () => {
                                           round.ongoing
                                             ? 'bg-red-500/20 text-red-400'
                                             : isPast
-                                              ? 'bg-background-3 text-secondary'
+                                              ? 'bg-background-2 text-secondary'
                                               : 'bg-blue-500/20 text-blue-400'
                                         }`}
                                       >
@@ -275,12 +277,12 @@ const BroadcastsPage: NextPage = () => {
                               <button
                                 onClick={() => handleSelectBroadcast(broadcast)}
                                 disabled={!hasOngoingRounds && !isPast}
-                                className={`w-full rounded py-2 text-sm font-medium transition ${
+                                className={`w-full rounded border py-1.5 text-sm font-medium transition-all duration-200 ${
                                   hasOngoingRounds
-                                    ? 'bg-human-4 text-white hover:bg-human-4/80'
+                                    ? 'border-human-4/30 bg-human-4 text-white hover:border-human-4/50 hover:bg-human-4/80'
                                     : isPast
-                                      ? 'bg-background-3 text-secondary hover:bg-background-3/80'
-                                      : 'cursor-not-allowed bg-background-3/50 text-secondary/50'
+                                      ? 'border-white/10 bg-background-2 text-secondary hover:border-white/20 hover:bg-background-2/80'
+                                      : 'cursor-not-allowed border-white/5 bg-background-2/50 text-secondary/50'
                                 }`}
                               >
                                 {hasOngoingRounds

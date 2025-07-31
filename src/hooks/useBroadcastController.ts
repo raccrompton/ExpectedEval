@@ -63,7 +63,7 @@ export const useBroadcastController = (): BroadcastStreamController => {
       // Organize broadcasts into sections
       const sections: BroadcastSection[] = []
 
-      // Official active broadcasts
+      // 1. Official active broadcasts (Lichess official live tournaments)
       const officialActive = officialBroadcasts.filter((b) =>
         b.rounds.some((r) => r.ongoing),
       )
@@ -75,7 +75,23 @@ export const useBroadcastController = (): BroadcastStreamController => {
         })
       }
 
-      // Top active broadcasts (unofficial)
+      // 2. Official upcoming broadcasts (Lichess official upcoming tournaments) - max 4
+      const officialUpcoming = officialBroadcasts
+        .filter(
+          (b) =>
+            b.rounds.every((r) => !r.ongoing) &&
+            b.rounds.some((r) => r.startsAt > Date.now()),
+        )
+        .slice(0, 4) // Limit to 4
+      if (officialUpcoming.length > 0) {
+        sections.push({
+          title: 'Upcoming Official Tournaments',
+          broadcasts: officialUpcoming,
+          type: 'official-upcoming',
+        })
+      }
+
+      // 3. Community live broadcasts (all live community broadcasts)
       const unofficialActive = topBroadcasts.active
         .map(convertTopBroadcastToBroadcast)
         .filter(
@@ -86,37 +102,23 @@ export const useBroadcastController = (): BroadcastStreamController => {
         sections.push({
           title: 'Community Live Broadcasts',
           broadcasts: unofficialActive,
-          type: 'unofficial-active',
+          type: 'community-active',
         })
       }
 
-      // Official upcoming broadcasts
-      const officialUpcoming = officialBroadcasts.filter(
-        (b) =>
-          b.rounds.every((r) => !r.ongoing) &&
-          b.rounds.some((r) => r.startsAt > Date.now()),
-      )
-      if (officialUpcoming.length > 0) {
-        sections.push({
-          title: 'Upcoming Official Tournaments',
-          broadcasts: officialUpcoming,
-          type: 'official-upcoming',
-        })
-      }
-
-      // Top upcoming broadcasts (unofficial)
-      const unofficialUpcoming = topBroadcasts.upcoming.map(
-        convertTopBroadcastToBroadcast,
-      )
+      // 4. Community upcoming broadcasts - max 5
+      const unofficialUpcoming = topBroadcasts.upcoming
+        .map(convertTopBroadcastToBroadcast)
+        .slice(0, 5) // Limit to 5
       if (unofficialUpcoming.length > 0) {
         sections.push({
           title: 'Upcoming Community Broadcasts',
           broadcasts: unofficialUpcoming,
-          type: 'unofficial-upcoming',
+          type: 'community-upcoming',
         })
       }
 
-      // Past broadcasts (mix of official and top)
+      // 5. Past tournaments (separate section) - max 8
       const officialPast = officialBroadcasts.filter(
         (b) =>
           b.rounds.every((r) => !r.ongoing) &&
@@ -127,10 +129,10 @@ export const useBroadcastController = (): BroadcastStreamController => {
         ...topBroadcasts.past.currentPageResults.map(
           convertTopBroadcastToBroadcast,
         ),
-      ]
+      ].slice(0, 8) // Limit to 8
       if (pastBroadcasts.length > 0) {
         sections.push({
-          title: 'Recent Tournaments',
+          title: 'Past Tournaments',
           broadcasts: pastBroadcasts,
           type: 'past',
         })
