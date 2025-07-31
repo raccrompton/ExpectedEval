@@ -193,6 +193,10 @@ export const useBroadcastController = (): BroadcastStreamController => {
       if (roundData) {
         const game = roundData.games.get(gameId)
         if (game) {
+          console.log(
+            'Manual game selection:',
+            game.white + ' vs ' + game.black,
+          )
           setCurrentGame(game)
         }
       }
@@ -226,44 +230,97 @@ export const useBroadcastController = (): BroadcastStreamController => {
       const startingFen =
         'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
-      // Build game tree from moves
-      const tree = new GameTree(startingFen)
-      const chess = new Chess(startingFen)
-      let currentNode = tree.getRoot()
+      // Check if we have an existing game state to build upon
+      const existingLiveGame = gameStates.current.get(broadcastGame.id)
 
-      const gameStates = [
-        {
-          board: startingFen,
-          lastMove: undefined as [string, string] | undefined,
-          san: undefined as string | undefined,
-          check: false,
-          maia_values: {},
-        },
-      ]
+      let tree: GameTree
+      let movesList: any[]
+      let existingMoveCount = 0
 
-      // Process each move
-      for (const moveStr of broadcastGame.moves) {
-        try {
-          const move = chess.move(moveStr)
-          if (move) {
-            const newFen = chess.fen()
-            const uci =
-              move.from + move.to + (move.promotion ? move.promotion : '')
+      if (existingLiveGame && existingLiveGame.tree) {
+        // Reuse existing tree and states - preserve all analysis and variations
+        tree = existingLiveGame.tree
+        movesList = [...existingLiveGame.moves]
+        existingMoveCount = movesList.length - 1 // Subtract 1 for initial position
+        console.log(
+          `Reusing existing tree with ${existingMoveCount} moves, adding ${broadcastGame.moves.length - existingMoveCount} new moves`,
+        )
+      } else {
+        // Create new tree only for new games
+        tree = new GameTree(startingFen)
+        movesList = [
+          {
+            board: startingFen,
+            lastMove: undefined as [string, string] | undefined,
+            san: undefined as string | undefined,
+            check: false,
+            maia_values: {},
+          },
+        ]
+        console.log(
+          `Creating new tree for ${broadcastGame.white} vs ${broadcastGame.black}`,
+        )
+      }
 
-            gameStates.push({
-              board: newFen,
-              lastMove: [move.from, move.to],
-              san: move.san,
-              check: chess.inCheck(),
-              maia_values: {},
-            })
+      // Only process new moves that we don't already have
+      if (broadcastGame.moves.length > existingMoveCount) {
+        const chess = new Chess(startingFen)
+        let currentNode = tree.getRoot()
 
-            currentNode = tree.addMainMove(currentNode, newFen, uci, move.san)
+        // Replay existing moves to get to the current position
+        for (let i = 0; i < existingMoveCount; i++) {
+          try {
+            const move = chess.move(broadcastGame.moves[i])
+            if (move && currentNode.mainChild) {
+              currentNode = currentNode.mainChild
+            }
+          } catch (error) {
+            console.warn(
+              `Error replaying existing move ${broadcastGame.moves[i]}:`,
+              error,
+            )
+            break
           }
-        } catch (error) {
-          console.warn(`Error processing move ${moveStr}:`, error)
-          break
         }
+
+        // Add only the new moves
+        for (let i = existingMoveCount; i < broadcastGame.moves.length; i++) {
+          try {
+            const moveStr = broadcastGame.moves[i]
+            const move = chess.move(moveStr)
+            if (move) {
+              const newFen = chess.fen()
+              const uci =
+                move.from + move.to + (move.promotion ? move.promotion : '')
+
+              movesList.push({
+                board: newFen,
+                lastMove: [move.from, move.to],
+                san: move.san,
+                check: chess.inCheck(),
+                maia_values: {},
+              })
+
+              currentNode = tree.addMainMove(currentNode, newFen, uci, move.san)
+              console.log(`Added new move: ${move.san}`)
+            }
+          } catch (error) {
+            console.warn(
+              `Error processing new move ${broadcastGame.moves[i]}:`,
+              error,
+            )
+            break
+          }
+        }
+      }
+
+      // Preserve existing availableMoves array (legacy) and extend if needed
+      const availableMoves =
+        existingLiveGame?.availableMoves || new Array(movesList.length).fill({})
+
+      // Extend availableMoves array if we have new moves
+      while (availableMoves.length < movesList.length) {
+        availableMoves.push({})
       }
 
       return {
@@ -278,10 +335,8 @@ export const useBroadcastController = (): BroadcastStreamController => {
         },
         gameType: 'broadcast',
         type: 'stream' as const,
-        moves: gameStates,
-        availableMoves: new Array(gameStates.length).fill(
-          {},
-        ) as AvailableMoves[],
+        moves: movesList,
+        availableMoves: availableMoves as AvailableMoves[],
         termination:
           broadcastGame.result === '*'
             ? undefined
@@ -294,8 +349,8 @@ export const useBroadcastController = (): BroadcastStreamController => {
                       ? 'black'
                       : 'none',
               },
-        maiaEvaluations: [],
-        stockfishEvaluations: [],
+        maiaEvaluations: existingLiveGame?.maiaEvaluations || [],
+        stockfishEvaluations: existingLiveGame?.stockfishEvaluations || [],
         loadedFen: broadcastGame.fen,
         loaded: true,
         tree,
@@ -366,15 +421,30 @@ export const useBroadcastController = (): BroadcastStreamController => {
 
       // Update current game data if it's in the update, but don't switch to a different game
       if (currentGame) {
+        console.log(
+          'Current game selected:',
+          currentGame.white + ' vs ' + currentGame.black,
+        )
         const updatedCurrentGame = parseResult.games.find(
           (g) => g.id === currentGame.id,
         )
         if (updatedCurrentGame) {
+          console.log('Updating current game with new data')
           // Update the currently selected game with new data (including clocks)
           setCurrentGame(updatedCurrentGame)
+        } else {
+          console.log(
+            'Current game not in update - keeping selection unchanged',
+          )
         }
+        // Important: Do NOT change game selection if current game is not in the update
       } else if (parseResult.games.length > 0) {
         // Auto-select first game only if no game is currently selected
+        console.log('No game selected - auto-selecting first game')
+        console.log(
+          'Auto-selecting:',
+          parseResult.games[0].white + ' vs ' + parseResult.games[0].black,
+        )
         setCurrentGame(parseResult.games[0])
       }
 
