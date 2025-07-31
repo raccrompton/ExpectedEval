@@ -312,27 +312,16 @@ export const useBroadcastController = (): BroadcastStreamController => {
       }
 
       lastPGNData.current = pgnData
-      console.log('Processing PGN update with length:', pgnData.length)
 
       const parseResult = parsePGNData(pgnData)
-      console.log('Parsed games count:', parseResult.games.length)
-      console.log(
-        'Game IDs:',
-        parseResult.games.map((g) => `${g.white} vs ${g.black}`),
-      )
 
       if (parseResult.errors.length > 0) {
         console.warn('PGN parsing errors:', parseResult.errors)
       }
 
       if (parseResult.games.length === 0) {
-        console.warn('No games found in PGN data')
         return
       }
-
-      // Determine if this is initial load (multiple games) or update (single game)
-      const isInitialLoad = parseResult.games.length > 1
-      console.log('Is initial load:', isInitialLoad)
 
       setRoundData((prevRoundData) => {
         // Start with existing games
@@ -363,8 +352,6 @@ export const useBroadcastController = (): BroadcastStreamController => {
 
           gameStates.current.set(game.id, newLiveGame)
         }
-
-        console.log('Updated games map, now has', updatedGames.size, 'games')
 
         const newRoundData: BroadcastRoundData = {
           roundId: currentRoundId.current || '',

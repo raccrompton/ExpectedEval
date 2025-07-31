@@ -50,6 +50,16 @@ export interface BroadcastGame {
   chapterName?: string
   utcDate?: string
   utcTime?: string
+  whiteClock?: {
+    timeInSeconds: number
+    isActive: boolean
+    lastUpdateTime: number
+  }
+  blackClock?: {
+    timeInSeconds: number
+    isActive: boolean
+    lastUpdateTime: number
+  }
 }
 
 export interface BroadcastRoundData {

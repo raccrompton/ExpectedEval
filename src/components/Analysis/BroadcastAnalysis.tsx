@@ -319,6 +319,23 @@ export const BroadcastAnalysis: React.FC<Props> = ({
                 analysisController.orientation === 'white' ? 'black' : 'white'
               }
               termination={game.termination?.winner}
+              clock={(() => {
+                const clock =
+                  analysisController.orientation === 'white'
+                    ? broadcastController.currentGame?.blackClock
+                    : broadcastController.currentGame?.whiteClock
+                console.log('Top PlayerInfo clock data:', {
+                  orientation: analysisController.orientation,
+                  currentGame:
+                    broadcastController.currentGame?.white +
+                    ' vs ' +
+                    broadcastController.currentGame?.black,
+                  whiteClock: broadcastController.currentGame?.whiteClock,
+                  blackClock: broadcastController.currentGame?.blackClock,
+                  selectedClock: clock,
+                })
+                return clock
+              })()}
             />
             <div className="desktop-board-container relative flex aspect-square">
               <GameBoard
@@ -362,6 +379,11 @@ export const BroadcastAnalysis: React.FC<Props> = ({
               }
               termination={game.termination?.winner}
               showArrowLegend={true}
+              clock={
+                analysisController.orientation === 'white'
+                  ? broadcastController.currentGame?.whiteClock
+                  : broadcastController.currentGame?.blackClock
+              }
             />
           </div>
           <ConfigurableScreens
