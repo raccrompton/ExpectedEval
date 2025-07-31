@@ -337,8 +337,10 @@ export const useBroadcastController = (): BroadcastStreamController => {
           const existingGameState = gameStates.current.get(game.id)
           const newLiveGame = createLiveGameFromBroadcastGame(game)
 
-          // Play sound for new moves if game was already loaded
+          // Play sound for new moves only if this is the currently selected game
           if (
+            currentGame &&
+            game.id === currentGame.id &&
             existingGameState &&
             newLiveGame.moves.length > existingGameState.moves.length
           ) {
@@ -362,16 +364,17 @@ export const useBroadcastController = (): BroadcastStreamController => {
         return newRoundData
       })
 
-      // Update current game if it exists in the new data
+      // Update current game data if it's in the update, but don't switch to a different game
       if (currentGame) {
-        const updatedGame = parseResult.games.find(
+        const updatedCurrentGame = parseResult.games.find(
           (g) => g.id === currentGame.id,
         )
-        if (updatedGame) {
-          setCurrentGame(updatedGame)
+        if (updatedCurrentGame) {
+          // Update the currently selected game with new data (including clocks)
+          setCurrentGame(updatedCurrentGame)
         }
       } else if (parseResult.games.length > 0) {
-        // Auto-select first game if none selected
+        // Auto-select first game only if no game is currently selected
         setCurrentGame(parseResult.games[0])
       }
 
