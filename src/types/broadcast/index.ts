@@ -69,12 +69,40 @@ export interface BroadcastState {
   gameEnded: boolean
 }
 
-export interface BroadcastStreamController {
+export interface TopBroadcastItem {
+  tour: BroadcastTour
+  round: BroadcastRound
+}
+
+export interface TopBroadcastsResponse {
+  active: TopBroadcastItem[]
+  upcoming: TopBroadcastItem[]
+  past: {
+    currentPage: number
+    maxPerPage: number
+    currentPageResults: TopBroadcastItem[]
+    previousPage: number | null
+    nextPage: number | null
+  }
+}
+
+export interface BroadcastSection {
+  title: string
   broadcasts: Broadcast[]
+  type:
+    | 'official-active'
+    | 'unofficial-active'
+    | 'official-upcoming'
+    | 'unofficial-upcoming'
+    | 'past'
+}
+
+export interface BroadcastStreamController {
+  broadcastSections: BroadcastSection[]
   currentBroadcast: Broadcast | null
   currentRound: BroadcastRound | null
   currentGame: BroadcastGame | null
-  currentLiveGame: any | null
+  currentLiveGame: unknown | null
   roundData: BroadcastRoundData | null
   broadcastState: BroadcastState
   loadBroadcasts: () => Promise<void>

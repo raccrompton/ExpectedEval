@@ -11,7 +11,12 @@ import { useBroadcastController } from 'src/hooks/useBroadcastController'
 import { useAnalysisController } from 'src/hooks'
 import { TreeControllerContext } from 'src/contexts'
 import { BroadcastAnalysis } from 'src/components/Analysis/BroadcastAnalysis'
-import { AnalyzedGame, BroadcastStreamController, LiveGame } from 'src/types'
+import {
+  AnalyzedGame,
+  Broadcast,
+  BroadcastStreamController,
+  LiveGame,
+} from 'src/types'
 import { GameTree } from 'src/types/base/tree'
 
 const BroadcastAnalysisPage: NextPage = () => {
@@ -34,21 +39,25 @@ const BroadcastAnalysisPage: NextPage = () => {
         setError(null)
 
         // Load broadcasts if not already loaded
-        if (broadcastController.broadcasts.length === 0) {
+        if (broadcastController.broadcastSections.length === 0) {
           await broadcastController.loadBroadcasts()
         }
 
-        // Find and select the broadcast
-        const broadcast = broadcastController.broadcasts.find(
-          (b) => b.tour.id === broadcastId,
-        )
+        // Find and select the broadcast across all sections
+        let broadcast: Broadcast | undefined
+        for (const section of broadcastController.broadcastSections) {
+          broadcast = section.broadcasts.find((b) => b.tour.id === broadcastId)
+          if (broadcast) break
+        }
 
         if (!broadcast) {
           throw new Error('Broadcast not found')
         }
 
         // Find the round
-        const round = broadcast.rounds.find((r) => r.id === roundId)
+        const round = broadcast.rounds.find(
+          (r: { id: string }) => r.id === roundId,
+        )
         if (!round) {
           throw new Error('Round not found')
         }
@@ -68,7 +77,7 @@ const BroadcastAnalysisPage: NextPage = () => {
     }
 
     initializeBroadcast()
-  }, [broadcastId, roundId, broadcastController.broadcasts.length])
+  }, [broadcastId, roundId, broadcastController.broadcastSections.length])
 
   // Create a dummy game for analysis controller when no game is selected
   const dummyGame: AnalyzedGame = useMemo(() => {

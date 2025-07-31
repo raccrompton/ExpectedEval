@@ -9,16 +9,21 @@ import {
   BroadcastRoundData,
   BroadcastState,
   BroadcastStreamController,
+  BroadcastSection,
   LiveGame,
 } from 'src/types'
 import {
   getLichessBroadcasts,
+  getLichessTopBroadcasts,
+  convertTopBroadcastToBroadcast,
   streamBroadcastRound,
   parsePGNData,
 } from 'src/api/lichess/broadcasts'
 
 export const useBroadcastController = (): BroadcastStreamController => {
-  const [broadcasts, setBroadcasts] = useState<Broadcast[]>([])
+  const [broadcastSections, setBroadcastSections] = useState<
+    BroadcastSection[]
+  >([])
   const [currentBroadcast, setCurrentBroadcast] = useState<Broadcast | null>(
     null,
   )
@@ -47,8 +52,90 @@ export const useBroadcastController = (): BroadcastStreamController => {
         isConnecting: true,
         error: null,
       }))
-      const broadcastList = await getLichessBroadcasts()
-      setBroadcasts(broadcastList)
+
+      // Load both official and top broadcasts concurrently
+      const [officialBroadcasts, topBroadcasts] = await Promise.all([
+        getLichessBroadcasts(),
+        getLichessTopBroadcasts(),
+      ])
+
+      // Organize broadcasts into sections
+      const sections: BroadcastSection[] = []
+
+      // Official active broadcasts
+      const officialActive = officialBroadcasts.filter((b) =>
+        b.rounds.some((r) => r.ongoing),
+      )
+      if (officialActive.length > 0) {
+        sections.push({
+          title: 'Official Live Tournaments',
+          broadcasts: officialActive,
+          type: 'official-active',
+        })
+      }
+
+      // Top active broadcasts (unofficial)
+      const unofficialActive = topBroadcasts.active
+        .map(convertTopBroadcastToBroadcast)
+        .filter(
+          (b) =>
+            !officialActive.some((official) => official.tour.id === b.tour.id),
+        )
+      if (unofficialActive.length > 0) {
+        sections.push({
+          title: 'Community Live Broadcasts',
+          broadcasts: unofficialActive,
+          type: 'unofficial-active',
+        })
+      }
+
+      // Official upcoming broadcasts
+      const officialUpcoming = officialBroadcasts.filter(
+        (b) =>
+          b.rounds.every((r) => !r.ongoing) &&
+          b.rounds.some((r) => r.startsAt > Date.now()),
+      )
+      if (officialUpcoming.length > 0) {
+        sections.push({
+          title: 'Upcoming Official Tournaments',
+          broadcasts: officialUpcoming,
+          type: 'official-upcoming',
+        })
+      }
+
+      // Top upcoming broadcasts (unofficial)
+      const unofficialUpcoming = topBroadcasts.upcoming.map(
+        convertTopBroadcastToBroadcast,
+      )
+      if (unofficialUpcoming.length > 0) {
+        sections.push({
+          title: 'Upcoming Community Broadcasts',
+          broadcasts: unofficialUpcoming,
+          type: 'unofficial-upcoming',
+        })
+      }
+
+      // Past broadcasts (mix of official and top)
+      const officialPast = officialBroadcasts.filter(
+        (b) =>
+          b.rounds.every((r) => !r.ongoing) &&
+          b.rounds.every((r) => r.startsAt <= Date.now()),
+      )
+      const pastBroadcasts = [
+        ...officialPast,
+        ...topBroadcasts.past.currentPageResults.map(
+          convertTopBroadcastToBroadcast,
+        ),
+      ]
+      if (pastBroadcasts.length > 0) {
+        sections.push({
+          title: 'Recent Tournaments',
+          broadcasts: pastBroadcasts,
+          type: 'past',
+        })
+      }
+
+      setBroadcastSections(sections)
       setBroadcastState((prev) => ({ ...prev, isConnecting: false }))
     } catch (error) {
       console.error('Error loading broadcasts:', error)
@@ -63,7 +150,12 @@ export const useBroadcastController = (): BroadcastStreamController => {
 
   const selectBroadcast = useCallback(
     (broadcastId: string) => {
-      const broadcast = broadcasts.find((b) => b.tour.id === broadcastId)
+      // Find broadcast across all sections
+      let broadcast: Broadcast | undefined
+      for (const section of broadcastSections) {
+        broadcast = section.broadcasts.find((b) => b.tour.id === broadcastId)
+        if (broadcast) break
+      }
       if (broadcast) {
         setCurrentBroadcast(broadcast)
         // Auto-select default round if available
@@ -76,7 +168,7 @@ export const useBroadcastController = (): BroadcastStreamController => {
         }
       }
     },
-    [broadcasts],
+    [broadcastSections],
   )
 
   const selectRound = useCallback(
@@ -393,7 +485,7 @@ export const useBroadcastController = (): BroadcastStreamController => {
   }, [currentGame, roundData?.lastUpdate])
 
   return {
-    broadcasts,
+    broadcastSections,
     currentBroadcast,
     currentRound,
     currentGame,
