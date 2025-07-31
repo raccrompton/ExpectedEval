@@ -92,6 +92,25 @@ export const convertTopBroadcastToBroadcast = (
   }
 }
 
+export const getBroadcastRoundPGN = async (
+  roundId: string,
+): Promise<string> => {
+  const response = await fetch(
+    `https://lichess.org/api/broadcast/round/${roundId}.pgn`,
+    {
+      headers: {
+        Accept: 'application/x-chess-pgn',
+      },
+    },
+  )
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+  }
+
+  return await response.text()
+}
+
 export const streamBroadcastRound = async (
   roundId: string,
   onPGNUpdate: (pgn: string) => void,
@@ -110,6 +129,7 @@ export const streamBroadcastRound = async (
 
   const onMessage = (data: string) => {
     if (data.trim()) {
+      console.log('Received PGN data length:', data.length)
       onPGNUpdate(data)
     }
   }
