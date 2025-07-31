@@ -121,31 +121,45 @@ const BroadcastAnalysisPage: NextPage = () => {
 
   useEffect(() => {
     const currentLiveGame = (broadcastController as any).currentLiveGame
-    if (currentLiveGame?.tree && analysisController) {
+    if (
+      currentLiveGame?.tree &&
+      analysisController &&
+      analysisController.currentNode
+    ) {
       try {
         const mainLine = currentLiveGame.tree.getMainLine()
         const currentMoveCount = mainLine.length
 
         // If new moves have been added to the game
         if (currentMoveCount > lastGameMoveCount.current) {
-          lastGameMoveCount.current = currentMoveCount
+          console.log(
+            `New move detected: ${lastGameMoveCount.current} -> ${currentMoveCount}`,
+          )
 
           // Find the last node in the main line
-          let lastNode = currentLiveGame.tree.getRoot()
-          while (lastNode.mainChild) {
-            lastNode = lastNode.mainChild
-          }
+          const lastNode = mainLine[mainLine.length - 1]
 
-          // Only auto-follow if user is currently at the previous last node
-          if (
-            analysisController.currentNode &&
-            lastNode.parent === analysisController.currentNode
-          ) {
+          // Only auto-follow if user is currently at the previous last node (or close to it)
+          const isAtLatestPosition =
+            lastNode.parent === analysisController.currentNode ||
+            lastNode === analysisController.currentNode
+
+          console.log('Auto-follow check:', {
+            isAtLatestPosition,
+            currentNodeId: analysisController.currentNode.id,
+            lastNodeParentId: lastNode.parent?.id,
+            lastNodeId: lastNode.id,
+          })
+
+          if (isAtLatestPosition) {
+            console.log('Auto-following to new move')
             analysisController.setCurrentNode(lastNode)
           }
+
+          lastGameMoveCount.current = currentMoveCount
         }
       } catch (error) {
-        console.error('Error setting current node:', error)
+        console.error('Error in auto-follow logic:', error)
       }
     }
   }, [(broadcastController as any).currentLiveGame, analysisController])
@@ -157,6 +171,11 @@ const BroadcastAnalysisPage: NextPage = () => {
       const mainLine = currentLiveGame.tree.getMainLine()
       if (mainLine.length > 0) {
         analysisController.setCurrentNode(mainLine[mainLine.length - 1])
+        // Update the move count tracker for the new game
+        lastGameMoveCount.current = mainLine.length
+      } else {
+        // Reset move count for games with no moves
+        lastGameMoveCount.current = 0
       }
     }
   }, [broadcastController.currentGame?.id])
