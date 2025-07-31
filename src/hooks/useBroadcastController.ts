@@ -378,6 +378,8 @@ export const useBroadcastController = (): BroadcastStreamController => {
         return
       }
 
+      let allGamesAfterUpdate: BroadcastGame[] = []
+
       setRoundData((prevRoundData) => {
         // Start with existing games
         const existingGames =
@@ -410,6 +412,9 @@ export const useBroadcastController = (): BroadcastStreamController => {
           gameStates.current.set(game.id, newLiveGame)
         }
 
+        // Store all games for auto-selection logic
+        allGamesAfterUpdate = Array.from(updatedGames.values())
+
         const newRoundData: BroadcastRoundData = {
           roundId: currentRoundId.current || '',
           broadcastId: currentBroadcast?.tour.id || '',
@@ -438,14 +443,15 @@ export const useBroadcastController = (): BroadcastStreamController => {
           )
         }
         // Important: Do NOT change game selection if current game is not in the update
-      } else if (parseResult.games.length > 0) {
+      } else if (allGamesAfterUpdate.length > 0) {
         // Auto-select first game only if no game is currently selected
+        // Use the first game from the complete games list, not just the updated games
         console.log('No game selected - auto-selecting first game')
         console.log(
           'Auto-selecting:',
-          parseResult.games[0].white + ' vs ' + parseResult.games[0].black,
+          allGamesAfterUpdate[0].white + ' vs ' + allGamesAfterUpdate[0].black,
         )
-        setCurrentGame(parseResult.games[0])
+        setCurrentGame(allGamesAfterUpdate[0])
       }
 
       // Update broadcast state
