@@ -380,6 +380,9 @@ export const useBroadcastController = (): BroadcastStreamController => {
         return
       }
 
+      // Store the current game ID to preserve selection
+      const currentGameId = currentGame?.id
+
       let allGamesAfterUpdate: BroadcastGame[] = []
 
       setRoundData((prevRoundData) => {
@@ -398,8 +401,8 @@ export const useBroadcastController = (): BroadcastStreamController => {
 
           // Play sound for new moves only if this is the currently selected game
           if (
-            currentGame &&
-            game.id === currentGame.id &&
+            currentGameId &&
+            game.id === currentGameId &&
             existingGameState &&
             newLiveGame.moves.length > existingGameState.moves.length
           ) {
@@ -426,14 +429,14 @@ export const useBroadcastController = (): BroadcastStreamController => {
         return newRoundData
       })
 
-      // Update current game data if it's in the update, but don't switch to a different game
-      if (currentGame) {
+      // Preserve game selection - only update current game if it was already selected
+      if (currentGameId) {
         console.log(
           'Current game selected:',
-          currentGame.white + ' vs ' + currentGame.black,
+          currentGame?.white + ' vs ' + currentGame?.black,
         )
         const updatedCurrentGame = parseResult.games.find(
-          (g) => g.id === currentGame.id,
+          (g) => g.id === currentGameId,
         )
         if (updatedCurrentGame) {
           console.log('Updating current game with new data')
@@ -443,11 +446,11 @@ export const useBroadcastController = (): BroadcastStreamController => {
           console.log(
             'Current game not in update - keeping selection unchanged',
           )
+          // Keep the current game selection even if it's not in this update
+          // This prevents auto-switching to the first game
         }
-        // Important: Do NOT change game selection if current game is not in the update
       } else if (allGamesAfterUpdate.length > 0) {
         // Auto-select first game only if no game is currently selected
-        // Use the first game from the complete games list, not just the updated games
         console.log('No game selected - auto-selecting first game')
         console.log(
           'Auto-selecting:',
