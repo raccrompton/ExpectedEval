@@ -25,6 +25,7 @@ import { DrillConfiguration, AnalyzedGame } from 'src/types'
 import { GameNode } from 'src/types/base/tree'
 import { MIN_STOCKFISH_DEPTH } from 'src/constants/analysis'
 import openings from 'src/lib/openings/openings.json'
+import { getComprehensiveOpenings } from 'src/lib/openings'
 
 const LazyOpeningDrillAnalysis = lazy(() =>
   import('src/components/Openings/OpeningDrillAnalysis').then((module) => ({
@@ -61,6 +62,16 @@ const OpeningsPage: NextPage = () => {
   const { user } = useContext(AuthContext)
   const [showSelectionModal, setShowSelectionModal] = useState(true)
   const [isReopenedModal, setIsReopenedModal] = useState(false)
+
+  // Get comprehensive ECO database
+  const ecoDatabase = useMemo(() => {
+    try {
+      return getComprehensiveOpenings()
+    } catch (error) {
+      console.warn('Failed to load comprehensive openings database:', error)
+      return undefined
+    }
+  }, [])
 
   const handleCloseModal = () => {
     if (isReopenedModal) {
@@ -674,6 +685,7 @@ const OpeningsPage: NextPage = () => {
         <AnimatePresence>
           <OpeningSelectionModal
             openings={openings}
+            ecoDatabase={ecoDatabase}
             initialSelections={drillConfiguration?.selections || []}
             onComplete={handleCompleteSelection}
             onClose={handleCloseModal}

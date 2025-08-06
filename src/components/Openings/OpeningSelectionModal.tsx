@@ -8,11 +8,21 @@ import {
   OpeningVariation,
   OpeningSelection,
   DrillConfiguration,
+  EcoOpening,
+  EcoOpeningVariation,
+  EcoDatabase,
+  EcoSection,
+  PopularOpening,
 } from 'src/types'
 import { ModalContainer } from '../Common/ModalContainer'
 import { useTour } from 'src/contexts'
 import { tourConfigs } from 'src/constants/tours'
 import { WindowSizeContext } from 'src/contexts/WindowSizeContext'
+import EcoTreeView from './EcoTreeView'
+import {
+  processEcoDatabase,
+  ecoToLegacyOpening,
+} from 'src/lib/openings/ecoProcessor'
 import {
   trackOpeningSelectionModalOpened,
   trackOpeningSearchUsed,
@@ -26,9 +36,11 @@ import { MAIA_MODELS_WITH_NAMES } from 'src/constants/common'
 import { selectOpeningDrills } from 'src/api/opening'
 
 type MobileTab = 'browse' | 'selected'
+type ViewMode = 'simple' | 'eco'
 
 interface Props {
   openings: Opening[]
+  ecoDatabase?: EcoDatabase
   initialSelections?: OpeningSelection[]
   onComplete: (configuration: DrillConfiguration) => void
   onClose: () => void
@@ -791,6 +803,7 @@ const SelectedPanel: React.FC<{
 
 export const OpeningSelectionModal: React.FC<Props> = ({
   openings,
+  ecoDatabase,
   initialSelections = [],
   onComplete,
   onClose,
@@ -810,8 +823,24 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   const [drillCount, setDrillCount] = useState(5)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeTab, setActiveTab] = useState<MobileTab>('browse')
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    ecoDatabase ? 'eco' : 'simple',
+  )
   const [initialTourCheck, setInitialTourCheck] = useState(false)
   const [hasTrackedModalOpen, setHasTrackedModalOpen] = useState(false)
+
+  // ECO database processing
+  const ecoData = useMemo(() => {
+    if (!ecoDatabase) return null
+    return processEcoDatabase(ecoDatabase)
+  }, [ecoDatabase])
+
+  // ECO preview state - initialize with first ECO opening if available
+  const [previewEcoOpening, setPreviewEcoOpening] = useState<EcoOpening | null>(
+    ecoData?.sections?.[0]?.openings?.[0] || null,
+  )
+  const [previewEcoVariation, setPreviewEcoVariation] =
+    useState<EcoOpeningVariation | null>(null)
   const [mobilePopupOpening, setMobilePopupOpening] = useState<Opening | null>(
     null,
   )
@@ -863,8 +892,60 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   }
 
   const previewFen = useMemo(() => {
+    if (viewMode === 'eco' && previewEcoOpening) {
+      return previewEcoVariation
+        ? previewEcoVariation.fen
+        : previewEcoOpening.fen
+    }
     return previewVariation ? previewVariation.fen : previewOpening.fen
-  }, [previewOpening, previewVariation])
+  }, [
+    previewOpening,
+    previewVariation,
+    previewEcoOpening,
+    previewEcoVariation,
+    viewMode,
+  ])
+
+  // ECO selection handlers
+  const handleEcoOpeningClick = (
+    opening: EcoOpening,
+    variation?: EcoOpeningVariation,
+  ) => {
+    setPreviewEcoOpening(opening)
+    setPreviewEcoVariation(variation || null)
+    trackOpeningPreviewSelected(
+      opening.name,
+      opening.id,
+      !!variation,
+      variation?.name,
+    )
+  }
+
+  const handleEcoQuickAdd = (
+    opening: EcoOpening,
+    variation?: EcoOpeningVariation,
+  ) => {
+    const legacyOpening = ecoToLegacyOpening(opening)
+    const legacyVariation = variation
+      ? {
+          id: variation.id,
+          name: variation.name,
+          fen: variation.fen,
+          pgn: variation.pgn,
+        }
+      : null
+
+    addQuickSelection(legacyOpening, legacyVariation)
+  }
+
+  const isEcoSelected = (
+    opening: EcoOpening,
+    variation?: EcoOpeningVariation,
+  ) => {
+    return selections.some(
+      (s) => s.opening.id === opening.id && s.variation?.id === variation?.id,
+    )
+  }
 
   const filteredOpenings = useMemo(() => {
     if (!searchTerm) return openings
@@ -899,12 +980,28 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   }
 
   const addSelection = () => {
-    if (isDuplicateSelection(previewOpening, previewVariation)) return
+    // Handle ECO vs traditional opening selection
+    const currentOpening =
+      viewMode === 'eco' && previewEcoOpening
+        ? ecoToLegacyOpening(previewEcoOpening)
+        : previewOpening
+
+    const currentVariation =
+      viewMode === 'eco' && previewEcoVariation
+        ? {
+            id: previewEcoVariation.id,
+            name: previewEcoVariation.name,
+            fen: previewEcoVariation.fen,
+            pgn: previewEcoVariation.pgn,
+          }
+        : previewVariation
+
+    if (isDuplicateSelection(currentOpening, currentVariation)) return
 
     const newSelection: OpeningSelection = {
-      id: `${previewOpening.id}-${previewVariation?.id || 'main'}-${selectedColor}-${selectedMaiaVersion.id}-${targetMoveNumber}`,
-      opening: previewOpening,
-      variation: previewVariation,
+      id: `${currentOpening.id}-${currentVariation?.id || 'main'}-${selectedColor}-${selectedMaiaVersion.id}-${targetMoveNumber}`,
+      opening: currentOpening,
+      variation: currentVariation,
       playerColor: selectedColor,
       maiaVersion: selectedMaiaVersion.id,
       targetMoveNumber,
@@ -912,11 +1009,11 @@ export const OpeningSelectionModal: React.FC<Props> = ({
 
     // Track opening configuration and addition
     trackOpeningConfiguredAndAdded(
-      previewOpening.name,
+      currentOpening.name,
       selectedColor,
       selectedMaiaVersion.id,
       targetMoveNumber,
-      previewVariation?.name,
+      currentVariation?.name,
     )
 
     setSelections([...selections, newSelection])
@@ -1178,6 +1275,32 @@ export const OpeningSelectionModal: React.FC<Props> = ({
                 your color and opponent strength.
               </p>
             </div>
+
+            {/* View Toggle */}
+            {ecoDatabase && (
+              <div className="flex items-center gap-2 rounded bg-background-2 p-1">
+                <button
+                  onClick={() => setViewMode('simple')}
+                  className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
+                    viewMode === 'simple'
+                      ? 'bg-human-4 text-white'
+                      : 'text-secondary hover:text-primary'
+                  }`}
+                >
+                  Simple
+                </button>
+                <button
+                  onClick={() => setViewMode('eco')}
+                  className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
+                    viewMode === 'eco'
+                      ? 'bg-human-4 text-white'
+                      : 'text-secondary hover:text-primary'
+                  }`}
+                >
+                  ECO Tree
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1190,26 +1313,69 @@ export const OpeningSelectionModal: React.FC<Props> = ({
 
         {/* Main Content - Responsive Layout */}
         <div className="grid w-full flex-1 grid-cols-1 overflow-hidden md:grid-cols-3">
-          <BrowsePanel
-            activeTab={activeTab}
-            filteredOpenings={filteredOpenings}
-            previewOpening={previewOpening}
-            previewVariation={previewVariation}
-            setPreviewOpening={setPreviewOpening}
-            setPreviewVariation={setPreviewVariation}
-            setActiveTab={setActiveTab}
-            addQuickSelection={addQuickSelection}
-            isDuplicateSelection={isDuplicateSelection}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            selections={selections}
-            onOpeningClick={handleMobileOpeningClick}
-            removeSelection={removeSelection}
-          />
+          {viewMode === 'eco' && ecoData ? (
+            <div
+              className={`flex w-full flex-col overflow-y-scroll ${activeTab !== 'browse' ? 'hidden md:flex' : 'flex'} md:border-r md:border-white/10`}
+            >
+              <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
+                <h2 className="text-xl font-bold">ECO Opening Tree</h2>
+                <p className="text-xs text-secondary">
+                  Browse openings organized by ECO classification
+                </p>
+              </div>
+
+              <div className="flex h-16 flex-col justify-center gap-1 border-b border-white/10 p-4 md:hidden">
+                <h2 className="text-lg font-bold">ECO Openings</h2>
+                <p className="text-xs text-secondary">
+                  Choose from ECO database
+                </p>
+              </div>
+
+              <EcoTreeView
+                sections={ecoData.sections}
+                popularOpenings={ecoData.popularOpenings}
+                onOpeningClick={handleEcoOpeningClick}
+                onQuickAdd={handleEcoQuickAdd}
+                isSelected={isEcoSelected}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+              />
+            </div>
+          ) : (
+            <BrowsePanel
+              activeTab={activeTab}
+              filteredOpenings={filteredOpenings}
+              previewOpening={previewOpening}
+              previewVariation={previewVariation}
+              setPreviewOpening={setPreviewOpening}
+              setPreviewVariation={setPreviewVariation}
+              setActiveTab={setActiveTab}
+              addQuickSelection={addQuickSelection}
+              isDuplicateSelection={isDuplicateSelection}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              selections={selections}
+              onOpeningClick={handleMobileOpeningClick}
+              removeSelection={removeSelection}
+            />
+          )}
           <PreviewPanel
             selections={selections}
-            previewOpening={previewOpening}
-            previewVariation={previewVariation}
+            previewOpening={
+              viewMode === 'eco' && previewEcoOpening
+                ? ecoToLegacyOpening(previewEcoOpening)
+                : previewOpening
+            }
+            previewVariation={
+              viewMode === 'eco' && previewEcoVariation
+                ? {
+                    id: previewEcoVariation.id,
+                    name: previewEcoVariation.name,
+                    fen: previewEcoVariation.fen,
+                    pgn: previewEcoVariation.pgn,
+                  }
+                : previewVariation
+            }
             previewFen={previewFen}
             selectedColor={selectedColor}
             setSelectedColor={setSelectedColor}
