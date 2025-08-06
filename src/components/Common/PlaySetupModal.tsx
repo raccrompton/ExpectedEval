@@ -82,6 +82,16 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
   const [timeControl, setTimeControl] = useState<TimeControl>(
     props.timeControl || TimeControlOptions[0],
   )
+  const [timeMinutes, setTimeMinutes] = useState<number>(() => {
+    const initial = props.timeControl || TimeControlOptions[0]
+    if (initial === 'unlimited') return 0
+    return parseInt(initial.split('+')[0])
+  })
+  const [incrementSeconds, setIncrementSeconds] = useState<number>(() => {
+    const initial = props.timeControl || TimeControlOptions[0]
+    if (initial === 'unlimited') return 0
+    return parseInt(initial.split('+')[1])
+  })
   const [isBrain, setIsBrain] = useState<boolean>(props.isBrain || false)
   const [sampleMoves, setSampleMoves] = useState<boolean>(
     props.sampleMoves || true,
@@ -101,6 +111,38 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
   )
 
   const [openMoreOptions, setMoreOptionsOpen] = useState<boolean>(true)
+
+  const handlePresetSelect = useCallback((preset: TimeControl) => {
+    setTimeControl(preset)
+    if (preset === 'unlimited') {
+      setTimeMinutes(0)
+      setIncrementSeconds(0)
+    } else {
+      const [minutes, increment] = preset.split('+').map(Number)
+      setTimeMinutes(minutes)
+      setIncrementSeconds(increment)
+    }
+  }, [])
+
+  const handleSliderChange = useCallback(
+    (newTimeMinutes: number, newIncrementSeconds: number) => {
+      setTimeMinutes(newTimeMinutes)
+      setIncrementSeconds(newIncrementSeconds)
+
+      if (newTimeMinutes === 0 && newIncrementSeconds === 0) {
+        setTimeControl('unlimited')
+      } else {
+        const newTimeControl =
+          `${newTimeMinutes}+${newIncrementSeconds}` as TimeControl
+        if (TimeControlOptions.includes(newTimeControl)) {
+          setTimeControl(newTimeControl)
+        } else {
+          setTimeControl(newTimeControl)
+        }
+      }
+    },
+    [],
+  )
 
   const start = useCallback(
     (color: Color | undefined) => {
@@ -248,19 +290,82 @@ export const PlaySetupModal: React.FC<Props> = (props: Props) => {
               </div>
 
               <div>
-                <label
-                  htmlFor="time-control-select"
-                  className="mb-1 block text-sm font-medium text-primary"
-                >
-                  Time control:
-                </label>
-                <div id="time-control-select">
-                  <OptionSelect
-                    options={TimeControlOptions}
-                    labels={TimeControlOptionNames}
-                    selected={timeControl}
-                    onChange={setTimeControl}
-                  />
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-sm font-medium text-primary">
+                    Time Control:
+                  </span>
+                  <div className="flex gap-1">
+                    {TimeControlOptions.map((option, index) => (
+                      <button
+                        key={option}
+                        onClick={() => handlePresetSelect(option)}
+                        className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+                          timeControl === option
+                            ? 'bg-human-4 text-white'
+                            : 'bg-background-2 text-secondary hover:bg-background-3 hover:text-primary'
+                        }`}
+                      >
+                        {TimeControlOptionNames[index]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <label
+                        htmlFor="time-minutes-slider"
+                        className="text-xs font-medium text-primary"
+                      >
+                        Time (minutes)
+                      </label>
+                      <span className="text-xs text-secondary">
+                        {timeMinutes}
+                      </span>
+                    </div>
+                    <input
+                      id="time-minutes-slider"
+                      type="range"
+                      min="0"
+                      max="60"
+                      step="1"
+                      value={timeMinutes}
+                      onChange={(e) =>
+                        handleSliderChange(
+                          Number(e.target.value),
+                          incrementSeconds,
+                        )
+                      }
+                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-background-2 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-human-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-human-4"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <label
+                        htmlFor="increment-seconds-slider"
+                        className="text-xs font-medium text-primary"
+                      >
+                        Increment (seconds)
+                      </label>
+                      <span className="text-xs text-secondary">
+                        {incrementSeconds}
+                      </span>
+                    </div>
+                    <input
+                      id="increment-seconds-slider"
+                      type="range"
+                      min="0"
+                      max="30"
+                      step="1"
+                      value={incrementSeconds}
+                      onChange={(e) =>
+                        handleSliderChange(timeMinutes, Number(e.target.value))
+                      }
+                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-background-2 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-human-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-human-4"
+                    />
+                  </div>
                 </div>
               </div>
 
