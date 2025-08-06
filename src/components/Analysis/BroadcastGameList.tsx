@@ -121,7 +121,9 @@ export const BroadcastGameList: React.FC<BroadcastGameListProps> = ({
               <p className="text-xs text-secondary">
                 {broadcastController.broadcastState.isConnecting
                   ? 'Loading games...'
-                  : 'No games available'}
+                  : broadcastController.currentRound?.ongoing
+                    ? 'No games available'
+                    : 'Round not started yet'}
               </p>
             </div>
           </div>
