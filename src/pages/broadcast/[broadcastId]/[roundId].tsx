@@ -64,7 +64,7 @@ const BroadcastAnalysisPage: NextPage = () => {
         }
 
         // Select broadcast and round
-        broadcastController.selectBroadcast(broadcastId)
+        await broadcastController.selectBroadcast(broadcastId)
         broadcastController.selectRound(roundId)
 
         setLoading(false)

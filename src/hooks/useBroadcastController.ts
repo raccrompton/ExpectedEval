@@ -14,6 +14,7 @@ import {
 } from 'src/types'
 import {
   getLichessBroadcasts,
+  getLichessBroadcastById,
   getLichessTopBroadcasts,
   convertTopBroadcastToBroadcast,
   getBroadcastRoundPGN,
@@ -145,6 +146,17 @@ export const useBroadcastController = (): BroadcastStreamController => {
       }
 
       setBroadcastSections(sections)
+      console.log(
+        'Loaded broadcasts:',
+        sections.map((s) => ({
+          title: s.title,
+          broadcasts: s.broadcasts.map((b) => ({
+            name: b.tour.name,
+            rounds: b.rounds.length,
+            roundNames: b.rounds.map((r) => r.name),
+          })),
+        })),
+      )
       setBroadcastState((prev) => ({ ...prev, isConnecting: false }))
     } catch (error) {
       console.error('Error loading broadcasts:', error)
@@ -158,14 +170,44 @@ export const useBroadcastController = (): BroadcastStreamController => {
   }, [])
 
   const selectBroadcast = useCallback(
-    (broadcastId: string) => {
-      // Find broadcast across all sections
+    async (broadcastId: string) => {
+      console.log('Selecting broadcast:', broadcastId)
+
+      // Always fetch complete broadcast data directly from API to ensure we get ALL rounds
+      // The /api/broadcast endpoint often only returns currently ongoing rounds
       let broadcast: Broadcast | undefined
-      for (const section of broadcastSections) {
-        broadcast = section.broadcasts.find((b) => b.tour.id === broadcastId)
-        if (broadcast) break
+      try {
+        console.log('Fetching complete broadcast data from API...')
+        const fetchedBroadcast = await getLichessBroadcastById(broadcastId)
+        if (fetchedBroadcast) {
+          broadcast = fetchedBroadcast
+          console.log('✓ Got complete broadcast data with all rounds')
+        }
+      } catch (error) {
+        console.error('Failed to get broadcast by ID:', error)
       }
+
+      // Fallback: use data from sections if API call failed
+      if (!broadcast) {
+        console.log('API call failed, falling back to section data...')
+        for (const section of broadcastSections) {
+          broadcast = section.broadcasts.find((b) => b.tour.id === broadcastId)
+          if (broadcast) {
+            console.log('⚠ Found in sections but may have incomplete rounds')
+            break
+          }
+        }
+      }
+
       if (broadcast) {
+        console.log(
+          'Selected broadcast:',
+          broadcast.tour.name,
+          'with',
+          broadcast.rounds.length,
+          'rounds:',
+          broadcast.rounds.map((r) => r.name),
+        )
         setCurrentBroadcast(broadcast)
         // Auto-select default round if available
         const defaultRound =
@@ -175,6 +217,8 @@ export const useBroadcastController = (): BroadcastStreamController => {
         if (defaultRound) {
           setCurrentRound(defaultRound)
         }
+      } else {
+        console.error('Broadcast not found:', broadcastId)
       }
     },
     [broadcastSections],
@@ -185,11 +229,33 @@ export const useBroadcastController = (): BroadcastStreamController => {
       if (currentBroadcast) {
         const round = currentBroadcast.rounds.find((r) => r.id === roundId)
         if (round) {
-          setCurrentRound(round)
+          console.log('Selecting round:', round.name, `(${roundId})`)
+
           // Stop current stream if different round
           if (currentRoundId.current !== roundId) {
-            stopRoundStream()
+            console.log('Switching to different round, stopping current stream')
+            // Stop the current stream
+            if (abortController.current) {
+              abortController.current.abort()
+              abortController.current = null
+            }
+            setBroadcastState((prev) => ({
+              ...prev,
+              isConnected: false,
+              isLive: false,
+            }))
+            currentRoundId.current = null
+            gameStates.current.clear()
+            lastPGNData.current = ''
+
+            // Clear current game selection when switching rounds
+            setCurrentGame(null)
+            // Clear round data so games list shows loading state
+            setRoundData(null)
           }
+
+          setCurrentRound(round)
+          // The useEffect will automatically start streaming the new round
         }
       }
     },
@@ -557,13 +623,18 @@ export const useBroadcastController = (): BroadcastStreamController => {
     }
   }, [startRoundStream])
 
-  // Auto-start stream when round is selected and ongoing
+  // Auto-start stream when any round is selected
   useEffect(() => {
     if (
-      currentRound?.ongoing &&
+      currentRound &&
       !broadcastState.isConnecting &&
       !broadcastState.isConnected
     ) {
+      console.log(
+        'Starting stream for selected round:',
+        currentRound.name,
+        currentRound.ongoing ? '(Live)' : '(Past/Future)',
+      )
       startRoundStream(currentRound.id)
     }
   }, [
