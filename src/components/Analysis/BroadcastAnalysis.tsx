@@ -295,6 +295,19 @@ export const BroadcastAnalysis: React.FC<Props> = ({
                   disableMoveClicking={false}
                 />
               </div>
+              <BoardController
+                gameTree={analysisController.gameTree}
+                orientation={analysisController.orientation}
+                setOrientation={analysisController.setOrientation}
+                currentNode={analysisController.currentNode}
+                plyCount={analysisController.plyCount}
+                goToNode={analysisController.goToNode}
+                goToNextNode={analysisController.goToNextNode}
+                goToPreviousNode={analysisController.goToPreviousNode}
+                goToRootNode={analysisController.goToRootNode}
+                disableKeyboardNavigation={false}
+                disableNavigation={false}
+              />
             </div>
           </div>
         </motion.div>
