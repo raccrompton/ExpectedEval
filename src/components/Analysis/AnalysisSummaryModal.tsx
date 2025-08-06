@@ -1,5 +1,6 @@
 import React, { useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { AnalyzedGame } from 'src/types'
 import { extractPlayerMistakes } from 'src/lib/analysis'
 
@@ -10,7 +11,6 @@ interface Props {
 }
 
 interface GameSummary {
-  totalMoves: number
   whiteMistakes: {
     total: number
     blunders: number
@@ -21,8 +21,11 @@ interface GameSummary {
     blunders: number
     inaccuracies: number
   }
-  averageDepth: number
-  positionsAnalyzed: number
+  evaluationData: Array<{
+    ply: number
+    evaluation: number
+    moveNumber: number
+  }>
 }
 
 export const AnalysisSummaryModal: React.FC<Props> = ({
@@ -47,87 +50,79 @@ export const AnalysisSummaryModal: React.FC<Props> = ({
     const whiteMistakes = extractPlayerMistakes(game.tree, 'white')
     const blackMistakes = extractPlayerMistakes(game.tree, 'black')
 
-    // Calculate analysis depth statistics
-    let totalDepth = 0
-    let positionsAnalyzed = 0
-
-    mainLine.forEach((node) => {
-      if (node.analysis.stockfish && node.analysis.stockfish.depth > 0) {
-        totalDepth += node.analysis.stockfish.depth
-        positionsAnalyzed++
+    // Generate evaluation data for the chart
+    const evaluationData = mainLine.slice(1).map((node, index) => {
+      const evaluation = node.analysis.stockfish?.model_optimal_cp || 0
+      // Convert centipawns to evaluation (cap at +/- 5 for chart readability)
+      const normalizedEval = Math.max(-5, Math.min(5, evaluation / 100))
+      
+      return {
+        ply: index + 1,
+        evaluation: normalizedEval,
+        moveNumber: Math.ceil((index + 1) / 2),
       }
     })
 
-    const averageDepth =
-      positionsAnalyzed > 0 ? Math.round(totalDepth / positionsAnalyzed) : 0
-
     return {
-      totalMoves: Math.ceil((mainLine.length - 1) / 2), // Convert plies to moves
       whiteMistakes: {
         total: whiteMistakes.length,
         blunders: whiteMistakes.filter((m) => m.type === 'blunder').length,
-        inaccuracies: whiteMistakes.filter((m) => m.type === 'inaccuracy')
-          .length,
+        inaccuracies: whiteMistakes.filter((m) => m.type === 'inaccuracy').length,
       },
       blackMistakes: {
         total: blackMistakes.length,
         blunders: blackMistakes.filter((m) => m.type === 'blunder').length,
-        inaccuracies: blackMistakes.filter((m) => m.type === 'inaccuracy')
-          .length,
+        inaccuracies: blackMistakes.filter((m) => m.type === 'inaccuracy').length,
       },
-      averageDepth,
-      positionsAnalyzed,
+      evaluationData,
     }
   }, [game.tree])
 
   if (!isOpen) return null
 
-  const MistakeSection = ({
-    title,
-    color,
-    mistakes,
-    playerName,
-  }: {
+  const formatYAxisLabel = (value: number) => {
+    if (value === 0) return '0.00'
+    return value > 0 ? `+${value.toFixed(1)}` : `${value.toFixed(1)}`
+  }
+
+  const PlayerPerformanceRow = ({ 
+    title, 
+    color, 
+    mistakes, 
+    playerName 
+  }: { 
     title: string
     color: string
     mistakes: { total: number; blunders: number; inaccuracies: number }
-    playerName: string
+    playerName: string 
   }) => (
-    <div className="flex flex-col gap-2 rounded-lg border border-white/10 bg-background-2/40 p-4">
-      <div className="flex items-center gap-2">
-        <div
-          className={`h-3 w-3 rounded-full ${color === 'white' ? 'bg-white' : 'border border-white bg-black'}`}
-        />
-        <h3 className="font-semibold">{title}</h3>
-        <span className="text-sm text-secondary">({playerName})</span>
+    <div className="flex items-center justify-between rounded border border-white/5 bg-background-2/30 p-3">
+      <div className="flex items-center gap-3">
+        <div className={`h-4 w-4 rounded-full ${color === 'white' ? 'bg-white' : 'border border-white bg-black'}`} />
+        <div>
+          <p className="text-sm font-medium text-primary">{playerName}</p>
+          <p className="text-xs text-secondary">{title}</p>
+        </div>
       </div>
-
+      
       {mistakes.total === 0 ? (
-        <div className="flex items-center gap-2 text-sm text-green-400">
-          <span className="material-symbols-outlined !text-sm">
-            check_circle
-          </span>
-          <span>No significant mistakes detected</span>
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined !text-sm text-green-400">check_circle</span>
+          <span className="text-xs text-green-400">Clean game</span>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-3 text-sm">
-          <div className="flex flex-col items-center gap-1 rounded bg-background-3/50 p-2">
-            <span className="text-lg font-bold text-red-400">
-              {mistakes.blunders}
-            </span>
-            <span className="text-xs text-secondary">Blunders</span>
+        <div className="flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-1">
+            <span className="font-semibold text-red-400">{mistakes.blunders}</span>
+            <span className="text-secondary">blunders</span>
           </div>
-          <div className="flex flex-col items-center gap-1 rounded bg-background-3/50 p-2">
-            <span className="text-lg font-bold text-orange-400">
-              {mistakes.inaccuracies}
-            </span>
-            <span className="text-xs text-secondary">Inaccuracies</span>
+          <div className="flex items-center gap-1">
+            <span className="font-semibold text-orange-400">{mistakes.inaccuracies}</span>
+            <span className="text-secondary">inaccuracies</span>
           </div>
-          <div className="flex flex-col items-center gap-1 rounded bg-background-3/50 p-2">
-            <span className="text-lg font-bold text-primary">
-              {mistakes.total}
-            </span>
-            <span className="text-xs text-secondary">Total</span>
+          <div className="flex items-center gap-1">
+            <span className="font-semibold text-primary">{mistakes.total}</span>
+            <span className="text-secondary">total</span>
           </div>
         </div>
       )}
@@ -136,7 +131,7 @@ export const AnalysisSummaryModal: React.FC<Props> = ({
 
   return (
     <motion.div
-      className="absolute left-0 top-0 z-20 flex h-screen w-screen flex-col items-center justify-center bg-black/70 px-4 backdrop-blur-sm md:px-0"
+      className="fixed inset-0 z-20 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm md:px-0"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -146,94 +141,101 @@ export const AnalysisSummaryModal: React.FC<Props> = ({
       }}
     >
       <motion.div
-        className="flex w-full flex-col gap-5 rounded-md border border-white/10 bg-background-1 p-5 md:w-[min(600px,50vw)] md:p-6"
+        className="flex w-full max-w-4xl flex-col gap-5 rounded-lg border border-white/10 bg-background-1 p-6 shadow-2xl"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }}
         transition={{ duration: 0.3 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-2xl text-human-3">
-            analytics
-          </span>
-          <h2 className="text-xl font-semibold">Analysis Summary</h2>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          {/* Game Overview */}
-          <div className="flex flex-col gap-2">
-            <h3 className="font-semibold text-primary/90">Game Overview</h3>
-            <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
-              <div className="flex flex-col items-center gap-1 rounded bg-background-2/60 p-3">
-                <span className="text-lg font-bold text-human-3">
-                  {summary.totalMoves}
-                </span>
-                <span className="text-xs text-secondary">Total Moves</span>
-              </div>
-              <div className="flex flex-col items-center gap-1 rounded bg-background-2/60 p-3">
-                <span className="text-lg font-bold text-human-3">
-                  {summary.positionsAnalyzed}
-                </span>
-                <span className="text-xs text-secondary">Positions</span>
-              </div>
-              <div className="flex flex-col items-center gap-1 rounded bg-background-2/60 p-3">
-                <span className="text-lg font-bold text-human-3">
-                  d{summary.averageDepth}
-                </span>
-                <span className="text-xs text-secondary">Avg Depth</span>
-              </div>
-              <div className="flex flex-col items-center gap-1 rounded bg-background-2/60 p-3">
-                <span className="text-lg font-bold text-green-400">100%</span>
-                <span className="text-xs text-secondary">Complete</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Player Performance */}
-          <div className="flex flex-col gap-3">
-            <h3 className="font-semibold text-primary/90">
-              Player Performance
-            </h3>
-
-            <MistakeSection
-              title="White"
-              color="white"
-              mistakes={summary.whiteMistakes}
-              playerName={game.whitePlayer.name}
-            />
-
-            <MistakeSection
-              title="Black"
-              color="black"
-              mistakes={summary.blackMistakes}
-              playerName={game.blackPlayer.name}
-            />
-          </div>
-
-          {/* Analysis Tips */}
-          <div className="flex items-start gap-2 rounded bg-human-4/10 p-3">
-            <span className="material-symbols-outlined !text-base text-human-3">
-              lightbulb
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-2xl text-human-4">
+              analytics
             </span>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium text-human-3">Next Steps</p>
-              <p className="text-xs text-primary/80">
-                Navigate through the game to review specific positions. Use the
-                &quot;Learn from Mistakes&quot; feature to practice improving
-                the identified errors.
-              </p>
-            </div>
+            <h2 className="text-xl font-bold text-primary">Analysis Complete</h2>
           </div>
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2">
           <button
             onClick={onClose}
-            className="flex h-9 items-center gap-1 rounded bg-human-4 px-4 text-sm font-medium text-white transition duration-200 hover:bg-human-4/90"
+            className="text-secondary transition-colors hover:text-primary"
           >
-            <span className="material-symbols-outlined text-sm">check</span>
-            Got it
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          {/* Player Performance */}
+          <div className="flex flex-col gap-3">
+            <h3 className="text-sm font-semibold text-primary/90">Player Performance</h3>
+            <div className="flex flex-col gap-2">
+              <PlayerPerformanceRow
+                title="White"
+                color="white"
+                mistakes={summary.whiteMistakes}
+                playerName={game.whitePlayer.name}
+              />
+              <PlayerPerformanceRow
+                title="Black"
+                color="black"
+                mistakes={summary.blackMistakes}
+                playerName={game.blackPlayer.name}
+              />
+            </div>
+          </div>
+
+          {/* Evaluation Chart */}
+          <div className="flex flex-col gap-3">
+            <h3 className="text-sm font-semibold text-primary/90">Game Evaluation</h3>
+            <div className="rounded border border-white/10 bg-background-2/20 p-4">
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={summary.evaluationData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                    <XAxis 
+                      dataKey="moveNumber" 
+                      tick={{ fontSize: 12, fill: '#94a3b8' }}
+                      tickLine={{ stroke: '#334155' }}
+                      axisLine={{ stroke: '#334155' }}
+                    />
+                    <YAxis 
+                      domain={[-5, 5]}
+                      tickFormatter={formatYAxisLabel}
+                      tick={{ fontSize: 12, fill: '#94a3b8' }}
+                      tickLine={{ stroke: '#334155' }}
+                      axisLine={{ stroke: '#334155' }}
+                    />
+                    <ReferenceLine y={0} stroke="#475569" strokeDasharray="2 2" />
+                    <Line 
+                      type="monotone" 
+                      dataKey="evaluation" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{ r: 4, fill: '#3b82f6' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-2 flex items-center justify-center gap-4 text-xs text-secondary">
+                <div className="flex items-center gap-1">
+                  <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                  <span>Stockfish Evaluation</span>
+                </div>
+                <span>•</span>
+                <span>Positive values favor White</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end border-t border-white/10 pt-4">
+          <button
+            onClick={onClose}
+            className="flex items-center gap-2 rounded bg-human-4 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-human-4/90"
+          >
+            <span className="material-symbols-outlined !text-sm">check</span>
+            Continue
           </button>
         </div>
       </motion.div>
