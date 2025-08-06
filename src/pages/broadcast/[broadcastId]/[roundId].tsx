@@ -144,13 +144,6 @@ const BroadcastAnalysisPage: NextPage = () => {
             lastNode.parent === analysisController.currentNode ||
             lastNode === analysisController.currentNode
 
-          console.log('Auto-follow check:', {
-            isAtLatestPosition,
-            currentNodeId: analysisController.currentNode.id,
-            lastNodeParentId: lastNode.parent?.id,
-            lastNodeId: lastNode.id,
-          })
-
           if (isAtLatestPosition) {
             console.log('Auto-following to new move')
             analysisController.setCurrentNode(lastNode)

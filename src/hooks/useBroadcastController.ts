@@ -45,6 +45,12 @@ export const useBroadcastController = (): BroadcastStreamController => {
   const currentRoundId = useRef<string | null>(null)
   const gameStates = useRef<Map<string, LiveGame>>(new Map())
   const lastPGNData = useRef<string>('')
+  const currentGameRef = useRef<BroadcastGame | null>(null)
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    currentGameRef.current = currentGame
+  }, [currentGame])
 
   const loadBroadcasts = useCallback(async () => {
     try {
@@ -102,7 +108,7 @@ export const useBroadcastController = (): BroadcastStreamController => {
         sections.push({
           title: 'Community Live Broadcasts',
           broadcasts: unofficialActive,
-          type: 'community-active',
+          type: 'unofficial-active',
         })
       }
 
@@ -114,7 +120,7 @@ export const useBroadcastController = (): BroadcastStreamController => {
         sections.push({
           title: 'Upcoming Community Broadcasts',
           broadcasts: unofficialUpcoming,
-          type: 'community-upcoming',
+          type: 'unofficial-upcoming',
         })
       }
 
@@ -223,6 +229,7 @@ export const useBroadcastController = (): BroadcastStreamController => {
     })
 
     currentRoundId.current = null
+    setCurrentGame(null)
     gameStates.current.clear()
     lastPGNData.current = ''
   }, [])
@@ -381,7 +388,13 @@ export const useBroadcastController = (): BroadcastStreamController => {
       }
 
       // Store the current game ID to preserve selection
-      const currentGameId = currentGame?.id
+      const currentGameId = currentGameRef.current?.id
+      console.log(
+        'handlePGNUpdate - currentGameId:',
+        currentGameId,
+        'currentGame:',
+        currentGameRef.current?.white + ' vs ' + currentGameRef.current?.black,
+      )
 
       let allGamesAfterUpdate: BroadcastGame[] = []
 
@@ -433,7 +446,9 @@ export const useBroadcastController = (): BroadcastStreamController => {
       if (currentGameId) {
         console.log(
           'Current game selected:',
-          currentGame?.white + ' vs ' + currentGame?.black,
+          currentGameRef.current?.white +
+            ' vs ' +
+            currentGameRef.current?.black,
         )
         const updatedCurrentGame = parseResult.games.find(
           (g) => g.id === currentGameId,
@@ -449,14 +464,23 @@ export const useBroadcastController = (): BroadcastStreamController => {
           // Keep the current game selection even if it's not in this update
           // This prevents auto-switching to the first game
         }
-      } else if (allGamesAfterUpdate.length > 0) {
-        // Auto-select first game only if no game is currently selected
+      } else if (!currentGameRef.current && allGamesAfterUpdate.length > 0) {
+        // Auto-select first game only if no game is currently selected at all
         console.log('No game selected - auto-selecting first game')
         console.log(
           'Auto-selecting:',
           allGamesAfterUpdate[0].white + ' vs ' + allGamesAfterUpdate[0].black,
         )
         setCurrentGame(allGamesAfterUpdate[0])
+      } else {
+        console.log(
+          'No action taken - currentGameId:',
+          currentGameId,
+          'currentGame exists:',
+          !!currentGameRef.current,
+          'allGamesAfterUpdate.length:',
+          allGamesAfterUpdate.length,
+        )
       }
 
       // Update broadcast state
@@ -469,7 +493,7 @@ export const useBroadcastController = (): BroadcastStreamController => {
         error: null,
       }))
     },
-    [currentBroadcast, currentGame, createLiveGameFromBroadcastGame],
+    [currentBroadcast, createLiveGameFromBroadcastGame],
   )
 
   const handleStreamComplete = useCallback(() => {
