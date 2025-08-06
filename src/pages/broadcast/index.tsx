@@ -182,7 +182,7 @@ const BroadcastsPage: NextPage = () => {
                     <h2 className="flex items-center gap-2 text-xl font-semibold text-primary">
                       {section.title}
                       {(section.type === 'official-active' ||
-                        section.type === 'community-active') && (
+                        section.type === 'unofficial-active') && (
                         <div className="flex items-center gap-1">
                           <div className="h-2 w-2 animate-pulse rounded-full bg-red-500"></div>
                           <span className="text-xs font-medium text-red-400">
