@@ -587,15 +587,49 @@ export const useBroadcastController = (): BroadcastStreamController => {
         error: null,
       }))
 
+      // Set up a timeout to handle rounds with no data (future rounds)
+      const timeoutId = setTimeout(() => {
+        console.log(
+          'Stream timeout - no data received, likely future/empty round',
+        )
+        if (abortController.current && currentRoundId.current === roundId) {
+          // Set empty round data instead of staying in connecting state
+          setRoundData({
+            roundId: roundId,
+            broadcastId: currentBroadcast?.tour.id || '',
+            games: new Map(),
+            lastUpdate: Date.now(),
+          })
+
+          setBroadcastState({
+            isConnected: true,
+            isConnecting: false,
+            isLive: false,
+            error: null,
+            roundStarted: true,
+            roundEnded: false,
+            gameEnded: false,
+          })
+        }
+      }, 5000) // 5 second timeout
+
       try {
         // Start streaming - this will send all games initially, then updates
         await streamBroadcastRound(
           roundId,
-          handlePGNUpdate,
-          handleStreamComplete,
+          (pgnData) => {
+            // Clear timeout if we receive data
+            clearTimeout(timeoutId)
+            handlePGNUpdate(pgnData)
+          },
+          () => {
+            clearTimeout(timeoutId)
+            handleStreamComplete()
+          },
           abortController.current.signal,
         )
       } catch (error) {
+        clearTimeout(timeoutId)
         console.error('Round stream error:', error)
 
         const errorMessage =
@@ -614,7 +648,7 @@ export const useBroadcastController = (): BroadcastStreamController => {
         abortController.current = null
       }
     },
-    [handlePGNUpdate, handleStreamComplete],
+    [handlePGNUpdate, handleStreamComplete, currentBroadcast],
   )
 
   const reconnect = useCallback(() => {
