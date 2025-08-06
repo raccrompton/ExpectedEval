@@ -68,6 +68,45 @@ export const getLichessBroadcasts = async (): Promise<Broadcast[]> => {
   })
 }
 
+export const getLichessBroadcastById = async (
+  broadcastId: string,
+): Promise<Broadcast | null> => {
+  try {
+    console.log('Fetching broadcast by ID:', broadcastId)
+    const response = await fetch(
+      `https://lichess.org/api/broadcast/${broadcastId}`,
+      {
+        headers: {
+          Accept: 'application/json',
+        },
+      },
+    )
+
+    if (!response.ok) {
+      console.error(`Failed to fetch broadcast: ${response.status}`)
+      return null
+    }
+
+    const data = await response.json()
+    console.log('Broadcast data received:', {
+      name: data.tour?.name,
+      rounds: data.rounds?.length,
+      roundNames: data.rounds?.map((r: any) => r.name),
+    })
+
+    // Validate that this looks like broadcast data
+    if (data.tour && data.rounds) {
+      return data as Broadcast
+    }
+
+    console.error('Invalid broadcast data structure')
+    return null
+  } catch (error) {
+    console.error('Error fetching broadcast by ID:', error)
+    return null
+  }
+}
+
 export const getLichessTopBroadcasts =
   async (): Promise<TopBroadcastsResponse> => {
     const response = await fetch('https://lichess.org/api/broadcast/top', {
