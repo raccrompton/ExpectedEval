@@ -36,11 +36,10 @@ import { MAIA_MODELS_WITH_NAMES } from 'src/constants/common'
 import { selectOpeningDrills } from 'src/api/opening'
 
 type MobileTab = 'browse' | 'selected'
-type ViewMode = 'simple' | 'eco'
 
 interface Props {
   openings: Opening[]
-  ecoDatabase?: EcoDatabase
+  ecoDatabase: EcoDatabase
   initialSelections?: OpeningSelection[]
   onComplete: (configuration: DrillConfiguration) => void
   onClose: () => void
@@ -202,295 +201,6 @@ const TabNavigation: React.FC<{
   )
 }
 
-// Left Panel - Opening Selection
-const BrowsePanel: React.FC<{
-  activeTab: MobileTab
-  filteredOpenings: Opening[]
-  previewOpening: Opening
-  previewVariation: OpeningVariation | null
-  setPreviewOpening: (opening: Opening) => void
-  setPreviewVariation: (variation: OpeningVariation | null) => void
-  setActiveTab: (tab: MobileTab) => void
-  addQuickSelection: (
-    opening: Opening,
-    variation: OpeningVariation | null,
-  ) => void
-  isDuplicateSelection: (
-    opening: Opening,
-    variation: OpeningVariation | null,
-  ) => boolean
-  searchTerm: string
-  setSearchTerm: (term: string) => void
-  selections: OpeningSelection[]
-  onOpeningClick: (opening: Opening, variation: OpeningVariation | null) => void
-  removeSelection: (id: string) => void
-}> = ({
-  activeTab,
-  filteredOpenings,
-  previewOpening,
-  previewVariation,
-  setPreviewOpening,
-  setPreviewVariation,
-  setActiveTab,
-  addQuickSelection,
-  isDuplicateSelection,
-  searchTerm,
-  setSearchTerm,
-  selections,
-  onOpeningClick,
-  removeSelection,
-}) => {
-  const { isMobile } = useContext(WindowSizeContext)
-
-  // Helper function to remove a selection by opening and variation
-  const removeOpeningSelection = (
-    opening: Opening,
-    variation: OpeningVariation | null,
-  ) => {
-    const selectionToRemove = selections.find(
-      (selection) =>
-        selection.opening.id === opening.id &&
-        selection.variation?.id === variation?.id,
-    )
-    if (selectionToRemove) {
-      removeSelection(selectionToRemove.id)
-    }
-  }
-
-  return (
-    <div
-      id="opening-drill-browse"
-      className={`flex w-full flex-col overflow-y-scroll ${activeTab !== 'browse' ? 'hidden md:flex' : 'flex'} md:border-r md:border-white/10`}
-    >
-      <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
-        <h2 className="text-xl font-bold">Select Openings</h2>
-        <p className="text-xs text-secondary">
-          Click the + button to quickly add an opening with current settings
-        </p>
-      </div>
-
-      {/* Mobile header */}
-      <div className="flex h-16 flex-col justify-center gap-1 border-b border-white/10 p-4 md:hidden">
-        <h2 className="text-lg font-bold">Select Openings</h2>
-        <p className="text-xs text-secondary">Choose openings to practice</p>
-      </div>
-
-      {/* Search Bar */}
-      <div className="border-b border-white/10 p-4">
-        <div className="relative">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-secondary">
-            search
-          </span>
-          <input
-            type="text"
-            placeholder="Search openings..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded bg-background-2 py-2 pl-10 pr-4 text-sm text-primary placeholder-secondary focus:outline-none focus:ring-1 focus:ring-human-4"
-          />
-        </div>
-      </div>
-
-      <div
-        className="red-scrollbar flex flex-1 flex-col overflow-y-auto"
-        style={{ userSelect: 'none' }}
-      >
-        {filteredOpenings.map((opening) => {
-          const openingIsSelected = selections.some(
-            (selection) =>
-              selection.opening.id === opening.id &&
-              selection.variation === null,
-          )
-          const openingIsBeingPreviewed =
-            previewOpening.id === opening.id && !previewVariation
-          return (
-            <div key={opening.id} className="flex flex-col">
-              <div
-                className={`group transition-colors ${
-                  isMobile
-                    ? openingIsSelected
-                      ? 'bg-human-2/20'
-                      : ''
-                    : openingIsSelected
-                      ? 'bg-human-2/20'
-                      : openingIsBeingPreviewed
-                        ? 'bg-human-2/10'
-                        : 'hover:bg-human-2/10'
-                }`}
-              >
-                <div className="flex items-center">
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    className="flex-1 cursor-pointer p-4"
-                    onClick={() => {
-                      setPreviewOpening(opening)
-                      setPreviewVariation(null)
-                      trackOpeningPreviewSelected(
-                        opening.name,
-                        opening.id,
-                        false,
-                      )
-                      if (isMobile) {
-                        onOpeningClick(opening, null)
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        setPreviewOpening(opening)
-                        setPreviewVariation(null)
-                        trackOpeningPreviewSelected(
-                          opening.name,
-                          opening.id,
-                          false,
-                        )
-                        if (isMobile) {
-                          onOpeningClick(opening, null)
-                        }
-                      }
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">{opening.name}</h3>
-                        <p className="text-sm text-secondary">
-                          {opening.description}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  {openingIsSelected ? (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        removeOpeningSelection(opening, null)
-                      }}
-                      className="mr-3 rounded p-1 text-human-3 transition-colors hover:text-human-4"
-                      title="Remove opening from selection"
-                    >
-                      <span className="material-symbols-outlined !text-base">
-                        check
-                      </span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        addQuickSelection(opening, null)
-                      }}
-                      className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
-                      title="Add opening with current settings"
-                    >
-                      <span className="material-symbols-outlined !text-base">
-                        add
-                      </span>
-                    </button>
-                  )}
-                </div>
-              </div>
-              {opening.variations.map((variation) => {
-                const variationIsSelected = selections.some(
-                  (selection) =>
-                    selection.opening.id === opening.id &&
-                    selection.variation?.id === variation.id,
-                )
-                const variationIsBeingPreviewed =
-                  previewOpening.id === opening.id &&
-                  previewVariation?.id === variation.id
-
-                return (
-                  <div
-                    key={variation.id}
-                    className={`group transition-colors ${
-                      isMobile
-                        ? variationIsSelected
-                          ? 'bg-human-2/20'
-                          : ''
-                        : variationIsSelected
-                          ? 'bg-human-2/20'
-                          : variationIsBeingPreviewed
-                            ? 'bg-human-2/10'
-                            : 'hover:bg-human-2/10'
-                    }`}
-                  >
-                    <div className="flex items-center">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        className="flex-1 cursor-pointer px-6 py-1"
-                        onClick={() => {
-                          setPreviewOpening(opening)
-                          setPreviewVariation(variation)
-                          trackOpeningPreviewSelected(
-                            opening.name,
-                            opening.id,
-                            true,
-                            variation.name,
-                          )
-                          if (isMobile) {
-                            onOpeningClick(opening, variation)
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            setPreviewOpening(opening)
-                            setPreviewVariation(variation)
-                            trackOpeningPreviewSelected(
-                              opening.name,
-                              opening.id,
-                              true,
-                              variation.name,
-                            )
-                            if (isMobile) {
-                              onOpeningClick(opening, variation)
-                            }
-                          }
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm text-secondary">
-                            {variation.name}
-                          </p>
-                        </div>
-                      </div>
-                      {variationIsSelected ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            removeOpeningSelection(opening, variation)
-                          }}
-                          className="mr-3 rounded p-1 text-human-3 transition-colors hover:text-human-4"
-                          title="Remove variation from selection"
-                        >
-                          <span className="material-symbols-outlined !text-base">
-                            check
-                          </span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            addQuickSelection(opening, variation)
-                          }}
-                          className="mr-3 rounded p-1 text-secondary/60 transition-colors hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30 group-hover:text-secondary/80"
-                          title="Add variation with current settings"
-                        >
-                          <span className="material-symbols-outlined !text-base">
-                            add
-                          </span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
 
 const PreviewPanel: React.FC<{
   selections: OpeningSelection[]
@@ -812,9 +522,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   const { isMobile } = useContext(WindowSizeContext)
   const [selections, setSelections] =
     useState<OpeningSelection[]>(initialSelections)
-  const [previewOpening, setPreviewOpening] = useState<Opening>(openings[0])
-  const [previewVariation, setPreviewVariation] =
-    useState<OpeningVariation | null>(null)
   const [selectedMaiaVersion, setSelectedMaiaVersion] = useState(
     MAIA_MODELS_WITH_NAMES[4],
   )
@@ -823,22 +530,16 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   const [drillCount, setDrillCount] = useState(5)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeTab, setActiveTab] = useState<MobileTab>('browse')
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    ecoDatabase ? 'eco' : 'simple',
-  )
   const [initialTourCheck, setInitialTourCheck] = useState(false)
   const [hasTrackedModalOpen, setHasTrackedModalOpen] = useState(false)
 
   // ECO database processing
   const ecoData = useMemo(() => {
-    if (!ecoDatabase) return null
     return processEcoDatabase(ecoDatabase)
   }, [ecoDatabase])
 
   // ECO preview state - initialize with first ECO opening if available
-  const [previewEcoOpening, setPreviewEcoOpening] = useState<EcoOpening | null>(
-    ecoData?.sections?.[0]?.openings?.[0] || null,
-  )
+  const [previewEcoOpening, setPreviewEcoOpening] = useState<EcoOpening | null>(null)
   const [previewEcoVariation, setPreviewEcoVariation] =
     useState<EcoOpeningVariation | null>(null)
   const [mobilePopupOpening, setMobilePopupOpening] = useState<Opening | null>(
@@ -847,6 +548,13 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   const [mobilePopupVariation, setMobilePopupVariation] =
     useState<OpeningVariation | null>(null)
   const [mobilePopupOpen, setMobilePopupOpen] = useState(false)
+
+  // Initialize ECO preview when data becomes available
+  useEffect(() => {
+    if (ecoData?.sections?.[0]?.openings?.[0] && !previewEcoOpening) {
+      setPreviewEcoOpening(ecoData.sections[0].openings[0])
+    }
+  }, [ecoData, previewEcoOpening])
 
   // Check if user has completed the tour on initial load
   useEffect(() => {
@@ -892,18 +600,16 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   }
 
   const previewFen = useMemo(() => {
-    if (viewMode === 'eco' && previewEcoOpening) {
+    if (previewEcoOpening) {
       return previewEcoVariation
         ? previewEcoVariation.fen
         : previewEcoOpening.fen
     }
-    return previewVariation ? previewVariation.fen : previewOpening.fen
+    return ecoData?.sections?.[0]?.openings?.[0]?.fen || ''
   }, [
-    previewOpening,
-    previewVariation,
     previewEcoOpening,
     previewEcoVariation,
-    viewMode,
+    ecoData,
   ])
 
   // ECO selection handlers
@@ -935,7 +641,41 @@ export const OpeningSelectionModal: React.FC<Props> = ({
         }
       : null
 
-    addQuickSelection(legacyOpening, legacyVariation)
+    // Check for duplicates
+    const isDuplicate = selections.some(
+      (s) =>
+        s.opening.id === legacyOpening.id &&
+        s.variation?.id === legacyVariation?.id &&
+        s.playerColor === selectedColor &&
+        s.maiaVersion === selectedMaiaVersion.id &&
+        s.targetMoveNumber === targetMoveNumber,
+    )
+    
+    if (isDuplicate) return
+
+    // Track quick add usage
+    trackOpeningQuickAddUsed(
+      legacyOpening.name,
+      selectedColor,
+      selectedMaiaVersion.id,
+      targetMoveNumber,
+    )
+
+    const newSelection: OpeningSelection = {
+      id: `${legacyOpening.id}-${legacyVariation?.id || 'main'}-${selectedColor}-${selectedMaiaVersion.id}-${targetMoveNumber}`,
+      opening: legacyOpening,
+      variation: legacyVariation,
+      playerColor: selectedColor,
+      maiaVersion: selectedMaiaVersion.id,
+      targetMoveNumber,
+    }
+
+    setSelections([...selections, newSelection])
+    setPreviewEcoOpening(opening)
+    setPreviewEcoVariation(variation || null)
+    if (isMobile) {
+      setActiveTab('selected')
+    }
   }
 
   const isEcoSelected = (
@@ -947,56 +687,32 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     )
   }
 
-  const filteredOpenings = useMemo(() => {
-    if (!searchTerm) return openings
-    const filtered = openings.filter(
-      (opening) =>
-        opening.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        opening.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        opening.variations.some((variation) =>
-          variation.name.toLowerCase().includes(searchTerm.toLowerCase()),
-        ),
-    )
 
-    // Track search usage
-    if (searchTerm) {
-      trackOpeningSearchUsed(searchTerm, filtered.length)
-    }
-
-    return filtered
-  }, [openings, searchTerm])
-
-  const isDuplicateSelection = (
-    opening: Opening,
-    variation: OpeningVariation | null,
-  ) => {
-    return selections.some(
-      (s) =>
-        s.opening.id === opening.id &&
-        s.variation?.id === variation?.id &&
-        s.playerColor === selectedColor &&
-        s.maiaVersion === selectedMaiaVersion.id,
-    )
-  }
 
   const addSelection = () => {
-    // Handle ECO vs traditional opening selection
-    const currentOpening =
-      viewMode === 'eco' && previewEcoOpening
-        ? ecoToLegacyOpening(previewEcoOpening)
-        : previewOpening
+    if (!previewEcoOpening) return
+    
+    const currentOpening = ecoToLegacyOpening(previewEcoOpening)
+    const currentVariation = previewEcoVariation
+      ? {
+          id: previewEcoVariation.id,
+          name: previewEcoVariation.name,
+          fen: previewEcoVariation.fen,
+          pgn: previewEcoVariation.pgn,
+        }
+      : null
 
-    const currentVariation =
-      viewMode === 'eco' && previewEcoVariation
-        ? {
-            id: previewEcoVariation.id,
-            name: previewEcoVariation.name,
-            fen: previewEcoVariation.fen,
-            pgn: previewEcoVariation.pgn,
-          }
-        : previewVariation
-
-    if (isDuplicateSelection(currentOpening, currentVariation)) return
+    // Check for duplicates
+    const isDuplicate = selections.some(
+      (s) =>
+        s.opening.id === currentOpening.id &&
+        s.variation?.id === currentVariation?.id &&
+        s.playerColor === selectedColor &&
+        s.maiaVersion === selectedMaiaVersion.id &&
+        s.targetMoveNumber === targetMoveNumber,
+    )
+    
+    if (isDuplicate) return
 
     const newSelection: OpeningSelection = {
       id: `${currentOpening.id}-${currentVariation?.id || 'main'}-${selectedColor}-${selectedMaiaVersion.id}-${targetMoveNumber}`,
@@ -1034,14 +750,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     setSelections(selections.filter((s) => s.id !== selectionId))
   }
 
-  const handleMobileOpeningClick = (
-    opening: Opening,
-    variation: OpeningVariation | null,
-  ) => {
-    setMobilePopupOpening(opening)
-    setMobilePopupVariation(variation)
-    setMobilePopupOpen(true)
-  }
 
   const handleMobilePopupAdd = (color: 'white' | 'black') => {
     if (!mobilePopupOpening) return
@@ -1088,36 +796,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     )
   }
 
-  const addQuickSelection = (
-    opening: Opening,
-    variation: OpeningVariation | null,
-  ) => {
-    if (isDuplicateSelection(opening, variation)) return
-
-    // Track quick add usage
-    trackOpeningQuickAddUsed(
-      opening.name,
-      selectedColor,
-      selectedMaiaVersion.id,
-      targetMoveNumber,
-    )
-
-    const newSelection: OpeningSelection = {
-      id: `${opening.id}-${variation?.id || 'main'}-${selectedColor}-${selectedMaiaVersion.id}-${targetMoveNumber}`,
-      opening,
-      variation,
-      playerColor: selectedColor,
-      maiaVersion: selectedMaiaVersion.id,
-      targetMoveNumber,
-    }
-
-    setSelections([...selections, newSelection])
-    setPreviewOpening(opening)
-    setPreviewVariation(variation)
-    if (isMobile) {
-      setActiveTab('selected')
-    }
-  }
 
   // Helper function to generate drill sequenc
   const generateDrillSequence = (
@@ -1276,31 +954,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
               </p>
             </div>
 
-            {/* View Toggle */}
-            {ecoDatabase && (
-              <div className="flex items-center gap-2 rounded bg-background-2 p-1">
-                <button
-                  onClick={() => setViewMode('simple')}
-                  className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
-                    viewMode === 'simple'
-                      ? 'bg-human-4 text-white'
-                      : 'text-secondary hover:text-primary'
-                  }`}
-                >
-                  Simple
-                </button>
-                <button
-                  onClick={() => setViewMode('eco')}
-                  className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
-                    viewMode === 'eco'
-                      ? 'bg-human-4 text-white'
-                      : 'text-secondary hover:text-primary'
-                  }`}
-                >
-                  ECO Tree
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
@@ -1313,68 +966,51 @@ export const OpeningSelectionModal: React.FC<Props> = ({
 
         {/* Main Content - Responsive Layout */}
         <div className="grid w-full flex-1 grid-cols-1 overflow-hidden md:grid-cols-3">
-          {viewMode === 'eco' && ecoData ? (
-            <div
-              className={`flex w-full flex-col overflow-y-scroll ${activeTab !== 'browse' ? 'hidden md:flex' : 'flex'} md:border-r md:border-white/10`}
-            >
-              <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
-                <h2 className="text-xl font-bold">ECO Opening Tree</h2>
-                <p className="text-xs text-secondary">
-                  Browse openings organized by ECO classification
-                </p>
-              </div>
-
-              <div className="flex h-16 flex-col justify-center gap-1 border-b border-white/10 p-4 md:hidden">
-                <h2 className="text-lg font-bold">ECO Openings</h2>
-                <p className="text-xs text-secondary">
-                  Choose from ECO database
-                </p>
-              </div>
-
-              <EcoTreeView
-                sections={ecoData.sections}
-                popularOpenings={ecoData.popularOpenings}
-                onOpeningClick={handleEcoOpeningClick}
-                onQuickAdd={handleEcoQuickAdd}
-                isSelected={isEcoSelected}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-              />
+          <div
+            className={`flex w-full flex-col overflow-y-scroll ${activeTab !== 'browse' ? 'hidden md:flex' : 'flex'} md:border-r md:border-white/10`}
+          >
+            <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
+              <h2 className="text-xl font-bold">ECO Opening Tree</h2>
+              <p className="text-xs text-secondary">
+                Browse openings organized by ECO classification
+              </p>
             </div>
-          ) : (
-            <BrowsePanel
-              activeTab={activeTab}
-              filteredOpenings={filteredOpenings}
-              previewOpening={previewOpening}
-              previewVariation={previewVariation}
-              setPreviewOpening={setPreviewOpening}
-              setPreviewVariation={setPreviewVariation}
-              setActiveTab={setActiveTab}
-              addQuickSelection={addQuickSelection}
-              isDuplicateSelection={isDuplicateSelection}
+
+            <div className="flex h-16 flex-col justify-center gap-1 border-b border-white/10 p-4 md:hidden">
+              <h2 className="text-lg font-bold">ECO Openings</h2>
+              <p className="text-xs text-secondary">
+                Choose from ECO database
+              </p>
+            </div>
+
+            <EcoTreeView
+              sections={ecoData.sections}
+              popularOpenings={ecoData.popularOpenings}
+              onOpeningClick={handleEcoOpeningClick}
+              onQuickAdd={handleEcoQuickAdd}
+              isSelected={isEcoSelected}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
-              selections={selections}
-              onOpeningClick={handleMobileOpeningClick}
-              removeSelection={removeSelection}
+              previewOpening={previewEcoOpening}
+              previewVariation={previewEcoVariation}
             />
-          )}
+          </div>
           <PreviewPanel
             selections={selections}
             previewOpening={
-              viewMode === 'eco' && previewEcoOpening
+              previewEcoOpening
                 ? ecoToLegacyOpening(previewEcoOpening)
-                : previewOpening
+                : (ecoData?.sections?.[0]?.openings?.[0] ? ecoToLegacyOpening(ecoData.sections[0].openings[0]) : { id: '', name: '', description: '', fen: '', pgn: '', variations: [] })
             }
             previewVariation={
-              viewMode === 'eco' && previewEcoVariation
+              previewEcoVariation
                 ? {
                     id: previewEcoVariation.id,
                     name: previewEcoVariation.name,
                     fen: previewEcoVariation.fen,
                     pgn: previewEcoVariation.pgn,
                   }
-                : previewVariation
+                : null
             }
             previewFen={previewFen}
             selectedColor={selectedColor}

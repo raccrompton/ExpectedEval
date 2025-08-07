@@ -68,8 +68,18 @@ const OpeningsPage: NextPage = () => {
     try {
       return getComprehensiveOpenings()
     } catch (error) {
-      console.warn('Failed to load comprehensive openings database:', error)
-      return undefined
+      console.error('Failed to load comprehensive openings database:', error)
+      // Return a minimal fallback database to prevent the app from crashing
+      return {
+        meta: {
+          title: 'Fallback ECO Database',
+          description: 'Minimal database for error handling',
+          version: '1.0.0',
+          totalOpenings: 0,
+          ecoSections: [],
+        },
+        openings: {},
+      }
     }
   }, [])
 

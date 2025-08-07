@@ -15,6 +15,8 @@ interface EcoTreeViewProps {
   isSelected: (opening: EcoOpening, variation?: EcoOpeningVariation) => boolean
   searchTerm: string
   setSearchTerm: (term: string) => void
+  previewOpening?: EcoOpening | null
+  previewVariation?: EcoOpeningVariation | null
 }
 
 const TreeNode: React.FC<{
@@ -25,48 +27,56 @@ const TreeNode: React.FC<{
   parentLines: boolean[]
   onToggle?: () => void
   children: React.ReactNode
-}> = ({ level, hasChildren, isExpanded, isLast, parentLines, onToggle, children }) => {
+}> = ({
+  level,
+  hasChildren,
+  isExpanded,
+  isLast,
+  parentLines,
+  onToggle,
+  children,
+}) => {
   const nodeHeight = 24 // Height of each node for proper line alignment
   const lineOffset = Math.floor(nodeHeight / 2) // Center the lines vertically
-  
+
   return (
     <div className="relative" style={{ height: nodeHeight }}>
       {/* Tree lines */}
       <div className="absolute left-0 top-0 flex h-full">
         {/* Parent connection lines */}
         {parentLines.map((showLine, index) => (
-          <div
-            key={index}
-            className="relative w-5 flex-shrink-0"
-          >
+          <div key={index} className="relative w-5 flex-shrink-0">
             {showLine && (
-              <div className="absolute left-2 top-0 bottom-0 w-px bg-secondary/20" />
+              <div className="absolute bottom-0 left-2 top-0 w-px bg-secondary/20" />
             )}
           </div>
         ))}
-        
+
         {/* Current level connector */}
         <div className="relative w-5 flex-shrink-0">
           {/* Horizontal line - centered vertically */}
           {level > 0 && (
-            <div 
-              className="absolute left-2 w-3 h-px bg-secondary/20" 
+            <div
+              className="absolute left-2 h-px w-3 bg-secondary/20"
               style={{ top: `${lineOffset}px` }}
             />
           )}
-          
+
           {/* Vertical line continuing down */}
           {!isLast && level > 0 && (
-            <div 
-              className="absolute left-2 w-px bg-secondary/20" 
-              style={{ top: `${lineOffset}px`, height: `${nodeHeight - lineOffset}px` }}
+            <div
+              className="absolute left-2 w-px bg-secondary/20"
+              style={{
+                top: `${lineOffset}px`,
+                height: `${nodeHeight - lineOffset}px`,
+              }}
             />
           )}
-          
+
           {/* Vertical line from top to center (connecting to parent) */}
           {level > 0 && (
-            <div 
-              className="absolute left-2 top-0 w-px bg-secondary/20" 
+            <div
+              className="absolute left-2 top-0 w-px bg-secondary/20"
               style={{ height: `${lineOffset}px` }}
             />
           )}
@@ -74,21 +84,22 @@ const TreeNode: React.FC<{
       </div>
 
       {/* Node content */}
-      <div className="relative flex items-center h-full" style={{ marginLeft: `${(level + 1) * 20}px` }}>
+      <div
+        className="relative flex h-full items-center"
+        style={{ marginLeft: `${(level + 1) * 20}px` }}
+      >
         {/* Expand/collapse button */}
         {hasChildren && (
           <button
             onClick={onToggle}
-            className="flex items-center justify-center w-3 h-3 mr-1 text-xs text-secondary/70 hover:text-primary hover:bg-secondary/10 rounded flex-shrink-0"
+            className="mr-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded text-xs text-secondary/70 hover:bg-secondary/10 hover:text-primary"
           >
             {isExpanded ? '−' : '+'}
           </button>
         )}
-        
+
         {/* Node content */}
-        <div className="flex-1 min-w-0">
-          {children}
-        </div>
+        <div className="h-full min-w-0 flex-1">{children}</div>
       </div>
     </div>
   )
@@ -102,6 +113,8 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
   isSelected,
   searchTerm,
   setSearchTerm,
+  previewOpening,
+  previewVariation,
 }) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(),
@@ -110,6 +123,19 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
     new Set(),
   )
   const [showPopular, setShowPopular] = useState(true)
+
+  // Helper function to check if an opening is currently being previewed
+  const isBeingPreviewed = (
+    opening: EcoOpening,
+    variation?: EcoOpeningVariation,
+  ) => {
+    if (!previewOpening) return false
+    const matchesOpening = previewOpening.id === opening.id
+    const matchesVariation = variation
+      ? previewVariation?.id === variation.id
+      : !previewVariation
+    return matchesOpening && matchesVariation
+  }
 
   const toggleSection = (sectionCode: string) => {
     const newExpanded = new Set(expandedSections)
@@ -135,34 +161,37 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
     if (!searchTerm) return sections
 
     const searchLower = searchTerm.toLowerCase()
-    
+
     return sections
       .map((section) => {
         const matchingOpenings = section.openings
           .map((opening) => {
-            const openingMatches = 
+            const openingMatches =
               opening.name.toLowerCase().includes(searchLower) ||
-              opening.eco.toLowerCase().includes(searchLower)
-            
-            const matchingVariations = opening.variations.filter((variation) =>
-              variation.name.toLowerCase().includes(searchLower)
+              opening.eco.toLowerCase().includes(searchLower) ||
+              opening.pgn.toLowerCase().includes(searchLower)
+
+            const matchingVariations = opening.variations.filter(
+              (variation) =>
+                variation.name.toLowerCase().includes(searchLower) ||
+                variation.pgn.toLowerCase().includes(searchLower),
             )
-            
+
             // Include opening if it matches or has matching variations
             if (openingMatches || matchingVariations.length > 0) {
               return {
                 ...opening,
                 // Only show matching variations when searching
-                variations: matchingVariations
+                variations: matchingVariations,
               }
             }
             return null
           })
           .filter(Boolean) as EcoOpening[]
-        
+
         return {
           ...section,
-          openings: matchingOpenings
+          openings: matchingOpenings,
         }
       })
       .filter((section) => section.openings.length > 0)
@@ -199,11 +228,13 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
 
     return popularOpenings.filter(
       (popular) =>
-        popular.opening.name
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
+        popular.opening.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        popular.opening.pgn.toLowerCase().includes(searchTerm.toLowerCase()) ||
         popular.variation?.name
           .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        popular.variation?.pgn
+          ?.toLowerCase()
           .includes(searchTerm.toLowerCase()),
     )
   }, [popularOpenings, searchTerm])
@@ -218,7 +249,7 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
           </span>
           <input
             type="text"
-            placeholder="Search ECO codes, openings, or variations..."
+            placeholder="Search ECO codes, openings, variations, or PGN..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full rounded bg-background-2 py-2 pl-10 pr-4 text-sm text-primary placeholder-secondary focus:outline-none focus:ring-1 focus:ring-human-4"
@@ -246,12 +277,14 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
               parentLines={[]}
               onToggle={() => setShowPopular(!showPopular)}
             >
-              <div className="flex items-center justify-between flex-1 py-0.5 px-1 hover:bg-human-2/10 rounded cursor-pointer">
+              <div className="flex flex-1 cursor-pointer items-center justify-between rounded px-1 py-0.5 hover:bg-human-2/10">
                 <div className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-sm text-human-4">
                     star
                   </span>
-                  <span className="font-medium text-human-4">Popular Openings</span>
+                  <span className="font-medium text-human-4">
+                    Popular Openings
+                  </span>
                 </div>
                 <span className="text-xs text-secondary">
                   ({filteredPopularOpenings.length})
@@ -272,8 +305,10 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                     const opening = popular.opening
                     const variation = popular.variation
                     const selected = isSelected(opening, variation)
-                    const isLastPopular = index === filteredPopularOpenings.length - 1
-                    
+                    const previewed = isBeingPreviewed(opening, variation)
+                    const isLastPopular =
+                      index === filteredPopularOpenings.length - 1
+
                     return (
                       <TreeNode
                         key={`popular-${opening.id}-${variation?.id || 'main'}`}
@@ -284,26 +319,28 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                         parentLines={[true]}
                       >
                         <div
-                          className={`group flex items-center flex-1 py-0.5 px-1 rounded cursor-pointer transition-colors ${
-                            selected 
-                              ? 'bg-human-2/20' 
-                              : 'hover:bg-human-2/10'
+                          className={`group flex h-full flex-1 cursor-pointer items-center rounded px-1 transition-colors ${
+                            selected
+                              ? 'bg-human-2/20'
+                              : previewed
+                                ? 'bg-human-2/10'
+                                : 'hover:bg-human-2/10'
                           }`}
                           onClick={() => onOpeningClick(opening, variation)}
                         >
-                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                            <span className="font-mono text-xs text-primary flex-shrink-0">
+                          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                            <span className="flex-shrink-0 font-mono text-xs font-medium text-secondary">
                               {opening.eco}
                             </span>
-                            <span className="text-sm text-primary flex-shrink-0">
+                            <span className="flex-shrink-0 text-sm text-primary">
                               {opening.name}
                             </span>
                             {variation && (
-                              <span className="text-xs text-secondary flex-shrink-0">
+                              <span className="flex-shrink-0 text-xs text-secondary">
                                 • {variation.name}
                               </span>
                             )}
-                            <span className="font-mono text-xxs text-secondary/70 ml-auto truncate">
+                            <span className="ml-auto truncate font-mono text-xxs text-secondary/70">
                               {variation ? variation.pgn : opening.pgn}
                             </span>
                           </div>
@@ -312,12 +349,14 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                               e.stopPropagation()
                               onQuickAdd(opening, variation)
                             }}
-                            className={`rounded p-0.5 ml-1 transition-colors flex-shrink-0 ${
+                            className={`ml-1 flex-shrink-0 rounded p-0.5 transition-colors ${
                               selected
                                 ? 'text-human-3 hover:text-human-4'
                                 : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
                             }`}
-                            title={selected ? "Already selected" : "Add opening"}
+                            title={
+                              selected ? 'Already selected' : 'Add opening'
+                            }
                           >
                             <span className="material-symbols-outlined !text-sm">
                               {selected ? 'check' : 'add'}
@@ -338,7 +377,7 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
           {filteredSections.map((section, sectionIndex) => {
             const isLastSection = sectionIndex === filteredSections.length - 1
             const sectionExpanded = autoExpandedSections.has(section.code)
-            
+
             return (
               <div key={section.code}>
                 {/* ECO Section Root Node */}
@@ -350,12 +389,12 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                   parentLines={[]}
                   onToggle={() => toggleSection(section.code)}
                 >
-                  <div className="flex items-center justify-between flex-1 py-0.5 px-1 hover:bg-human-2/10 rounded cursor-pointer">
+                  <div className="flex flex-1 cursor-pointer items-center justify-between rounded px-1 py-0.5 hover:bg-human-2/10">
                     <div className="flex items-center gap-1.5">
                       <span className="font-mono text-sm font-bold text-human-4">
                         {section.code}
                       </span>
-                      <span className="font-medium text-sm text-primary">
+                      <span className="text-sm font-medium text-primary">
                         {section.name}
                       </span>
                     </div>
@@ -376,10 +415,14 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                       className="overflow-hidden"
                     >
                       {section.openings.map((opening, openingIndex) => {
-                        const isLastOpening = openingIndex === section.openings.length - 1
-                        const openingExpanded = autoExpandedOpenings.has(opening.id)
+                        const isLastOpening =
+                          openingIndex === section.openings.length - 1
+                        const openingExpanded = autoExpandedOpenings.has(
+                          opening.id,
+                        )
                         const hasVariations = opening.variations.length > 0
-                        
+                        const openingPreviewed = isBeingPreviewed(opening)
+
                         return (
                           <div key={opening.id}>
                             {/* Opening Node */}
@@ -389,24 +432,30 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                               isExpanded={openingExpanded}
                               isLast={isLastOpening}
                               parentLines={[!isLastSection]}
-                              onToggle={hasVariations ? () => toggleOpening(opening.id) : undefined}
+                              onToggle={
+                                hasVariations
+                                  ? () => toggleOpening(opening.id)
+                                  : undefined
+                              }
                             >
                               <div
-                                className={`group flex items-center flex-1 py-0.5 px-1 rounded cursor-pointer transition-colors ${
+                                className={`group flex h-full flex-1 cursor-pointer items-center rounded px-1 transition-colors ${
                                   isSelected(opening)
                                     ? 'bg-human-2/20'
-                                    : 'hover:bg-human-2/10'
+                                    : openingPreviewed
+                                      ? 'bg-human-2/10'
+                                      : 'hover:bg-human-2/10'
                                 }`}
                                 onClick={() => onOpeningClick(opening)}
                               >
-                                <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                  <span className="font-mono text-xs text-primary flex-shrink-0">
+                                <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                                  <span className="flex-shrink-0 font-mono text-xs text-secondary">
                                     {opening.eco}
                                   </span>
-                                  <span className="text-sm text-primary flex-shrink-0">
+                                  <span className="flex-shrink-0 text-sm text-primary">
                                     {opening.name}
                                   </span>
-                                  <span className="font-mono text-xxs text-secondary/70 ml-auto truncate">
+                                  <span className="ml-auto truncate font-mono text-xxs text-secondary/70">
                                     {opening.pgn}
                                   </span>
                                 </div>
@@ -415,7 +464,7 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                                     e.stopPropagation()
                                     onQuickAdd(opening)
                                   }}
-                                  className={`rounded p-0.5 ml-1 transition-colors flex-shrink-0 ${
+                                  className={`ml-1 flex-shrink-0 rounded p-0.5 transition-colors ${
                                     isSelected(opening)
                                       ? 'text-human-3 hover:text-human-4'
                                       : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
@@ -443,61 +492,76 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                                   transition={{ duration: 0.2 }}
                                   className="overflow-hidden"
                                 >
-                                  {opening.variations.map((variation, variationIndex) => {
-                                    const isLastVariation = variationIndex === opening.variations.length - 1
-                                    
-                                    return (
-                                      <TreeNode
-                                        key={variation.id}
-                                        level={2}
-                                        hasChildren={false}
-                                        isExpanded={false}
-                                        isLast={isLastVariation}
-                                        parentLines={[!isLastSection, !isLastOpening]}
-                                      >
-                                        <div
-                                          className={`group flex items-center flex-1 py-0.5 px-1 rounded cursor-pointer transition-colors ${
-                                            isSelected(opening, variation)
-                                              ? 'bg-human-2/20'
-                                              : 'hover:bg-human-2/10'
-                                          }`}
-                                          onClick={() => onOpeningClick(opening, variation)}
+                                  {opening.variations.map(
+                                    (variation, variationIndex) => {
+                                      const isLastVariation =
+                                        variationIndex ===
+                                        opening.variations.length - 1
+                                      const variationPreviewed =
+                                        isBeingPreviewed(opening, variation)
+
+                                      return (
+                                        <TreeNode
+                                          key={variation.id}
+                                          level={2}
+                                          hasChildren={false}
+                                          isExpanded={false}
+                                          isLast={isLastVariation}
+                                          parentLines={[
+                                            !isLastSection,
+                                            !isLastOpening,
+                                          ]}
                                         >
-                                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                            <span className="font-mono text-xs text-primary flex-shrink-0">
-                                              {variation.eco}
-                                            </span>
-                                            <span className="text-sm text-primary flex-shrink-0">
-                                              {variation.name}
-                                            </span>
-                                            <span className="font-mono text-xxs text-secondary/70 ml-auto truncate">
-                                              {variation.pgn}
-                                            </span>
-                                          </div>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              onQuickAdd(opening, variation)
-                                            }}
-                                            className={`rounded p-0.5 ml-1 transition-colors flex-shrink-0 ${
+                                          <div
+                                            className={`group flex h-full flex-1 cursor-pointer items-center rounded px-1 transition-colors ${
                                               isSelected(opening, variation)
-                                                ? 'text-human-3 hover:text-human-4'
-                                                : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
+                                                ? 'bg-human-2/20'
+                                                : variationPreviewed
+                                                  ? 'bg-human-2/10'
+                                                  : 'hover:bg-human-2/10'
                                             }`}
-                                            title={
-                                              isSelected(opening, variation)
-                                                ? 'Already selected'
-                                                : 'Add variation'
+                                            onClick={() =>
+                                              onOpeningClick(opening, variation)
                                             }
                                           >
-                                            <span className="material-symbols-outlined !text-sm">
-                                              {isSelected(opening, variation) ? 'check' : 'add'}
-                                            </span>
-                                          </button>
-                                        </div>
-                                      </TreeNode>
-                                    )
-                                  })}
+                                            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                                              <span className="flex-shrink-0 font-mono text-xs text-secondary">
+                                                {variation.eco}
+                                              </span>
+                                              <span className="flex-shrink-0 text-sm text-primary">
+                                                {variation.name}
+                                              </span>
+                                              <span className="ml-auto truncate font-mono text-xxs text-secondary/70">
+                                                {variation.pgn}
+                                              </span>
+                                            </div>
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation()
+                                                onQuickAdd(opening, variation)
+                                              }}
+                                              className={`ml-1 flex-shrink-0 rounded p-0.5 transition-colors ${
+                                                isSelected(opening, variation)
+                                                  ? 'text-human-3 hover:text-human-4'
+                                                  : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
+                                              }`}
+                                              title={
+                                                isSelected(opening, variation)
+                                                  ? 'Already selected'
+                                                  : 'Add variation'
+                                              }
+                                            >
+                                              <span className="material-symbols-outlined !text-sm">
+                                                {isSelected(opening, variation)
+                                                  ? 'check'
+                                                  : 'add'}
+                                              </span>
+                                            </button>
+                                          </div>
+                                        </TreeNode>
+                                      )
+                                    },
+                                  )}
                                 </motion.div>
                               )}
                             </AnimatePresence>
@@ -521,7 +585,8 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
               No openings found for &ldquo;{searchTerm}&rdquo;
             </p>
             <p className="mt-1 text-xs text-secondary/70">
-              Try searching for opening names, ECO codes, or variations
+              Try searching for opening names, ECO codes, variations, or PGN
+              moves
             </p>
           </div>
         )}
