@@ -134,22 +134,65 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
   const filteredSections = useMemo(() => {
     if (!searchTerm) return sections
 
+    const searchLower = searchTerm.toLowerCase()
+    
     return sections
-      .map((section) => ({
-        ...section,
-        openings: section.openings.filter(
-          (opening) =>
-            opening.name
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase()) ||
-            opening.eco.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            opening.variations.some((variation) =>
-              variation.name.toLowerCase().includes(searchTerm.toLowerCase()),
-            ),
-        ),
-      }))
+      .map((section) => {
+        const matchingOpenings = section.openings
+          .map((opening) => {
+            const openingMatches = 
+              opening.name.toLowerCase().includes(searchLower) ||
+              opening.eco.toLowerCase().includes(searchLower)
+            
+            const matchingVariations = opening.variations.filter((variation) =>
+              variation.name.toLowerCase().includes(searchLower)
+            )
+            
+            // Include opening if it matches or has matching variations
+            if (openingMatches || matchingVariations.length > 0) {
+              return {
+                ...opening,
+                // Only show matching variations when searching
+                variations: matchingVariations
+              }
+            }
+            return null
+          })
+          .filter(Boolean) as EcoOpening[]
+        
+        return {
+          ...section,
+          openings: matchingOpenings
+        }
+      })
       .filter((section) => section.openings.length > 0)
   }, [sections, searchTerm])
+
+  // Auto-expand sections and openings when searching
+  const autoExpandedSections = useMemo(() => {
+    if (!searchTerm) return expandedSections
+
+    const newExpanded = new Set(expandedSections)
+    filteredSections.forEach((section) => {
+      newExpanded.add(section.code)
+    })
+    return newExpanded
+  }, [expandedSections, filteredSections, searchTerm])
+
+  const autoExpandedOpenings = useMemo(() => {
+    if (!searchTerm) return expandedOpenings
+
+    const newExpanded = new Set(expandedOpenings)
+    filteredSections.forEach((section) => {
+      section.openings.forEach((opening) => {
+        // Auto-expand openings that have matching variations
+        if (opening.variations.length > 0) {
+          newExpanded.add(opening.id)
+        }
+      })
+    })
+    return newExpanded
+  }, [expandedOpenings, filteredSections, searchTerm])
 
   const filteredPopularOpenings = useMemo(() => {
     if (!searchTerm) return popularOpenings
@@ -294,7 +337,7 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
         <div className="py-1">
           {filteredSections.map((section, sectionIndex) => {
             const isLastSection = sectionIndex === filteredSections.length - 1
-            const sectionExpanded = expandedSections.has(section.code)
+            const sectionExpanded = autoExpandedSections.has(section.code)
             
             return (
               <div key={section.code}>
@@ -334,7 +377,7 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                     >
                       {section.openings.map((opening, openingIndex) => {
                         const isLastOpening = openingIndex === section.openings.length - 1
-                        const openingExpanded = expandedOpenings.has(opening.id)
+                        const openingExpanded = autoExpandedOpenings.has(opening.id)
                         const hasVariations = opening.variations.length > 0
                         
                         return (
