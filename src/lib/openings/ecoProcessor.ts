@@ -3,28 +3,18 @@ import { EcoDatabase, EcoSection, EcoOpening, PopularOpening } from 'src/types'
 export const ECO_SECTION_DEFINITIONS = {
   A: {
     name: 'Irregular Openings & Flank Games',
-    description:
-      'Openings that do not begin with 1.e4 or 1.d4, including English Opening, Réti, Bird Opening, and various irregular first moves.',
   },
   B: {
     name: 'Semi-Open Games',
-    description:
-      'Black responses to 1.e4 other than 1...e5, including Sicilian Defense, French Defense (partial), Caro-Kann, and Alekhine Defense.',
   },
   C: {
     name: 'Open Games & French Defense',
-    description:
-      'Games beginning with 1.e4 e5, including Ruy Lopez, Italian Game, and the French Defense (1.e4 e6).',
   },
   D: {
     name: "Closed Games & Queen's Gambit",
-    description:
-      "Games beginning with 1.d4 d5, including Queen's Gambit variations, Slav Defense, and various Queen's Pawn games.",
   },
   E: {
     name: 'Indian Defenses',
-    description:
-      "Games beginning with 1.d4 Nf6, including King's Indian, Nimzo-Indian, Queen's Indian, and other Indian defenses.",
   },
 }
 
@@ -71,7 +61,6 @@ export function processEcoDatabase(ecoDatabase: EcoDatabase): {
       sections.push({
         code: sectionCode,
         name: sectionDef.name,
-        description: sectionDef.description,
         openings: openings,
       })
 

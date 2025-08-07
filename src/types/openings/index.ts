@@ -30,7 +30,6 @@ export interface EcoOpeningVariation {
 export interface EcoSection {
   code: string
   name: string
-  description: string
   openings: EcoOpening[]
 }
 

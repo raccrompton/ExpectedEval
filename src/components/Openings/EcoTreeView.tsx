@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Image from 'next/image'
 import {
   EcoOpening,
   EcoOpeningVariation,
@@ -16,6 +15,83 @@ interface EcoTreeViewProps {
   isSelected: (opening: EcoOpening, variation?: EcoOpeningVariation) => boolean
   searchTerm: string
   setSearchTerm: (term: string) => void
+}
+
+const TreeNode: React.FC<{
+  level: number
+  hasChildren: boolean
+  isExpanded: boolean
+  isLast: boolean
+  parentLines: boolean[]
+  onToggle?: () => void
+  children: React.ReactNode
+}> = ({ level, hasChildren, isExpanded, isLast, parentLines, onToggle, children }) => {
+  const nodeHeight = 24 // Height of each node for proper line alignment
+  const lineOffset = Math.floor(nodeHeight / 2) // Center the lines vertically
+  
+  return (
+    <div className="relative" style={{ height: nodeHeight }}>
+      {/* Tree lines */}
+      <div className="absolute left-0 top-0 flex h-full">
+        {/* Parent connection lines */}
+        {parentLines.map((showLine, index) => (
+          <div
+            key={index}
+            className="relative w-5 flex-shrink-0"
+          >
+            {showLine && (
+              <div className="absolute left-2 top-0 bottom-0 w-px bg-secondary/20" />
+            )}
+          </div>
+        ))}
+        
+        {/* Current level connector */}
+        <div className="relative w-5 flex-shrink-0">
+          {/* Horizontal line - centered vertically */}
+          {level > 0 && (
+            <div 
+              className="absolute left-2 w-3 h-px bg-secondary/20" 
+              style={{ top: `${lineOffset}px` }}
+            />
+          )}
+          
+          {/* Vertical line continuing down */}
+          {!isLast && level > 0 && (
+            <div 
+              className="absolute left-2 w-px bg-secondary/20" 
+              style={{ top: `${lineOffset}px`, height: `${nodeHeight - lineOffset}px` }}
+            />
+          )}
+          
+          {/* Vertical line from top to center (connecting to parent) */}
+          {level > 0 && (
+            <div 
+              className="absolute left-2 top-0 w-px bg-secondary/20" 
+              style={{ height: `${lineOffset}px` }}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Node content */}
+      <div className="relative flex items-center h-full" style={{ marginLeft: `${(level + 1) * 20}px` }}>
+        {/* Expand/collapse button */}
+        {hasChildren && (
+          <button
+            onClick={onToggle}
+            className="flex items-center justify-center w-3 h-3 mr-1 text-xs text-secondary/70 hover:text-primary hover:bg-secondary/10 rounded flex-shrink-0"
+          >
+            {isExpanded ? '−' : '+'}
+          </button>
+        )}
+        
+        {/* Node content */}
+        <div className="flex-1 min-w-0">
+          {children}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 const EcoTreeView: React.FC<EcoTreeViewProps> = ({
@@ -63,8 +139,7 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
         ...section,
         openings: section.openings.filter(
           (opening) =>
-            opening.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            opening.description
+            opening.name
               .toLowerCase()
               .includes(searchTerm.toLowerCase()) ||
             opening.eco.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,8 +156,7 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
 
     return popularOpenings.filter(
       (popular) =>
-        popular.opening.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        popular.opening.description
+        popular.opening.name
           .toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
         popular.variation?.name
@@ -120,27 +194,28 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
       <div className="red-scrollbar flex-1 overflow-y-auto">
         {/* Popular Openings Section */}
         {!searchTerm && (
-          <div className="border-b border-white/10">
-            <button
-              onClick={() => setShowPopular(!showPopular)}
-              className="flex w-full items-center justify-between p-3 text-left transition-colors hover:bg-human-2/10"
+          <div className="py-1">
+            <TreeNode
+              level={0}
+              hasChildren={filteredPopularOpenings.length > 0}
+              isExpanded={showPopular}
+              isLast={false}
+              parentLines={[]}
+              onToggle={() => setShowPopular(!showPopular)}
             >
-              <div className="flex items-center gap-2">
-                <span
-                  className={`material-symbols-outlined text-sm transition-transform duration-200 ${
-                    showPopular ? 'rotate-90' : ''
-                  }`}
-                >
-                  chevron_right
-                </span>
-                <span className="font-medium text-human-4">
-                  Popular Openings
+              <div className="flex items-center justify-between flex-1 py-0.5 px-1 hover:bg-human-2/10 rounded cursor-pointer">
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm text-human-4">
+                    star
+                  </span>
+                  <span className="font-medium text-human-4">Popular Openings</span>
+                </div>
+                <span className="text-xs text-secondary">
+                  ({filteredPopularOpenings.length})
                 </span>
               </div>
-              <span className="text-xs text-secondary">
-                {filteredPopularOpenings.length} openings
-              </span>
-            </button>
+            </TreeNode>
+
             <AnimatePresence>
               {showPopular && (
                 <motion.div
@@ -154,62 +229,59 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                     const opening = popular.opening
                     const variation = popular.variation
                     const selected = isSelected(opening, variation)
-
+                    const isLastPopular = index === filteredPopularOpenings.length - 1
+                    
                     return (
-                      <div
+                      <TreeNode
                         key={`popular-${opening.id}-${variation?.id || 'main'}`}
-                        className={`group flex items-center border-l-2 transition-colors ${
-                          selected
-                            ? 'border-human-4 bg-human-2/20'
-                            : 'border-transparent hover:bg-human-2/10'
-                        }`}
+                        level={1}
+                        hasChildren={false}
+                        isExpanded={false}
+                        isLast={isLastPopular}
+                        parentLines={[true]}
                       >
                         <div
-                          role="button"
-                          tabIndex={0}
-                          className="flex-1 cursor-pointer p-3 pl-6"
-                          onClick={() => onOpeningClick(opening, variation)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              onOpeningClick(opening, variation)
-                            }
-                          }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-xs text-human-3">
-                                  {opening.eco}
-                                </span>
-                                <span className="text-sm font-medium">
-                                  {opening.name}
-                                </span>
-                              </div>
-                              {variation && (
-                                <p className="pl-8 text-xs text-secondary">
-                                  → {variation.name}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onQuickAdd(opening, variation)
-                          }}
-                          className={`mr-3 rounded p-1 transition-colors ${
-                            selected
-                              ? 'text-human-3 hover:text-human-4'
-                              : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
+                          className={`group flex items-center flex-1 py-0.5 px-1 rounded cursor-pointer transition-colors ${
+                            selected 
+                              ? 'bg-human-2/20' 
+                              : 'hover:bg-human-2/10'
                           }`}
-                          title={selected ? 'Already selected' : 'Add opening'}
+                          onClick={() => onOpeningClick(opening, variation)}
                         >
-                          <span className="material-symbols-outlined !text-base">
-                            {selected ? 'check' : 'add'}
-                          </span>
-                        </button>
-                      </div>
+                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                            <span className="font-mono text-xs text-primary flex-shrink-0">
+                              {opening.eco}
+                            </span>
+                            <span className="text-sm text-primary flex-shrink-0">
+                              {opening.name}
+                            </span>
+                            {variation && (
+                              <span className="text-xs text-secondary flex-shrink-0">
+                                • {variation.name}
+                              </span>
+                            )}
+                            <span className="font-mono text-xxs text-secondary/70 ml-auto truncate">
+                              {variation ? variation.pgn : opening.pgn}
+                            </span>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onQuickAdd(opening, variation)
+                            }}
+                            className={`rounded p-0.5 ml-1 transition-colors flex-shrink-0 ${
+                              selected
+                                ? 'text-human-3 hover:text-human-4'
+                                : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
+                            }`}
+                            title={selected ? "Already selected" : "Add opening"}
+                          >
+                            <span className="material-symbols-outlined !text-sm">
+                              {selected ? 'check' : 'add'}
+                            </span>
+                          </button>
+                        </div>
+                      </TreeNode>
                     )
                   })}
                 </motion.div>
@@ -218,212 +290,184 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
           </div>
         )}
 
-        {/* ECO Sections */}
-        {filteredSections.map((section) => (
-          <div
-            key={section.code}
-            className="border-b border-white/10 last:border-b-0"
-          >
-            <button
-              onClick={() => toggleSection(section.code)}
-              className="flex w-full items-center justify-between p-3 text-left transition-colors hover:bg-human-2/10"
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className={`material-symbols-outlined text-sm transition-transform duration-200 ${
-                    expandedSections.has(section.code) ? 'rotate-90' : ''
-                  }`}
+        {/* ECO Sections Tree */}
+        <div className="py-1">
+          {filteredSections.map((section, sectionIndex) => {
+            const isLastSection = sectionIndex === filteredSections.length - 1
+            const sectionExpanded = expandedSections.has(section.code)
+            
+            return (
+              <div key={section.code}>
+                {/* ECO Section Root Node */}
+                <TreeNode
+                  level={0}
+                  hasChildren={section.openings.length > 0}
+                  isExpanded={sectionExpanded}
+                  isLast={isLastSection}
+                  parentLines={[]}
+                  onToggle={() => toggleSection(section.code)}
                 >
-                  chevron_right
-                </span>
-                <div>
-                  <span className="font-mono text-sm font-bold text-human-4">
-                    {section.code}00-{section.code}99
-                  </span>
-                  <span className="ml-2 font-medium">{section.name}</span>
-                </div>
-              </div>
-              <span className="text-xs text-secondary">
-                {section.openings.length} openings
-              </span>
-            </button>
-
-            <AnimatePresence>
-              {expandedSections.has(section.code) && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  {section.openings.map((opening) => (
-                    <div key={opening.id}>
-                      {/* Main Opening */}
-                      <div
-                        className={`group flex items-center border-l-2 transition-colors ${
-                          isSelected(opening)
-                            ? 'border-human-4 bg-human-2/20'
-                            : 'border-transparent hover:bg-human-2/10'
-                        }`}
-                      >
-                        <div className="flex items-center">
-                          {opening.variations.length > 0 && (
-                            <button
-                              onClick={() => toggleOpening(opening.id)}
-                              className="p-2 text-secondary hover:text-primary"
-                            >
-                              <span
-                                className={`material-symbols-outlined text-xs transition-transform duration-200 ${
-                                  expandedOpenings.has(opening.id)
-                                    ? 'rotate-90'
-                                    : ''
-                                }`}
-                              >
-                                chevron_right
-                              </span>
-                            </button>
-                          )}
-                          {opening.variations.length === 0 && (
-                            <div className="w-8" />
-                          )}
-                        </div>
-
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          className="flex-1 cursor-pointer p-3 pl-0"
-                          onClick={() => onOpeningClick(opening)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              onOpeningClick(opening)
-                            }
-                          }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-xs text-human-3">
-                                  {opening.eco}
-                                </span>
-                                <span className="text-sm font-medium">
-                                  {opening.name}
-                                </span>
-                              </div>
-                              <p className="max-w-md truncate text-xs text-secondary">
-                                {opening.description}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onQuickAdd(opening)
-                          }}
-                          className={`mr-3 rounded p-1 transition-colors ${
-                            isSelected(opening)
-                              ? 'text-human-3 hover:text-human-4'
-                              : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
-                          }`}
-                          title={
-                            isSelected(opening)
-                              ? 'Already selected'
-                              : 'Add opening'
-                          }
-                        >
-                          <span className="material-symbols-outlined !text-base">
-                            {isSelected(opening) ? 'check' : 'add'}
-                          </span>
-                        </button>
-                      </div>
-
-                      {/* Variations */}
-                      <AnimatePresence>
-                        {expandedOpenings.has(opening.id) &&
-                          opening.variations.length > 0 && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="overflow-hidden"
-                            >
-                              {opening.variations.map((variation) => (
-                                <div
-                                  key={variation.id}
-                                  className={`group flex items-center border-l-2 transition-colors ${
-                                    isSelected(opening, variation)
-                                      ? 'border-human-4 bg-human-2/20'
-                                      : 'border-transparent hover:bg-human-2/10'
-                                  }`}
-                                >
-                                  <div className="flex w-12 justify-center">
-                                    <div className="h-4 w-4 rounded-full border border-secondary/30" />
-                                  </div>
-
-                                  <div
-                                    role="button"
-                                    tabIndex={0}
-                                    className="flex-1 cursor-pointer p-2"
-                                    onClick={() =>
-                                      onOpeningClick(opening, variation)
-                                    }
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter' || e.key === ' ') {
-                                        onOpeningClick(opening, variation)
-                                      }
-                                    }}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-mono text-xs text-human-3">
-                                            {variation.eco}
-                                          </span>
-                                          <span className="text-sm">
-                                            {variation.name}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      onQuickAdd(opening, variation)
-                                    }}
-                                    className={`mr-3 rounded p-1 transition-colors ${
-                                      isSelected(opening, variation)
-                                        ? 'text-human-3 hover:text-human-4'
-                                        : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
-                                    }`}
-                                    title={
-                                      isSelected(opening, variation)
-                                        ? 'Already selected'
-                                        : 'Add variation'
-                                    }
-                                  >
-                                    <span className="material-symbols-outlined !text-base">
-                                      {isSelected(opening, variation)
-                                        ? 'check'
-                                        : 'add'}
-                                    </span>
-                                  </button>
-                                </div>
-                              ))}
-                            </motion.div>
-                          )}
-                      </AnimatePresence>
+                  <div className="flex items-center justify-between flex-1 py-0.5 px-1 hover:bg-human-2/10 rounded cursor-pointer">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-sm font-bold text-human-4">
+                        {section.code}
+                      </span>
+                      <span className="font-medium text-sm text-primary">
+                        {section.name}
+                      </span>
                     </div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        ))}
+                    <span className="text-xs text-secondary">
+                      ({section.openings.length})
+                    </span>
+                  </div>
+                </TreeNode>
+
+                {/* Openings under this section */}
+                <AnimatePresence>
+                  {sectionExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      {section.openings.map((opening, openingIndex) => {
+                        const isLastOpening = openingIndex === section.openings.length - 1
+                        const openingExpanded = expandedOpenings.has(opening.id)
+                        const hasVariations = opening.variations.length > 0
+                        
+                        return (
+                          <div key={opening.id}>
+                            {/* Opening Node */}
+                            <TreeNode
+                              level={1}
+                              hasChildren={hasVariations}
+                              isExpanded={openingExpanded}
+                              isLast={isLastOpening}
+                              parentLines={[!isLastSection]}
+                              onToggle={hasVariations ? () => toggleOpening(opening.id) : undefined}
+                            >
+                              <div
+                                className={`group flex items-center flex-1 py-0.5 px-1 rounded cursor-pointer transition-colors ${
+                                  isSelected(opening)
+                                    ? 'bg-human-2/20'
+                                    : 'hover:bg-human-2/10'
+                                }`}
+                                onClick={() => onOpeningClick(opening)}
+                              >
+                                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                  <span className="font-mono text-xs text-primary flex-shrink-0">
+                                    {opening.eco}
+                                  </span>
+                                  <span className="text-sm text-primary flex-shrink-0">
+                                    {opening.name}
+                                  </span>
+                                  <span className="font-mono text-xxs text-secondary/70 ml-auto truncate">
+                                    {opening.pgn}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    onQuickAdd(opening)
+                                  }}
+                                  className={`rounded p-0.5 ml-1 transition-colors flex-shrink-0 ${
+                                    isSelected(opening)
+                                      ? 'text-human-3 hover:text-human-4'
+                                      : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
+                                  }`}
+                                  title={
+                                    isSelected(opening)
+                                      ? 'Already selected'
+                                      : 'Add opening'
+                                  }
+                                >
+                                  <span className="material-symbols-outlined !text-sm">
+                                    {isSelected(opening) ? 'check' : 'add'}
+                                  </span>
+                                </button>
+                              </div>
+                            </TreeNode>
+
+                            {/* Opening Variations */}
+                            <AnimatePresence>
+                              {openingExpanded && hasVariations && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="overflow-hidden"
+                                >
+                                  {opening.variations.map((variation, variationIndex) => {
+                                    const isLastVariation = variationIndex === opening.variations.length - 1
+                                    
+                                    return (
+                                      <TreeNode
+                                        key={variation.id}
+                                        level={2}
+                                        hasChildren={false}
+                                        isExpanded={false}
+                                        isLast={isLastVariation}
+                                        parentLines={[!isLastSection, !isLastOpening]}
+                                      >
+                                        <div
+                                          className={`group flex items-center flex-1 py-0.5 px-1 rounded cursor-pointer transition-colors ${
+                                            isSelected(opening, variation)
+                                              ? 'bg-human-2/20'
+                                              : 'hover:bg-human-2/10'
+                                          }`}
+                                          onClick={() => onOpeningClick(opening, variation)}
+                                        >
+                                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                            <span className="font-mono text-xs text-primary flex-shrink-0">
+                                              {variation.eco}
+                                            </span>
+                                            <span className="text-sm text-primary flex-shrink-0">
+                                              {variation.name}
+                                            </span>
+                                            <span className="font-mono text-xxs text-secondary/70 ml-auto truncate">
+                                              {variation.pgn}
+                                            </span>
+                                          </div>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              onQuickAdd(opening, variation)
+                                            }}
+                                            className={`rounded p-0.5 ml-1 transition-colors flex-shrink-0 ${
+                                              isSelected(opening, variation)
+                                                ? 'text-human-3 hover:text-human-4'
+                                                : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
+                                            }`}
+                                            title={
+                                              isSelected(opening, variation)
+                                                ? 'Already selected'
+                                                : 'Add variation'
+                                            }
+                                          >
+                                            <span className="material-symbols-outlined !text-sm">
+                                              {isSelected(opening, variation) ? 'check' : 'add'}
+                                            </span>
+                                          </button>
+                                        </div>
+                                      </TreeNode>
+                                    )
+                                  })}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        )
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )
+          })}
+        </div>
 
         {filteredSections.length === 0 && searchTerm && (
           <div className="flex flex-col items-center justify-center p-8 text-center">
