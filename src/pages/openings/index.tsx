@@ -21,7 +21,7 @@ import {
   AuthContext,
   MaiaEngineContext,
 } from 'src/contexts'
-import { DrillConfiguration, AnalyzedGame } from 'src/types'
+import { DrillConfiguration, AnalyzedGame, EcoDatabase } from 'src/types'
 import { GameNode } from 'src/types/base/tree'
 import { MIN_STOCKFISH_DEPTH } from 'src/constants/analysis'
 import openings from 'src/lib/openings/openings.json'
@@ -63,23 +63,42 @@ const OpeningsPage: NextPage = () => {
   const [showSelectionModal, setShowSelectionModal] = useState(true)
   const [isReopenedModal, setIsReopenedModal] = useState(false)
 
-  // Get comprehensive ECO database
-  const ecoDatabase = useMemo(() => {
-    try {
-      return getComprehensiveOpenings()
-    } catch (error) {
-      console.error('Failed to load comprehensive openings database:', error)
-      // Return a minimal fallback database to prevent the app from crashing
-      return {
-        meta: {
-          title: 'Fallback ECO Database',
-          description: 'Minimal database for error handling',
-          version: '1.0.0',
-          totalOpenings: 0,
-          ecoSections: [],
-        },
-        openings: {},
+  // Load comprehensive ECO database (async, TSV-backed)
+  const [ecoDatabase, setEcoDatabase] = useState<EcoDatabase>({
+    meta: {
+      title: 'Loading ECO Database',
+      description: 'Loading...',
+      version: 'pending',
+      totalOpenings: 0,
+      ecoSections: [],
+    },
+    openings: {},
+  })
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const db = await getComprehensiveOpenings()
+        if (!cancelled) setEcoDatabase(db)
+      } catch (error) {
+        console.error('Failed to load comprehensive openings database:', error)
+        if (!cancelled) {
+          setEcoDatabase({
+            meta: {
+              title: 'Fallback ECO Database',
+              description: 'Minimal database for error handling',
+              version: '1.0.0',
+              totalOpenings: 0,
+              ecoSections: [],
+            },
+            openings: {},
+          })
+        }
       }
+    })()
+    return () => {
+      cancelled = true
     }
   }, [])
 

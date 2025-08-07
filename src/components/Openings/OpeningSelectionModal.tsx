@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useContext } from 'react'
+import { Chess } from 'chess.ts'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import Chessground from '@react-chess/chessground'
@@ -66,7 +67,18 @@ const MobileOpeningPopup: React.FC<MobileOpeningPopupProps> = ({
 }) => {
   const [selectedColor, setSelectedColor] = useState<'white' | 'black'>('white')
   const previewFen = useMemo(() => {
-    return variation ? variation.fen : opening.fen
+    const pgn = variation?.pgn || opening.pgn
+    if (pgn) {
+      try {
+        const chess = new Chess()
+        chess.loadPgn(pgn.trim())
+        return chess.fen()
+      } catch (err) {
+        // fall back to any provided fen if parsing fails
+        return variation?.fen || opening.fen || ''
+      }
+    }
+    return variation?.fen || opening.fen || ''
   }, [opening, variation])
 
   if (!isOpen) return null
@@ -201,7 +213,6 @@ const TabNavigation: React.FC<{
   )
 }
 
-
 const PreviewPanel: React.FC<{
   selections: OpeningSelection[]
   previewOpening: Opening
@@ -248,7 +259,9 @@ const PreviewPanel: React.FC<{
               {previewVariation && ` → ${previewVariation.name}`}
             </span>
           </p>
-          <p className="text-xs text-secondary">{previewOpening.description}</p>
+          <p className="font-mono text-xs text-secondary">
+            {previewVariation ? previewVariation.pgn : previewOpening.pgn}
+          </p>
         </div>
 
         <div className="flex flex-col gap-1">
@@ -539,7 +552,9 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   }, [ecoDatabase])
 
   // ECO preview state - initialize with first ECO opening if available
-  const [previewEcoOpening, setPreviewEcoOpening] = useState<EcoOpening | null>(null)
+  const [previewEcoOpening, setPreviewEcoOpening] = useState<EcoOpening | null>(
+    null,
+  )
   const [previewEcoVariation, setPreviewEcoVariation] =
     useState<EcoOpeningVariation | null>(null)
   const [mobilePopupOpening, setMobilePopupOpening] = useState<Opening | null>(
@@ -600,17 +615,29 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   }
 
   const previewFen = useMemo(() => {
-    if (previewEcoOpening) {
-      return previewEcoVariation
-        ? previewEcoVariation.fen
-        : previewEcoOpening.fen
+    const pgn = previewEcoVariation?.pgn || previewEcoOpening?.pgn
+    if (pgn) {
+      try {
+        const chess = new Chess()
+        chess.loadPgn(pgn.trim())
+        return chess.fen()
+      } catch (err) {
+        // fallback to any fen if present
+        return (
+          previewEcoVariation?.fen ||
+          previewEcoOpening?.fen ||
+          ecoData?.sections?.[0]?.openings?.[0]?.fen ||
+          ''
+        )
+      }
     }
-    return ecoData?.sections?.[0]?.openings?.[0]?.fen || ''
-  }, [
-    previewEcoOpening,
-    previewEcoVariation,
-    ecoData,
-  ])
+    return (
+      previewEcoVariation?.fen ||
+      previewEcoOpening?.fen ||
+      ecoData?.sections?.[0]?.openings?.[0]?.fen ||
+      ''
+    )
+  }, [previewEcoOpening, previewEcoVariation, ecoData])
 
   // ECO selection handlers
   const handleEcoOpeningClick = (
@@ -650,7 +677,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
         s.maiaVersion === selectedMaiaVersion.id &&
         s.targetMoveNumber === targetMoveNumber,
     )
-    
+
     if (isDuplicate) return
 
     // Track quick add usage
@@ -687,11 +714,9 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     )
   }
 
-
-
   const addSelection = () => {
     if (!previewEcoOpening) return
-    
+
     const currentOpening = ecoToLegacyOpening(previewEcoOpening)
     const currentVariation = previewEcoVariation
       ? {
@@ -711,7 +736,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
         s.maiaVersion === selectedMaiaVersion.id &&
         s.targetMoveNumber === targetMoveNumber,
     )
-    
+
     if (isDuplicate) return
 
     const newSelection: OpeningSelection = {
@@ -749,7 +774,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     }
     setSelections(selections.filter((s) => s.id !== selectionId))
   }
-
 
   const handleMobilePopupAdd = (color: 'white' | 'black') => {
     if (!mobilePopupOpening) return
@@ -795,7 +819,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
       (s) => s.opening.id === opening.id && s.variation?.id === variation?.id,
     )
   }
-
 
   // Helper function to generate drill sequenc
   const generateDrillSequence = (
@@ -953,7 +976,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
                 your color and opponent strength.
               </p>
             </div>
-
           </div>
         </div>
 
@@ -978,9 +1000,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
 
             <div className="flex h-16 flex-col justify-center gap-1 border-b border-white/10 p-4 md:hidden">
               <h2 className="text-lg font-bold">ECO Openings</h2>
-              <p className="text-xs text-secondary">
-                Choose from ECO database
-              </p>
+              <p className="text-xs text-secondary">Choose from ECO database</p>
             </div>
 
             <EcoTreeView
@@ -1000,7 +1020,16 @@ export const OpeningSelectionModal: React.FC<Props> = ({
             previewOpening={
               previewEcoOpening
                 ? ecoToLegacyOpening(previewEcoOpening)
-                : (ecoData?.sections?.[0]?.openings?.[0] ? ecoToLegacyOpening(ecoData.sections[0].openings[0]) : { id: '', name: '', description: '', fen: '', pgn: '', variations: [] })
+                : ecoData?.sections?.[0]?.openings?.[0]
+                  ? ecoToLegacyOpening(ecoData.sections[0].openings[0])
+                  : {
+                      id: '',
+                      name: '',
+                      description: '',
+                      fen: '',
+                      pgn: '',
+                      variations: [],
+                    }
             }
             previewVariation={
               previewEcoVariation
