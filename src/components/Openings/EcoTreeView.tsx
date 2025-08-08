@@ -122,6 +122,7 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
   const [expandedOpenings, setExpandedOpenings] = useState<Set<string>>(
     new Set(),
   )
+  const [expandedDecades, setExpandedDecades] = useState<Set<string>>(new Set())
   const [showPopular, setShowPopular] = useState(true)
 
   // Helper function to check if an opening is currently being previewed
@@ -155,6 +156,14 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
       newExpanded.add(openingId)
     }
     setExpandedOpenings(newExpanded)
+  }
+
+  const toggleDecade = (sectionCode: string, groupCode: string) => {
+    const key = `${sectionCode}:${groupCode}`
+    const next = new Set(expandedDecades)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    setExpandedDecades(next)
   }
 
   const filteredSections = useMemo(() => {
@@ -238,6 +247,17 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
           .includes(searchTerm.toLowerCase()),
     )
   }, [popularOpenings, searchTerm])
+
+  const autoExpandedDecades = useMemo(() => {
+    if (!searchTerm) return expandedDecades
+    const next = new Set(expandedDecades)
+    filteredSections.forEach((section) => {
+      const decadeKeys = new Set<string>()
+      section.openings.forEach((op) => decadeKeys.add(op.eco.slice(0, 2)))
+      decadeKeys.forEach((g) => next.add(`${section.code}:${g}`))
+    })
+    return next
+  }, [expandedDecades, filteredSections, searchTerm])
 
   return (
     <div className="flex h-full flex-col">
@@ -404,7 +424,7 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                   </div>
                 </TreeNode>
 
-                {/* Openings under this section */}
+                {/* Openings grouped by ECO decade (e.g., A0–A9) under this section */}
                 <AnimatePresence>
                   {sectionExpanded && (
                     <motion.div
@@ -414,160 +434,262 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      {section.openings.map((opening, openingIndex) => {
-                        const isLastOpening =
-                          openingIndex === section.openings.length - 1
-                        const openingExpanded = autoExpandedOpenings.has(
-                          opening.id,
-                        )
-                        const hasVariations = opening.variations.length > 0
-                        const openingPreviewed = isBeingPreviewed(opening)
-
-                        return (
-                          <div key={opening.id}>
-                            {/* Opening Node */}
-                            <TreeNode
-                              level={1}
-                              hasChildren={hasVariations}
-                              isExpanded={openingExpanded}
-                              isLast={isLastOpening}
-                              parentLines={[!isLastSection]}
-                              onToggle={
-                                hasVariations
-                                  ? () => toggleOpening(opening.id)
-                                  : undefined
-                              }
-                            >
-                              <div
-                                className={`group flex h-full flex-1 cursor-pointer items-center rounded px-1 transition-colors ${
-                                  isSelected(opening)
-                                    ? 'bg-human-2/20'
-                                    : openingPreviewed
-                                      ? 'bg-human-2/10'
-                                      : 'hover:bg-human-2/10'
-                                }`}
-                                onClick={() => onOpeningClick(opening)}
-                              >
-                                <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                                  <span className="flex-shrink-0 font-mono text-xs text-secondary">
-                                    {opening.eco}
-                                  </span>
-                                  <span className="flex-shrink-0 text-sm text-primary">
-                                    {opening.name}
-                                  </span>
-                                  <span className="ml-auto truncate font-mono text-xxs text-secondary/70">
-                                    {opening.pgn}
-                                  </span>
-                                </div>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    onQuickAdd(opening)
-                                  }}
-                                  className={`ml-1 flex-shrink-0 rounded p-0.5 transition-colors ${
-                                    isSelected(opening)
-                                      ? 'text-human-3 hover:text-human-4'
-                                      : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
-                                  }`}
-                                  title={
-                                    isSelected(opening)
-                                      ? 'Already selected'
-                                      : 'Add opening'
+                      {Array.from(
+                        section.openings.reduce((m, op) => {
+                          const groupCode = op.eco.slice(0, 2)
+                          if (!m.has(groupCode))
+                            m.set(groupCode, [] as EcoOpening[])
+                          m.get(groupCode)!.push(op)
+                          return m
+                        }, new Map<string, EcoOpening[]>()),
+                      )
+                        .sort((a, b) => a[0].localeCompare(b[0]))
+                        .map(
+                          ([groupCode, groupOpenings], groupIdx, allGroups) => {
+                            const isLastGroup =
+                              groupIdx === allGroups.length - 1
+                            return (
+                              <div key={`${section.code}-${groupCode}`}>
+                                {/* Decade Group Node */}
+                                <TreeNode
+                                  level={1}
+                                  hasChildren={groupOpenings.length > 0}
+                                  isExpanded={autoExpandedDecades.has(
+                                    `${section.code}:${groupCode}`,
+                                  )}
+                                  isLast={isLastGroup}
+                                  parentLines={[!isLastSection]}
+                                  onToggle={() =>
+                                    toggleDecade(section.code, groupCode)
                                   }
                                 >
-                                  <span className="material-symbols-outlined !text-sm">
-                                    {isSelected(opening) ? 'check' : 'add'}
-                                  </span>
-                                </button>
-                              </div>
-                            </TreeNode>
+                                  <div className="flex flex-1 items-center gap-1.5 px-1 py-0.5">
+                                    <span className="font-mono text-sm font-medium text-human-4">
+                                      {groupCode}
+                                    </span>
+                                    <span className="text-xs text-secondary">
+                                      ({groupOpenings.length})
+                                    </span>
+                                  </div>
+                                </TreeNode>
 
-                            {/* Opening Variations */}
-                            <AnimatePresence>
-                              {openingExpanded && hasVariations && (
-                                <motion.div
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: 'auto', opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  transition={{ duration: 0.2 }}
-                                  className="overflow-hidden"
-                                >
-                                  {opening.variations.map(
-                                    (variation, variationIndex) => {
-                                      const isLastVariation =
-                                        variationIndex ===
-                                        opening.variations.length - 1
-                                      const variationPreviewed =
-                                        isBeingPreviewed(opening, variation)
+                                {/* Openings within group */}
+                                {autoExpandedDecades.has(
+                                  `${section.code}:${groupCode}`,
+                                ) &&
+                                  groupOpenings
+                                    .slice()
+                                    .sort((a, b) => a.eco.localeCompare(b.eco))
+                                    .map((opening, openingIndex) => {
+                                      const isLastOpening =
+                                        openingIndex ===
+                                        groupOpenings.length - 1
+                                      const openingExpanded =
+                                        autoExpandedOpenings.has(opening.id)
+                                      const hasVariations =
+                                        opening.variations.length > 0
+                                      const openingPreviewed =
+                                        isBeingPreviewed(opening)
 
                                       return (
-                                        <TreeNode
-                                          key={variation.id}
-                                          level={2}
-                                          hasChildren={false}
-                                          isExpanded={false}
-                                          isLast={isLastVariation}
-                                          parentLines={[
-                                            !isLastSection,
-                                            !isLastOpening,
-                                          ]}
-                                        >
-                                          <div
-                                            className={`group flex h-full flex-1 cursor-pointer items-center rounded px-1 transition-colors ${
-                                              isSelected(opening, variation)
-                                                ? 'bg-human-2/20'
-                                                : variationPreviewed
-                                                  ? 'bg-human-2/10'
-                                                  : 'hover:bg-human-2/10'
-                                            }`}
-                                            onClick={() =>
-                                              onOpeningClick(opening, variation)
+                                        <div key={opening.id}>
+                                          {/* Opening Node */}
+                                          <TreeNode
+                                            level={2}
+                                            hasChildren={hasVariations}
+                                            isExpanded={openingExpanded}
+                                            isLast={isLastOpening}
+                                            parentLines={[
+                                              !isLastSection,
+                                              !isLastGroup,
+                                            ]}
+                                            onToggle={
+                                              hasVariations
+                                                ? () =>
+                                                    toggleOpening(opening.id)
+                                                : undefined
                                             }
                                           >
-                                            <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                                              <span className="flex-shrink-0 font-mono text-xs text-secondary">
-                                                {variation.eco}
-                                              </span>
-                                              <span className="flex-shrink-0 text-sm text-primary">
-                                                {variation.name}
-                                              </span>
-                                              <span className="ml-auto truncate font-mono text-xxs text-secondary/70">
-                                                {variation.pgn}
-                                              </span>
-                                            </div>
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation()
-                                                onQuickAdd(opening, variation)
-                                              }}
-                                              className={`ml-1 flex-shrink-0 rounded p-0.5 transition-colors ${
-                                                isSelected(opening, variation)
-                                                  ? 'text-human-3 hover:text-human-4'
-                                                  : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
+                                            <div
+                                              className={`group flex h-full flex-1 cursor-pointer items-center rounded px-1 transition-colors ${
+                                                isSelected(opening)
+                                                  ? 'bg-human-2/20'
+                                                  : openingPreviewed
+                                                    ? 'bg-human-2/10'
+                                                    : 'hover:bg-human-2/10'
                                               }`}
-                                              title={
-                                                isSelected(opening, variation)
-                                                  ? 'Already selected'
-                                                  : 'Add variation'
-                                              }
+                                              onClick={() => {
+                                                if (hasVariations) {
+                                                  toggleOpening(opening.id)
+                                                }
+                                                onOpeningClick(opening)
+                                              }}
                                             >
-                                              <span className="material-symbols-outlined !text-sm">
-                                                {isSelected(opening, variation)
-                                                  ? 'check'
-                                                  : 'add'}
-                                              </span>
-                                            </button>
-                                          </div>
-                                        </TreeNode>
+                                              <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                                                <span className="flex-shrink-0 font-mono text-xs text-secondary">
+                                                  {opening.eco}
+                                                </span>
+                                                <span className="flex-shrink-0 text-sm text-primary">
+                                                  {opening.name}
+                                                </span>
+                                                <span className="ml-auto truncate font-mono text-xxs text-secondary/70">
+                                                  {opening.pgn}
+                                                </span>
+                                              </div>
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  onQuickAdd(opening)
+                                                }}
+                                                className={`ml-1 flex-shrink-0 rounded p-0.5 transition-colors ${
+                                                  isSelected(opening)
+                                                    ? 'text-human-3 hover:text-human-4'
+                                                    : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
+                                                }`}
+                                                title={
+                                                  isSelected(opening)
+                                                    ? 'Already selected'
+                                                    : 'Add opening'
+                                                }
+                                              >
+                                                <span className="material-symbols-outlined !text-sm">
+                                                  {isSelected(opening)
+                                                    ? 'check'
+                                                    : 'add'}
+                                                </span>
+                                              </button>
+                                            </div>
+                                          </TreeNode>
+
+                                          {/* Opening Variations */}
+                                          <AnimatePresence>
+                                            {openingExpanded &&
+                                              hasVariations && (
+                                                <motion.div
+                                                  initial={{
+                                                    height: 0,
+                                                    opacity: 0,
+                                                  }}
+                                                  animate={{
+                                                    height: 'auto',
+                                                    opacity: 1,
+                                                  }}
+                                                  exit={{
+                                                    height: 0,
+                                                    opacity: 0,
+                                                  }}
+                                                  transition={{ duration: 0.2 }}
+                                                  className="overflow-hidden"
+                                                >
+                                                  {opening.variations.map(
+                                                    (
+                                                      variation,
+                                                      variationIndex,
+                                                    ) => {
+                                                      const isLastVariation =
+                                                        variationIndex ===
+                                                        opening.variations
+                                                          .length -
+                                                          1
+                                                      const variationPreviewed =
+                                                        isBeingPreviewed(
+                                                          opening,
+                                                          variation,
+                                                        )
+
+                                                      return (
+                                                        <TreeNode
+                                                          key={variation.id}
+                                                          level={3}
+                                                          hasChildren={false}
+                                                          isExpanded={false}
+                                                          isLast={
+                                                            isLastVariation
+                                                          }
+                                                          parentLines={[
+                                                            !isLastSection,
+                                                            !isLastGroup,
+                                                            !isLastOpening,
+                                                          ]}
+                                                        >
+                                                          <div
+                                                            className={`group flex h-full flex-1 cursor-pointer items-center rounded px-1 transition-colors ${
+                                                              isSelected(
+                                                                opening,
+                                                                variation,
+                                                              )
+                                                                ? 'bg-human-2/20'
+                                                                : variationPreviewed
+                                                                  ? 'bg-human-2/10'
+                                                                  : 'hover:bg-human-2/10'
+                                                            }`}
+                                                            onClick={() =>
+                                                              onOpeningClick(
+                                                                opening,
+                                                                variation,
+                                                              )
+                                                            }
+                                                          >
+                                                            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                                                              <span className="flex-shrink-0 font-mono text-xs text-secondary">
+                                                                {variation.eco}
+                                                              </span>
+                                                              <span className="flex-shrink-0 text-sm text-primary">
+                                                                {variation.name}
+                                                              </span>
+                                                              <span className="ml-auto truncate font-mono text-xxs text-secondary/70">
+                                                                {variation.pgn}
+                                                              </span>
+                                                            </div>
+                                                            <button
+                                                              onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                onQuickAdd(
+                                                                  opening,
+                                                                  variation,
+                                                                )
+                                                              }}
+                                                              className={`ml-1 flex-shrink-0 rounded p-0.5 transition-colors ${
+                                                                isSelected(
+                                                                  opening,
+                                                                  variation,
+                                                                )
+                                                                  ? 'text-human-3 hover:text-human-4'
+                                                                  : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
+                                                              }`}
+                                                              title={
+                                                                isSelected(
+                                                                  opening,
+                                                                  variation,
+                                                                )
+                                                                  ? 'Already selected'
+                                                                  : 'Add variation'
+                                                              }
+                                                            >
+                                                              <span className="material-symbols-outlined !text-sm">
+                                                                {isSelected(
+                                                                  opening,
+                                                                  variation,
+                                                                )
+                                                                  ? 'check'
+                                                                  : 'add'}
+                                                              </span>
+                                                            </button>
+                                                          </div>
+                                                        </TreeNode>
+                                                      )
+                                                    },
+                                                  )}
+                                                </motion.div>
+                                              )}
+                                          </AnimatePresence>
+                                        </div>
                                       )
-                                    },
-                                  )}
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        )
-                      })}
+                                    })}
+                              </div>
+                            )
+                          },
+                        )}
                     </motion.div>
                   )}
                 </AnimatePresence>

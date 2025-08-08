@@ -134,7 +134,7 @@ async function buildEcoDatabaseFromTsv(): Promise<EcoDatabase> {
     >
 
     if (!openingsMap.has(openingKey)) {
-      const openingId = slugifyId(baseName)
+      const openingId = openingKey
       openingsMap.set(openingKey, {
         eco: ecoCode,
         id: openingId,
@@ -151,7 +151,7 @@ async function buildEcoDatabaseFromTsv(): Promise<EcoDatabase> {
 
     if (variationNameRaw && variationNameRaw.length > 0) {
       // Treat as a variation under the base opening
-      const variationId = slugifyId(variationNameRaw)
+      const variationId = `${ecoCode}-${slugifyId(variationNameRaw)}`
       // Avoid duplicates by id+fen
       const hasSame = opening.variations.some(
         (v) => v.id === variationId && v.pgn === entry.pgn,
