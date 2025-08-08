@@ -989,7 +989,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
         {/* Main Content - Responsive Layout */}
         <div className="grid w-full flex-1 grid-cols-1 overflow-hidden md:grid-cols-3">
           <div
-            className={`flex w-full flex-col overflow-y-scroll ${activeTab !== 'browse' ? 'hidden md:flex' : 'flex'} md:border-r md:border-white/10`}
+            className={`flex w-full flex-col overflow-hidden ${activeTab !== 'browse' ? 'hidden md:flex' : 'flex'} md:border-r md:border-white/10`}
           >
             <div className="hidden h-20 flex-col justify-center gap-1 border-b border-white/10 p-4 md:flex">
               <h2 className="text-xl font-bold">ECO Opening Tree</h2>

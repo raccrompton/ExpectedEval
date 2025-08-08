@@ -307,7 +307,7 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col overflow-hidden">
       {/* Search Bar */}
       <div className="border-b border-white/10 p-4">
         <div className="relative">
@@ -331,11 +331,10 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
           )}
         </div>
       </div>
-
-      <div className="red-scrollbar flex-1 overflow-y-auto">
+      <div className="red-scrollbar flex-1 overflow-y-auto py-4">
         {/* Popular Openings Section */}
         {!searchTerm && (
-          <div className="py-1">
+          <div>
             <TreeNode
               level={0}
               hasChildren={filteredPopularOpenings.length > 0}
@@ -344,12 +343,17 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
               parentLines={[]}
               onToggle={() => setShowPopular(!showPopular)}
             >
-              <div className="flex flex-1 cursor-pointer items-center justify-between rounded px-1 py-0.5 hover:bg-human-2/10">
+              <div
+                className="flex flex-1 cursor-pointer items-center justify-between rounded px-1 py-0.5 hover:bg-human-2/10"
+                onClick={() => setShowPopular(!showPopular)}
+              >
                 <div className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-sm text-human-4">
-                    star
+                  <span className="inline-flex w-5 justify-center">
+                    <span className="material-symbols-outlined text-sm text-human-4">
+                      star
+                    </span>
                   </span>
-                  <span className="font-medium text-human-4">
+                  <span className="text-sm font-medium text-primary">
                     Popular Openings
                   </span>
                 </div>
@@ -440,7 +444,7 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
         )}
 
         {/* ECO Sections Tree */}
-        <div className="py-1">
+        <div className="">
           {filteredSections.map((section, sectionIndex) => {
             const isLastSection = sectionIndex === filteredSections.length - 1
             const sectionExpanded = autoExpandedSections.has(section.code)
@@ -456,7 +460,10 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                   parentLines={[]}
                   onToggle={() => toggleSection(section.code)}
                 >
-                  <div className="flex flex-1 cursor-pointer items-center justify-between rounded px-1 py-0.5 hover:bg-human-2/10">
+                  <div
+                    className="flex flex-1 cursor-pointer items-center justify-between rounded px-1 py-0.5 hover:bg-human-2/10"
+                    onClick={() => toggleSection(section.code)}
+                  >
                     <div className="flex items-center gap-1.5">
                       <span className="font-mono text-sm font-bold text-human-4">
                         {section.code}
@@ -510,7 +517,12 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                                     toggleDecade(section.code, groupCode)
                                   }
                                 >
-                                  <div className="flex flex-1 items-center gap-1.5 px-1 py-0.5">
+                                  <div
+                                    className="flex flex-1 cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 hover:bg-human-2/10"
+                                    onClick={() =>
+                                      toggleDecade(section.code, groupCode)
+                                    }
+                                  >
                                     <span className="font-mono text-sm font-medium text-human-4">
                                       {groupCode}
                                     </span>
