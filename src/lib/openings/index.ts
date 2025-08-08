@@ -46,16 +46,16 @@ function parseOpeningName(rawName: string): {
   const unifiedDashes = rawName.replace(/[\u2012\u2013\u2014\u2015]/g, '-')
   const cleaned = normalizeWhitespace(unifiedDashes)
 
-  const commaIdx = cleaned.indexOf(',')
+  // Per dataset convention, names are structured as
+  // "Opening family: Variation, Subvariation, ...".
+  // So we MUST split on the first colon to separate the base (family)
+  // and only then interpret commas as subvariation separators.
   const colonIdx = cleaned.indexOf(':')
 
   let base = cleaned
   let variation: string | null = null
 
-  if (commaIdx !== -1) {
-    base = cleaned.slice(0, commaIdx)
-    variation = cleaned.slice(commaIdx + 1)
-  } else if (colonIdx !== -1) {
+  if (colonIdx !== -1) {
     base = cleaned.slice(0, colonIdx)
     variation = cleaned.slice(colonIdx + 1)
   }
@@ -125,8 +125,9 @@ async function buildEcoDatabaseFromTsv(): Promise<EcoDatabase> {
       entry.name,
     )
 
-    // Build opening key stable across files
-    const openingKey = `${ecoCode}-${slugifyId(baseName)}`
+    // Build opening key stable within ECO decade (e.g., A0, A1) so bases appear under the correct decade group
+    const decade = `${ecoCode.slice(0, 2)}`
+    const openingKey = `${decade}-${slugifyId(baseName)}`
 
     const openingsMap = sectionToOpeningsMap.get(sectionLetter) as Map<
       string,
@@ -140,7 +141,6 @@ async function buildEcoDatabaseFromTsv(): Promise<EcoDatabase> {
         id: openingId,
         name: baseName,
         description: baseName,
-        // Initialize with this entry's PGN/FEN; may be overwritten by a non-variation record later
         pgn: entry.pgn,
         fen: '',
         variations: [],
@@ -148,6 +148,10 @@ async function buildEcoDatabaseFromTsv(): Promise<EcoDatabase> {
     }
 
     const opening = openingsMap.get(openingKey) as EcoOpening
+    // Keep the smallest ECO code seen for this opening for display/sort
+    if (opening.eco.localeCompare(ecoCode) > 0) {
+      opening.eco = ecoCode
+    }
 
     if (variationNameRaw && variationNameRaw.length > 0) {
       // Treat as a variation under the base opening
@@ -273,7 +277,7 @@ function buildEcoDatabaseFromJson(): EcoDatabase {
     const { base: baseName, variation: variationNameRaw } = parseOpeningName(
       entry.name,
     )
-    const openingKey = `${ecoCode}-${slugifyId(baseName)}`
+    const openingKey = `${sectionLetter}-${slugifyId(baseName)}`
     const openingsMap = sectionToOpeningsMap.get(sectionLetter) as Map<
       string,
       EcoOpening

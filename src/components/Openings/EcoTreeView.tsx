@@ -259,6 +259,50 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
     return next
   }, [expandedDecades, filteredSections, searchTerm])
 
+  // Local helper to build nested variation nodes from comma-separated names
+  const buildVariationTree = (
+    variations: EcoOpeningVariation[],
+  ): { name: string; variation?: EcoOpeningVariation; children: any[] }[] => {
+    const root = new Map<string, any>()
+    const getOrCreate = (container: Map<string, any>, name: string) => {
+      let node = container.get(name)
+      if (!node) {
+        node = { name, children: [] as any[] }
+        container.set(name, node)
+      }
+      return node
+    }
+    variations.forEach((v) => {
+      const parts = v.name
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      let current: any = null
+      let container: any = root
+      parts.forEach((part, idx) => {
+        if (current) {
+          // descend into current.children as a map
+          if (!current._map) current._map = new Map<string, any>()
+          container = current._map
+        }
+        const node = getOrCreate(container, part)
+        if (idx === parts.length - 1) node.variation = v
+        current = node
+      })
+    })
+    // Convert maps to arrays recursively
+    const toArray = (map: Map<string, any>): any[] => {
+      const arr = Array.from(map.values())
+      arr.forEach((n) => {
+        n.children = n._map ? toArray(n._map) : []
+        delete n._map
+      })
+      arr.sort((a, b) => a.name.localeCompare(b.name))
+      return arr
+    }
+    return toArray(root)
+  }
+
   return (
     <div className="flex h-full flex-col">
       {/* Search Bar */}
@@ -561,7 +605,7 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                                             </div>
                                           </TreeNode>
 
-                                          {/* Opening Variations */}
+                                          {/* Opening Variations (nested) */}
                                           <AnimatePresence>
                                             {openingExpanded &&
                                               hasVariations && (
@@ -581,105 +625,205 @@ const EcoTreeView: React.FC<EcoTreeViewProps> = ({
                                                   transition={{ duration: 0.2 }}
                                                   className="overflow-hidden"
                                                 >
-                                                  {opening.variations.map(
-                                                    (
-                                                      variation,
-                                                      variationIndex,
-                                                    ) => {
-                                                      const isLastVariation =
-                                                        variationIndex ===
-                                                        opening.variations
-                                                          .length -
-                                                          1
-                                                      const variationPreviewed =
-                                                        isBeingPreviewed(
-                                                          opening,
-                                                          variation,
-                                                        )
-
-                                                      return (
-                                                        <TreeNode
-                                                          key={variation.id}
-                                                          level={3}
-                                                          hasChildren={false}
-                                                          isExpanded={false}
-                                                          isLast={
-                                                            isLastVariation
-                                                          }
-                                                          parentLines={[
-                                                            !isLastSection,
-                                                            !isLastGroup,
-                                                            !isLastOpening,
-                                                          ]}
-                                                        >
-                                                          <div
-                                                            className={`group flex h-full flex-1 cursor-pointer items-center rounded px-1 transition-colors ${
-                                                              isSelected(
-                                                                opening,
-                                                                variation,
-                                                              )
-                                                                ? 'bg-human-2/20'
-                                                                : variationPreviewed
-                                                                  ? 'bg-human-2/10'
-                                                                  : 'hover:bg-human-2/10'
-                                                            }`}
-                                                            onClick={() =>
-                                                              onOpeningClick(
-                                                                opening,
-                                                                variation,
-                                                              )
-                                                            }
-                                                          >
-                                                            <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                                                              <span className="flex-shrink-0 font-mono text-xs text-secondary">
-                                                                {variation.eco}
-                                                              </span>
-                                                              <span className="flex-shrink-0 text-sm text-primary">
-                                                                {variation.name}
-                                                              </span>
-                                                              <span className="ml-auto truncate font-mono text-xxs text-secondary/70">
-                                                                {variation.pgn}
-                                                              </span>
+                                                  {(() => {
+                                                    const toNodes = (
+                                                      level: number,
+                                                      nodes: any[],
+                                                      parentLines: boolean[],
+                                                      parentPath: string[] = [],
+                                                    ) =>
+                                                      nodes.map(
+                                                        (
+                                                          node: any,
+                                                          idx: number,
+                                                        ) => {
+                                                          const isLast =
+                                                            idx ===
+                                                            nodes.length - 1
+                                                          const path = [
+                                                            ...parentPath,
+                                                            node.name,
+                                                          ].join(' > ')
+                                                          const key = `${opening.id}::${path}`
+                                                          const hasChildren =
+                                                            node.children &&
+                                                            node.children
+                                                              .length > 0
+                                                          const nodeExpanded =
+                                                            expandedOpenings.has(
+                                                              key as any,
+                                                            ) || false
+                                                          const selected =
+                                                            node.variation
+                                                              ? isSelected(
+                                                                  opening,
+                                                                  node.variation,
+                                                                )
+                                                              : isSelected(
+                                                                  opening,
+                                                                )
+                                                          const previewed =
+                                                            node.variation
+                                                              ? isBeingPreviewed(
+                                                                  opening,
+                                                                  node.variation,
+                                                                )
+                                                              : isBeingPreviewed(
+                                                                  opening,
+                                                                )
+                                                          return (
+                                                            <div key={key}>
+                                                              <TreeNode
+                                                                level={level}
+                                                                hasChildren={
+                                                                  hasChildren
+                                                                }
+                                                                isExpanded={
+                                                                  nodeExpanded
+                                                                }
+                                                                isLast={isLast}
+                                                                parentLines={
+                                                                  parentLines
+                                                                }
+                                                                onToggle={
+                                                                  hasChildren
+                                                                    ? () =>
+                                                                        toggleOpening(
+                                                                          key,
+                                                                        )
+                                                                    : undefined
+                                                                }
+                                                              >
+                                                                <div
+                                                                  className={`group flex h-full flex-1 cursor-pointer items-center rounded px-1 transition-colors ${
+                                                                    selected
+                                                                      ? 'bg-human-2/20'
+                                                                      : previewed
+                                                                        ? 'bg-human-2/10'
+                                                                        : 'hover:bg-human-2/10'
+                                                                  }`}
+                                                                  onClick={() => {
+                                                                    if (
+                                                                      hasChildren
+                                                                    )
+                                                                      toggleOpening(
+                                                                        key,
+                                                                      )
+                                                                    if (
+                                                                      node.variation
+                                                                    )
+                                                                      onOpeningClick(
+                                                                        opening,
+                                                                        node.variation,
+                                                                      )
+                                                                  }}
+                                                                >
+                                                                  <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                                                                    <span className="flex-shrink-0 font-mono text-xs text-secondary">
+                                                                      {node
+                                                                        .variation
+                                                                        ?.eco ||
+                                                                        opening.eco}
+                                                                    </span>
+                                                                    <span className="flex-shrink-0 text-sm text-primary">
+                                                                      {
+                                                                        node.name
+                                                                      }
+                                                                    </span>
+                                                                    {node.variation && (
+                                                                      <span className="ml-auto truncate font-mono text-xxs text-secondary/70">
+                                                                        {
+                                                                          node
+                                                                            .variation
+                                                                            .pgn
+                                                                        }
+                                                                      </span>
+                                                                    )}
+                                                                  </div>
+                                                                  {node.variation && (
+                                                                    <button
+                                                                      onClick={(
+                                                                        e,
+                                                                      ) => {
+                                                                        e.stopPropagation()
+                                                                        onQuickAdd(
+                                                                          opening,
+                                                                          node.variation,
+                                                                        )
+                                                                      }}
+                                                                      className={`ml-1 flex-shrink-0 rounded p-0.5 transition-colors ${
+                                                                        selected
+                                                                          ? 'text-human-3 hover:text-human-4'
+                                                                          : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
+                                                                      }`}
+                                                                      title={
+                                                                        selected
+                                                                          ? 'Already selected'
+                                                                          : 'Add variation'
+                                                                      }
+                                                                    >
+                                                                      <span className="material-symbols-outlined !text-sm">
+                                                                        {selected
+                                                                          ? 'check'
+                                                                          : 'add'}
+                                                                      </span>
+                                                                    </button>
+                                                                  )}
+                                                                </div>
+                                                              </TreeNode>
+                                                              {hasChildren && (
+                                                                <AnimatePresence>
+                                                                  {nodeExpanded && (
+                                                                    <motion.div
+                                                                      initial={{
+                                                                        height: 0,
+                                                                        opacity: 0,
+                                                                      }}
+                                                                      animate={{
+                                                                        height:
+                                                                          'auto',
+                                                                        opacity: 1,
+                                                                      }}
+                                                                      exit={{
+                                                                        height: 0,
+                                                                        opacity: 0,
+                                                                      }}
+                                                                      transition={{
+                                                                        duration: 0.2,
+                                                                      }}
+                                                                      className="overflow-hidden"
+                                                                    >
+                                                                      {toNodes(
+                                                                        level +
+                                                                          1,
+                                                                        node.children,
+                                                                        [
+                                                                          ...parentLines,
+                                                                          !isLast,
+                                                                        ],
+                                                                        [
+                                                                          ...parentPath,
+                                                                          node.name,
+                                                                        ],
+                                                                      )}
+                                                                    </motion.div>
+                                                                  )}
+                                                                </AnimatePresence>
+                                                              )}
                                                             </div>
-                                                            <button
-                                                              onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                onQuickAdd(
-                                                                  opening,
-                                                                  variation,
-                                                                )
-                                                              }}
-                                                              className={`ml-1 flex-shrink-0 rounded p-0.5 transition-colors ${
-                                                                isSelected(
-                                                                  opening,
-                                                                  variation,
-                                                                )
-                                                                  ? 'text-human-3 hover:text-human-4'
-                                                                  : 'text-secondary/60 hover:text-secondary group-hover:text-secondary/80'
-                                                              }`}
-                                                              title={
-                                                                isSelected(
-                                                                  opening,
-                                                                  variation,
-                                                                )
-                                                                  ? 'Already selected'
-                                                                  : 'Add variation'
-                                                              }
-                                                            >
-                                                              <span className="material-symbols-outlined !text-sm">
-                                                                {isSelected(
-                                                                  opening,
-                                                                  variation,
-                                                                )
-                                                                  ? 'check'
-                                                                  : 'add'}
-                                                              </span>
-                                                            </button>
-                                                          </div>
-                                                        </TreeNode>
+                                                          )
+                                                        },
                                                       )
-                                                    },
-                                                  )}
+                                                    const tree =
+                                                      buildVariationTree(
+                                                        opening.variations as any,
+                                                      )
+                                                    return toNodes(3, tree, [
+                                                      !isLastSection,
+                                                      !isLastGroup,
+                                                      !isLastOpening,
+                                                    ])
+                                                  })()}
                                                 </motion.div>
                                               )}
                                           </AnimatePresence>
