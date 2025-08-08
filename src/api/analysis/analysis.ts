@@ -478,7 +478,7 @@ export const getAnalyzedCustomPGN = async (
 ): Promise<AnalyzedGame> => {
   const { saveCustomAnalysis } = await import('src/lib/customAnalysis')
 
-  const stored = saveCustomAnalysis('pgn', pgn, name)
+  const stored = await saveCustomAnalysis('pgn', pgn, name)
 
   return createAnalyzedGameFromPGN(pgn, stored.id)
 }
@@ -533,7 +533,7 @@ export const getAnalyzedCustomFEN = async (
 ): Promise<AnalyzedGame> => {
   const { saveCustomAnalysis } = await import('src/lib/customAnalysis')
 
-  const stored = saveCustomAnalysis('fen', fen, name)
+  const stored = await saveCustomAnalysis('fen', fen, name)
 
   return createAnalyzedGameFromFEN(fen, stored.id)
 }
@@ -717,4 +717,41 @@ export const getEngineAnalysis = async (
   }
 
   return res.json()
+}
+
+export interface StoreCustomGameRequest {
+  name?: string
+  pgn?: string
+  fen?: string
+}
+
+export interface StoredCustomGameResponse {
+  id: string
+  name: string
+  pgn?: string
+  fen?: string
+  created_at: string
+}
+
+export const storeCustomGame = async (
+  data: StoreCustomGameRequest,
+): Promise<StoredCustomGameResponse> => {
+  const res = await fetch(buildUrl('analysis/store_custom_game'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (res.status === 401) {
+    throw new Error('Unauthorized')
+  }
+
+  if (!res.ok) {
+    const errorText = await res.text()
+    throw new Error(`Failed to store custom game: ${errorText}`)
+  }
+
+  return res.json() as Promise<StoredCustomGameResponse>
 }
