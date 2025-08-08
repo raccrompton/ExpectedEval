@@ -89,13 +89,16 @@ const TreeNode: React.FC<{
         style={{ marginLeft: `${(level + 1) * 20}px` }}
       >
         {/* Expand/collapse button */}
-        {hasChildren && (
+        {hasChildren ? (
           <button
             onClick={onToggle}
             className="mr-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded text-xs text-secondary/70 hover:bg-secondary/10 hover:text-primary"
           >
             {isExpanded ? '−' : '+'}
           </button>
+        ) : (
+          // Placeholder to keep alignment consistent for leaf nodes
+          <span className="mr-1 h-3 w-3 flex-shrink-0" />
         )}
 
         {/* Node content */}

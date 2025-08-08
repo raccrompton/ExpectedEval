@@ -74,12 +74,25 @@ export function processEcoDatabase(ecoDatabase: EcoDatabase): {
   // Create popular openings list
   const popularOpenings: PopularOpening[] = []
 
+  const toSlug = (text: string) =>
+    text
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '')
+
   POPULAR_OPENING_IDS.forEach((popularId) => {
     // Find opening in all sections
-    const opening = allOpenings.find((o) => o.id === popularId.id)
+    const opening = allOpenings.find(
+      (o) => o.id === popularId.id || toSlug(o.name) === popularId.id,
+    )
     if (opening) {
       const variation = popularId.variationId
-        ? opening.variations.find((v) => v.id === popularId.variationId)
+        ? opening.variations.find(
+            (v) =>
+              v.id === popularId.variationId ||
+              toSlug(v.name) === popularId.variationId,
+          )
         : undefined
 
       popularOpenings.push({
