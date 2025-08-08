@@ -92,12 +92,8 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     }
     return []
   })
-  const [favoriteGames, setFavoriteGames] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return getFavoritesAsWebGames()
-    }
-    return []
-  })
+  const [favoriteGames, setFavoriteGames] = useState<AnalysisWebGame[]>([])
+  const [favoritedGameIds, setFavoritedGameIds] = useState<Set<string>>(new Set())
   const [hbSubsection, setHbSubsection] = useState<'hand' | 'brain'>('hand')
 
   // Modal state for favoriting
@@ -108,7 +104,14 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
 
   useEffect(() => {
     setCustomAnalyses(getCustomAnalysesAsWebGames())
-    setFavoriteGames(getFavoritesAsWebGames())
+    // Load favorites asynchronously
+    getFavoritesAsWebGames().then((favorites) => {
+      setFavoriteGames(favorites)
+      setFavoritedGameIds(new Set(favorites.map(f => f.id)))
+    }).catch(() => {
+      setFavoriteGames([])
+      setFavoritedGameIds(new Set())
+    })
   }, [refreshTrigger])
 
   useEffect(() => {
@@ -386,17 +389,21 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     setFavoriteModal({ isOpen: true, game })
   }
 
-  const handleSaveFavorite = (customName: string) => {
+  const handleSaveFavorite = async (customName: string) => {
     if (favoriteModal.game) {
-      addFavoriteGame(favoriteModal.game, customName)
-      setFavoriteGames(getFavoritesAsWebGames())
+      await addFavoriteGame(favoriteModal.game, customName)
+      const updatedFavorites = await getFavoritesAsWebGames()
+      setFavoriteGames(updatedFavorites)
+      setFavoritedGameIds(new Set(updatedFavorites.map(f => f.id)))
     }
   }
 
-  const handleRemoveFavorite = () => {
+  const handleRemoveFavorite = async () => {
     if (favoriteModal.game) {
-      removeFavoriteGame(favoriteModal.game.id)
-      setFavoriteGames(getFavoritesAsWebGames())
+      await removeFavoriteGame(favoriteModal.game.id, favoriteModal.game.type)
+      const updatedFavorites = await getFavoritesAsWebGames()
+      setFavoriteGames(updatedFavorites)
+      setFavoritedGameIds(new Set(updatedFavorites.map(f => f.id)))
     }
   }
 
@@ -533,7 +540,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                 <>
                   {getCurrentGames().map((game, index) => {
                     const selectedGame = currentId && currentId[0] === game.id
-                    const isFavorited = isFavoriteGame(game.id)
+                    const isFavorited = favoritedGameIds.has(game.id)
                     return (
                       <div
                         key={index}
@@ -709,7 +716,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
         onClose={() => setFavoriteModal({ isOpen: false, game: null })}
         onSave={handleSaveFavorite}
         onRemove={
-          favoriteModal.game && isFavoriteGame(favoriteModal.game.id)
+          favoriteModal.game && favoritedGameIds.has(favoriteModal.game.id)
             ? handleRemoveFavorite
             : undefined
         }

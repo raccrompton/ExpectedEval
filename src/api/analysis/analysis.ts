@@ -80,12 +80,17 @@ export const getAnalysisGameList = async (
   type = 'play',
   page = 1,
   lichessId?: string,
+  favoritesOnly?: boolean,
 ) => {
   const url = buildUrl(`analysis/user/list/${type}/${page}`)
   const searchParams = new URLSearchParams()
 
   if (lichessId) {
     searchParams.append('lichess_id', lichessId)
+  }
+
+  if (favoritesOnly !== undefined) {
+    searchParams.append('favorites_only', String(favoritesOnly))
   }
 
   const fullUrl = searchParams.toString()
@@ -717,4 +722,34 @@ export const getEngineAnalysis = async (
   }
 
   return res.json()
+}
+
+export interface UpdateGameMetadataRequest {
+  custom_name?: string
+  is_favorited?: boolean
+}
+
+export const updateGameMetadata = async (
+  gameType: 'custom' | 'play' | 'hand' | 'brain',
+  gameId: string,
+  metadata: UpdateGameMetadataRequest,
+): Promise<void> => {
+  const res = await fetch(
+    buildUrl(`analysis/update_metadata/${gameType}/${gameId}`),
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(metadata),
+    },
+  )
+
+  if (res.status === 401) {
+    throw new Error('Unauthorized')
+  }
+
+  if (!res.ok) {
+    throw new Error('Failed to update game metadata')
+  }
 }
