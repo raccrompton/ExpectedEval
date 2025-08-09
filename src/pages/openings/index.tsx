@@ -1,15 +1,7 @@
 import Head from 'next/head'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import {
-  useState,
-  useEffect,
-  useContext,
-  useCallback,
-  useMemo,
-  Suspense,
-  lazy,
-} from 'react'
+import { useState, useEffect, useContext, useCallback, useMemo } from 'react'
 import { Chess, PieceSymbol } from 'chess.ts'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { Key } from 'chessground/types'
@@ -25,12 +17,7 @@ import { DrillConfiguration, AnalyzedGame } from 'src/types'
 import { GameNode } from 'src/types/base/tree'
 import { MIN_STOCKFISH_DEPTH } from 'src/constants/analysis'
 import openings from 'src/lib/openings/openings.json'
-
-const LazyOpeningDrillAnalysis = lazy(() =>
-  import('src/components/Openings/OpeningDrillAnalysis').then((module) => ({
-    default: module.OpeningDrillAnalysis,
-  })),
-)
+import { OpeningDrillAnalysis } from 'src/components/Openings/OpeningDrillAnalysis'
 
 import {
   OpeningSelectionModal,
@@ -841,34 +828,24 @@ const OpeningsPage: NextPage = () => {
           id="analysis"
           className="desktop-right-column-container flex flex-col gap-2"
         >
-          <Suspense
-            fallback={
-              <div className="flex h-full items-center justify-center">
-                <div className="text-sm text-secondary">
-                  Loading analysis...
-                </div>
-              </div>
-            }
-          >
-            {analyzedGame && (
-              <LazyOpeningDrillAnalysis
-                currentNode={controller.currentNode}
-                gameTree={treeController.gameTree}
-                analysisEnabled={controller.analysisEnabled}
-                onToggleAnalysis={() =>
-                  controller.setAnalysisEnabled(!controller.analysisEnabled)
-                }
-                playerColor={controller.currentDrill?.playerColor || 'white'}
-                maiaVersion={
-                  controller.currentDrill?.maiaVersion || 'maia_kdd_1500'
-                }
-                analysisController={analysisController}
-                hover={hover}
-                setHoverArrow={setHoverArrow}
-                makeMove={makeMove}
-              />
-            )}
-          </Suspense>
+          {analyzedGame && (
+            <OpeningDrillAnalysis
+              currentNode={controller.currentNode}
+              gameTree={treeController.gameTree}
+              analysisEnabled={controller.analysisEnabled}
+              onToggleAnalysis={() =>
+                controller.setAnalysisEnabled(!controller.analysisEnabled)
+              }
+              playerColor={controller.currentDrill?.playerColor || 'white'}
+              maiaVersion={
+                controller.currentDrill?.maiaVersion || 'maia_kdd_1500'
+              }
+              analysisController={analysisController}
+              hover={hover}
+              setHoverArrow={setHoverArrow}
+              makeMove={makeMove}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -1046,7 +1023,7 @@ const OpeningsPage: NextPage = () => {
           {/* Analysis Components Stacked */}
           <div className="flex w-full flex-col gap-1 overflow-hidden">
             {analyzedGame && (
-              <LazyOpeningDrillAnalysis
+              <OpeningDrillAnalysis
                 currentNode={controller.currentNode}
                 gameTree={treeController.gameTree}
                 analysisEnabled={controller.analysisEnabled}

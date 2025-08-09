@@ -13,6 +13,11 @@ import {
 import { buildUrl } from '../utils'
 import { cpToWinrate } from 'src/lib/stockfish'
 import { AvailableMoves } from 'src/types/training'
+import { Chess } from 'chess.ts'
+import {
+  saveCustomAnalysis,
+  getCustomAnalysisById,
+} from 'src/lib/customAnalysis'
 
 function buildGameTree(moves: any[], initialFen: string) {
   const tree = new GameTree(initialFen)
@@ -405,7 +410,6 @@ const createAnalyzedGameFromPGN = async (
   pgn: string,
   id?: string,
 ): Promise<AnalyzedGame> => {
-  const { Chess } = await import('chess.ts')
   const chess = new Chess()
 
   try {
@@ -476,8 +480,6 @@ export const getAnalyzedCustomPGN = async (
   pgn: string,
   name?: string,
 ): Promise<AnalyzedGame> => {
-  const { saveCustomAnalysis } = await import('src/lib/customAnalysis')
-
   const stored = await saveCustomAnalysis('pgn', pgn, name)
 
   return createAnalyzedGameFromPGN(pgn, stored.id)
@@ -487,7 +489,6 @@ const createAnalyzedGameFromFEN = async (
   fen: string,
   id?: string,
 ): Promise<AnalyzedGame> => {
-  const { Chess } = await import('chess.ts')
   const chess = new Chess()
 
   try {
@@ -531,8 +532,6 @@ export const getAnalyzedCustomFEN = async (
   fen: string,
   name?: string,
 ): Promise<AnalyzedGame> => {
-  const { saveCustomAnalysis } = await import('src/lib/customAnalysis')
-
   const stored = await saveCustomAnalysis('fen', fen, name)
 
   return createAnalyzedGameFromFEN(fen, stored.id)
@@ -541,8 +540,6 @@ export const getAnalyzedCustomFEN = async (
 export const getAnalyzedCustomGame = async (
   id: string,
 ): Promise<AnalyzedGame> => {
-  const { getCustomAnalysisById } = await import('src/lib/customAnalysis')
-
   const stored = getCustomAnalysisById(id)
   if (!stored) {
     throw new Error('Custom analysis not found')
