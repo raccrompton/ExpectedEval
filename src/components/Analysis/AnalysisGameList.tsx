@@ -28,6 +28,8 @@ interface GameData {
   maia_name: string
   result: string
   player_color: 'white' | 'black'
+  is_favorited?: boolean
+  custom_name?: string
 }
 
 interface AnalysisGameListProps {
@@ -84,6 +86,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     play: {},
     hand: {},
     brain: {},
+    favorites: {},
   })
 
   const [customAnalyses, setCustomAnalyses] = useState(() => {
@@ -128,6 +131,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     brain: {},
     lichess: {},
     tournament: {},
+    favorites: {},
   })
 
   const [totalPagesCache, setTotalPagesCache] = useState<{
@@ -142,6 +146,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     brain: 1,
     lichess: 1,
     tournament: 1,
+    favorites: 1,
   })
 
   const listKeys = useMemo(() => {
@@ -193,8 +198,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
       selected !== 'tournament' &&
       selected !== 'lichess' &&
       selected !== 'custom' &&
-      selected !== 'hb' &&
-      selected !== 'favorites'
+      selected !== 'hb'
     ) {
       const isAlreadyFetched = fetchedCache[selected]?.[currentPage]
 
@@ -208,32 +212,54 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
 
         getAnalysisGameList(selected, currentPage)
           .then((data) => {
-            const parse = (
-              game: {
-                game_id: string
-                maia_name: string
-                result: string
-                player_color: 'white' | 'black'
-              },
-              type: string,
-            ) => {
-              const raw = game.maia_name.replace('_kdd_', ' ')
-              const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
+            let parsedGames: AnalysisWebGame[] = []
+            
+            if (selected === 'favorites') {
+              // Handle favorites response format
+              parsedGames = data.games.map((game: any) => ({
+                id: game.game_id || game.id,
+                type: game.game_type || game.type || 'custom-pgn',
+                label: game.custom_name || game.label || 'Untitled',
+                result: game.result || '*',
+                pgn: game.pgn,
+                is_favorited: true, // All games in favorites are favorited
+                custom_name: game.custom_name,
+              }))
+            } else {
+              // Handle regular games response format
+              const parse = (
+                game: {
+                  game_id: string
+                  maia_name: string
+                  result: string
+                  player_color: 'white' | 'black'
+                  is_favorited?: boolean
+                  custom_name?: string
+                },
+                type: string,
+              ) => {
+                const raw = game.maia_name.replace('_kdd_', ' ')
+                const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
+                
+                // Use custom name if available, otherwise generate default label
+                const defaultLabel = game.player_color === 'white'
+                  ? `You vs. ${maia}`
+                  : `${maia} vs. You`
 
-              return {
-                id: game.game_id,
-                label:
-                  game.player_color === 'white'
-                    ? `You vs. ${maia}`
-                    : `${maia} vs. You`,
-                result: game.result,
-                type,
+                return {
+                  id: game.game_id,
+                  label: game.custom_name || defaultLabel,
+                  result: game.result,
+                  type,
+                  is_favorited: game.is_favorited || false,
+                  custom_name: game.custom_name,
+                }
               }
-            }
 
-            const parsedGames = data.games.map((game: GameData) =>
-              parse(game, selected),
-            )
+              parsedGames = data.games.map((game: GameData) =>
+                parse(game, selected),
+              )
+            }
             const calculatedTotalPages =
               data.total_pages || Math.ceil(data.total_games / 25)
 
@@ -249,6 +275,14 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                 [currentPage]: parsedGames,
               },
             }))
+            
+            // Update favoritedGameIds from the actual games data
+            const favoritedIds = new Set<string>(
+              parsedGames
+                .filter((game: any) => game.is_favorited)
+                .map((game: any) => game.id as string)
+            )
+            setFavoritedGameIds((prev) => new Set<string>([...prev, ...favoritedIds]))
 
             setLoading(false)
           })
@@ -286,20 +320,26 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                 maia_name: string
                 result: string
                 player_color: 'white' | 'black'
+                is_favorited?: boolean
+                custom_name?: string
               },
               type: string,
             ) => {
               const raw = game.maia_name.replace('_kdd_', ' ')
               const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
+              
+              // Use custom name if available, otherwise generate default label
+              const defaultLabel = game.player_color === 'white'
+                ? `You vs. ${maia}`
+                : `${maia} vs. You`
 
               return {
                 id: game.game_id,
-                label:
-                  game.player_color === 'white'
-                    ? `You vs. ${maia}`
-                    : `${maia} vs. You`,
+                label: game.custom_name || defaultLabel,
                 result: game.result,
                 type,
+                is_favorited: game.is_favorited || false,
+                custom_name: game.custom_name,
               }
             }
 
@@ -321,6 +361,14 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                 [currentPage]: parsedGames,
               },
             }))
+            
+            // Update favoritedGameIds from the actual games data
+            const favoritedIds = new Set<string>(
+              parsedGames
+                .filter((game: any) => game.is_favorited)
+                .map((game: any) => game.id as string)
+            )
+            setFavoritedGameIds((prev) => new Set<string>([...prev, ...favoritedIds]))
 
             setLoading(false)
           })
@@ -395,6 +443,29 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
       const updatedFavorites = await getFavoritesAsWebGames()
       setFavoriteGames(updatedFavorites)
       setFavoritedGameIds(new Set(updatedFavorites.map(f => f.id)))
+      
+      // Clear favorites cache to force re-fetch
+      setFetchedCache((prev) => ({
+        ...prev,
+        favorites: {},
+      }))
+      setGamesByPage((prev) => ({
+        ...prev,
+        favorites: {},
+      }))
+      
+      // Also clear current section cache to show updated favorite status
+      if (selected !== 'favorites') {
+        const currentSection = selected === 'hb' ? (hbSubsection === 'hand' ? 'hand' : 'brain') : selected
+        setFetchedCache((prev) => ({
+          ...prev,
+          [currentSection]: {},
+        }))
+        setGamesByPage((prev) => ({
+          ...prev,
+          [currentSection]: {},
+        }))
+      }
     }
   }
 
@@ -404,6 +475,59 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
       const updatedFavorites = await getFavoritesAsWebGames()
       setFavoriteGames(updatedFavorites)
       setFavoritedGameIds(new Set(updatedFavorites.map(f => f.id)))
+      
+      // Clear favorites cache to force re-fetch
+      setFetchedCache((prev) => ({
+        ...prev,
+        favorites: {},
+      }))
+      setGamesByPage((prev) => ({
+        ...prev,
+        favorites: {},
+      }))
+      
+      // Also clear current section cache to show updated favorite status
+      if (selected !== 'favorites') {
+        const currentSection = selected === 'hb' ? (hbSubsection === 'hand' ? 'hand' : 'brain') : selected
+        setFetchedCache((prev) => ({
+          ...prev,
+          [currentSection]: {},
+        }))
+        setGamesByPage((prev) => ({
+          ...prev,
+          [currentSection]: {},
+        }))
+      }
+    }
+  }
+
+  const handleDirectUnfavorite = async (game: AnalysisWebGame) => {
+    await removeFavoriteGame(game.id, game.type)
+    const updatedFavorites = await getFavoritesAsWebGames()
+    setFavoriteGames(updatedFavorites)
+    setFavoritedGameIds(new Set(updatedFavorites.map(f => f.id)))
+    
+    // Clear favorites cache to force re-fetch
+    setFetchedCache((prev) => ({
+      ...prev,
+      favorites: {},
+    }))
+    setGamesByPage((prev) => ({
+      ...prev,
+      favorites: {},
+    }))
+    
+    // Also clear current section cache to show updated favorite status
+    if (selected !== 'favorites') {
+      const currentSection = selected === 'hb' ? (hbSubsection === 'hand' ? 'hand' : 'brain') : selected
+      setFetchedCache((prev) => ({
+        ...prev,
+        [currentSection]: {},
+      }))
+      setGamesByPage((prev) => ({
+        ...prev,
+        [currentSection]: {},
+      }))
     }
   }
 
@@ -418,9 +542,27 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     } else if (selected === 'lichess') {
       return analysisLichessList
     } else if (selected === 'favorites') {
-      return favoriteGames
+      return gamesByPage.favorites[currentPage] || []
     }
     return []
+  }
+
+  const getModalCurrentName = () => {
+    if (!favoriteModal.game) return ''
+    
+    // If we're in the favorites section, the label is already the custom name
+    if (selected === 'favorites') {
+      return favoriteModal.game.label
+    }
+    
+    // For other sections, check if the game is favorited and get its custom name
+    const favorite = favoriteGames.find(fav => fav.id === favoriteModal.game!.id)
+    if (favorite) {
+      return favorite.label // In AnalysisWebGame, the label contains the custom name
+    }
+    
+    // Otherwise, use the game's label
+    return favoriteModal.game.label
   }
 
   return analysisTournamentList ? (
@@ -540,7 +682,8 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                 <>
                   {getCurrentGames().map((game, index) => {
                     const selectedGame = currentId && currentId[0] === game.id
-                    const isFavorited = favoritedGameIds.has(game.id)
+                    const isFavorited = (game as any).is_favorited || false
+                    const displayName = game.label // This now contains the custom name if favorited
                     return (
                       <div
                         key={index}
@@ -550,7 +693,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                           className={`flex h-full w-9 items-center justify-center ${selectedGame ? 'bg-background-3' : 'bg-background-2 group-hover:bg-white/5'}`}
                         >
                           <p className="text-sm text-secondary">
-                            {selected === 'play' || selected === 'hb'
+                            {selected === 'play' || selected === 'hb' || selected === 'favorites'
                               ? (currentPage - 1) * 25 + index + 1
                               : index + 1}
                           </p>
@@ -575,7 +718,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                         >
                           <div className="flex items-center gap-2 overflow-hidden">
                             <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-primary">
-                              {game.label}
+                              {displayName}
                             </p>
                             {selected === 'favorites' &&
                               (game.type === 'hand' ||
@@ -589,18 +732,32 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                           </div>
                           <div className="flex items-center gap-2">
                             {selected === 'favorites' && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleFavoriteGame(game)
-                                }}
-                                className="flex items-center justify-center text-secondary transition hover:text-primary"
-                                title="Edit favourite"
-                              >
-                                <span className="material-symbols-outlined !text-xs">
-                                  edit
-                                </span>
-                              </button>
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleFavoriteGame(game)
+                                  }}
+                                  className="flex items-center justify-center text-secondary transition hover:text-primary"
+                                  title="Edit favourite"
+                                >
+                                  <span className="material-symbols-outlined !text-xs">
+                                    edit
+                                  </span>
+                                </button>
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation()
+                                    await handleDirectUnfavorite(game)
+                                  }}
+                                  className="flex items-center justify-center transition text-yellow-400 hover:text-yellow-300"
+                                  title="Remove from favourites"
+                                >
+                                  <span className="material-symbols-outlined material-symbols-filled !text-xs">
+                                    star
+                                  </span>
+                                </button>
+                              </>
                             )}
                             {selected !== 'favorites' && (
                               <button
@@ -636,7 +793,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                       </div>
                     )
                   })}
-                  {(selected === 'play' || selected === 'hb') &&
+                  {(selected === 'play' || selected === 'hb' || selected === 'favorites') &&
                     totalPages > 1 && (
                       <div className="flex items-center justify-center gap-2 py-2">
                         <button
@@ -712,7 +869,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
       </div>
       <FavoriteModal
         isOpen={favoriteModal.isOpen}
-        currentName={favoriteModal.game?.label || ''}
+        currentName={getModalCurrentName()}
         onClose={() => setFavoriteModal({ isOpen: false, game: null })}
         onSave={handleSaveFavorite}
         onRemove={

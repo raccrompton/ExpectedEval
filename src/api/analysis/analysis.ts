@@ -80,17 +80,12 @@ export const getAnalysisGameList = async (
   type = 'play',
   page = 1,
   lichessId?: string,
-  favoritesOnly?: boolean,
 ) => {
   const url = buildUrl(`analysis/user/list/${type}/${page}`)
   const searchParams = new URLSearchParams()
 
   if (lichessId) {
     searchParams.append('lichess_id', lichessId)
-  }
-
-  if (favoritesOnly !== undefined) {
-    searchParams.append('favorites_only', String(favoritesOnly))
   }
 
   const fullUrl = searchParams.toString()

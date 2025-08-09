@@ -186,34 +186,25 @@ const getFavoriteGamesFromStorage = (): FavoriteGame[] => {
 
 export const getFavoriteGames = async (): Promise<FavoriteGame[]> => {
   try {
-    // Try to fetch from API for each game type
-    const gameTypes: Array<'custom' | 'play' | 'hand' | 'brain'> = ['custom', 'play', 'hand', 'brain']
-    const allFavorites: FavoriteGame[] = []
+    // Fetch favorites using the special "favorites" game type endpoint
+    const response = await getAnalysisGameList('favorites', 1)
     
-    for (const gameType of gameTypes) {
-      try {
-        const response = await getAnalysisGameList(gameType, 1, undefined, true)
-        
-        // Convert API response to FavoriteGame format
-        if (response.games && Array.isArray(response.games)) {
-          const favorites = response.games.map((game: any) => ({
-            id: game.id,
-            type: gameType === 'custom' ? 'custom-pgn' : gameType, // Default custom to custom-pgn
-            originalLabel: game.label || game.custom_name || 'Untitled',
-            customName: game.custom_name || game.label || 'Untitled',
-            result: game.result || '*',
-            addedAt: game.created_at || new Date().toISOString(),
-            pgn: game.pgn,
-          } as FavoriteGame))
-          
-          allFavorites.push(...favorites)
-        }
-      } catch (typeError) {
-        console.warn(`Failed to fetch favorites for ${gameType}:`, typeError)
-      }
+    // Convert API response to FavoriteGame format
+    if (response.games && Array.isArray(response.games)) {
+      const favorites = response.games.map((game: any) => ({
+        id: game.id,
+        type: game.game_type || game.type || 'custom-pgn', // Use the game_type field from API
+        originalLabel: game.label || game.custom_name || 'Untitled',
+        customName: game.custom_name || game.label || 'Untitled',
+        result: game.result || '*',
+        addedAt: game.created_at || new Date().toISOString(),
+        pgn: game.pgn,
+      } as FavoriteGame))
+      
+      return favorites
     }
     
-    return allFavorites
+    return []
   } catch (error) {
     console.warn('Failed to fetch favorites from API, falling back to localStorage:', error)
     return getFavoriteGamesFromStorage()
