@@ -12,7 +12,7 @@ import { Tournament } from 'src/components'
 import { FavoriteModal } from 'src/components/Common/FavoriteModal'
 import { AnalysisListContext } from 'src/contexts'
 import { getAnalysisGameList } from 'src/api'
-import { getCustomAnalysesAsWebGames } from 'src/lib/customAnalysis'
+import { ensureMigration } from 'src/lib/customAnalysis'
 import {
   getFavoritesAsWebGames,
   addFavoriteGame,
@@ -87,14 +87,9 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     hand: {},
     brain: {},
     favorites: {},
+    custom: {},
   })
 
-  const [customAnalyses, setCustomAnalyses] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return getCustomAnalysesAsWebGames()
-    }
-    return []
-  })
   const [favoriteGames, setFavoriteGames] = useState<AnalysisWebGame[]>([])
   const [favoritedGameIds, setFavoritedGameIds] = useState<Set<string>>(new Set())
   const [hbSubsection, setHbSubsection] = useState<'hand' | 'brain'>('hand')
@@ -106,7 +101,6 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   }>({ isOpen: false, game: null })
 
   useEffect(() => {
-    setCustomAnalyses(getCustomAnalysesAsWebGames())
     // Load favorites asynchronously
     getFavoritesAsWebGames().then((favorites) => {
       setFavoriteGames(favorites)
@@ -116,6 +110,12 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
       setFavoritedGameIds(new Set())
     })
   }, [refreshTrigger])
+
+  useEffect(() => {
+    ensureMigration().catch((error) => {
+      console.warn('Failed to migrate custom analyses:', error)
+    })
+  }, [])
 
   useEffect(() => {
     if (currentId?.[1] === 'custom') {
@@ -129,6 +129,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     play: {},
     hand: {},
     brain: {},
+    custom: {},
     lichess: {},
     tournament: {},
     favorites: {},
@@ -144,6 +145,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     play: 1,
     hand: 1,
     brain: 1,
+    custom: 1,
     lichess: 1,
     tournament: 1,
     favorites: 1,
@@ -194,10 +196,18 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   }, [selected])
 
   useEffect(() => {
+    if (selected === 'custom') {
+      setFetchedCache((prev) => ({
+        ...prev,
+        custom: {},
+      }))
+    }
+  }, [refreshTrigger, selected])
+
+  useEffect(() => {
     if (
       selected !== 'tournament' &&
       selected !== 'lichess' &&
-      selected !== 'custom' &&
       selected !== 'hb'
     ) {
       const isAlreadyFetched = fetchedCache[selected]?.[currentPage]
@@ -227,19 +237,30 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
               }))
             } else {
               // Handle regular games response format
+              let parsedGames
+
+            if (selected === 'custom') {
+              parsedGames = data.games.map((game: any) => ({
+                id: game.id,
+                label: game.name || 'Custom Game',
+                result: '*',
+                type: game.pgn ? 'custom-pgn' : 'custom-fen',
+                pgn: game.pgn,
+              }))
+            } else {
               const parse = (
-                game: {
-                  game_id: string
-                  maia_name: string
-                  result: string
-                  player_color: 'white' | 'black'
+                  game: {
+                    game_id: string
+                    maia_name: string
+                    result: string
+                    player_color: 'white' | 'black'
                   is_favorited?: boolean
                   custom_name?: string
-                },
-                type: string,
-              ) => {
-                const raw = game.maia_name.replace('_kdd_', ' ')
-                const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
+                  },
+                  type: string,
+                ) => {
+                  const raw = game.maia_name.replace('_kdd_', ' ')
+                  const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
                 
                 // Use custom name if available, otherwise generate default label
                 const defaultLabel = game.player_color === 'white'
@@ -396,13 +417,12 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     } else if (totalPagesCache[selected]) {
       setTotalPages(totalPagesCache[selected])
       setCurrentPage(currentPagePerTab[selected] || 1)
-    } else if (
-      selected === 'lichess' ||
-      selected === 'tournament' ||
-      selected === 'custom'
-    ) {
+    } else if (selected === 'lichess' || selected === 'tournament') {
       setTotalPages(1)
       setCurrentPage(1)
+    } else if (selected === 'custom') {
+      setTotalPages(totalPagesCache['custom'] || 1)
+      setCurrentPage(currentPagePerTab['custom'] || 1)
     } else {
       setTotalPages(1)
       setCurrentPage(currentPagePerTab[selected] || 1)
@@ -538,7 +558,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
       const gameType = hbSubsection === 'hand' ? 'hand' : 'brain'
       return gamesByPage[gameType]?.[currentPage] || []
     } else if (selected === 'custom') {
-      return customAnalyses
+      return gamesByPage['custom']?.[currentPage] || []
     } else if (selected === 'lichess') {
       return analysisLichessList
     } else if (selected === 'favorites') {

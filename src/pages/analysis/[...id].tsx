@@ -58,6 +58,7 @@ import { tourConfigs } from 'src/constants/tours'
 import type { DrawShape } from 'chessground/draw'
 import { MAIA_MODELS } from 'src/constants/common'
 import { applyEngineAnalysisData } from 'src/lib/analysisStorage'
+import { deleteCustomAnalysis } from 'src/lib/customAnalysis'
 
 const AnalysisPage: NextPage = () => {
   const { startTour, tourState } = useTour()
@@ -423,7 +424,6 @@ const Analysis: React.FC<Props> = ({
       analyzedGame.type === 'custom-pgn' ||
       analyzedGame.type === 'custom-fen'
     ) {
-      const { deleteCustomAnalysis } = await import('src/lib/customAnalysis')
       deleteCustomAnalysis(analyzedGame.id)
       toast.success('Custom analysis deleted')
       router.push('/analysis')

@@ -1,8 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable jsx-a11y/alt-text */
+import { useState } from 'react'
 import { PieceSymbol } from 'chess.ts'
 
 import { BaseGame, Color } from 'src/types'
+import { ResignationConfirmModal } from 'src/components'
 
 const pieceTypes: PieceSymbol[] = ['k', 'q', 'r', 'b', 'n', 'p']
 
@@ -52,6 +54,17 @@ export const HandBrainPlayControls: React.FC<Props> = ({
   simulateMaiaTime,
   setSimulateMaiaTime,
 }: Props) => {
+  const [showResignConfirm, setShowResignConfirm] = useState(false)
+
+  const handleResignClick = () => {
+    setShowResignConfirm(true)
+  }
+
+  const handleConfirmResign = () => {
+    if (resign) {
+      resign()
+    }
+  }
   const status = playerActive
     ? isBrain
       ? selectedPiece
@@ -218,7 +231,7 @@ export const HandBrainPlayControls: React.FC<Props> = ({
                 {/* Resign Button - Smaller and Less Prominent */}
                 <div className="flex justify-center">
                   <button
-                    onClick={resign}
+                    onClick={handleResignClick}
                     disabled={!resign || !playerActive}
                     className={`rounded px-3 py-1 text-xs font-medium transition-colors duration-200 ${
                       resign && playerActive
@@ -234,6 +247,12 @@ export const HandBrainPlayControls: React.FC<Props> = ({
           </>
         )}
       </div>
+
+      <ResignationConfirmModal
+        isOpen={showResignConfirm}
+        onClose={() => setShowResignConfirm(false)}
+        onConfirm={handleConfirmResign}
+      />
     </div>
   )
 }

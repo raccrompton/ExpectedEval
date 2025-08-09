@@ -1,4 +1,7 @@
+import { useState } from 'react'
+
 import { BaseGame } from 'src/types'
+import { ResignationConfirmModal } from 'src/components'
 
 interface Props {
   game: BaseGame
@@ -21,6 +24,17 @@ export const PlayControls: React.FC<Props> = ({
   simulateMaiaTime,
   setSimulateMaiaTime,
 }: Props) => {
+  const [showResignConfirm, setShowResignConfirm] = useState(false)
+
+  const handleResignClick = () => {
+    setShowResignConfirm(true)
+  }
+
+  const handleConfirmResign = () => {
+    if (resign) {
+      resign()
+    }
+  }
   return (
     <div className="flex h-full w-full flex-col border-white/40 bg-background-1">
       {gameOver ? (
@@ -112,7 +126,7 @@ export const PlayControls: React.FC<Props> = ({
               {/* Resign Button - Smaller and Less Prominent */}
               <div className="flex justify-center">
                 <button
-                  onClick={resign}
+                  onClick={handleResignClick}
                   disabled={!resign || !playerActive}
                   className={`rounded px-3 py-1 text-xs font-medium transition-colors duration-200 ${
                     resign && playerActive
@@ -127,6 +141,12 @@ export const PlayControls: React.FC<Props> = ({
           </div>
         </>
       )}
+
+      <ResignationConfirmModal
+        isOpen={showResignConfirm}
+        onClose={() => setShowResignConfirm(false)}
+        onConfirm={handleConfirmResign}
+      />
     </div>
   )
 }
