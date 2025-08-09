@@ -104,8 +104,8 @@ export const GameList = ({
     if (showCustom) {
       setCustomAnalyses(getCustomAnalysesAsWebGames())
     }
-    // Load favorites asynchronously
-    getFavoritesAsWebGames()
+    // Load favorites (supports both sync and async implementations)
+    Promise.resolve(getFavoritesAsWebGames())
       .then((favorites) => {
         setFavoriteGames(favorites)
         setFavoritedGameIds(new Set(favorites.map((f) => f.id)))
