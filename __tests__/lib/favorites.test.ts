@@ -33,8 +33,12 @@ Object.defineProperty(window, 'localStorage', {
 
 // Mock the API functions to test fallback to localStorage
 jest.mock('src/api/analysis/analysis', () => ({
-  updateGameMetadata: jest.fn().mockRejectedValue(new Error('API not available')),
-  getAnalysisGameList: jest.fn().mockRejectedValue(new Error('API not available')),
+  updateGameMetadata: jest
+    .fn()
+    .mockRejectedValue(new Error('API not available')),
+  getAnalysisGameList: jest
+    .fn()
+    .mockRejectedValue(new Error('API not available')),
 }))
 
 describe('favorites', () => {

@@ -378,7 +378,7 @@ export const Header: React.FC = () => {
                 <Link href="/settings" className="uppercase">
                   Settings
                 </Link>
-                <button onClick={logout} className="uppercase text-left">
+                <button onClick={logout} className="text-left uppercase">
                   Logout
                 </button>
               </>

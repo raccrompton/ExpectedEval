@@ -1,5 +1,8 @@
 import { AnalysisWebGame } from 'src/types'
-import { updateGameMetadata, getAnalysisGameList } from 'src/api/analysis/analysis'
+import {
+  updateGameMetadata,
+  getAnalysisGameList,
+} from 'src/api/analysis/analysis'
 
 export interface FavoriteGame {
   id: string
@@ -57,8 +60,11 @@ export const addFavoriteGame = async (
 
     return favorite
   } catch (error) {
-    console.warn('Failed to favorite via API, falling back to localStorage:', error)
-    
+    console.warn(
+      'Failed to favorite via API, falling back to localStorage:',
+      error,
+    )
+
     // Fallback to localStorage
     const favorites = getFavoriteGamesFromStorage()
 
@@ -105,11 +111,11 @@ export const removeFavoriteGame = async (
       })
       return
     }
-    
+
     // If no game type provided, try to find it in localStorage first
     const localFavorites = getFavoriteGamesFromStorage()
     const existingFavorite = localFavorites.find((fav) => fav.id === gameId)
-    
+
     if (existingFavorite) {
       const apiGameType = mapGameTypeToApiType(existingFavorite.type)
       await updateGameMetadata(apiGameType, gameId, {
@@ -117,12 +123,15 @@ export const removeFavoriteGame = async (
       })
       return
     }
-    
+
     // If not found in localStorage, we can't determine the game type for API
     throw new Error('Game type required for API call')
   } catch (error) {
-    console.warn('Failed to unfavorite via API, falling back to localStorage:', error)
-    
+    console.warn(
+      'Failed to unfavorite via API, falling back to localStorage:',
+      error,
+    )
+
     // Fallback to localStorage
     const favorites = getFavoriteGamesFromStorage()
     const filtered = favorites.filter((favorite) => favorite.id !== gameId)
@@ -144,11 +153,11 @@ export const updateFavoriteName = async (
       })
       return
     }
-    
+
     // If no game type provided, try to find it in localStorage first
     const localFavorites = getFavoriteGamesFromStorage()
     const existingFavorite = localFavorites.find((fav) => fav.id === gameId)
-    
+
     if (existingFavorite) {
       const apiGameType = mapGameTypeToApiType(existingFavorite.type)
       await updateGameMetadata(apiGameType, gameId, {
@@ -156,12 +165,15 @@ export const updateFavoriteName = async (
       })
       return
     }
-    
+
     // If not found in localStorage, we can't determine the game type for API
     throw new Error('Game type required for API call')
   } catch (error) {
-    console.warn('Failed to update name via API, falling back to localStorage:', error)
-    
+    console.warn(
+      'Failed to update name via API, falling back to localStorage:',
+      error,
+    )
+
     // Fallback to localStorage
     const favorites = getFavoriteGamesFromStorage()
     const favoriteIndex = favorites.findIndex((fav) => fav.id === gameId)
@@ -188,25 +200,31 @@ export const getFavoriteGames = async (): Promise<FavoriteGame[]> => {
   try {
     // Fetch favorites using the special "favorites" game type endpoint
     const response = await getAnalysisGameList('favorites', 1)
-    
+
     // Convert API response to FavoriteGame format
     if (response.games && Array.isArray(response.games)) {
-      const favorites = response.games.map((game: any) => ({
-        id: game.id,
-        type: game.game_type || game.type || 'custom-pgn', // Use the game_type field from API
-        originalLabel: game.label || game.custom_name || 'Untitled',
-        customName: game.custom_name || game.label || 'Untitled',
-        result: game.result || '*',
-        addedAt: game.created_at || new Date().toISOString(),
-        pgn: game.pgn,
-      } as FavoriteGame))
-      
+      const favorites = response.games.map(
+        (game: any) =>
+          ({
+            id: game.id,
+            type: game.game_type || game.type || 'custom-pgn', // Use the game_type field from API
+            originalLabel: game.label || game.custom_name || 'Untitled',
+            customName: game.custom_name || game.label || 'Untitled',
+            result: game.result || '*',
+            addedAt: game.created_at || new Date().toISOString(),
+            pgn: game.pgn,
+          }) as FavoriteGame,
+      )
+
       return favorites
     }
-    
+
     return []
   } catch (error) {
-    console.warn('Failed to fetch favorites from API, falling back to localStorage:', error)
+    console.warn(
+      'Failed to fetch favorites from API, falling back to localStorage:',
+      error,
+    )
     return getFavoriteGamesFromStorage()
   }
 }
@@ -216,7 +234,9 @@ export const isFavoriteGame = async (gameId: string): Promise<boolean> => {
   return favorites.some((favorite) => favorite.id === gameId)
 }
 
-export const getFavoriteGame = async (gameId: string): Promise<FavoriteGame | undefined> => {
+export const getFavoriteGame = async (
+  gameId: string,
+): Promise<FavoriteGame | undefined> => {
   const favorites = await getFavoriteGames()
   return favorites.find((favorite) => favorite.id === gameId)
 }

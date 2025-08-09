@@ -62,7 +62,9 @@ export const GameList = ({
     return []
   })
   const [favoriteGames, setFavoriteGames] = useState<AnalysisWebGame[]>([])
-  const [favoritedGameIds, setFavoritedGameIds] = useState<Set<string>>(new Set())
+  const [favoritedGameIds, setFavoritedGameIds] = useState<Set<string>>(
+    new Set(),
+  )
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -103,13 +105,15 @@ export const GameList = ({
       setCustomAnalyses(getCustomAnalysesAsWebGames())
     }
     // Load favorites asynchronously
-    getFavoritesAsWebGames().then((favorites) => {
-      setFavoriteGames(favorites)
-      setFavoritedGameIds(new Set(favorites.map(f => f.id)))
-    }).catch(() => {
-      setFavoriteGames([])
-      setFavoritedGameIds(new Set())
-    })
+    getFavoritesAsWebGames()
+      .then((favorites) => {
+        setFavoriteGames(favorites)
+        setFavoritedGameIds(new Set(favorites.map((f) => f.id)))
+      })
+      .catch(() => {
+        setFavoriteGames([])
+        setFavoritedGameIds(new Set())
+      })
   }, [])
 
   useEffect(() => {
@@ -137,11 +141,7 @@ export const GameList = ({
 
   useEffect(() => {
     const targetUser = lichessId || user?.lichessId
-    if (
-      targetUser &&
-      selected !== 'lichess' &&
-      selected !== 'custom'
-    ) {
+    if (targetUser && selected !== 'lichess' && selected !== 'custom') {
       const gameType = selected === 'hb' ? hbSubsection : selected
       const isAlreadyFetched = fetchedCache[gameType]?.[currentPage]
 
@@ -156,7 +156,7 @@ export const GameList = ({
         getAnalysisGameList(gameType, currentPage, lichessId)
           .then((data) => {
             let parsedGames: AnalysisWebGame[] = []
-            
+
             if (gameType === 'favorites') {
               // Handle favorites response format
               parsedGames = data.games.map((game: any) => ({
@@ -185,11 +185,12 @@ export const GameList = ({
                 const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
 
                 const playerLabel = userName || 'You'
-                
+
                 // Use custom name if available, otherwise generate default label
-                const defaultLabel = game.player_color === 'white'
-                  ? `${playerLabel} vs. ${maia}`
-                  : `${maia} vs. ${playerLabel}`
+                const defaultLabel =
+                  game.player_color === 'white'
+                    ? `${playerLabel} vs. ${maia}`
+                    : `${maia} vs. ${playerLabel}`
 
                 return {
                   id: game.game_id,
@@ -221,12 +222,12 @@ export const GameList = ({
                 [currentPage]: parsedGames,
               },
             }))
-            
+
             // Update favoritedGameIds from the actual games data
             const favoritedIds = new Set(
               parsedGames
                 .filter((game: any) => game.is_favorited)
-                .map((game: any) => game.id)
+                .map((game: any) => game.id),
             )
             setFavoritedGameIds((prev) => new Set([...prev, ...favoritedIds]))
 
@@ -317,8 +318,8 @@ export const GameList = ({
       await addFavoriteGame(favoriteModal.game, customName)
       const updatedFavorites = await getFavoritesAsWebGames()
       setFavoriteGames(updatedFavorites)
-      setFavoritedGameIds(new Set(updatedFavorites.map(f => f.id)))
-      
+      setFavoritedGameIds(new Set(updatedFavorites.map((f) => f.id)))
+
       // Clear favorites cache to force re-fetch
       setFetchedCache((prev) => ({
         ...prev,
@@ -328,7 +329,7 @@ export const GameList = ({
         ...prev,
         favorites: {},
       }))
-      
+
       // Also clear current section cache to show updated favorite status
       if (selected !== 'favorites') {
         const currentSection = selected === 'hb' ? hbSubsection : selected
@@ -349,8 +350,8 @@ export const GameList = ({
       await removeFavoriteGame(favoriteModal.game.id, favoriteModal.game.type)
       const updatedFavorites = await getFavoritesAsWebGames()
       setFavoriteGames(updatedFavorites)
-      setFavoritedGameIds(new Set(updatedFavorites.map(f => f.id)))
-      
+      setFavoritedGameIds(new Set(updatedFavorites.map((f) => f.id)))
+
       // Clear favorites cache to force re-fetch
       setFetchedCache((prev) => ({
         ...prev,
@@ -360,7 +361,7 @@ export const GameList = ({
         ...prev,
         favorites: {},
       }))
-      
+
       // Also clear current section cache to show updated favorite status
       if (selected !== 'favorites') {
         const currentSection = selected === 'hb' ? hbSubsection : selected
@@ -380,8 +381,8 @@ export const GameList = ({
     await removeFavoriteGame(game.id, game.type)
     const updatedFavorites = await getFavoritesAsWebGames()
     setFavoriteGames(updatedFavorites)
-    setFavoritedGameIds(new Set(updatedFavorites.map(f => f.id)))
-    
+    setFavoritedGameIds(new Set(updatedFavorites.map((f) => f.id)))
+
     // Clear favorites cache to force re-fetch
     setFetchedCache((prev) => ({
       ...prev,
@@ -391,7 +392,7 @@ export const GameList = ({
       ...prev,
       favorites: {},
     }))
-    
+
     // Also clear current section cache to show updated favorite status
     if (selected !== 'favorites') {
       const currentSection = selected === 'hb' ? hbSubsection : selected
@@ -424,18 +425,20 @@ export const GameList = ({
 
   const getModalCurrentName = () => {
     if (!favoriteModal.game) return ''
-    
+
     // If we're in the favorites section, the label is already the custom name
     if (selected === 'favorites') {
       return favoriteModal.game.label
     }
-    
+
     // For other sections, check if the game is favorited and get its custom name
-    const favorite = favoriteGames.find(fav => fav.id === favoriteModal.game!.id)
+    const favorite = favoriteGames.find(
+      (fav) => fav.id === favoriteModal.game!.id,
+    )
     if (favorite) {
       return favorite.label // In AnalysisWebGame, the label contains the custom name
     }
-    
+
     // Otherwise, use the game's label
     return favoriteModal.game.label
   }
@@ -555,7 +558,9 @@ export const GameList = ({
                 >
                   <div className="flex h-full w-10 items-center justify-center bg-background-2 py-1 group-hover:bg-white/5">
                     <p className="text-sm text-secondary">
-                      {selected === 'play' || selected === 'hb' || selected === 'favorites'
+                      {selected === 'play' ||
+                      selected === 'hb' ||
+                      selected === 'favorites'
                         ? (currentPage - 1) * 25 + index + 1
                         : index + 1}
                     </p>
@@ -627,41 +632,44 @@ export const GameList = ({
       </div>
 
       {/* Pagination */}
-      {(selected === 'play' || selected === 'hb' || selected === 'favorites') && totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 border-t border-white border-opacity-10 bg-background-1 py-2">
-          <button
-            onClick={() => handlePageChange(1)}
-            disabled={currentPage === 1}
-            className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined">first_page</span>
-          </button>
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined">arrow_back_ios</span>
-          </button>
-          <span className="text-sm text-secondary">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined">arrow_forward_ios</span>
-          </button>
-          <button
-            onClick={() => handlePageChange(totalPages)}
-            disabled={currentPage === totalPages}
-            className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined">last_page</span>
-          </button>
-        </div>
-      )}
+      {(selected === 'play' || selected === 'hb' || selected === 'favorites') &&
+        totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 border-t border-white border-opacity-10 bg-background-1 py-2">
+            <button
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined">first_page</span>
+            </button>
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined">arrow_back_ios</span>
+            </button>
+            <span className="text-sm text-secondary">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined">
+                arrow_forward_ios
+              </span>
+            </button>
+            <button
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined">last_page</span>
+            </button>
+          </div>
+        )}
       <FavoriteModal
         isOpen={favoriteModal.isOpen}
         currentName={getModalCurrentName()}
