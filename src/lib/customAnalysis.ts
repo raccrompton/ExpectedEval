@@ -55,10 +55,10 @@ export const saveCustomAnalysis = async (
     return analysis
   } catch (error) {
     console.error('Failed to store custom game on backend:', error)
-    
+
     const analyses = getLocalStoredCustomAnalyses()
     const id = `${type}-${Date.now()}`
-    
+
     const analysis: StoredCustomAnalysis = {
       id,
       name: finalName,
@@ -88,7 +88,7 @@ const getLocalStoredCustomAnalyses = (): StoredCustomAnalysis[] => {
 
 const migrateLocalStorageToBackend = async (): Promise<void> => {
   if (typeof window === 'undefined') return
-  
+
   const hasBeenMigrated = localStorage.getItem(MIGRATION_KEY)
   if (hasBeenMigrated) return
 
@@ -115,13 +115,15 @@ const migrateLocalStorageToBackend = async (): Promise<void> => {
     }
   }
 
-  const successCount = migrationResults.filter(r => r.success).length
-  console.log(`Migration completed: ${successCount}/${localAnalyses.length} analyses migrated successfully`)
+  const successCount = migrationResults.filter((r) => r.success).length
+  console.log(
+    `Migration completed: ${successCount}/${localAnalyses.length} analyses migrated successfully`,
+  )
 
   if (successCount === localAnalyses.length) {
     localStorage.removeItem(STORAGE_KEY)
   }
-  
+
   localStorage.setItem(MIGRATION_KEY, 'true')
 }
 

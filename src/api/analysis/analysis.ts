@@ -716,6 +716,36 @@ export const getEngineAnalysis = async (
   return res.json()
 }
 
+export interface UpdateGameMetadataRequest {
+  custom_name?: string
+  is_favorited?: boolean
+}
+
+export const updateGameMetadata = async (
+  gameType: 'custom' | 'play' | 'hand' | 'brain',
+  gameId: string,
+  metadata: UpdateGameMetadataRequest,
+): Promise<void> => {
+  const res = await fetch(
+    buildUrl(`analysis/update_metadata/${gameType}/${gameId}`),
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(metadata),
+    },
+  )
+
+  if (res.status === 401) {
+    throw new Error('Unauthorized')
+  }
+
+  if (!res.ok) {
+    throw new Error('Failed to update game metadata')
+  }
+}
+
 export interface StoreCustomGameRequest {
   name?: string
   pgn?: string
