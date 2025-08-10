@@ -1,7 +1,7 @@
 import { Chess } from 'chess.ts'
 import { createContext } from 'react'
 import { GameTree, GameNode } from 'src/types'
-import { BaseTreeControllerContext } from '../BaseTreeControllerContext'
+import { BaseTreeControllerContext } from './BaseTreeControllerContext'
 
 export interface ITrainingControllerContext extends BaseTreeControllerContext {
   currentNode: GameNode

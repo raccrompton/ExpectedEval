@@ -3,7 +3,7 @@ import { createContext } from 'react'
 import { GameTree, Color, GameNode } from 'src/types'
 import { TuringGame } from 'src/types/turing'
 import { AllStats } from 'src/hooks/useStats'
-import { BaseTreeControllerContext } from '../BaseTreeControllerContext'
+import { BaseTreeControllerContext } from './BaseTreeControllerContext'
 
 export interface ITuringControllerContext extends BaseTreeControllerContext {
   game?: TuringGame

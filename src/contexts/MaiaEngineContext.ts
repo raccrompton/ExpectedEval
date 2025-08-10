@@ -8,10 +8,4 @@ export const MaiaEngineContext = React.createContext<MaiaEngine>({
   downloadModel: async () => {
     throw new Error('poorly provided MaiaEngineContext, missing downloadModel')
   },
-  // getStorageInfo: async () => {
-  //   throw new Error('poorly provided MaiaEngineContext, missing getStorageInfo')
-  // },
-  // clearStorage: async () => {
-  //   throw new Error('poorly provided MaiaEngineContext, missing clearStorage')
-  // },
 })

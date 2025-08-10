@@ -1,7 +1,7 @@
 import React, { SetStateAction } from 'react'
 import { Chess } from 'chess.ts'
 import { useTreeController } from 'src/hooks/useTreeController'
-import { BaseTreeControllerContext } from '../BaseTreeControllerContext'
+import { BaseTreeControllerContext } from './BaseTreeControllerContext'
 import { GameTree } from 'src/types'
 
 export interface ITreeControllerContext extends BaseTreeControllerContext {

@@ -13,7 +13,7 @@ import { useUnload } from 'src/hooks/useUnload'
 import type { DrawShape } from 'chessground/draw'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import { AuthContext, WindowSizeContext } from 'src/contexts'
-import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
+import { PlayControllerContext } from 'src/contexts/PlayControllerContext'
 
 interface Props {
   boardShapes?: DrawShape[]

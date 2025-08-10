@@ -2,7 +2,7 @@ import React from 'react'
 import { Chess } from 'chess.ts'
 import { GameTree } from 'src/types'
 import { usePlayController } from 'src/hooks/usePlayController'
-import { BaseTreeControllerContext } from '../BaseTreeControllerContext'
+import { BaseTreeControllerContext } from './BaseTreeControllerContext'
 
 export interface IPlayControllerContext extends BaseTreeControllerContext {
   game: ReturnType<typeof usePlayController>['game']

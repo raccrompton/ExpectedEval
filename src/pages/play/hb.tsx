@@ -10,7 +10,7 @@ import { HandBrainPlayControls } from 'src/components/Play'
 import { ModalContext, useTour } from 'src/contexts'
 import { Color, PlayGameConfig, TimeControl } from 'src/types'
 import { useHandBrainController } from 'src/hooks/usePlayController/useHandBrainController'
-import { PlayControllerContext } from 'src/contexts/PlayControllerContext/PlayControllerContext'
+import { PlayControllerContext } from 'src/contexts/PlayControllerContext'
 import { tourConfigs } from 'src/constants/tours'
 
 interface Props {

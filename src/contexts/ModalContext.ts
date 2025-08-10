@@ -1,6 +1,4 @@
 import React, { ComponentProps } from 'react'
-
-import { Modals } from 'src/types'
 import { PlaySetupModal } from 'src/components'
 
 const fn = () => {
