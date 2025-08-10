@@ -1,4 +1,4 @@
-import Maia from './model'
+import Maia from '../lib/engine/maia'
 import { MaiaStatus } from 'src/types'
 import { MaiaEngineContext } from 'src/contexts'
 import {

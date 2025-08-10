@@ -1,7 +1,7 @@
 import { MaiaStatus } from 'src/types'
 import { InferenceSession, Tensor } from 'onnxruntime-web'
 
-import { mirrorMove, preprocess, allPossibleMovesReversed } from './utils'
+import { mirrorMove, preprocess, allPossibleMovesReversed } from './tensor'
 import { MaiaModelStorage } from './storage'
 
 interface MaiaOptions {

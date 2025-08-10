@@ -9,7 +9,7 @@ import {
 import toast from 'react-hot-toast'
 import { StockfishEngineContext } from 'src/contexts'
 import { StockfishStatus } from 'src/types'
-import Engine from 'src/providers/StockfishEngineContextProvider/engine'
+import Engine from 'src/lib/engine/stockfish'
 
 export const StockfishEngineContextProvider: React.FC<{
   children: ReactNode

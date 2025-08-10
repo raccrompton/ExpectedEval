@@ -1,6 +1,6 @@
 import { Game } from '../base'
 import { AvailableMoves } from '../training'
-import Maia from 'src/providers/MaiaEngineContextProvider/model'
+import Maia from 'src/lib/engine/maia'
 
 export interface MaiaEngine {
   maia?: Maia
