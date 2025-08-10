@@ -1,8 +1,5 @@
 import { AnalysisWebGame } from 'src/types'
-import {
-  updateGameMetadata,
-  getAnalysisGameList,
-} from 'src/api/analysis/analysis'
+import { updateGameMetadata, fetchMaiaGameList } from 'src/api/analysis'
 
 export interface FavoriteGame {
   id: string
@@ -199,7 +196,7 @@ const getFavoriteGamesFromStorage = (): FavoriteGame[] => {
 export const getFavoriteGames = async (): Promise<FavoriteGame[]> => {
   try {
     // Fetch favorites using the special "favorites" game type endpoint
-    const response = await getAnalysisGameList('favorites', 1)
+    const response = await fetchMaiaGameList('favorites', 1)
 
     // Convert API response to FavoriteGame format
     if (response.games && Array.isArray(response.games)) {

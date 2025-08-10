@@ -10,35 +10,18 @@ import {
   StockfishEvaluation,
   AnalysisTournamentGame,
 } from 'src/types'
-import { buildUrl } from '../utils'
-import { cpToWinrate } from 'src/lib/stockfish'
-import { AvailableMoves } from 'src/types/training'
+import {
+  buildGameTreeFromMoveList,
+  convertBackendEvalToStockfishEval,
+} from 'src/lib'
+import { buildUrl } from './utils'
 import { Chess } from 'chess.ts'
+import { AvailableMoves } from 'src/types/training'
+
 import {
   saveCustomAnalysis,
   getCustomAnalysisById,
 } from 'src/lib/customAnalysis'
-
-function buildGameTree(moves: any[], initialFen: string) {
-  const tree = new GameTree(initialFen)
-  let currentNode = tree.getRoot()
-
-  for (let i = 0; i < moves.length; i++) {
-    const move = moves[i]
-
-    if (move.lastMove) {
-      const [from, to] = move.lastMove
-      currentNode = tree.addMainMove(
-        currentNode,
-        move.board,
-        from + to,
-        move.san || '',
-      )
-    }
-  }
-
-  return tree
-}
 
 const readStream = (processLine: (data: any) => void) => (response: any) => {
   const stream = response.body.getReader()
@@ -67,7 +50,7 @@ const readStream = (processLine: (data: any) => void) => (response: any) => {
   return loop()
 }
 
-export const getAnalysisList = async (): Promise<
+export const fetchWorldChampionshipGameList = async (): Promise<
   Map<string, AnalysisTournamentGame[]>
 > => {
   const res = await fetch(buildUrl('analysis/list'))
@@ -81,7 +64,7 @@ export const getAnalysisList = async (): Promise<
   return data
 }
 
-export const getAnalysisGameList = async (
+export const fetchMaiaGameList = async (
   type = 'play',
   page = 1,
   lichessId?: string,
@@ -107,7 +90,7 @@ export const getAnalysisGameList = async (
   return data
 }
 
-export const getLichessGames = async (
+export const streamLichessGames = async (
   username: string,
   onMessage: (data: any) => void,
 ) => {
@@ -122,7 +105,7 @@ export const getLichessGames = async (
   stream.then(readStream(onMessage))
 }
 
-export const getLichessGamePGN = async (id: string) => {
+export const fetchPgnOfLichessGame = async (id: string) => {
   const res = await fetch(`https://lichess.org/game/export/${id}`, {
     headers: {
       Accept: 'application/x-chess-pgn',
@@ -131,83 +114,7 @@ export const getLichessGamePGN = async (id: string) => {
   return res.text()
 }
 
-function convertMoveMapToStockfishEval(
-  moveMap: MoveMap,
-  turn: 'w' | 'b',
-): StockfishEvaluation {
-  const cp_vec: { [key: string]: number } = {}
-  const cp_relative_vec: { [key: string]: number } = {}
-  let model_optimal_cp = -Infinity
-  let model_move = ''
-
-  for (const move in moveMap) {
-    const cp = moveMap[move]
-    cp_vec[move] = cp
-    if (cp > model_optimal_cp) {
-      model_optimal_cp = cp
-      model_move = move
-    }
-  }
-
-  for (const move in cp_vec) {
-    const cp = moveMap[move]
-    cp_relative_vec[move] = cp - model_optimal_cp
-  }
-
-  const cp_vec_sorted = Object.fromEntries(
-    Object.entries(cp_vec).sort(([, a], [, b]) => b - a),
-  )
-
-  const cp_relative_vec_sorted = Object.fromEntries(
-    Object.entries(cp_relative_vec).sort(([, a], [, b]) => b - a),
-  )
-
-  const winrate_vec: { [key: string]: number } = {}
-  let max_winrate = -Infinity
-
-  for (const move in cp_vec_sorted) {
-    const cp = cp_vec_sorted[move]
-    const winrate = cpToWinrate(cp, false)
-    winrate_vec[move] = winrate
-
-    if (winrate_vec[move] > max_winrate) {
-      max_winrate = winrate_vec[move]
-    }
-  }
-
-  const winrate_loss_vec: { [key: string]: number } = {}
-  for (const move in winrate_vec) {
-    winrate_loss_vec[move] = winrate_vec[move] - max_winrate
-  }
-
-  const winrate_vec_sorted = Object.fromEntries(
-    Object.entries(winrate_vec).sort(([, a], [, b]) => b - a),
-  )
-
-  const winrate_loss_vec_sorted = Object.fromEntries(
-    Object.entries(winrate_loss_vec).sort(([, a], [, b]) => b - a),
-  )
-
-  if (turn === 'b') {
-    model_optimal_cp *= -1
-    for (const move in cp_vec_sorted) {
-      cp_vec_sorted[move] *= -1
-    }
-  }
-
-  return {
-    sent: true,
-    depth: 20,
-    model_move: model_move,
-    model_optimal_cp: model_optimal_cp,
-    cp_vec: cp_vec_sorted,
-    cp_relative_vec: cp_relative_vec_sorted,
-    winrate_vec: winrate_vec_sorted,
-    winrate_loss_vec: winrate_loss_vec_sorted,
-  }
-}
-
-export const getAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
+export const fetchAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
   const res = await fetch(
     buildUrl(`analysis/analysis_list/${gameId.join('/')}`),
   )
@@ -275,7 +182,7 @@ export const getAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
 
   const maiaEvaluations = [] as { [rating: number]: MaiaEvaluation }[]
 
-  const tree = buildGameTree(moves, moves[0].board)
+  const tree = buildGameTreeFromMoveList(moves, moves[0].board)
 
   let currentNode: GameNode | null = tree.getRoot()
 
@@ -285,7 +192,7 @@ export const getAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
     }
 
     const stockfishEval = stockfishEvaluations[i]
-      ? convertMoveMapToStockfishEval(
+      ? convertBackendEvalToStockfishEval(
           stockfishEvaluations[i],
           moves[i].board.split(' ')[1],
         )
@@ -311,7 +218,7 @@ export const getAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
   } as any as AnalyzedGame
 }
 
-export const getAnalyzedLichessGame = async (id: string, pgn: string) => {
+export const fetchAnalyzedPgnGame = async (id: string, pgn: string) => {
   const res = await fetch(buildUrl('analysis/analyze_user_game'), {
     method: 'POST',
     body: pgn,
@@ -388,7 +295,7 @@ export const getAnalyzedLichessGame = async (id: string, pgn: string) => {
 
   const maiaEvaluations = [] as { [rating: number]: MaiaEvaluation }[]
   const stockfishEvaluations: StockfishEvaluation[] = []
-  const tree = buildGameTree(moves, moves[0].board)
+  const tree = buildGameTreeFromMoveList(moves, moves[0].board)
 
   return {
     id,
@@ -403,6 +310,114 @@ export const getAnalyzedLichessGame = async (id: string, pgn: string) => {
     tree,
     type: 'brain',
     pgn,
+  } as AnalyzedGame
+}
+
+export const fetchAnalyzedMaiaGame = async (
+  id: string,
+  game_type: 'play' | 'hand' | 'brain',
+) => {
+  const res = await fetch(
+    buildUrl(
+      `analysis/user/analyze_user_maia_game/${id}?` +
+        new URLSearchParams({
+          game_type,
+        }),
+    ),
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+    },
+  )
+
+  if (res.status === 401) {
+    throw new Error('Unauthorized')
+  }
+
+  const data = await res.json()
+
+  const termination = {
+    ...data['termination'],
+    condition: 'Normal',
+  }
+
+  const gameType = 'blitz'
+  const blackPlayer = data['black_player'] as Player
+  const whitePlayer = data['white_player'] as Player
+
+  const maiaPattern = /maia_kdd_1\d00/
+
+  if (blackPlayer.name && maiaPattern.test(blackPlayer.name)) {
+    blackPlayer.name = blackPlayer.name.replace('maia_kdd_', 'Maia ')
+  }
+
+  if (whitePlayer.name && maiaPattern.test(whitePlayer.name)) {
+    whitePlayer.name = whitePlayer.name.replace('maia_kdd_', 'Maia ')
+  }
+
+  const maiaEvals: { [model: string]: MoveMap[] } = {}
+
+  const availableMoves: AvailableMoves[] = []
+
+  for (const model of data['maia_versions']) {
+    maiaEvals[model] = data['maia_evals'][model]
+  }
+
+  for (const position of data['move_maps']) {
+    const moves: AvailableMoves = {}
+    for (const move of position) {
+      const fromTo = move.move.join('')
+      const san = move['move_san']
+      const { check, fen } = move
+
+      moves[fromTo] = {
+        board: fen,
+        check,
+        san,
+        lastMove: move.move,
+      }
+    }
+    availableMoves.push(moves)
+  }
+
+  const gameStates = data['game_states']
+
+  const moves = gameStates.map((gameState: any) => {
+    const {
+      last_move: lastMove,
+      fen,
+      check,
+      last_move_san: san,
+      evaluations: maia_values,
+    } = gameState
+
+    return {
+      board: fen,
+      lastMove,
+      san,
+      check,
+      maia_values,
+    }
+  })
+
+  const maiaEvaluations = [] as { [rating: number]: MaiaEvaluation }[]
+  const stockfishEvaluations: StockfishEvaluation[] = []
+  const tree = buildGameTreeFromMoveList(moves, moves[0].board)
+
+  return {
+    id,
+    blackPlayer,
+    whitePlayer,
+    moves,
+    availableMoves,
+    gameType,
+    termination,
+    maiaEvaluations,
+    stockfishEvaluations,
+    tree,
+    type: 'brain',
   } as AnalyzedGame
 }
 
@@ -449,7 +464,7 @@ const createAnalyzedGameFromPGN = async (
     })
   }
 
-  const tree = buildGameTree(moves, startingFen)
+  const tree = buildGameTreeFromMoveList(moves, startingFen)
 
   return {
     id: id || `pgn-${Date.now()}`,
@@ -552,114 +567,6 @@ export const getAnalyzedCustomGame = async (
   }
 }
 
-export const getAnalyzedUserGame = async (
-  id: string,
-  game_type: 'play' | 'hand' | 'brain',
-) => {
-  const res = await fetch(
-    buildUrl(
-      `analysis/user/analyze_user_maia_game/${id}?` +
-        new URLSearchParams({
-          game_type,
-        }),
-    ),
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'text/plain',
-      },
-    },
-  )
-
-  if (res.status === 401) {
-    throw new Error('Unauthorized')
-  }
-
-  const data = await res.json()
-
-  const termination = {
-    ...data['termination'],
-    condition: 'Normal',
-  }
-
-  const gameType = 'blitz'
-  const blackPlayer = data['black_player'] as Player
-  const whitePlayer = data['white_player'] as Player
-
-  const maiaPattern = /maia_kdd_1\d00/
-
-  if (blackPlayer.name && maiaPattern.test(blackPlayer.name)) {
-    blackPlayer.name = blackPlayer.name.replace('maia_kdd_', 'Maia ')
-  }
-
-  if (whitePlayer.name && maiaPattern.test(whitePlayer.name)) {
-    whitePlayer.name = whitePlayer.name.replace('maia_kdd_', 'Maia ')
-  }
-
-  const maiaEvals: { [model: string]: MoveMap[] } = {}
-
-  const availableMoves: AvailableMoves[] = []
-
-  for (const model of data['maia_versions']) {
-    maiaEvals[model] = data['maia_evals'][model]
-  }
-
-  for (const position of data['move_maps']) {
-    const moves: AvailableMoves = {}
-    for (const move of position) {
-      const fromTo = move.move.join('')
-      const san = move['move_san']
-      const { check, fen } = move
-
-      moves[fromTo] = {
-        board: fen,
-        check,
-        san,
-        lastMove: move.move,
-      }
-    }
-    availableMoves.push(moves)
-  }
-
-  const gameStates = data['game_states']
-
-  const moves = gameStates.map((gameState: any) => {
-    const {
-      last_move: lastMove,
-      fen,
-      check,
-      last_move_san: san,
-      evaluations: maia_values,
-    } = gameState
-
-    return {
-      board: fen,
-      lastMove,
-      san,
-      check,
-      maia_values,
-    }
-  })
-
-  const maiaEvaluations = [] as { [rating: number]: MaiaEvaluation }[]
-  const stockfishEvaluations: StockfishEvaluation[] = []
-  const tree = buildGameTree(moves, moves[0].board)
-
-  return {
-    id,
-    blackPlayer,
-    whitePlayer,
-    moves,
-    availableMoves,
-    gameType,
-    termination,
-    maiaEvaluations,
-    stockfishEvaluations,
-    tree,
-    type: 'brain',
-  } as AnalyzedGame
-}
-
 export interface EngineAnalysisPosition {
   ply: number
   fen: string
@@ -670,7 +577,7 @@ export interface EngineAnalysisPosition {
   }
 }
 
-export const storeEngineAnalysis = async (
+export const storeGameAnalysisCache = async (
   gameId: string,
   analysisData: EngineAnalysisPosition[],
 ): Promise<void> => {
@@ -694,8 +601,7 @@ export const storeEngineAnalysis = async (
   }
 }
 
-// Retrieve stored engine analysis from backend
-export const getEngineAnalysis = async (
+export const retrieveGameAnalysisCache = async (
   gameId: string,
 ): Promise<{ positions: EngineAnalysisPosition[] } | null> => {
   const res = await fetch(buildUrl(`analysis/get_engine_analysis/${gameId}`))

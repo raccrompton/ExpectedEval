@@ -3,7 +3,11 @@ import { ReactNode, useContext, useEffect, useState } from 'react'
 
 import { AnalysisWebGame, AnalysisTournamentGame } from 'src/types'
 import { AuthContext, AnalysisListContext } from 'src/contexts'
-import { getAnalysisList, getLichessGames, getAnalysisGameList } from 'src/api'
+import {
+  fetchWorldChampionshipGameList,
+  streamLichessGames,
+  fetchMaiaGameList,
+} from 'src/api'
 
 export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
   children,
@@ -34,7 +38,7 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
     async function getAndSetData() {
       let response
       try {
-        response = await getAnalysisList()
+        response = await fetchWorldChampionshipGameList()
       } catch (e) {
         router.push('/401')
         return
@@ -49,7 +53,7 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
 
   useEffect(() => {
     if (user?.lichessId) {
-      getLichessGames(user?.lichessId, (data) => {
+      streamLichessGames(user?.lichessId, (data) => {
         const result = data.pgn.match(/\[Result\s+"(.+?)"\]/)[1] || '?'
 
         const game: AnalysisWebGame = {
@@ -67,9 +71,9 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
 
   useEffect(() => {
     if (user?.lichessId) {
-      const playRequest = getAnalysisGameList('play', 1)
-      const handRequest = getAnalysisGameList('hand', 1)
-      const brainRequest = getAnalysisGameList('brain', 1)
+      const playRequest = fetchMaiaGameList('play', 1)
+      const handRequest = fetchMaiaGameList('hand', 1)
+      const brainRequest = fetchMaiaGameList('brain', 1)
 
       Promise.all([playRequest, handRequest, brainRequest]).then((data) => {
         const [play, hand, brain] = data

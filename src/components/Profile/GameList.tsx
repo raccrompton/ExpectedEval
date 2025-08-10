@@ -3,7 +3,7 @@ import React, { useState, useEffect, useContext } from 'react'
 
 import { AuthContext } from 'src/contexts'
 import { AnalysisWebGame } from 'src/types'
-import { getLichessGames, getAnalysisGameList } from 'src/api'
+import { streamLichessGames, fetchMaiaGameList } from 'src/api'
 import { getCustomAnalysesAsWebGames } from 'src/lib/customAnalysis'
 import { FavoriteModal } from 'src/components/Common/FavoriteModal'
 import {
@@ -124,7 +124,7 @@ export const GameList = ({
         lichess: { ...prev.lichess, 1: true },
       }))
 
-      getLichessGames(targetUser, (data) => {
+      streamLichessGames(targetUser, (data) => {
         const result = data.pgn.match(/\[Result\s+"(.+?)"\]/)[1] || '?'
 
         const game: AnalysisWebGame = {
@@ -153,7 +153,7 @@ export const GameList = ({
           [gameType]: { ...prev[gameType], [currentPage]: true },
         }))
 
-        getAnalysisGameList(gameType, currentPage, lichessId)
+        fetchMaiaGameList(gameType, currentPage, lichessId)
           .then((data) => {
             let parsedGames: AnalysisWebGame[] = []
 

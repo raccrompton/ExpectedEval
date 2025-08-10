@@ -8,14 +8,14 @@ import React, {
   SetStateAction,
 } from 'react'
 import {
-  getLichessGamePGN,
-  getAnalyzedUserGame,
-  getAnalyzedLichessGame,
-  getAnalyzedTournamentGame,
+  fetchPgnOfLichessGame,
+  fetchAnalyzedMaiaGame,
+  fetchAnalyzedPgnGame,
+  fetchAnalyzedTournamentGame,
   getAnalyzedCustomPGN,
   getAnalyzedCustomFEN,
   getAnalyzedCustomGame,
-  getEngineAnalysis,
+  retrieveGameAnalysisCache,
 } from 'src/api'
 import {
   AnalyzedGame,
@@ -92,7 +92,7 @@ const AnalysisPage: NextPage = () => {
     }
 
     try {
-      const storedAnalysis = await getEngineAnalysis(game.id)
+      const storedAnalysis = await retrieveGameAnalysisCache(game.id)
       if (storedAnalysis && storedAnalysis.positions.length > 0) {
         applyEngineAnalysisData(game.tree, storedAnalysis.positions)
         console.log(
@@ -114,7 +114,7 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getAnalyzedTournamentGame(newId)
+        game = await fetchAnalyzedTournamentGame(newId)
       } catch (e) {
         router.push('/401')
         return
@@ -152,7 +152,7 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getAnalyzedLichessGame(id, pgn)
+        game = await fetchAnalyzedPgnGame(id, pgn)
       } catch (e) {
         router.push('/401')
         return
@@ -184,7 +184,7 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await getAnalyzedUserGame(id, type)
+        game = await fetchAnalyzedMaiaGame(id, type)
       } catch (e) {
         router.push('/401')
         return
@@ -269,7 +269,7 @@ const AnalysisPage: NextPage = () => {
         if (queryId[1] === 'custom') {
           getAndSetCustomGame(queryId[0], undefined, false)
         } else if (queryId[1] === 'pgn') {
-          const pgn = await getLichessGamePGN(queryId[0])
+          const pgn = await fetchPgnOfLichessGame(queryId[0])
           getAndSetLichessGame(queryId[0], pgn, undefined, false)
         } else if (['play', 'hand', 'brain'].includes(queryId[1])) {
           getAndSetUserGame(

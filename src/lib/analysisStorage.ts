@@ -1,6 +1,6 @@
 import { Chess } from 'chess.ts'
 import { GameTree } from 'src/types'
-import { EngineAnalysisPosition } from 'src/api/analysis/analysis'
+import { EngineAnalysisPosition } from 'src/api/analysis'
 import { cpToWinrate } from 'src/lib/stockfish'
 
 /**

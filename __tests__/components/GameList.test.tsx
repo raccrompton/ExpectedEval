@@ -42,12 +42,12 @@ jest.mock('framer-motion', () => ({
   },
 }))
 
-const mockGetAnalysisGameList = api.getAnalysisGameList as jest.MockedFunction<
-  typeof api.getAnalysisGameList
+const mockGetAnalysisGameList = api.fetchMaiaGameList as jest.MockedFunction<
+  typeof api.fetchMaiaGameList
 >
 
-const mockGetLichessGames = api.getLichessGames as jest.MockedFunction<
-  typeof api.getLichessGames
+const mockGetLichessGames = api.streamLichessGames as jest.MockedFunction<
+  typeof api.streamLichessGames
 >
 
 // Mock user context

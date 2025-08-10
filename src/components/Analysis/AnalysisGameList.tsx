@@ -11,7 +11,7 @@ import { motion } from 'framer-motion'
 import { Tournament } from 'src/components'
 import { FavoriteModal } from 'src/components/Common/FavoriteModal'
 import { AnalysisListContext } from 'src/contexts'
-import { getAnalysisGameList } from 'src/api'
+import { fetchMaiaGameList } from 'src/api'
 import { ensureMigration } from 'src/lib/customAnalysis'
 import {
   getFavoritesAsWebGames,
@@ -224,7 +224,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
           [selected]: { ...prev[selected], [currentPage]: true },
         }))
 
-        getAnalysisGameList(selected, currentPage)
+        fetchMaiaGameList(selected, currentPage)
           .then((data) => {
             let parsedGames: AnalysisWebGame[] = []
 
@@ -340,7 +340,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
           [gameType]: { ...prev[gameType], [currentPage]: true },
         }))
 
-        getAnalysisGameList(gameType, currentPage)
+        fetchMaiaGameList(gameType, currentPage)
           .then((data) => {
             const parse = (
               game: {
