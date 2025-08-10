@@ -1,7 +1,5 @@
-/**
- * Get the count of active users in the last 30 minutes
- * Calls our secure server-side API endpoint that handles PostHog integration
- */
+import { buildUrl } from 'src/api'
+
 export const getActiveUserCount = async (): Promise<number> => {
   try {
     const response = await fetch('/api/active-users')
