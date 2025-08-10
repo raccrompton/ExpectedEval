@@ -1,5 +1,5 @@
-import { Termination } from '../analysis'
-import { BaseGame, Color, GameTree } from '../base'
+import { Termination } from './analysis'
+import { BaseGame, Color } from './common'
 
 export const TimeControlOptions = ['3+0', '5+2', '10+0', '15+10', 'unlimited']
 export const TimeControlOptionNames = [

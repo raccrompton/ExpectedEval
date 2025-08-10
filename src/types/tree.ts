@@ -1,5 +1,5 @@
 import { Chess, Color } from 'chess.ts'
-import { StockfishEvaluation, MaiaEvaluation } from '..'
+import { StockfishEvaluation, MaiaEvaluation } from '.'
 import { MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/analysis'
 import { calculateMoveColor } from 'src/hooks/useAnalysisController/utils'
 

@@ -1,4 +1,4 @@
-import { GameNode } from 'src/types/base/tree'
+import { GameNode } from 'src/types/tree'
 import { StockfishEvaluation, MaiaEvaluation } from 'src/types'
 
 describe('GameNode Move Classification', () => {

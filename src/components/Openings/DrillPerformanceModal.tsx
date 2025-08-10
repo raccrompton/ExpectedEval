@@ -34,7 +34,7 @@ import {
 import { MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/analysis'
 import { useTreeController } from 'src/hooks'
 import { generateColorSanMapping } from 'src/hooks/useAnalysisController/utils'
-import { GameNode, GameTree } from 'src/types/base/tree'
+import { GameNode, GameTree } from 'src/types/tree'
 
 interface Props {
   performanceData: DrillPerformanceData

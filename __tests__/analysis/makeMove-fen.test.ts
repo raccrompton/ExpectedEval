@@ -1,4 +1,4 @@
-import { GameTree, GameNode } from 'src/types/base/tree'
+import { GameTree, GameNode } from 'src/types/tree'
 import { Chess, PieceSymbol } from 'chess.ts'
 
 describe('Analysis Page makeMove Logic for FEN Positions', () => {

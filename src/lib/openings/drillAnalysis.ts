@@ -1,6 +1,6 @@
 import { Chess } from 'chess.ts'
 import { StockfishEvaluation, MaiaEvaluation } from 'src/types'
-import { GameNode } from 'src/types/base/tree'
+import { GameNode } from 'src/types/tree'
 import {
   MoveAnalysis,
   RatingComparison,

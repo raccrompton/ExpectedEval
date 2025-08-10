@@ -1,6 +1,6 @@
-import { Player } from '..'
+import { Player } from '.'
 import { GameTree } from './tree'
-import { Termination } from '../analysis'
+import { Termination } from './analysis'
 
 export * from './tree'
 

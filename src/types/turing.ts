@@ -1,5 +1,5 @@
-import { Termination, Color, Player, GameTree } from '..'
-import { BaseGame } from '../base'
+import { BaseGame } from './common'
+import { Termination, Color, Player } from '.'
 
 export interface TuringGame extends BaseGame {
   termination: Termination

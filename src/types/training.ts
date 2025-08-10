@@ -1,4 +1,4 @@
-import { Game, Move, MoveMap, GameTree } from '..'
+import { Game, Move, MoveMap, GameTree } from '.'
 
 export interface AvailableMoves {
   [fromTo: string]: Move

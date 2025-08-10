@@ -1,5 +1,5 @@
 import { Chess } from 'chess.ts'
-import { GameNode, GameTree } from 'src/types/base/tree'
+import { GameNode, GameTree } from 'src/types/tree'
 import { MistakePosition } from 'src/types/analysis'
 
 /**

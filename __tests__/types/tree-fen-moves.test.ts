@@ -1,4 +1,4 @@
-import { GameTree, GameNode } from 'src/types/base/tree'
+import { GameTree, GameNode } from 'src/types/tree'
 import { Chess, Move } from 'chess.ts'
 
 describe('GameTree FEN Position Move Handling', () => {
