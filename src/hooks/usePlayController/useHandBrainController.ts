@@ -7,12 +7,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { PlayGameConfig } from 'src/types'
 import { useStats } from 'src/hooks/useStats'
 import { usePlayController } from './usePlayController'
-import { getGameMove, submitGameMove, getPlayPlayerStats } from 'src/api'
+import { fetchGameMove, logGameMove, fetchPlayPlayerStats } from 'src/api'
 import { chessSoundManager } from 'src/lib/chessSoundManager'
 import { safeUpdateRating } from 'src/lib/ratingUtils'
 
 const brainStatsLoader = async () => {
-  const stats = await getPlayPlayerStats()
+  const stats = await fetchPlayPlayerStats()
   return {
     gamesPlayed: stats.brainGamesPlayed,
     gamesWon: stats.brainWon,
@@ -21,7 +21,7 @@ const brainStatsLoader = async () => {
 }
 
 const handStatsLoader = async () => {
-  const stats = await getPlayPlayerStats()
+  const stats = await fetchPlayPlayerStats()
   return {
     gamesPlayed: stats.handGamesPlayed,
     gamesWon: stats.handWon,
@@ -74,7 +74,7 @@ export const useHandBrainController = (
       const maiaChoosePiece = async () => {
         const maiaMoves = await backOff(
           () =>
-            getGameMove(
+            fetchGameMove(
               controller.moveList,
               playGameConfig.maiaPartnerVersion,
               playGameConfig.startFen,
@@ -139,7 +139,7 @@ export const useHandBrainController = (
 
       const maiaMoves = await backOff(
         () =>
-          getGameMove(
+          fetchGameMove(
             controller.moveList,
             playGameConfig.maiaVersion,
             playGameConfig.startFen,
@@ -200,7 +200,7 @@ export const useHandBrainController = (
 
         const maiaMoves = await backOff(
           () =>
-            getGameMove(
+            fetchGameMove(
               controller.moveList,
               playGameConfig.maiaPartnerVersion,
               playGameConfig.startFen,
@@ -258,7 +258,7 @@ export const useHandBrainController = (
     const submitFn = async () => {
       const response = await backOff(
         () =>
-          submitGameMove(
+          logGameMove(
             controller.game.id,
             controller.moveList,
             controller.moveTimes,

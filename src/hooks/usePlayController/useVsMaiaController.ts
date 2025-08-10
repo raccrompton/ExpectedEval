@@ -4,12 +4,12 @@ import { PlayGameConfig } from 'src/types'
 import { backOff } from 'exponential-backoff'
 import { useStats } from 'src/hooks/useStats'
 import { usePlayController } from 'src/hooks/usePlayController'
-import { getGameMove, submitGameMove, getPlayPlayerStats } from 'src/api'
+import { fetchGameMove, logGameMove, fetchPlayPlayerStats } from 'src/api'
 import { chessSoundManager } from 'src/lib/chessSoundManager'
 import { safeUpdateRating } from 'src/lib/ratingUtils'
 
 const playStatsLoader = async () => {
-  const stats = await getPlayPlayerStats()
+  const stats = await fetchPlayPlayerStats()
   return {
     gamesPlayed: stats.playGamesPlayed,
     gamesWon: stats.playWon,
@@ -49,7 +49,7 @@ export const useVsMaiaPlayController = (
 
         const maiaMoves = await backOff(
           () =>
-            getGameMove(
+            fetchGameMove(
               controller.moveList,
               playGameConfig.maiaVersion,
               playGameConfig.startFen,
@@ -111,7 +111,7 @@ export const useVsMaiaPlayController = (
     const submitFn = async () => {
       const response = await backOff(
         () =>
-          submitGameMove(
+          logGameMove(
             controller.game.id,
             controller.moveList,
             controller.moveTimes,

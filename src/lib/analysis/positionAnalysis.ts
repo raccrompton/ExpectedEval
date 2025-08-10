@@ -1,5 +1,5 @@
 import { Chess } from 'chess.ts'
-import { getBookMoves } from 'src/api'
+import { fetchOpeningBookMoves } from 'src/api'
 import { MAIA_MODELS } from 'src/constants/common'
 import { StockfishEvaluation, MaiaEvaluation } from 'src/types/analysis'
 
@@ -187,7 +187,7 @@ export async function analyzePositionWithAllMaiaRatings(
     // Include opening book moves for early positions
     if (moveNumber <= 5) {
       try {
-        const bookMoves = await getBookMoves(fen)
+        const bookMoves = await fetchOpeningBookMoves(fen)
 
         MAIA_MODELS.forEach((model, index) => {
           const policySource = Object.keys(bookMoves[model] || {}).length

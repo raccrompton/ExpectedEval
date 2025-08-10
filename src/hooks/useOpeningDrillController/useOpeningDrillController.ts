@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { Chess } from 'chess.ts'
-import { getGameMove } from 'src/api/play/play'
+import { fetchGameMove } from 'src/api/play'
 import { submitOpeningDrill } from 'src/api/openings'
 import { useTreeController } from '../useTreeController'
 import { useLocalStorage } from '../useLocalStorage'
@@ -1157,7 +1157,7 @@ export const useOpeningDrillController = (
       if (!currentDrillGame || !currentDrill || !fromNode) return
 
       try {
-        const response = await getGameMove(
+        const response = await fetchGameMove(
           [],
           currentDrill.maiaVersion,
           fromNode.fen,

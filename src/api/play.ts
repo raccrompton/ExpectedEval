@@ -1,4 +1,4 @@
-import { buildUrl } from '../utils'
+import { buildUrl } from './utils'
 import { Color, TimeControl } from 'src/types'
 
 export const startGame = async (
@@ -48,7 +48,7 @@ export const startGame = async (
   }
 }
 
-export const getGameMove = async (
+export const fetchGameMove = async (
   moves: string[],
   maiaVersion = 'maia_kdd_1900',
   fen: string | null = null,
@@ -106,7 +106,7 @@ export const getGameMove = async (
   return res.json()
 }
 
-export const getBookMoves = async (fen: string) => {
+export const fetchOpeningBookMoves = async (fen: string) => {
   const res = await fetch(buildUrl(`play/get_book_moves?fen=${fen}`), {
     method: 'POST',
     headers: {
@@ -132,7 +132,7 @@ export const getBookMoves = async (fen: string) => {
   return res.json()
 }
 
-export const submitGameMove = async (
+export const logGameMove = async (
   gameId: string,
   moves: string[],
   moveTimes: number[],
@@ -164,7 +164,7 @@ export const submitGameMove = async (
   return res.json()
 }
 
-export const getPlayPlayerStats = async () => {
+export const fetchPlayPlayerStats = async () => {
   const res = await fetch(buildUrl('play/get_player_stats'))
   const data = await res.json()
   return {
