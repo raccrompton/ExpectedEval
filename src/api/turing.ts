@@ -1,7 +1,7 @@
+import { buildUrl } from './utils'
 import { Color, TuringGame, TuringSubmissionResult, GameTree } from 'src/types'
-import { buildUrl } from 'src/api'
 
-export const getTuringGame = async () => {
+export const fetchTuringGame = async () => {
   const res = await fetch(buildUrl('turing/new_game'))
 
   if (res.status === 401) {
@@ -114,7 +114,7 @@ export const submitTuringGuess = async (
   } as TuringSubmissionResult
 }
 
-export const getTuringPlayerStats = async () => {
+export const fetchTuringPlayerStats = async () => {
   const res = await fetch(buildUrl('turing/get_player_stats'))
   const data = await res.json()
   return {

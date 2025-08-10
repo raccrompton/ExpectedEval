@@ -18,9 +18,9 @@ import type { DrawShape } from 'chessground/draw'
 import { Chess, PieceSymbol } from 'chess.ts'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  getTrainingGame,
+  fetchPuzzle,
   logPuzzleGuesses,
-  getTrainingPlayerStats,
+  fetchTrainingPlayerStats,
 } from 'src/api'
 import {
   trackPuzzleStarted,
@@ -62,7 +62,7 @@ import { mockAnalysisData } from 'src/lib/analysis/mockAnalysisData'
 import { tourConfigs } from 'src/constants/tours'
 
 const statsLoader = async () => {
-  const stats = await getTrainingPlayerStats()
+  const stats = await fetchTrainingPlayerStats()
   return {
     gamesPlayed: Math.max(0, stats.totalPuzzles),
     gamesWon: stats.puzzlesSolved,
@@ -100,7 +100,7 @@ const TrainPage: NextPage = () => {
     setLoadingGame(true)
     let game
     try {
-      game = await getTrainingGame()
+      game = await fetchPuzzle()
     } catch (e) {
       router.push('/401')
       return

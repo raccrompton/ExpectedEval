@@ -1,4 +1,4 @@
-import { buildUrl } from 'src/api'
+import { buildUrl } from './utils'
 
 const parseAccountInfo = (data: { [x: string]: string }) => {
   const clientId = data['client_id']
@@ -12,28 +12,21 @@ const parseAccountInfo = (data: { [x: string]: string }) => {
   }
 }
 
-export const getAccount = async () => {
+export const fetchAccount = async () => {
   const res = await fetch(buildUrl('auth/account'))
   const data = await res.json()
 
   return parseAccountInfo(data)
 }
 
-export const logoutAndGetAccount = async () => {
+export const logoutAndFetchAccount = async () => {
   await fetch(buildUrl('auth/logout'))
 
-  return getAccount()
+  return fetchAccount()
 }
 
-export const getLeaderboard = async () => {
+export const fetchLeaderboard = async () => {
   const res = await fetch(buildUrl('auth/leaderboard'))
-  const data = await res.json()
-
-  return data
-}
-
-export const getGlobalStats = async () => {
-  const res = await fetch(buildUrl('auth/global_stats'))
   const data = await res.json()
 
   return data

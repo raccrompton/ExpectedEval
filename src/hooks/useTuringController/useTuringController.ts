@@ -6,10 +6,14 @@ import { useStats } from '../useStats'
 import { Color, GameTree } from 'src/types'
 import { TuringGame } from 'src/types/turing'
 import { useTreeController } from '../useTreeController'
-import { getTuringGame, getTuringPlayerStats, submitTuringGuess } from 'src/api'
+import {
+  fetchTuringGame,
+  fetchTuringPlayerStats,
+  submitTuringGuess,
+} from 'src/api'
 
 const statsLoader = async () => {
-  const stats = await getTuringPlayerStats()
+  const stats = await fetchTuringPlayerStats()
   return {
     gamesPlayed: stats.correctGuesses + stats.wrongGuesses,
     gamesWon: stats.correctGuesses,
@@ -51,7 +55,7 @@ export const useTuringController = () => {
     setLoading(true)
     let game
     try {
-      game = await getTuringGame()
+      game = await fetchTuringGame()
     } catch (e) {
       router.push('/401')
       return

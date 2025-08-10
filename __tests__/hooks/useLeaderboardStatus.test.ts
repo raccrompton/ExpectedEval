@@ -25,7 +25,7 @@ const mockLeaderboardData = {
 describe('useLeaderboardStatus', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    ;(api.getLeaderboard as jest.Mock).mockResolvedValue(mockLeaderboardData)
+    ;(api.fetchLeaderboard as jest.Mock).mockResolvedValue(mockLeaderboardData)
   })
 
   it('should return correct status for player on multiple leaderboards', async () => {
@@ -85,11 +85,13 @@ describe('useLeaderboardStatus', () => {
     expect(result.current.status.isOnLeaderboard).toBe(false)
     expect(result.current.status.totalLeaderboards).toBe(0)
     expect(result.current.status.positions).toHaveLength(0)
-    expect(api.getLeaderboard).not.toHaveBeenCalled()
+    expect(api.fetchLeaderboard).not.toHaveBeenCalled()
   })
 
   it('should handle API errors gracefully', async () => {
-    ;(api.getLeaderboard as jest.Mock).mockRejectedValue(new Error('API Error'))
+    ;(api.fetchLeaderboard as jest.Mock).mockRejectedValue(
+      new Error('API Error'),
+    )
 
     const { result } = renderHook(() => useLeaderboardStatus('TestPlayer1'))
 

@@ -1,4 +1,4 @@
-import { buildUrl } from 'src/api'
+import { buildUrl } from './utils'
 
 export const getActiveUserCount = async (): Promise<number> => {
   try {
@@ -14,4 +14,11 @@ export const getActiveUserCount = async (): Promise<number> => {
   }
 
   return 0
+}
+
+export const getGlobalStats = async () => {
+  const res = await fetch(buildUrl('auth/global_stats'))
+  const data = await res.json()
+
+  return data
 }

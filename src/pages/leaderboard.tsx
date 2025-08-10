@@ -9,7 +9,7 @@ import {
   TrainIcon,
   BotOrNotIcon,
 } from 'src/components/Common/Icons'
-import { getLeaderboard } from 'src/api'
+import { fetchLeaderboard } from 'src/api'
 import { LeaderboardColumn, DelayedLoading } from 'src/components'
 import { LeaderboardProvider } from 'src/components/Leaderboard/LeaderboardContext'
 
@@ -45,7 +45,7 @@ const Leaderboard: React.FC = () => {
 
   const fetchLeaderboard = useCallback(async () => {
     setLoading(true)
-    const lb = await getLeaderboard()
+    const lb = await fetchLeaderboard()
     setLastUpdated(new Date(lb.last_updated + 'Z'))
     setLeaderboard([
       {

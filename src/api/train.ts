@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Chess } from 'chess.ts'
+import { buildUrl } from './utils'
 import { MoveMap, GameTree } from 'src/types'
 import { AvailableMoves, TrainingGame } from 'src/types/training'
-import { buildUrl } from '../utils'
 
-export const getTrainingGame = async () => {
+export const fetchPuzzle = async () => {
   const res = await fetch(buildUrl('puzzle/new_puzzle'))
   const data = await res.json()
   const id =
@@ -150,7 +149,7 @@ export const logPuzzleGuesses = async (
   return res.json()
 }
 
-export const getTrainingPlayerStats = async () => {
+export const fetchTrainingPlayerStats = async () => {
   const res = await fetch(buildUrl('puzzle/get_player_stats'))
   const data = await res.json()
   return {

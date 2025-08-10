@@ -5,7 +5,7 @@ import { useContext, useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { PlayerStats } from 'src/types'
-import { getPlayerStats } from 'src/api'
+import { fetchPlayerStats } from 'src/api'
 import { WindowSizeContext } from 'src/contexts'
 import {
   AuthenticatedWrapper,
@@ -64,7 +64,7 @@ const ProfilePage: NextPage = () => {
   useEffect(() => {
     const fetchStats = async (n: string) => {
       setLoading(true)
-      const playerStats = await getPlayerStats(n)
+      const playerStats = await fetchPlayerStats(n)
       setName(n)
       setStats(playerStats)
       setLoading(false)
