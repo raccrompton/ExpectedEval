@@ -23,7 +23,7 @@ import {
   trackDrillConfigurationCompleted,
 } from 'src/lib/analytics'
 import { MAIA_MODELS_WITH_NAMES } from 'src/constants/common'
-import { selectOpeningDrills } from 'src/api/opening'
+import { selectOpeningDrills } from 'src/api/openings'
 
 type MobileTab = 'browse' | 'selected'
 

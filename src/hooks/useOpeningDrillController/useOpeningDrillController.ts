@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { Chess } from 'chess.ts'
 import { getGameMove } from 'src/api/play/play'
-import { submitOpeningDrill } from 'src/api/opening'
+import { submitOpeningDrill } from 'src/api/openings'
 import { useTreeController } from '../useTreeController'
 import { useLocalStorage } from '../useLocalStorage'
 import {

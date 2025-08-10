@@ -1,4 +1,4 @@
-import { buildUrl } from '../utils'
+import { buildUrl } from './utils'
 
 // API Types for opening drill logging
 export interface OpeningDrillSelection {
