@@ -11,6 +11,7 @@ import {
   AnalysisTournamentGame,
 } from 'src/types'
 import {
+  readLichessStream,
   buildGameTreeFromMoveList,
   convertBackendEvalToStockfishEval,
 } from 'src/lib'
@@ -22,33 +23,6 @@ import {
   saveCustomAnalysis,
   getCustomAnalysisById,
 } from 'src/lib/customAnalysis'
-
-const readStream = (processLine: (data: any) => void) => (response: any) => {
-  const stream = response.body.getReader()
-  const matcher = /\r?\n/
-  const decoder = new TextDecoder()
-  let buf = ''
-
-  const loop = () =>
-    stream.read().then(({ done, value }: { done: boolean; value: any }) => {
-      if (done) {
-        if (buf.length > 0) processLine(JSON.parse(buf))
-      } else {
-        const chunk = decoder.decode(value, {
-          stream: true,
-        })
-        buf += chunk
-
-        const parts = (buf || '').split(matcher)
-        buf = parts.pop() as string
-        for (const i of parts.filter((p) => p)) processLine(JSON.parse(i))
-
-        return loop()
-      }
-    })
-
-  return loop()
-}
 
 export const fetchWorldChampionshipGameList = async (): Promise<
   Map<string, AnalysisTournamentGame[]>
@@ -102,7 +76,7 @@ export const streamLichessGames = async (
       },
     },
   )
-  stream.then(readStream(onMessage))
+  stream.then(readLichessStream(onMessage))
 }
 
 export const fetchPgnOfLichessGame = async (id: string) => {

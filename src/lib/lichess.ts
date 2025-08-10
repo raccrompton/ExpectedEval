@@ -1,124 +1,42 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Chess } from 'chess.ts'
-import { GameTree } from 'src/types/base/tree'
-import { AvailableMoves } from 'src/types/training'
 import {
-  LiveGame,
-  Player,
-  StockfishEvaluation,
-  StreamedGame,
+  GameTree,
   StreamedMove,
+  type LiveGame,
+  type Player,
+  type AvailableMoves,
+  StockfishEvaluation,
 } from 'src/types'
 
-const readStream = (processLine: (data: any) => void) => (response: any) => {
-  const stream = response.body.getReader()
-  const matcher = /\r?\n/
-  const decoder = new TextDecoder()
-  let buf = ''
+export const readLichessStream =
+  (processLine: (data: any) => void) => (response: any) => {
+    const stream = response.body.getReader()
+    const matcher = /\r?\n/
+    const decoder = new TextDecoder()
+    let buf = ''
 
-  const loop = () =>
-    stream.read().then(({ done, value }: { done: boolean; value: any }) => {
-      if (done) {
-        if (buf.length > 0) processLine(JSON.parse(buf))
-      } else {
-        const chunk = decoder.decode(value, {
-          stream: true,
-        })
-        buf += chunk
+    const loop = () =>
+      stream.read().then(({ done, value }: { done: boolean; value: any }) => {
+        if (done) {
+          if (buf.length > 0) processLine(JSON.parse(buf))
+        } else {
+          const chunk = decoder.decode(value, {
+            stream: true,
+          })
+          buf += chunk
 
-        const parts = (buf || '').split(matcher)
-        buf = parts.pop() as string
-        for (const i of parts.filter((p) => p)) processLine(JSON.parse(i))
+          const parts = (buf || '').split(matcher)
+          buf = parts.pop() as string
+          for (const i of parts.filter((p) => p)) processLine(JSON.parse(i))
 
-        return loop()
-      }
-    })
-
-  return loop()
-}
-
-export const getLichessTVGame = async () => {
-  const res = await fetch('https://lichess.org/api/tv/channels')
-  if (!res.ok) {
-    throw new Error('Failed to fetch Lichess TV data')
-  }
-  const data = await res.json()
-
-  // Return the best rapid game (highest rated players)
-  const bestChannel = data.rapid
-  if (!bestChannel?.gameId) {
-    throw new Error('No TV game available')
-  }
-
-  return {
-    gameId: bestChannel.gameId,
-    white: bestChannel.user1,
-    black: bestChannel.user2,
-  }
-}
-
-export const getLichessGameInfo = async (gameId: string) => {
-  const res = await fetch(`https://lichess.org/api/game/${gameId}`)
-  if (!res.ok) {
-    throw new Error(`Failed to fetch game info for ${gameId}`)
-  }
-  return res.json()
-}
-
-export const streamLichessGame = async (
-  gameId: string,
-  onGameInfo: (data: StreamedGame) => void,
-  onMove: (data: StreamedMove) => void,
-  onComplete: () => void,
-  abortSignal?: AbortSignal,
-) => {
-  const stream = fetch(`https://lichess.org/api/stream/game/${gameId}`, {
-    signal: abortSignal,
-    headers: {
-      Accept: 'application/x-ndjson',
-    },
-  })
-
-  const onMessage = (message: any) => {
-    if (message.id) {
-      onGameInfo(message as StreamedGame)
-    } else if (message.uci || message.lm) {
-      onMove({
-        fen: message.fen,
-        uci: message.uci || message.lm,
-        wc: message.wc,
-        bc: message.bc,
+          return loop()
+        }
       })
-    } else {
-      console.log('Unknown message format:', message)
-    }
+
+    return loop()
   }
 
-  try {
-    const response = await stream
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    if (!response.body) {
-      throw new Error('No response body')
-    }
-
-    await readStream(onMessage)(response).then(onComplete)
-  } catch (error) {
-    if (abortSignal?.aborted) {
-      console.log('Stream aborted')
-    } else {
-      console.error('Stream error:', error)
-      throw error
-    }
-  }
-}
-
-export const createAnalyzedGameFromLichessStream = (
-  gameData: any,
-): LiveGame => {
+export const convertLichessStreamToLiveGame = (gameData: any): LiveGame => {
   const { players, id } = gameData
 
   const whitePlayer: Player = {
@@ -164,7 +82,7 @@ export const createAnalyzedGameFromLichessStream = (
   } as LiveGame
 }
 
-export const parseLichessStreamMove = (
+export const handleLichessStreamMove = (
   moveData: StreamedMove,
   currentGame: LiveGame,
 ) => {
@@ -174,8 +92,7 @@ export const parseLichessStreamMove = (
     return currentGame
   }
 
-  // Convert UCI to SAN notation using chess.js
-  let san = uci // Fallback to UCI
+  let san = uci
   try {
     // Get the position before this move by finding the last node in the tree
     let beforeMoveNode = currentGame.tree.getRoot()
