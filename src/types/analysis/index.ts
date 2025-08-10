@@ -1,6 +1,18 @@
-import { Game } from '../base'
-import { AvailableMoves } from '../training'
 import Maia from 'src/lib/engine/maia'
+import { AvailableMoves } from '../training'
+import { Game, GameNode, GameTree } from '../base'
+
+export interface BaseTreeControllerContext {
+  gameTree: GameTree
+  currentNode: GameNode
+  goToNode: (node: GameNode) => void
+  goToNextNode: () => void
+  goToPreviousNode: () => void
+  goToRootNode: () => void
+  plyCount: number
+  orientation: 'white' | 'black'
+  setOrientation: (orientation: 'white' | 'black') => void
+}
 
 export interface MaiaEngine {
   maia?: Maia

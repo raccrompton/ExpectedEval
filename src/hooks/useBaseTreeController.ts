@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { BaseTreeControllerContext } from 'src/contexts/BaseTreeControllerContext'
+import { BaseTreeControllerContext } from 'src/types'
 import { TreeControllerContext } from 'src/contexts/TreeControllerContext'
 import { PlayControllerContext } from 'src/contexts/PlayControllerContext'
 import { TuringControllerContext } from 'src/contexts/TuringTreeControllerContext'

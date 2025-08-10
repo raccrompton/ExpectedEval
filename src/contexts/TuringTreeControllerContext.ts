@@ -1,9 +1,8 @@
 import { Chess } from 'chess.ts'
 import { createContext } from 'react'
-import { GameTree, Color, GameNode } from 'src/types'
 import { TuringGame } from 'src/types/turing'
 import { AllStats } from 'src/hooks/useStats'
-import { BaseTreeControllerContext } from './BaseTreeControllerContext'
+import { GameTree, Color, BaseTreeControllerContext } from 'src/types'
 
 export interface ITuringControllerContext extends BaseTreeControllerContext {
   game?: TuringGame
