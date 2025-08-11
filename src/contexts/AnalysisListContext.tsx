@@ -73,7 +73,7 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
 
         const game: MaiaGameListEntry = {
           id: data.id,
-          type: 'pgn',
+          type: 'lichess',
           label: `${data.players.white.user?.id || 'Unknown'} vs. ${data.players.black.user?.id || 'Unknown'}`,
           result: result,
           pgn: data.pgn,

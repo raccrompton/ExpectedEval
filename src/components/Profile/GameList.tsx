@@ -120,7 +120,7 @@ export const GameList = ({
           id: data.id,
           label: `${data.players.white.user?.id || 'Unknown'} vs. ${data.players.black.user?.id || 'Unknown'}`,
           result: result,
-          type: 'pgn',
+          type: 'lichess',
         }
 
         setGames((x) => [...x, game])
@@ -150,7 +150,7 @@ export const GameList = ({
               // Handle favorites response format
               parsedGames = data.games.map((game: any) => ({
                 id: game.game_id || game.id,
-                type: game.game_type || game.type || 'custom-pgn',
+                type: game.game_type || game.type,
                 label: game.custom_name || game.label || 'Untitled',
                 result: game.result || '*',
                 pgn: game.pgn,

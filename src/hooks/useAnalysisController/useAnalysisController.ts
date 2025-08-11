@@ -91,13 +91,7 @@ export const useAnalysisController = (
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const saveAnalysisToBackend = useCallback(async () => {
-    if (
-      !enableAutoSave ||
-      !game.id ||
-      game.type === 'custom-pgn' ||
-      game.type === 'custom-fen' ||
-      game.type === 'tournament'
-    ) {
+    if (!enableAutoSave || !game.id || game.type === 'tournament') {
       return
     }
 

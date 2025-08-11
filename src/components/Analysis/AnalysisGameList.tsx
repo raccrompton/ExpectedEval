@@ -33,22 +33,18 @@ interface GameData {
 
 interface AnalysisGameListProps {
   currentId: string[] | null
-  loadNewTournamentGame: (
+  loadNewWorldChampionshipGame: (
     newId: string[],
     setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
-  loadNewLichessGames: (
+  loadNewLichessGame: (
     id: string,
     pgn: string,
     setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
-  loadNewUserGames: (
+  loadNewMaiaGame: (
     id: string,
     type: 'play' | 'hand' | 'brain',
-    setCurrentMove?: Dispatch<SetStateAction<number>>,
-  ) => Promise<void>
-  loadNewCustomGame: (
-    id: string,
     setCurrentMove?: Dispatch<SetStateAction<number>>,
   ) => Promise<void>
   onCustomAnalysis?: () => void
@@ -58,10 +54,10 @@ interface AnalysisGameListProps {
 
 export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   currentId,
-  loadNewTournamentGame,
   onCustomAnalysis,
   onGameSelected,
   refreshTrigger,
+  loadNewWorldChampionshipGame,
 }) => {
   const router = useRouter()
   const { analysisLichessList, analysisTournamentList } =
@@ -215,7 +211,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
               // Handle favorites response format
               parsedGames = data.games.map((game: any) => ({
                 id: game.game_id || game.id,
-                type: game.game_type || game.type || 'custom-pgn',
+                type: game.game_type || game.type,
                 label: game.custom_name || game.label || 'Untitled',
                 result: game.result || '*',
                 pgn: game.pgn,
@@ -223,14 +219,12 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                 custom_name: game.custom_name,
               }))
             } else {
-              // Handle regular games response format
-
               if (selected === 'custom') {
                 parsedGames = data.games.map((game: any) => ({
                   id: game.id,
                   label: game.name || 'Custom Game',
                   result: '*',
-                  type: game.pgn ? 'custom-pgn' : 'custom-fen',
+                  type: 'custom',
                   pgn: game.pgn,
                 }))
               } else {
@@ -703,7 +697,6 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                       selectedGameElement={
                         selectedGameElement as React.RefObject<HTMLButtonElement>
                       }
-                      loadNewTournamentGame={loadNewTournamentGame}
                       analysisTournamentList={analysisTournamentList}
                     />
                   ))}
@@ -713,7 +706,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                   {getCurrentGames().map((game, index) => {
                     const selectedGame = currentId && currentId[0] === game.id
                     const isFavorited = (game as any).is_favorited || false
-                    const displayName = game.label // This now contains the custom name if favorited
+                    const displayName = game.label
                     return (
                       <div
                         key={index}
@@ -733,8 +726,8 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                         <button
                           onClick={() => {
                             setLoadingIndex(index)
-                            if (game.type === 'pgn') {
-                              router.push(`/analysis/${game.id}/pgn`)
+                            if (game.type === 'lichess') {
+                              router.push(`/analysis/${game.id}/lichess`)
                             } else if (game.type === 'custom') {
                               router.push(`/analysis/${game.id}/custom`)
                             } else {

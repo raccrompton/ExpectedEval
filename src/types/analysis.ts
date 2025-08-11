@@ -57,12 +57,11 @@ export interface CachedEngineAnalysisEntry {
 
 type EvaluationType =
   | 'tournament'
-  | 'pgn'
+  | 'lichess'
   | 'play'
   | 'hand'
   | 'brain'
-  | 'custom-pgn'
-  | 'custom-fen'
+  | 'custom'
   | 'stream'
 
 export interface WorldChampionshipGameListEntry {
@@ -78,7 +77,14 @@ export interface WorldChampionshipGameListEntry {
 
 export interface MaiaGameListEntry {
   id: string
-  type: 'tournament' | 'pgn' | 'play' | 'hand' | 'brain' | 'stream'
+  type:
+    | 'tournament'
+    | 'lichess'
+    | 'play'
+    | 'hand'
+    | 'brain'
+    | 'custom'
+    | 'stream'
   label: string
   result: string
   pgn?: string

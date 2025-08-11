@@ -34,8 +34,6 @@ export const ConfigureAnalysis: React.FC<Props> = ({
   isLearnFromMistakesActive = false,
   autoSave,
 }: Props) => {
-  const isCustomGame = game.type === 'custom-pgn' || game.type === 'custom-fen'
-
   return (
     <div className="flex w-full flex-col items-start justify-start gap-1 p-3">
       <div className="flex w-full flex-col gap-0.5">
@@ -90,44 +88,41 @@ export const ConfigureAnalysis: React.FC<Props> = ({
           </div>
         </button>
       )}
-      {autoSave &&
-        game.type !== 'custom-pgn' &&
-        game.type !== 'custom-fen' &&
-        game.type !== 'tournament' && (
-          <div className="mt-2 w-full">
-            <div className="flex items-center gap-1.5">
-              {autoSave.status === 'saving' && (
-                <>
-                  <div className="h-2 w-2 animate-spin rounded-full border border-secondary border-t-primary"></div>
-                  <span className="text-xs text-secondary">
-                    Saving analysis...
-                  </span>
-                </>
-              )}
-              {autoSave.status === 'unsaved' && (
-                <>
-                  <span className="material-symbols-outlined !text-sm text-orange-400">
-                    sync_problem
-                  </span>
-                  <span className="text-xs text-orange-400">
-                    Unsaved analysis. Will auto-save...
-                  </span>
-                </>
-              )}
-              {autoSave.status === 'saved' && (
-                <>
-                  <span className="material-symbols-outlined !text-sm text-green-400">
-                    cloud_done
-                  </span>
-                  <span className="text-xs text-green-400">
-                    Analysis auto-saved
-                  </span>
-                </>
-              )}
-            </div>
+      {autoSave && game.type !== 'tournament' && (
+        <div className="mt-2 w-full">
+          <div className="flex items-center gap-1.5">
+            {autoSave.status === 'saving' && (
+              <>
+                <div className="h-2 w-2 animate-spin rounded-full border border-secondary border-t-primary"></div>
+                <span className="text-xs text-secondary">
+                  Saving analysis...
+                </span>
+              </>
+            )}
+            {autoSave.status === 'unsaved' && (
+              <>
+                <span className="material-symbols-outlined !text-sm text-orange-400">
+                  sync_problem
+                </span>
+                <span className="text-xs text-orange-400">
+                  Unsaved analysis. Will auto-save...
+                </span>
+              </>
+            )}
+            {autoSave.status === 'saved' && (
+              <>
+                <span className="material-symbols-outlined !text-sm text-green-400">
+                  cloud_done
+                </span>
+                <span className="text-xs text-green-400">
+                  Analysis auto-saved
+                </span>
+              </>
+            )}
           </div>
-        )}
-      {isCustomGame && onDeleteCustomGame && (
+        </div>
+      )}
+      {game.type === 'custom' && onDeleteCustomGame && (
         <div className="mt-2 w-full">
           <button
             onClick={onDeleteCustomGame}

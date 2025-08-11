@@ -77,13 +77,8 @@ const AnalysisPage: NextPage = () => {
   }, [initialTourCheck, startTour, tourState.ready])
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
 
-  const loadStoredAnalysis = useCallback(async (game: AnalyzedGame) => {
-    if (
-      !game.id ||
-      game.type === 'custom-pgn' ||
-      game.type === 'custom-fen' ||
-      game.type === 'tournament'
-    ) {
+  const loadGameAnalysisCache = useCallback(async (game: AnalyzedGame) => {
+    if (!game.id || game.type === 'tournament') {
       return
     }
 
@@ -91,18 +86,13 @@ const AnalysisPage: NextPage = () => {
       const storedAnalysis = await retrieveGameAnalysisCache(game.id)
       if (storedAnalysis && storedAnalysis.positions.length > 0) {
         applyEngineAnalysisData(game.tree, storedAnalysis.positions)
-        console.log(
-          'Loaded stored analysis:',
-          storedAnalysis.positions.length,
-          'positions',
-        )
       }
     } catch (error) {
       console.warn('Failed to load stored analysis:', error)
     }
   }, [])
 
-  const getAndSetTournamentGame = useCallback(
+  const getAndSetWorldChampionshipGame = useCallback(
     async (
       newId: string[],
       setCurrentMove?: Dispatch<SetStateAction<number>>,
@@ -127,7 +117,7 @@ const AnalysisPage: NextPage = () => {
         })
       }
     },
-    [router, loadStoredAnalysis],
+    [router, loadGameAnalysisCache],
   )
 
   const getAndSetLichessGame = useCallback(
@@ -137,52 +127,39 @@ const AnalysisPage: NextPage = () => {
       setCurrentMove?: Dispatch<SetStateAction<number>>,
       updateUrl = true,
     ) => {
-      let game
-      try {
-        game = await fetchAnalyzedPgnGame(id, pgn)
-      } catch (e) {
-        router.push('/401')
-        return
-      }
+      const game = await fetchAnalyzedPgnGame(id, pgn)
+
       if (setCurrentMove) setCurrentMove(0)
 
       setAnalyzedGame({
         ...game,
-        type: 'pgn',
+        type: 'lichess',
       })
-      setCurrentId([id, 'pgn'])
+      setCurrentId([id, 'lichess'])
 
-      // Load stored analysis
-      await loadStoredAnalysis({ ...game, type: 'pgn' })
+      await loadGameAnalysisCache({ ...game, type: 'lichess' })
 
       if (updateUrl) {
-        router.push(`/analysis/${id}/pgn`, undefined, { shallow: true })
+        router.push(`/analysis/${id}/lichess`, undefined, { shallow: true })
       }
     },
-    [router, loadStoredAnalysis],
+    [router, loadGameAnalysisCache],
   )
 
   const getAndSetUserGame = useCallback(
     async (
       id: string,
-      type: 'play' | 'hand' | 'brain',
+      type: 'play' | 'hand' | 'brain' | 'custom',
       setCurrentMove?: Dispatch<SetStateAction<number>>,
       updateUrl = true,
     ) => {
-      let game
-      try {
-        game = await fetchAnalyzedMaiaGame(id, type)
-      } catch (e) {
-        router.push('/401')
-        return
-      }
+      const game = await fetchAnalyzedMaiaGame(id, type)
+
       if (setCurrentMove) setCurrentMove(0)
 
       setAnalyzedGame({ ...game, type })
       setCurrentId([id, type])
-
-      // Load stored analysis
-      await loadStoredAnalysis({ ...game, type })
+      await loadGameAnalysisCache({ ...game, type })
 
       if (updateUrl) {
         router.push(`/analysis/${id}/${type}`, undefined, {
@@ -190,7 +167,7 @@ const AnalysisPage: NextPage = () => {
         })
       }
     },
-    [router, loadStoredAnalysis],
+    [router, loadGameAnalysisCache],
   )
 
   useEffect(() => {
@@ -202,25 +179,25 @@ const AnalysisPage: NextPage = () => {
         !analyzedGame || currentId.join('/') !== queryId.join('/')
 
       if (needsNewGame) {
-        if (queryId[1] === 'pgn') {
+        if (queryId[1] === 'lichess') {
           const pgn = await fetchPgnOfLichessGame(queryId[0])
           getAndSetLichessGame(queryId[0], pgn, undefined, false)
-        } else if (['play', 'hand', 'brain'].includes(queryId[1])) {
+        } else if (['play', 'hand', 'brain', 'custom'].includes(queryId[1])) {
           getAndSetUserGame(
             queryId[0],
-            queryId[1] as 'play' | 'hand' | 'brain',
+            queryId[1] as 'play' | 'hand' | 'brain' | 'custom',
             undefined,
             false,
           )
         } else {
-          getAndSetTournamentGame(queryId, undefined, false)
+          getAndSetWorldChampionshipGame(queryId, undefined, false)
         }
       }
     })()
   }, [
     id,
     analyzedGame,
-    getAndSetTournamentGame,
+    getAndSetWorldChampionshipGame,
     getAndSetLichessGame,
     getAndSetUserGame,
   ])
@@ -231,7 +208,7 @@ const AnalysisPage: NextPage = () => {
         <Analysis
           currentId={currentId}
           analyzedGame={analyzedGame}
-          getAndSetTournamentGame={getAndSetTournamentGame}
+          getAndSetTournamentGame={getAndSetWorldChampionshipGame}
           getAndSetLichessGame={getAndSetLichessGame}
           getAndSetUserGame={getAndSetUserGame}
           router={router}
@@ -262,7 +239,7 @@ interface Props {
   ) => Promise<void>
   getAndSetUserGame: (
     id: string,
-    type: 'play' | 'hand' | 'brain',
+    type: 'play' | 'hand' | 'brain' | 'custom',
     setCurrentMove?: Dispatch<SetStateAction<number>>,
     updateUrl?: boolean,
   ) => Promise<void>
@@ -278,17 +255,6 @@ const Analysis: React.FC<Props> = ({
 
   router,
 }: Props) => {
-  const screens = [
-    {
-      id: 'configure',
-      name: 'Configure',
-    },
-    {
-      id: 'export',
-      name: 'Export',
-    },
-  ]
-
   const { width } = useContext(WindowSizeContext)
   const isMobile = useMemo(() => width > 0 && width <= 670, [width])
   const [hoverArrow, setHoverArrow] = useState<DrawShape | null>(null)
@@ -299,7 +265,7 @@ const Analysis: React.FC<Props> = ({
   const [showCustomModal, setShowCustomModal] = useState(false)
   const [showAnalysisConfigModal, setShowAnalysisConfigModal] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
-  const [analysisEnabled, setAnalysisEnabled] = useState(true) // Analysis enabled by default
+  const [analysisEnabled, setAnalysisEnabled] = useState(true)
   const [lastMoveResult, setLastMoveResult] = useState<
     'correct' | 'incorrect' | 'not-learning'
   >('not-learning')
@@ -669,13 +635,13 @@ const Analysis: React.FC<Props> = ({
           <div className="flex max-h-[25vh] min-h-[25vh] flex-col bg-backdrop/30">
             <AnalysisGameList
               currentId={currentId}
-              loadNewTournamentGame={(newId, setCurrentMove) =>
+              loadNewWorldChampionshipGame={(newId, setCurrentMove) =>
                 getAndSetTournamentGame(newId, setCurrentMove)
               }
-              loadNewLichessGames={(id, pgn, setCurrentMove) =>
+              loadNewLichessGame={(id, pgn, setCurrentMove) =>
                 getAndSetLichessGame(id, pgn, setCurrentMove)
               }
-              loadNewUserGames={(id, type, setCurrentMove) =>
+              loadNewMaiaGame={(id, type, setCurrentMove) =>
                 getAndSetUserGame(id, type, setCurrentMove)
               }
               onCustomAnalysis={() => setShowCustomModal(true)}
@@ -882,17 +848,17 @@ const Analysis: React.FC<Props> = ({
             <div className="flex h-[calc(100vh-10rem)] w-full flex-col overflow-hidden rounded bg-backdrop/30">
               <AnalysisGameList
                 currentId={currentId}
-                loadNewTournamentGame={(newId, setCurrentMove) =>
+                loadNewWorldChampionshipGame={(newId, setCurrentMove) =>
                   loadGameAndCloseList(
                     getAndSetTournamentGame(newId, setCurrentMove),
                   )
                 }
-                loadNewLichessGames={(id, pgn, setCurrentMove) =>
+                loadNewLichessGame={(id, pgn, setCurrentMove) =>
                   loadGameAndCloseList(
                     getAndSetLichessGame(id, pgn, setCurrentMove),
                   )
                 }
-                loadNewUserGames={(id, type, setCurrentMove) =>
+                loadNewMaiaGame={(id, type, setCurrentMove) =>
                   loadGameAndCloseList(
                     getAndSetUserGame(id, type, setCurrentMove),
                   )

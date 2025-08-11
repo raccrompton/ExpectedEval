@@ -15,19 +15,17 @@ const STORAGE_KEY = 'maia_favorite_games'
 
 const mapGameTypeToApiType = (
   gameType: MaiaGameListEntry['type'],
-): 'custom' | 'play' | 'hand' | 'brain' => {
+): 'play' | 'hand' | 'brain' | 'custom' => {
   switch (gameType) {
-    case 'custom-pgn':
-    case 'custom-fen':
-      return 'custom'
     case 'play':
       return 'play'
     case 'hand':
       return 'hand'
     case 'brain':
       return 'brain'
+    case 'custom':
+      return 'custom'
     default:
-      // Default to 'custom' for other types like 'tournament', 'pgn', 'stream'
       return 'custom'
   }
 }
@@ -204,7 +202,7 @@ export const getFavoriteGames = async (): Promise<FavoriteGame[]> => {
         (game: any) =>
           ({
             id: game.id,
-            type: game.game_type || game.type || 'custom-pgn', // Use the game_type field from API
+            type: game.game_type || game.type,
             originalLabel: game.label || game.custom_name || 'Untitled',
             customName: game.custom_name || game.label || 'Untitled',
             result: game.result || '*',

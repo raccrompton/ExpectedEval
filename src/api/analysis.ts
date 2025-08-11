@@ -195,7 +195,7 @@ export const fetchAnalyzedPgnGame = async (id: string, pgn: string) => {
 
 export const fetchAnalyzedMaiaGame = async (
   id: string,
-  game_type: 'play' | 'hand' | 'brain',
+  game_type: 'play' | 'hand' | 'brain' | 'custom',
 ) => {
   const res = await fetch(
     buildUrl(

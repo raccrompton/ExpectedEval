@@ -12,10 +12,6 @@ type Props = {
   openElement: React.RefObject<HTMLDivElement>
   selectedGameElement: React.RefObject<HTMLButtonElement>
   analysisTournamentList: Map<string, WorldChampionshipGameListEntry[]>
-  loadNewTournamentGame: (
-    id: string[],
-    setCurrentMove?: Dispatch<SetStateAction<number>>,
-  ) => Promise<void>
   setCurrentMove?: Dispatch<SetStateAction<number>>
 }
 
@@ -30,8 +26,6 @@ export const Tournament = ({
   setLoadingIndex,
   selectedGameElement,
   analysisTournamentList,
-  loadNewTournamentGame,
-  setCurrentMove,
 }: Props) => {
   const router = useRouter()
   const games = analysisTournamentList.get(id)
