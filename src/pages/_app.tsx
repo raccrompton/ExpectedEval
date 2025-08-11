@@ -8,7 +8,7 @@ import posthog from 'posthog-js'
 import { Open_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import { PostHogProvider } from 'posthog-js/react'
-import { chessSoundManager } from 'src/lib/chessSoundManager'
+import { chessSoundManager } from 'src/lib/sound'
 
 import {
   AuthContextProvider,
@@ -18,8 +18,8 @@ import {
   MaiaEngineContextProvider,
   StockfishEngineContextProvider,
   SettingsProvider,
-} from 'src/providers'
-import { TourProvider as TourContextProvider } from 'src/contexts'
+  TourProvider as TourContextProvider,
+} from 'src/contexts'
 import 'src/styles/tailwind.css'
 import 'src/styles/themes.css'
 import 'react-tooltip/dist/react-tooltip.css'

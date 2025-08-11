@@ -8,7 +8,7 @@ import {
   ColorSanMapping,
   GameNode,
 } from 'src/types'
-import { cpToWinrate } from 'src/lib/stockfish'
+import { cpToWinrate } from 'src/lib/engine'
 import { MAIA_MODELS } from 'src/constants/common'
 import { WindowSizeContext } from 'src/contexts'
 

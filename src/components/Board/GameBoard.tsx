@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Chess } from 'chess.ts'
-import { chessSoundManager } from 'src/lib/chessSoundManager'
+import { chessSoundManager } from 'src/lib/sound'
 import { defaults } from 'chessground/state'
 import type { Key } from 'chessground/types'
 import Chessground from '@react-chess/chessground'

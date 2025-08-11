@@ -1,6 +1,6 @@
 import React from 'react'
 import { useSettings } from 'src/contexts/SettingsContext'
-import { useChessSoundManager } from 'src/lib/chessSoundManager'
+import { useChessSoundManager } from 'src/lib/sound'
 
 export const SoundSettings: React.FC = () => {
   const { settings, updateSetting } = useSettings()

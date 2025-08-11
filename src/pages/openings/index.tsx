@@ -41,7 +41,7 @@ import {
   getCurrentPlayer,
   getAvailableMovesArray,
   requiresPromotion,
-} from 'src/lib/train/utils'
+} from 'src/lib/puzzle'
 
 const OpeningsPage: NextPage = () => {
   const router = useRouter()

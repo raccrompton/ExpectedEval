@@ -24,7 +24,7 @@ import {
 } from 'src/types/openings'
 import { MAIA_MODELS } from 'src/constants/common'
 import { MIN_STOCKFISH_DEPTH } from 'src/constants/analysis'
-import { chessSoundManager } from 'src/lib/chessSoundManager'
+import { chessSoundManager } from 'src/lib/sound'
 
 interface CachedAnalysisResult {
   fen: string

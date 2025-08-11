@@ -5,7 +5,7 @@ import { backOff } from 'exponential-backoff'
 import { useStats } from 'src/hooks/useStats'
 import { usePlayController } from 'src/hooks/usePlayController'
 import { fetchGameMove, logGameMove, fetchPlayPlayerStats } from 'src/api'
-import { chessSoundManager } from 'src/lib/chessSoundManager'
+import { chessSoundManager } from 'src/lib/sound'
 import { safeUpdateRating } from 'src/lib/ratingUtils'
 
 const playStatsLoader = async () => {

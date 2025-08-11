@@ -94,7 +94,6 @@ export const handleLichessStreamMove = (
 
   let san = uci
   try {
-    // Get the position before this move by finding the last node in the tree
     let beforeMoveNode = currentGame.tree.getRoot()
     while (beforeMoveNode.mainChild) {
       beforeMoveNode = beforeMoveNode.mainChild
@@ -112,22 +111,8 @@ export const handleLichessStreamMove = (
     }
   } catch (error) {
     console.warn('Could not convert UCI to SAN:', error)
-    // Keep UCI as fallback
   }
 
-  // Create new move object
-  const newMove = {
-    board: fen,
-    lastMove: [uci.slice(0, 2), uci.slice(2, 4)] as [string, string],
-    san: san,
-    check: false as const, // We'd need to calculate this from the FEN
-    maia_values: {},
-  }
-
-  // Add to moves array
-  const updatedMoves = [...currentGame.moves, newMove]
-
-  // Add to tree mainline - find the last node in the main line
   let currentNode = currentGame.tree.getRoot()
   while (currentNode.mainChild) {
     currentNode = currentNode.mainChild
@@ -137,23 +122,13 @@ export const handleLichessStreamMove = (
     currentGame.tree.addMainMove(currentNode, fen, uci, san)
   } catch (error) {
     console.error('Error adding move to tree:', error)
-    // Return current game if tree update fails
     return currentGame
   }
 
-  // Update available moves and evaluations arrays
   const updatedAvailableMoves = [...currentGame.availableMoves, {}]
-  const updatedMaiaEvaluations = [...currentGame.maiaEvaluations, {}]
-  const updatedStockfishEvaluations = [
-    ...currentGame.stockfishEvaluations,
-    undefined,
-  ] as (StockfishEvaluation | undefined)[]
 
   return {
     ...currentGame,
-    moves: updatedMoves,
     availableMoves: updatedAvailableMoves,
-    maiaEvaluations: updatedMaiaEvaluations,
-    stockfishEvaluations: updatedStockfishEvaluations,
   }
 }

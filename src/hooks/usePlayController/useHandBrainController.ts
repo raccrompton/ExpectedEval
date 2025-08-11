@@ -8,7 +8,7 @@ import { PlayGameConfig } from 'src/types'
 import { useStats } from 'src/hooks/useStats'
 import { usePlayController } from './usePlayController'
 import { fetchGameMove, logGameMove, fetchPlayPlayerStats } from 'src/api'
-import { chessSoundManager } from 'src/lib/chessSoundManager'
+import { chessSoundManager } from 'src/lib/sound'
 import { safeUpdateRating } from 'src/lib/ratingUtils'
 
 const brainStatsLoader = async () => {

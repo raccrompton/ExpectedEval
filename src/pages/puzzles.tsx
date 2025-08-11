@@ -48,15 +48,14 @@ import { useTrainingController } from 'src/hooks/useTrainingController'
 import { useAnalysisController } from 'src/hooks/useAnalysisController'
 import { AllStats, useStats } from 'src/hooks/useStats'
 import { PuzzleGame, Status } from 'src/types/puzzle'
-import { MaiaEvaluation, StockfishEvaluation } from 'src/types'
+import { AnalyzedGame, MaiaEvaluation, StockfishEvaluation } from 'src/types'
 import { WindowSizeContext, useTour } from 'src/contexts'
 import { TrainingControllerContext } from 'src/contexts/TrainingControllerContext'
 import {
-  convertTrainingGameToAnalyzedGame,
   getCurrentPlayer,
   getAvailableMovesArray,
   requiresPromotion,
-} from 'src/lib/train/utils'
+} from 'src/lib/puzzle'
 import { tourConfigs } from 'src/constants/tours'
 
 const statsLoader = async () => {
@@ -299,7 +298,7 @@ const Train: React.FC<Props> = ({
   const controller = useTrainingController(trainingGame)
 
   const analyzedGame = useMemo(() => {
-    return convertTrainingGameToAnalyzedGame(trainingGame)
+    return { ...trainingGame, type: 'play', availableMoves: [] } as AnalyzedGame
   }, [trainingGame])
 
   const analysisController = useAnalysisController(
