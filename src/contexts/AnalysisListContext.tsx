@@ -14,6 +14,7 @@ interface IAnalysisListContext {
   analysisPlayList: MaiaGameListEntry[]
   analysisHandList: MaiaGameListEntry[]
   analysisBrainList: MaiaGameListEntry[]
+  analysisCustomList: MaiaGameListEntry[]
 }
 
 export const AnalysisListContext = React.createContext<IAnalysisListContext>({
@@ -22,6 +23,7 @@ export const AnalysisListContext = React.createContext<IAnalysisListContext>({
   analysisPlayList: [],
   analysisHandList: [],
   analysisBrainList: [],
+  analysisCustomList: [],
 })
 
 export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
@@ -46,6 +48,9 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
     [],
   )
   const [analysisBrainList, setAnalysisBrainList] = useState<
+    MaiaGameListEntry[]
+  >([])
+  const [analysisCustomList, setAnalysisCustomList] = useState<
     MaiaGameListEntry[]
   >([])
 
@@ -89,43 +94,49 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
       const playRequest = fetchMaiaGameList('play', 1)
       const handRequest = fetchMaiaGameList('hand', 1)
       const brainRequest = fetchMaiaGameList('brain', 1)
+      const customRequest = fetchMaiaGameList('custom', 1)
 
-      Promise.all([playRequest, handRequest, brainRequest]).then((data) => {
-        const [play, hand, brain] = data
+      Promise.all([playRequest, handRequest, brainRequest, customRequest]).then(
+        (data) => {
+          const [play, hand, brain, custom] = data
 
-        const parse = (
-          game: {
-            game_id: string
-            maia_name: string
-            result: string
-            player_color: 'white' | 'black'
-          },
-          type: string,
-        ) => {
-          const raw = game.maia_name.replace('_kdd_', ' ')
-          const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
+          const parse = (
+            game: {
+              game_id: string
+              maia_name: string
+              result: string
+              player_color: 'white' | 'black'
+            },
+            type: 'play' | 'hand' | 'brain' | 'custom',
+          ) => {
+            const raw = game.maia_name.replace('_kdd_', ' ')
+            const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
 
-          return {
-            id: game.game_id,
-            label:
-              game.player_color === 'white'
-                ? `You vs. ${maia}`
-                : `${maia} vs. You`,
-            result: game.result,
-            type,
+            return {
+              id: game.game_id,
+              label:
+                game.player_color === 'white'
+                  ? `You vs. ${maia}`
+                  : `${maia} vs. You`,
+              result: game.result,
+              type,
+            }
           }
-        }
 
-        setAnalysisPlayList(
-          play.games.map((game: never) => parse(game, 'play')),
-        )
-        setAnalysisHandList(
-          hand.games.map((game: never) => parse(game, 'hand')),
-        )
-        setAnalysisBrainList(
-          brain.games.map((game: never) => parse(game, 'brain')),
-        )
-      })
+          setAnalysisPlayList(
+            play.games.map((game: never) => parse(game, 'play')),
+          )
+          setAnalysisHandList(
+            hand.games.map((game: never) => parse(game, 'hand')),
+          )
+          setAnalysisBrainList(
+            brain.games.map((game: never) => parse(game, 'brain')),
+          )
+          setAnalysisCustomList(
+            custom.games.map((game: never) => parse(game, 'custom')),
+          )
+        },
+      )
     }
   }, [user?.lichessId])
 
@@ -137,6 +148,7 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
         analysisPlayList,
         analysisHandList,
         analysisBrainList,
+        analysisCustomList,
       }}
     >
       {children}

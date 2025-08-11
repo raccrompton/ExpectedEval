@@ -205,10 +205,10 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
 
         fetchMaiaGameList(selected, currentPage)
           .then((data) => {
+            console.log(data)
             let parsedGames: MaiaGameListEntry[] = []
 
             if (selected === 'favorites') {
-              // Handle favorites response format
               parsedGames = data.games.map((game: any) => ({
                 id: game.game_id || game.id,
                 type: game.game_type || game.type,
@@ -221,11 +221,12 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
             } else {
               if (selected === 'custom') {
                 parsedGames = data.games.map((game: any) => ({
-                  id: game.id,
-                  label: game.name || 'Custom Game',
-                  result: '*',
+                  id: game.game_id || game.id,
                   type: 'custom',
-                  pgn: game.pgn,
+                  label: game.custom_name || 'Custom Game',
+                  result: game.result || '*',
+                  is_favorited: game.is_favorited,
+                  custom_name: game.custom_name,
                 }))
               } else {
                 const parse = (
@@ -242,7 +243,6 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                   const raw = game.maia_name.replace('_kdd_', ' ')
                   const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
 
-                  // Use custom name if available, otherwise generate default label
                   const defaultLabel =
                     game.player_color === 'white'
                       ? `You vs. ${maia}`
@@ -279,7 +279,6 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
               },
             }))
 
-            // Update favoritedGameIds from the actual games data
             const favoritedIds = new Set<string>(
               parsedGames
                 .filter((game: any) => game.is_favorited)
@@ -303,7 +302,6 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     }
   }, [selected, currentPage, fetchedCache])
 
-  // Separate useEffect for H&B subsections
   useEffect(() => {
     if (selected === 'hb') {
       const gameType = hbSubsection === 'hand' ? 'hand' : 'brain'
@@ -333,7 +331,6 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
               const raw = game.maia_name.replace('_kdd_', ' ')
               const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
 
-              // Use custom name if available, otherwise generate default label
               const defaultLabel =
                 game.player_color === 'white'
                   ? `You vs. ${maia}`
@@ -368,7 +365,6 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
               },
             }))
 
-            // Update favoritedGameIds from the actual games data
             const favoritedIds = new Set<string>(
               parsedGames
                 .filter((game: any) => game.is_favorited)
@@ -488,7 +484,6 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
       setFavoriteGames(updatedFavorites)
       setFavoritedGameIds(new Set(updatedFavorites.map((f) => f.id)))
 
-      // Clear favorites cache to force re-fetch
       setFetchedCache((prev) => ({
         ...prev,
         favorites: {},
@@ -498,7 +493,6 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
         favorites: {},
       }))
 
-      // Also clear current section cache to show updated favorite status
       if (selected !== 'favorites') {
         const currentSection =
           selected === 'hb'
@@ -707,6 +701,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                     const selectedGame = currentId && currentId[0] === game.id
                     const isFavorited = (game as any).is_favorited || false
                     const displayName = game.label
+                    // console.log(game)
                     return (
                       <div
                         key={index}

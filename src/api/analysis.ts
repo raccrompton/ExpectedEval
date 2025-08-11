@@ -15,6 +15,7 @@ import {
 } from 'src/lib'
 import { buildUrl } from './utils'
 import { AvailableMoves } from 'src/types/puzzle'
+import { Chess } from 'chess.ts'
 
 export const fetchWorldChampionshipGameList = async (): Promise<
   Map<string, WorldChampionshipGameListEntry[]>
@@ -260,7 +261,10 @@ export const fetchAnalyzedMaiaGame = async (
   const gameStates = data['game_states']
 
   const moves = buildMovesListFromGameStates(gameStates)
-  const tree = buildGameTreeFromMoveList(moves, moves[0].board)
+  const tree = buildGameTreeFromMoveList(
+    moves,
+    moves.length ? moves[0].board : new Chess().fen(),
+  )
 
   return {
     id,
