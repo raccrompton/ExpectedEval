@@ -1,4 +1,3 @@
-export * from './colours'
 export * from './math'
 export * from './analysis'
 export * from './stockfish'
