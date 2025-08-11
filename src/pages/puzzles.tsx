@@ -48,7 +48,7 @@ import {
 import { useTrainingController } from 'src/hooks/useTrainingController'
 import { useAnalysisController } from 'src/hooks/useAnalysisController'
 import { AllStats, useStats } from 'src/hooks/useStats'
-import { TrainingGame, Status } from 'src/types/training'
+import { PuzzleGame, Status } from 'src/types/puzzle'
 import { MaiaEvaluation, StockfishEvaluation } from 'src/types'
 import { ModalContext, WindowSizeContext, useTour } from 'src/contexts'
 import { TrainingControllerContext } from 'src/contexts/TrainingControllerContext'
@@ -74,13 +74,13 @@ const TrainPage: NextPage = () => {
   const router = useRouter()
   const { startTour, tourState } = useTour()
 
-  const [trainingGames, setTrainingGames] = useState<TrainingGame[]>([])
+  const [trainingGames, setTrainingGames] = useState<PuzzleGame[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [status, setStatus] = useState<Status>('default')
   const [stats, incrementStats, updateRating] = useStats(statsLoader)
   const [userGuesses, setUserGuesses] = useState<string[]>([])
   const [previousGameResults, setPreviousGameResults] = useState<
-    (TrainingGame & { result?: boolean; ratingDiff?: number })[]
+    (PuzzleGame & { result?: boolean; ratingDiff?: number })[]
   >([])
   const [initialTourCheck, setInitialTourCheck] = useState(false)
   const [loadingGame, setLoadingGame] = useState(false)
@@ -269,7 +269,7 @@ const TrainPage: NextPage = () => {
 }
 
 interface Props {
-  trainingGame: TrainingGame
+  trainingGame: PuzzleGame
   gamesController: React.ReactNode
   stats: AllStats
   status: Status

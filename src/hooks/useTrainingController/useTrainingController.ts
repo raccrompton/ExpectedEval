@@ -1,10 +1,10 @@
 import { Chess } from 'chess.ts'
 import { GameTree } from 'src/types'
-import { TrainingGame } from 'src/types/training'
+import { PuzzleGame } from 'src/types/puzzle'
 import { useMemo, useCallback, useEffect } from 'react'
 import { useTreeController } from '../useTreeController'
 
-const buildTrainingGameTree = (game: TrainingGame): GameTree => {
+const buildTrainingGameTree = (game: PuzzleGame): GameTree => {
   if (!game.moves || game.moves.length === 0) {
     return new GameTree(new Chess().fen())
   }
@@ -28,7 +28,7 @@ const buildTrainingGameTree = (game: TrainingGame): GameTree => {
   return tree
 }
 
-export const useTrainingController = (game: TrainingGame) => {
+export const useTrainingController = (game: PuzzleGame) => {
   const gameTree = useMemo(() => buildTrainingGameTree(game), [game])
   const initialOrientation = useMemo(() => {
     const puzzleFen = game.moves[game.targetIndex].board

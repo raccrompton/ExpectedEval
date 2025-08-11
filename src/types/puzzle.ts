@@ -4,7 +4,7 @@ export interface AvailableMoves {
   [fromTo: string]: Move
 }
 
-export interface TrainingGame extends Game {
+export interface PuzzleGame extends Game {
   puzzle_elo: number
   stockfishEvaluation: MoveMap
   maiaEvaluation: MoveMap

@@ -29,14 +29,4 @@ export interface Game extends BaseGame {
   termination?: Termination
 }
 
-export interface DataNode {
-  x: number
-  y: number
-  nx: number
-  san?: string
-  move: string
-}
-
 export type Color = 'white' | 'black'
-
-export type SetIndexFunction = (index: number) => void

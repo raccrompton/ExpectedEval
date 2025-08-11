@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router'
 import { AuthContext } from 'src/contexts'
 import React, { ReactNode, useContext, useEffect, useState } from 'react'
-import { AnalysisWebGame, AnalysisTournamentGame } from 'src/types'
+import { MaiaGameEntry, WorldChampionshipGameEntry } from 'src/types'
 import {
   fetchWorldChampionshipGameList,
   streamLichessGames,
@@ -9,11 +9,11 @@ import {
 } from 'src/api'
 
 interface IAnalysisListContext {
-  analysisTournamentList: Map<string, AnalysisTournamentGame[]> | null
-  analysisLichessList: AnalysisWebGame[]
-  analysisPlayList: AnalysisWebGame[]
-  analysisHandList: AnalysisWebGame[]
-  analysisBrainList: AnalysisWebGame[]
+  analysisTournamentList: Map<string, WorldChampionshipGameEntry[]> | null
+  analysisLichessList: MaiaGameEntry[]
+  analysisPlayList: MaiaGameEntry[]
+  analysisHandList: MaiaGameEntry[]
+  analysisBrainList: MaiaGameEntry[]
 }
 
 export const AnalysisListContext = React.createContext<IAnalysisListContext>({
@@ -34,18 +34,14 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
 
   const [analysisTournamentList, setAnalysisTournamentList] = useState<Map<
     string,
-    AnalysisTournamentGame[]
+    WorldChampionshipGameEntry[]
   > | null>(null)
   const [analysisLichessList, setAnalysisLichessList] = useState<
-    AnalysisWebGame[]
+    MaiaGameEntry[]
   >([])
-  const [analysisPlayList, setAnalysisPlayList] = useState<AnalysisWebGame[]>(
-    [],
-  )
-  const [analysisHandList, setAnalysisHandList] = useState<AnalysisWebGame[]>(
-    [],
-  )
-  const [analysisBrainList, setAnalysisBrainList] = useState<AnalysisWebGame[]>(
+  const [analysisPlayList, setAnalysisPlayList] = useState<MaiaGameEntry[]>([])
+  const [analysisHandList, setAnalysisHandList] = useState<MaiaGameEntry[]>([])
+  const [analysisBrainList, setAnalysisBrainList] = useState<MaiaGameEntry[]>(
     [],
   )
 
@@ -71,7 +67,7 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
       streamLichessGames(user?.lichessId, (data) => {
         const result = data.pgn.match(/\[Result\s+"(.+?)"\]/)[1] || '?'
 
-        const game: AnalysisWebGame = {
+        const game: MaiaGameEntry = {
           id: data.id,
           type: 'pgn',
           label: `${data.players.white.user?.id || 'Unknown'} vs. ${data.players.black.user?.id || 'Unknown'}`,

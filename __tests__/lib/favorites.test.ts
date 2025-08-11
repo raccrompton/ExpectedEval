@@ -7,7 +7,7 @@ import {
   getFavoriteGame,
   getFavoritesAsWebGames,
 } from 'src/lib/favorites'
-import { AnalysisWebGame } from 'src/types'
+import { MaiaGameEntry } from 'src/types'
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -46,7 +46,7 @@ describe('favorites', () => {
     localStorageMock.clear()
   })
 
-  const mockGame: AnalysisWebGame = {
+  const mockGame: MaiaGameEntry = {
     id: 'test-game-1',
     type: 'play',
     label: 'You vs. Maia 1600',
@@ -124,7 +124,7 @@ describe('favorites', () => {
     it('should limit favorites to 100 entries', async () => {
       // Add 101 favorites
       for (let i = 0; i < 101; i++) {
-        const game: AnalysisWebGame = {
+        const game: MaiaGameEntry = {
           id: `game-${i}`,
           type: 'play',
           label: `Game ${i}`,

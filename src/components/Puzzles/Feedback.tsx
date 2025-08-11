@@ -3,11 +3,11 @@ import { useMemo, Dispatch, SetStateAction } from 'react'
 
 import { Markdown } from 'src/components'
 import { useTrainingController } from 'src/hooks'
-import { TrainingGame, Status } from 'src/types/training'
+import { PuzzleGame, Status } from 'src/types/puzzle'
 
 interface Props {
   status: string
-  game: TrainingGame
+  game: PuzzleGame
   setAndGiveUp: () => void
   getNewGame: () => Promise<void>
   setStatus: Dispatch<SetStateAction<Status>>

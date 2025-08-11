@@ -1,3 +1,24 @@
+import { AnalyzedGame } from './analysis'
+
+export interface LiveGame extends AnalyzedGame {
+  loadedFen: string
+  loaded: boolean
+}
+
+export interface LiveGameData {
+  gameId: string
+  white: {
+    name: string
+    rating?: number
+  }
+  black: {
+    name: string
+    rating?: number
+  }
+  lastMoveFen?: string
+  isLive: boolean
+}
+
 export interface StreamedGame {
   id: string
   fen: string

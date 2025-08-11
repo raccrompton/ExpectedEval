@@ -20,7 +20,7 @@ import {
   updateFavoriteName,
   isFavoriteGame,
 } from 'src/lib/favorites'
-import { AnalysisWebGame } from 'src/types'
+import { MaiaGameEntry } from 'src/types'
 import { useRouter } from 'next/router'
 
 interface GameData {
@@ -81,7 +81,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   const [loading, setLoading] = useState(false)
 
   const [gamesByPage, setGamesByPage] = useState<{
-    [gameType: string]: { [page: number]: AnalysisWebGame[] }
+    [gameType: string]: { [page: number]: MaiaGameEntry[] }
   }>({
     play: {},
     hand: {},
@@ -90,7 +90,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     custom: {},
   })
 
-  const [favoriteGames, setFavoriteGames] = useState<AnalysisWebGame[]>([])
+  const [favoriteGames, setFavoriteGames] = useState<MaiaGameEntry[]>([])
   const [favoritedGameIds, setFavoritedGameIds] = useState<Set<string>>(
     new Set(),
   )
@@ -99,7 +99,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   // Modal state for favoriting
   const [favoriteModal, setFavoriteModal] = useState<{
     isOpen: boolean
-    game: AnalysisWebGame | null
+    game: MaiaGameEntry | null
   }>({ isOpen: false, game: null })
 
   useEffect(() => {
@@ -226,7 +226,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
 
         fetchMaiaGameList(selected, currentPage)
           .then((data) => {
-            let parsedGames: AnalysisWebGame[] = []
+            let parsedGames: MaiaGameEntry[] = []
 
             if (selected === 'favorites') {
               // Handle favorites response format
@@ -463,7 +463,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     setSelected(newTab)
   }
 
-  const handleFavoriteGame = (game: AnalysisWebGame) => {
+  const handleFavoriteGame = (game: MaiaGameEntry) => {
     setFavoriteModal({ isOpen: true, game })
   }
 
@@ -541,7 +541,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
     }
   }
 
-  const handleDirectUnfavorite = async (game: AnalysisWebGame) => {
+  const handleDirectUnfavorite = async (game: MaiaGameEntry) => {
     await removeFavoriteGame(game.id, game.type)
     const updatedFavorites = await getFavoritesAsWebGames()
     setFavoriteGames(updatedFavorites)

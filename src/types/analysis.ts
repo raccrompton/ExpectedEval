@@ -1,5 +1,4 @@
-import Maia from 'src/lib/engine/maia'
-import { AvailableMoves } from './training'
+import { AvailableMoves } from './puzzle'
 import { Game, GameNode, GameTree } from './common'
 
 export interface BaseTreeControllerContext {
@@ -14,28 +13,9 @@ export interface BaseTreeControllerContext {
   setOrientation: (orientation: 'white' | 'black') => void
 }
 
-export interface MaiaEngine {
-  maia?: Maia
-  status: MaiaStatus
-  progress: number
-  downloadModel: () => void
-}
-
-export interface StockfishEngine {
-  error: string | null
-  status: StockfishStatus
-  isReady: () => boolean
-  stopEvaluation: () => void
-  streamEvaluations: (
-    fen: string,
-    moveCount: number,
-    depth?: number,
-  ) => AsyncIterable<StockfishEvaluation> | null
-}
-
 export interface MaiaEvaluation {
-  policy: { [key: string]: number }
   value: number
+  policy: { [key: string]: number }
 }
 
 export interface StockfishEvaluation {
@@ -63,7 +43,7 @@ type StockfishEvaluations<T extends EvaluationType> = T extends 'tournament'
   ? MoveMap[]
   : (StockfishEvaluation | undefined)[]
 
-export interface AnalysisTournamentGame {
+export interface WorldChampionshipGameEntry {
   game_index: number
   event: string
   site: string
@@ -74,7 +54,7 @@ export interface AnalysisTournamentGame {
   result?: string
 }
 
-export interface AnalysisWebGame {
+export interface MaiaGameEntry {
   id: string
   type:
     | 'tournament'
@@ -96,11 +76,6 @@ export interface AnalyzedGame extends Game {
   availableMoves: AvailableMoves[]
   type: EvaluationType
   pgn?: string
-}
-
-export interface LiveGame extends AnalyzedGame {
-  loadedFen: string
-  loaded: boolean
 }
 
 export interface CustomAnalysisInput {
@@ -152,15 +127,6 @@ export interface BlunderMeterResult {
   }
 }
 
-export type MaiaStatus =
-  | 'loading'
-  | 'no-cache'
-  | 'downloading'
-  | 'ready'
-  | 'error'
-
-export type StockfishStatus = 'loading' | 'ready' | 'error'
-
 export interface MistakePosition {
   nodeId: string
   moveIndex: number
@@ -184,19 +150,4 @@ export interface LearnFromMistakesState {
   currentAttempt: number
   maxAttempts: number
   originalPosition: string | null // FEN of the position where the player should make a move
-}
-
-// Streaming-related types
-export interface LiveGameData {
-  gameId: string
-  white: {
-    name: string
-    rating?: number
-  }
-  black: {
-    name: string
-    rating?: number
-  }
-  lastMoveFen?: string
-  isLive: boolean
 }

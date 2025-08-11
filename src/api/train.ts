@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { buildUrl } from './utils'
 import { MoveMap, GameTree } from 'src/types'
-import { AvailableMoves, TrainingGame } from 'src/types/training'
+import { AvailableMoves, PuzzleGame } from 'src/types/puzzle'
 
 export const fetchPuzzle = async () => {
   const res = await fetch(buildUrl('puzzle/new_puzzle'))
@@ -111,7 +111,7 @@ export const fetchPuzzle = async () => {
     termination,
     availableMoves,
     targetIndex: data['target_move_index'],
-  } as any as TrainingGame
+  } as any as PuzzleGame
 }
 
 export const logPuzzleGuesses = async (

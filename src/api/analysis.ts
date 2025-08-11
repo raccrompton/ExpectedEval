@@ -8,7 +8,7 @@ import {
   MaiaEvaluation,
   PositionEvaluation,
   StockfishEvaluation,
-  AnalysisTournamentGame,
+  WorldChampionshipGameEntry,
 } from 'src/types'
 import {
   readLichessStream,
@@ -17,7 +17,7 @@ import {
 } from 'src/lib'
 import { buildUrl } from './utils'
 import { Chess } from 'chess.ts'
-import { AvailableMoves } from 'src/types/training'
+import { AvailableMoves } from 'src/types/puzzle'
 
 import {
   saveCustomAnalysis,
@@ -25,7 +25,7 @@ import {
 } from 'src/lib/customAnalysis'
 
 export const fetchWorldChampionshipGameList = async (): Promise<
-  Map<string, AnalysisTournamentGame[]>
+  Map<string, WorldChampionshipGameEntry[]>
 > => {
   const res = await fetch(buildUrl('analysis/list'))
 

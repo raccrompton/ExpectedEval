@@ -1,5 +1,5 @@
 import { Chess } from 'chess.ts'
-import { TrainingGame } from 'src/types/training'
+import { PuzzleGame } from 'src/types/puzzle'
 import {
   GameNode,
   AnalyzedGame,
@@ -11,7 +11,7 @@ import {
  * Helper function to convert TrainingGame to AnalyzedGame
  */
 export const convertTrainingGameToAnalyzedGame = (
-  trainingGame: TrainingGame,
+  trainingGame: PuzzleGame,
 ): AnalyzedGame => {
   const maiaEvaluations: { [rating: string]: MaiaEvaluation }[] = []
   const stockfishEvaluations: (StockfishEvaluation | undefined)[] = []
