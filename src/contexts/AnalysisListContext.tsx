@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router'
 import { AuthContext } from 'src/contexts'
 import React, { ReactNode, useContext, useEffect, useState } from 'react'
-import { MaiaGameEntry, WorldChampionshipGameEntry } from 'src/types'
+import { MaiaGameListEntry, WorldChampionshipGameListEntry } from 'src/types'
 import {
   fetchWorldChampionshipGameList,
   streamLichessGames,
@@ -9,11 +9,11 @@ import {
 } from 'src/api'
 
 interface IAnalysisListContext {
-  analysisTournamentList: Map<string, WorldChampionshipGameEntry[]> | null
-  analysisLichessList: MaiaGameEntry[]
-  analysisPlayList: MaiaGameEntry[]
-  analysisHandList: MaiaGameEntry[]
-  analysisBrainList: MaiaGameEntry[]
+  analysisTournamentList: Map<string, WorldChampionshipGameListEntry[]> | null
+  analysisLichessList: MaiaGameListEntry[]
+  analysisPlayList: MaiaGameListEntry[]
+  analysisHandList: MaiaGameListEntry[]
+  analysisBrainList: MaiaGameListEntry[]
 }
 
 export const AnalysisListContext = React.createContext<IAnalysisListContext>({
@@ -34,16 +34,20 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
 
   const [analysisTournamentList, setAnalysisTournamentList] = useState<Map<
     string,
-    WorldChampionshipGameEntry[]
+    WorldChampionshipGameListEntry[]
   > | null>(null)
   const [analysisLichessList, setAnalysisLichessList] = useState<
-    MaiaGameEntry[]
+    MaiaGameListEntry[]
   >([])
-  const [analysisPlayList, setAnalysisPlayList] = useState<MaiaGameEntry[]>([])
-  const [analysisHandList, setAnalysisHandList] = useState<MaiaGameEntry[]>([])
-  const [analysisBrainList, setAnalysisBrainList] = useState<MaiaGameEntry[]>(
+  const [analysisPlayList, setAnalysisPlayList] = useState<MaiaGameListEntry[]>(
     [],
   )
+  const [analysisHandList, setAnalysisHandList] = useState<MaiaGameListEntry[]>(
+    [],
+  )
+  const [analysisBrainList, setAnalysisBrainList] = useState<
+    MaiaGameListEntry[]
+  >([])
 
   useEffect(() => {
     async function getAndSetData() {
@@ -67,7 +71,7 @@ export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
       streamLichessGames(user?.lichessId, (data) => {
         const result = data.pgn.match(/\[Result\s+"(.+?)"\]/)[1] || '?'
 
-        const game: MaiaGameEntry = {
+        const game: MaiaGameListEntry = {
           id: data.id,
           type: 'pgn',
           label: `${data.players.white.user?.id || 'Unknown'} vs. ${data.players.black.user?.id || 'Unknown'}`,

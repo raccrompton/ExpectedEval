@@ -1,38 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Player,
-  MoveMap,
-  GameTree,
-  GameNode,
   AnalyzedGame,
-  MaiaEvaluation,
-  PositionEvaluation,
-  StockfishEvaluation,
-  WorldChampionshipGameEntry,
+  MoveValueMapping,
+  CachedEngineAnalysisEntry,
+  WorldChampionshipGameListEntry,
+  RawMove,
 } from 'src/types'
 import {
   readLichessStream,
   buildGameTreeFromMoveList,
-  convertBackendEvalToStockfishEval,
+  buildMovesListFromGameStates,
+  insertBackendStockfishEvalToGameTree,
 } from 'src/lib'
 import { buildUrl } from './utils'
-import { Chess } from 'chess.ts'
 import { AvailableMoves } from 'src/types/puzzle'
 
-import {
-  saveCustomAnalysis,
-  getCustomAnalysisById,
-} from 'src/lib/customAnalysis'
-
 export const fetchWorldChampionshipGameList = async (): Promise<
-  Map<string, WorldChampionshipGameEntry[]>
+  Map<string, WorldChampionshipGameListEntry[]>
 > => {
   const res = await fetch(buildUrl('analysis/list'))
-
-  if (res.status === 401) {
-    throw new Error('Unauthorized')
-  }
-
   const data = await res.json()
 
   return data
@@ -55,10 +42,6 @@ export const fetchMaiaGameList = async (
     : url
   const res = await fetch(fullUrl)
 
-  if (res.status === 401) {
-    throw new Error('Unauthorized')
-  }
-
   const data = await res.json()
 
   return data
@@ -79,7 +62,7 @@ export const streamLichessGames = async (
   stream.then(readLichessStream(onMessage))
 }
 
-export const fetchPgnOfLichessGame = async (id: string) => {
+export const fetchPgnOfLichessGame = async (id: string): Promise<string> => {
   const res = await fetch(`https://lichess.org/game/export/${id}`, {
     headers: {
       Accept: 'application/x-chess-pgn',
@@ -93,11 +76,8 @@ export const fetchAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
     buildUrl(`analysis/analysis_list/${gameId.join('/')}`),
   )
 
-  if (res.status === 401) {
-    throw new Error('Unauthorized')
-  }
-
   const data = await res.json()
+
   const id = data['id']
   const termination = {
     ...data['termination'],
@@ -108,8 +88,10 @@ export const fetchAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
   const blackPlayer = data['black_player'] as Player
   const whitePlayer = data['white_player'] as Player
 
-  const maiaEvals: { [model: string]: MoveMap[] } = {}
-  const stockfishEvaluations: MoveMap[] = data['stockfish_evals']
+  const maiaEvals: {
+    [model: string]: MoveValueMapping[]
+  } = {}
+  const stockfishEvaluations: MoveValueMapping[] = data['stockfish_evals']
 
   const availableMoves: AvailableMoves[] = []
 
@@ -129,67 +111,26 @@ export const fetchAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
         check,
         san,
         lastMove: move.move,
-      }
+      } as RawMove
     }
     availableMoves.push(moves)
   }
 
   const gameStates = data['game_states']
 
-  const moves = gameStates.map((gameState: any) => {
-    const {
-      last_move: lastMove,
-      fen,
-      check,
-      last_move_san: san,
-      evaluations: maia_values,
-    } = gameState
-
-    return {
-      board: fen,
-      lastMove,
-      san,
-      check,
-      maia_values,
-    }
-  })
-
-  const maiaEvaluations = [] as { [rating: number]: MaiaEvaluation }[]
-
+  const moves = buildMovesListFromGameStates(gameStates)
   const tree = buildGameTreeFromMoveList(moves, moves[0].board)
-
-  let currentNode: GameNode | null = tree.getRoot()
-
-  for (let i = 0; i < moves.length; i++) {
-    if (!currentNode) {
-      break
-    }
-
-    const stockfishEval = stockfishEvaluations[i]
-      ? convertBackendEvalToStockfishEval(
-          stockfishEvaluations[i],
-          moves[i].board.split(' ')[1],
-        )
-      : undefined
-
-    if (stockfishEval) {
-      currentNode.addStockfishAnalysis(stockfishEval)
-    }
-    currentNode = currentNode?.mainChild
-  }
+  insertBackendStockfishEvalToGameTree(tree, moves, stockfishEvaluations)
 
   return {
     id,
     blackPlayer,
     whitePlayer,
-    moves,
-    maiaEvaluations,
-    stockfishEvaluations,
     availableMoves,
     gameType,
     termination,
     tree,
-  } as any as AnalyzedGame
+  } as AnalyzedGame
 }
 
 export const fetchAnalyzedPgnGame = async (id: string, pgn: string) => {
@@ -201,10 +142,6 @@ export const fetchAnalyzedPgnGame = async (id: string, pgn: string) => {
     },
   })
 
-  if (res.status === 401) {
-    throw new Error('Unauthorized')
-  }
-
   const data = await res.json()
 
   const termination = {
@@ -216,18 +153,11 @@ export const fetchAnalyzedPgnGame = async (id: string, pgn: string) => {
   const blackPlayer = data['black_player'] as Player
   const whitePlayer = data['white_player'] as Player
 
-  const maiaEvals: { [model: string]: MoveMap[] } = {}
-  const positionEvaluations: { [model: string]: PositionEvaluation[] } = {}
+  const maiaEvals: { [model: string]: MoveValueMapping[] } = {}
   const availableMoves: AvailableMoves[] = []
 
   for (const model of data['maia_versions']) {
     maiaEvals[model] = data['maia_evals'][model]
-    positionEvaluations[model] = Object.keys(data['maia_evals'][model]).map(
-      () => ({
-        trickiness: 1,
-        performance: 1,
-      }),
-    )
   }
 
   for (const position of data['move_maps']) {
@@ -242,48 +172,24 @@ export const fetchAnalyzedPgnGame = async (id: string, pgn: string) => {
         check,
         san,
         lastMove: move.move,
-      }
+      } as RawMove
     }
     availableMoves.push(moves)
   }
 
   const gameStates = data['game_states']
 
-  const moves = gameStates.map((gameState: any) => {
-    const {
-      last_move: lastMove,
-      fen,
-      check,
-      last_move_san: san,
-      evaluations: maia_values,
-    } = gameState
-
-    return {
-      board: fen,
-      lastMove,
-      san,
-      check,
-      maia_values,
-    }
-  })
-
-  const maiaEvaluations = [] as { [rating: number]: MaiaEvaluation }[]
-  const stockfishEvaluations: StockfishEvaluation[] = []
+  const moves = buildMovesListFromGameStates(gameStates)
   const tree = buildGameTreeFromMoveList(moves, moves[0].board)
 
   return {
     id,
     blackPlayer,
     whitePlayer,
-    moves,
     availableMoves,
     gameType,
     termination,
-    maiaEvaluations,
-    stockfishEvaluations,
     tree,
-    type: 'brain',
-    pgn,
   } as AnalyzedGame
 }
 
@@ -306,10 +212,6 @@ export const fetchAnalyzedMaiaGame = async (
     },
   )
 
-  if (res.status === 401) {
-    throw new Error('Unauthorized')
-  }
-
   const data = await res.json()
 
   const termination = {
@@ -331,8 +233,7 @@ export const fetchAnalyzedMaiaGame = async (
     whitePlayer.name = whitePlayer.name.replace('maia_kdd_', 'Maia ')
   }
 
-  const maiaEvals: { [model: string]: MoveMap[] } = {}
-
+  const maiaEvals: { [model: string]: MoveValueMapping[] } = {}
   const availableMoves: AvailableMoves[] = []
 
   for (const model of data['maia_versions']) {
@@ -351,209 +252,32 @@ export const fetchAnalyzedMaiaGame = async (
         check,
         san,
         lastMove: move.move,
-      }
+      } as RawMove
     }
     availableMoves.push(moves)
   }
 
   const gameStates = data['game_states']
 
-  const moves = gameStates.map((gameState: any) => {
-    const {
-      last_move: lastMove,
-      fen,
-      check,
-      last_move_san: san,
-      evaluations: maia_values,
-    } = gameState
-
-    return {
-      board: fen,
-      lastMove,
-      san,
-      check,
-      maia_values,
-    }
-  })
-
-  const maiaEvaluations = [] as { [rating: number]: MaiaEvaluation }[]
-  const stockfishEvaluations: StockfishEvaluation[] = []
+  const moves = buildMovesListFromGameStates(gameStates)
   const tree = buildGameTreeFromMoveList(moves, moves[0].board)
 
   return {
     id,
+    type: game_type,
     blackPlayer,
     whitePlayer,
     moves,
     availableMoves,
     gameType,
     termination,
-    maiaEvaluations,
-    stockfishEvaluations,
     tree,
-    type: 'brain',
   } as AnalyzedGame
-}
-
-const createAnalyzedGameFromPGN = async (
-  pgn: string,
-  id?: string,
-): Promise<AnalyzedGame> => {
-  const chess = new Chess()
-
-  try {
-    chess.loadPgn(pgn)
-  } catch (error) {
-    throw new Error('Invalid PGN format')
-  }
-
-  const history = chess.history({ verbose: true })
-  const headers = chess.header()
-
-  const moves = []
-  const tempChess = new Chess()
-
-  const startingFen =
-    headers.FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-  if (headers.FEN) {
-    tempChess.load(headers.FEN)
-  }
-
-  moves.push({
-    board: tempChess.fen(),
-    lastMove: undefined,
-    san: undefined,
-    check: tempChess.inCheck(),
-    maia_values: {},
-  })
-
-  for (const move of history) {
-    tempChess.move(move)
-    moves.push({
-      board: tempChess.fen(),
-      lastMove: [move.from, move.to] as [string, string],
-      san: move.san,
-      check: tempChess.inCheck(),
-      maia_values: {},
-    })
-  }
-
-  const tree = buildGameTreeFromMoveList(moves, startingFen)
-
-  return {
-    id: id || `pgn-${Date.now()}`,
-    blackPlayer: { name: headers.Black || 'Black', rating: undefined },
-    whitePlayer: { name: headers.White || 'White', rating: undefined },
-    moves,
-    availableMoves: new Array(moves.length).fill({}),
-    gameType: 'custom',
-    termination: {
-      result: headers.Result || '*',
-      winner:
-        headers.Result === '1-0'
-          ? 'white'
-          : headers.Result === '0-1'
-            ? 'black'
-            : 'none',
-      condition: 'Normal',
-    },
-    maiaEvaluations: new Array(moves.length).fill({}),
-    stockfishEvaluations: new Array(moves.length).fill(undefined),
-    tree,
-    type: 'custom-pgn' as const,
-    pgn,
-  } as AnalyzedGame
-}
-
-export const getAnalyzedCustomPGN = async (
-  pgn: string,
-  name?: string,
-): Promise<AnalyzedGame> => {
-  const stored = await saveCustomAnalysis('pgn', pgn, name)
-
-  return createAnalyzedGameFromPGN(pgn, stored.id)
-}
-
-const createAnalyzedGameFromFEN = async (
-  fen: string,
-  id?: string,
-): Promise<AnalyzedGame> => {
-  const chess = new Chess()
-
-  try {
-    chess.load(fen)
-  } catch (error) {
-    throw new Error('Invalid FEN format')
-  }
-
-  const moves = [
-    {
-      board: fen,
-      lastMove: undefined,
-      san: undefined,
-      check: chess.inCheck(),
-      maia_values: {},
-    },
-  ]
-
-  const tree = new GameTree(fen)
-
-  return {
-    id: id || `fen-${Date.now()}`,
-    blackPlayer: { name: 'Black', rating: undefined },
-    whitePlayer: { name: 'White', rating: undefined },
-    moves,
-    availableMoves: [{}],
-    gameType: 'custom',
-    termination: {
-      result: '*',
-      winner: 'none',
-      condition: 'Normal',
-    },
-    maiaEvaluations: [{}],
-    stockfishEvaluations: [undefined],
-    tree,
-    type: 'custom-fen' as const,
-  } as AnalyzedGame
-}
-
-export const getAnalyzedCustomFEN = async (
-  fen: string,
-  name?: string,
-): Promise<AnalyzedGame> => {
-  const stored = await saveCustomAnalysis('fen', fen, name)
-
-  return createAnalyzedGameFromFEN(fen, stored.id)
-}
-
-export const getAnalyzedCustomGame = async (
-  id: string,
-): Promise<AnalyzedGame> => {
-  const stored = getCustomAnalysisById(id)
-  if (!stored) {
-    throw new Error('Custom analysis not found')
-  }
-
-  if (stored.type === 'custom-pgn') {
-    return createAnalyzedGameFromPGN(stored.data, stored.id)
-  } else {
-    return createAnalyzedGameFromFEN(stored.data, stored.id)
-  }
-}
-
-export interface EngineAnalysisPosition {
-  ply: number
-  fen: string
-  maia?: { [rating: string]: MaiaEvaluation }
-  stockfish?: {
-    depth: number
-    cp_vec: { [move: string]: number }
-  }
 }
 
 export const storeGameAnalysisCache = async (
   gameId: string,
-  analysisData: EngineAnalysisPosition[],
+  analysisData: CachedEngineAnalysisEntry[],
 ): Promise<void> => {
   const res = await fetch(
     buildUrl(`analysis/store_engine_analysis/${gameId}`),
@@ -566,45 +290,36 @@ export const storeGameAnalysisCache = async (
     },
   )
 
-  if (res.status === 401) {
-    throw new Error('Unauthorized')
-  }
-
   if (!res.ok) {
-    throw new Error('Failed to store engine analysis')
+    console.error('Failed to cache engine analysis')
   }
 }
 
 export const retrieveGameAnalysisCache = async (
   gameId: string,
-): Promise<{ positions: EngineAnalysisPosition[] } | null> => {
+): Promise<{ positions: CachedEngineAnalysisEntry[] } | null> => {
   const res = await fetch(buildUrl(`analysis/get_engine_analysis/${gameId}`))
 
-  if (res.status === 401) {
-    throw new Error('Unauthorized')
-  }
-
   if (res.status === 404) {
-    // No stored analysis found
     return null
   }
 
   if (!res.ok) {
-    throw new Error('Failed to retrieve engine analysis')
+    console.error('Failed to retrieve engine analysis')
   }
 
-  return res.json()
-}
+  const data = await res.json()
 
-export interface UpdateGameMetadataRequest {
-  custom_name?: string
-  is_favorited?: boolean
+  return data
 }
 
 export const updateGameMetadata = async (
   gameType: 'custom' | 'play' | 'hand' | 'brain',
   gameId: string,
-  metadata: UpdateGameMetadataRequest,
+  metadata: {
+    custom_name?: string
+    is_favorited?: boolean
+  },
 ): Promise<void> => {
   const res = await fetch(
     buildUrl(`analysis/update_metadata/${gameType}/${gameId}`),
@@ -617,32 +332,22 @@ export const updateGameMetadata = async (
     },
   )
 
-  if (res.status === 401) {
-    throw new Error('Unauthorized')
-  }
-
   if (!res.ok) {
-    throw new Error('Failed to update game metadata')
+    console.error('Failed to update game metadata')
   }
 }
 
-export interface StoreCustomGameRequest {
+export const storeCustomGame = async (data: {
   name?: string
   pgn?: string
   fen?: string
-}
-
-export interface StoredCustomGameResponse {
+}): Promise<{
   id: string
   name: string
   pgn?: string
   fen?: string
   created_at: string
-}
-
-export const storeCustomGame = async (
-  data: StoreCustomGameRequest,
-): Promise<StoredCustomGameResponse> => {
+}> => {
   const res = await fetch(buildUrl('analysis/store_custom_game'), {
     method: 'POST',
     headers: {
@@ -651,14 +356,9 @@ export const storeCustomGame = async (
     body: JSON.stringify(data),
   })
 
-  if (res.status === 401) {
-    throw new Error('Unauthorized')
-  }
-
   if (!res.ok) {
-    const errorText = await res.text()
-    throw new Error(`Failed to store custom game: ${errorText}`)
+    console.error(`Failed to store custom game: ${await res.text()}`)
   }
 
-  return res.json() as Promise<StoredCustomGameResponse>
+  return res.json()
 }

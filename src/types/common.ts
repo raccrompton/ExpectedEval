@@ -6,19 +6,17 @@ export * from './tree'
 
 export type Check = false | 'white' | 'black'
 
-export interface Move {
+export interface RawMove {
   board: string
   lastMove?: [string, string]
   movePlayed?: [string, string]
   check?: false | 'white' | 'black'
   san?: string
   uci?: string
-  maia_values?: { [key: string]: number }
 }
 
 export interface BaseGame {
   id: string
-  moves: Move[]
   tree: GameTree
 }
 

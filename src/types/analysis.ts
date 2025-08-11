@@ -1,6 +1,15 @@
 import { AvailableMoves } from './puzzle'
 import { Game, GameNode, GameTree } from './common'
 
+export interface MoveValueMapping {
+  [move: string]: number
+}
+
+export interface AnalyzedGame extends Game {
+  availableMoves: AvailableMoves[]
+  type: EvaluationType
+}
+
 export interface BaseTreeControllerContext {
   gameTree: GameTree
   currentNode: GameNode
@@ -29,6 +38,16 @@ export interface StockfishEvaluation {
   winrate_loss_vec?: { [key: string]: number }
 }
 
+export interface CachedEngineAnalysisEntry {
+  ply: number
+  fen: string
+  maia?: { [rating: string]: MaiaEvaluation }
+  stockfish?: {
+    depth: number
+    cp_vec: MoveValueMapping
+  }
+}
+
 type EvaluationType =
   | 'tournament'
   | 'pgn'
@@ -39,11 +58,7 @@ type EvaluationType =
   | 'custom-fen'
   | 'stream'
 
-type StockfishEvaluations<T extends EvaluationType> = T extends 'tournament'
-  ? MoveMap[]
-  : (StockfishEvaluation | undefined)[]
-
-export interface WorldChampionshipGameEntry {
+export interface WorldChampionshipGameListEntry {
   game_index: number
   event: string
   site: string
@@ -54,34 +69,12 @@ export interface WorldChampionshipGameEntry {
   result?: string
 }
 
-export interface MaiaGameEntry {
+export interface MaiaGameListEntry {
   id: string
-  type:
-    | 'tournament'
-    | 'pgn'
-    | 'play'
-    | 'hand'
-    | 'brain'
-    | 'custom-pgn'
-    | 'custom-fen'
-    | 'stream'
+  type: 'tournament' | 'pgn' | 'play' | 'hand' | 'brain' | 'stream'
   label: string
   result: string
   pgn?: string
-}
-
-export interface AnalyzedGame extends Game {
-  maiaEvaluations: { [rating: string]: MaiaEvaluation }[]
-  stockfishEvaluations: StockfishEvaluations<EvaluationType>
-  availableMoves: AvailableMoves[]
-  type: EvaluationType
-  pgn?: string
-}
-
-export interface CustomAnalysisInput {
-  type: 'custom-pgn' | 'custom-fen'
-  data: string // PGN string or FEN string
-  name?: string
 }
 
 export interface Termination {
@@ -89,15 +82,6 @@ export interface Termination {
   winner: 'white' | 'black' | 'none' | undefined
   type?: 'rules' | 'resign' | 'time' | undefined
   condition?: string
-}
-
-export interface MoveMap {
-  [move: string]: number
-}
-
-export interface PositionEvaluation {
-  trickiness: number
-  performance: number
 }
 
 export interface ColorSanMapping {

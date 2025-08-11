@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import React, { useState, useEffect, useContext } from 'react'
 
 import { AuthContext } from 'src/contexts'
-import { MaiaGameEntry } from 'src/types'
+import { MaiaGameListEntry } from 'src/types'
 import { streamLichessGames, fetchMaiaGameList } from 'src/api'
 import { getCustomAnalysesAsWebGames } from 'src/lib/customAnalysis'
 import { FavoriteModal } from 'src/components/Common/FavoriteModal'
@@ -44,10 +44,10 @@ export const GameList = ({
     'play' | 'hb' | 'custom' | 'lichess' | 'favorites'
   >(showCustom ? 'favorites' : 'play')
   const [hbSubsection, setHbSubsection] = useState<'hand' | 'brain'>('hand')
-  const [games, setGames] = useState<MaiaGameEntry[]>([])
+  const [games, setGames] = useState<MaiaGameListEntry[]>([])
 
   const [gamesByPage, setGamesByPage] = useState<{
-    [gameType: string]: { [page: number]: MaiaGameEntry[] }
+    [gameType: string]: { [page: number]: MaiaGameListEntry[] }
   }>({
     play: {},
     hand: {},
@@ -61,7 +61,7 @@ export const GameList = ({
     }
     return []
   })
-  const [favoriteGames, setFavoriteGames] = useState<MaiaGameEntry[]>([])
+  const [favoriteGames, setFavoriteGames] = useState<MaiaGameListEntry[]>([])
   const [favoritedGameIds, setFavoritedGameIds] = useState<Set<string>>(
     new Set(),
   )
@@ -72,7 +72,7 @@ export const GameList = ({
   // Modal state for favoriting
   const [favoriteModal, setFavoriteModal] = useState<{
     isOpen: boolean
-    game: MaiaGameEntry | null
+    game: MaiaGameListEntry | null
   }>({ isOpen: false, game: null })
 
   const [fetchedCache, setFetchedCache] = useState<{
@@ -127,7 +127,7 @@ export const GameList = ({
       streamLichessGames(targetUser, (data) => {
         const result = data.pgn.match(/\[Result\s+"(.+?)"\]/)[1] || '?'
 
-        const game: MaiaGameEntry = {
+        const game: MaiaGameListEntry = {
           id: data.id,
           label: `${data.players.white.user?.id || 'Unknown'} vs. ${data.players.black.user?.id || 'Unknown'}`,
           result: result,
@@ -155,7 +155,7 @@ export const GameList = ({
 
         fetchMaiaGameList(gameType, currentPage, lichessId)
           .then((data) => {
-            let parsedGames: MaiaGameEntry[] = []
+            let parsedGames: MaiaGameListEntry[] = []
 
             if (gameType === 'favorites') {
               // Handle favorites response format
@@ -309,7 +309,7 @@ export const GameList = ({
     setSelected(newTab)
   }
 
-  const handleFavoriteGame = (game: MaiaGameEntry) => {
+  const handleFavoriteGame = (game: MaiaGameListEntry) => {
     setFavoriteModal({ isOpen: true, game })
   }
 
@@ -377,7 +377,7 @@ export const GameList = ({
     }
   }
 
-  const handleDirectUnfavorite = async (game: MaiaGameEntry) => {
+  const handleDirectUnfavorite = async (game: MaiaGameListEntry) => {
     await removeFavoriteGame(game.id, game.type)
     const updatedFavorites = await getFavoritesAsWebGames()
     setFavoriteGames(updatedFavorites)

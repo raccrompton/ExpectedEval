@@ -1,10 +1,14 @@
 import { cpToWinrate } from './stockfish'
-import { StockfishEvaluation } from 'src/types'
+import {
+  GameTree,
+  GameNode,
+  RawMove,
+  MoveValueMapping,
+  StockfishEvaluation,
+} from 'src/types'
 
 export function convertBackendEvalToStockfishEval(
-  moveMap: {
-    [move: string]: number
-  },
+  possibleMoves: MoveValueMapping,
   turn: 'w' | 'b',
 ): StockfishEvaluation {
   const cp_vec: { [key: string]: number } = {}
@@ -12,8 +16,8 @@ export function convertBackendEvalToStockfishEval(
   let model_optimal_cp = -Infinity
   let model_move = ''
 
-  for (const move in moveMap) {
-    const cp = moveMap[move]
+  for (const move in possibleMoves) {
+    const cp = possibleMoves[move]
     cp_vec[move] = cp
     if (cp > model_optimal_cp) {
       model_optimal_cp = cp
@@ -22,7 +26,7 @@ export function convertBackendEvalToStockfishEval(
   }
 
   for (const move in cp_vec) {
-    const cp = moveMap[move]
+    const cp = possibleMoves[move]
     cp_relative_vec[move] = cp - model_optimal_cp
   }
 
@@ -76,5 +80,31 @@ export function convertBackendEvalToStockfishEval(
     cp_relative_vec: cp_relative_vec_sorted,
     winrate_vec: winrate_vec_sorted,
     winrate_loss_vec: winrate_loss_vec_sorted,
+  }
+}
+
+export function insertBackendStockfishEvalToGameTree(
+  tree: GameTree,
+  moves: RawMove[],
+  stockfishEvaluations: MoveValueMapping[],
+) {
+  let currentNode: GameNode | null = tree.getRoot()
+
+  for (let i = 0; i < moves.length; i++) {
+    if (!currentNode) {
+      break
+    }
+
+    const stockfishEval = stockfishEvaluations[i]
+      ? convertBackendEvalToStockfishEval(
+          stockfishEvaluations[i],
+          moves[i].board.split(' ')[1] as 'w' | 'b',
+        )
+      : undefined
+
+    if (stockfishEval) {
+      currentNode.addStockfishAnalysis(stockfishEval)
+    }
+    currentNode = currentNode?.mainChild
   }
 }

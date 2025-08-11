@@ -1,15 +1,14 @@
 import { Chess } from 'chess.ts'
-import { GameTree } from 'src/types'
-import { EngineAnalysisPosition } from 'src/api/analysis'
 import { cpToWinrate } from 'src/lib/stockfish'
+import { GameTree, CachedEngineAnalysisEntry } from 'src/types'
 
 /**
  * Collects analysis data from a game tree to send to the backend
  */
 export const collectEngineAnalysisData = (
   gameTree: GameTree,
-): EngineAnalysisPosition[] => {
-  const positions: EngineAnalysisPosition[] = []
+): CachedEngineAnalysisEntry[] => {
+  const positions: CachedEngineAnalysisEntry[] = []
   const mainLine = gameTree.getMainLine()
 
   mainLine.forEach((node, index) => {
@@ -18,7 +17,7 @@ export const collectEngineAnalysisData = (
       return
     }
 
-    const position: EngineAnalysisPosition = {
+    const position: CachedEngineAnalysisEntry = {
       ply: index,
       fen: node.fen,
     }
@@ -45,7 +44,7 @@ export const collectEngineAnalysisData = (
  */
 export const applyEngineAnalysisData = (
   gameTree: GameTree,
-  analysisData: EngineAnalysisPosition[],
+  analysisData: CachedEngineAnalysisEntry[],
 ): void => {
   const mainLine = gameTree.getMainLine()
 
@@ -172,7 +171,7 @@ const reconstructStockfishEvaluation = (
  * Generate a unique cache key for analysis data
  */
 export const generateAnalysisCacheKey = (
-  analysisData: EngineAnalysisPosition[],
+  analysisData: CachedEngineAnalysisEntry[],
 ): string => {
   const keyData = analysisData.map((pos) => ({
     ply: pos.ply,

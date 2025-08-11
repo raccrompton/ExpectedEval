@@ -1,9 +1,9 @@
-import { MaiaGameEntry } from 'src/types'
+import { MaiaGameListEntry } from 'src/types'
 import { updateGameMetadata, fetchMaiaGameList } from 'src/api/analysis'
 
 export interface FavoriteGame {
   id: string
-  type: MaiaGameEntry['type']
+  type: MaiaGameListEntry['type']
   originalLabel: string
   customName: string
   result: string
@@ -14,7 +14,7 @@ export interface FavoriteGame {
 const STORAGE_KEY = 'maia_favorite_games'
 
 const mapGameTypeToApiType = (
-  gameType: MaiaGameEntry['type'],
+  gameType: MaiaGameListEntry['type'],
 ): 'custom' | 'play' | 'hand' | 'brain' => {
   switch (gameType) {
     case 'custom-pgn':
@@ -33,7 +33,7 @@ const mapGameTypeToApiType = (
 }
 
 export const addFavoriteGame = async (
-  game: MaiaGameEntry,
+  game: MaiaGameListEntry,
   customName?: string,
 ): Promise<FavoriteGame> => {
   try {
@@ -97,7 +97,7 @@ export const addFavoriteGame = async (
 
 export const removeFavoriteGame = async (
   gameId: string,
-  gameType?: MaiaGameEntry['type'],
+  gameType?: MaiaGameListEntry['type'],
 ): Promise<void> => {
   try {
     // First try to update via API if game type is provided
@@ -139,7 +139,7 @@ export const removeFavoriteGame = async (
 export const updateFavoriteName = async (
   gameId: string,
   customName: string,
-  gameType?: MaiaGameEntry['type'],
+  gameType?: MaiaGameListEntry['type'],
 ): Promise<void> => {
   try {
     // First try to update via API if game type is provided
@@ -240,7 +240,7 @@ export const getFavoriteGame = async (
 
 export const convertFavoriteToWebGame = (
   favorite: FavoriteGame,
-): MaiaGameEntry => {
+): MaiaGameListEntry => {
   return {
     id: favorite.id,
     type: favorite.type,
@@ -250,7 +250,9 @@ export const convertFavoriteToWebGame = (
   }
 }
 
-export const getFavoritesAsWebGames = async (): Promise<MaiaGameEntry[]> => {
+export const getFavoritesAsWebGames = async (): Promise<
+  MaiaGameListEntry[]
+> => {
   const favorites = await getFavoriteGames()
   return favorites.map(convertFavoriteToWebGame)
 }

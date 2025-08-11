@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { buildUrl } from './utils'
-import { MoveMap, GameTree } from 'src/types'
+import { MoveValueMapping, GameTree } from 'src/types'
 import { AvailableMoves, PuzzleGame } from 'src/types/puzzle'
 
 export const fetchPuzzle = async () => {
@@ -72,8 +72,8 @@ export const fetchPuzzle = async () => {
 
   const moveMap = data['target_move_map']
 
-  const stockfishEvaluation: MoveMap = {}
-  const maiaEvaluation: MoveMap = {}
+  const stockfishEvaluation: MoveValueMapping = {}
+  const maiaEvaluation: MoveValueMapping = {}
   const availableMoves: AvailableMoves = {}
 
   moveMap.forEach(

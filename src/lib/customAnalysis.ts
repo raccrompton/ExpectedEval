@@ -1,4 +1,4 @@
-import { AnalyzedGame, MaiaGameEntry } from 'src/types'
+import { AnalyzedGame, MaiaGameListEntry } from 'src/types'
 import { storeCustomGame } from 'src/api/analysis'
 
 export interface StoredCustomAnalysis {
@@ -153,7 +153,7 @@ export const getCustomAnalysisById = (
 
 export const convertStoredAnalysisToWebGame = (
   analysis: StoredCustomAnalysis,
-): MaiaGameEntry => {
+): MaiaGameListEntry => {
   return {
     id: analysis.id,
     type: analysis.type,
@@ -163,7 +163,7 @@ export const convertStoredAnalysisToWebGame = (
   }
 }
 
-export const getCustomAnalysesAsWebGames = (): MaiaGameEntry[] => {
+export const getCustomAnalysesAsWebGames = (): MaiaGameListEntry[] => {
   const stored = getLocalStoredCustomAnalyses()
   return stored.map(convertStoredAnalysisToWebGame)
 }

@@ -1,13 +1,13 @@
-import { Game, Move, MoveMap, GameTree } from '.'
+import { Game, RawMove, MoveValueMapping, GameTree } from '.'
 
 export interface AvailableMoves {
-  [fromTo: string]: Move
+  [uci: string]: RawMove
 }
 
 export interface PuzzleGame extends Game {
   puzzle_elo: number
-  stockfishEvaluation: MoveMap
-  maiaEvaluation: MoveMap
+  stockfishEvaluation: MoveValueMapping
+  maiaEvaluation: MoveValueMapping
   availableMoves: AvailableMoves
   targetIndex: number
   result?: boolean
