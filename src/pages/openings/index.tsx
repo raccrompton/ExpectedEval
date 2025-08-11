@@ -15,8 +15,8 @@ import {
 } from 'src/contexts'
 import { DrillConfiguration, AnalyzedGame } from 'src/types'
 import { GameNode } from 'src/types/tree'
+import openings from 'src/constants/openings.json'
 import { MIN_STOCKFISH_DEPTH } from 'src/constants/analysis'
-import openings from 'src/lib/openings/openings.json'
 import { OpeningDrillAnalysis } from 'src/components/Openings/OpeningDrillAnalysis'
 
 import {
