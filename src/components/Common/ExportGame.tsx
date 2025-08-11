@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 import { useContext, useEffect, useState } from 'react'
 
 import { PlayedGame, AnalyzedGame, GameTree, GameNode } from 'src/types'
-import { useBaseTreeController } from 'src/hooks/useBaseTreeController'
+import { TreeControllerContext } from 'src/contexts'
 
 interface AnalysisProps {
   game: AnalyzedGame
@@ -41,7 +41,7 @@ export const ExportGame: React.FC<Props> = (props) => {
   const [fen, setFen] = useState('')
   const [pgn, setPgn] = useState('')
 
-  const controller = useBaseTreeController(type)
+  const controller = useContext(TreeControllerContext)
 
   const { currentNode, gameTree } =
     type === 'analysis'
@@ -81,7 +81,6 @@ export const ExportGame: React.FC<Props> = (props) => {
     setFen(currentNode.fen)
   }, [
     currentNode,
-    game.moves,
     game.id,
     game.termination,
     whitePlayer,

@@ -1,10 +1,9 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useContext, useMemo, Fragment, useEffect, useRef } from 'react'
-import { WindowSizeContext } from 'src/contexts'
-import { GameNode, AnalyzedGame, Termination, BaseGame } from 'src/types'
 import { TuringGame } from 'src/types/turing'
-import { useBaseTreeController } from 'src/hooks/useBaseTreeController'
+import React, { useContext, useMemo, Fragment, useEffect, useRef } from 'react'
+import { TreeControllerContext, WindowSizeContext } from 'src/contexts'
+import { GameNode, AnalyzedGame, Termination, BaseGame } from 'src/types'
 import { MoveClassificationIcon } from 'src/components/Common/MoveIcons'
 
 interface AnalysisProps {
@@ -92,7 +91,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
     return plyFromStart >= 6
   }
 
-  const baseController = useBaseTreeController(type)
+  const baseController = useContext(TreeControllerContext)
 
   const mainLineNodes = useMemo(() => {
     return baseController.gameTree.getMainLine() ?? game.tree.getMainLine()

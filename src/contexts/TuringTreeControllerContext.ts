@@ -25,6 +25,9 @@ export interface ITuringControllerContext extends BaseTreeControllerContext {
 const defaultContext: ITuringControllerContext = {
   gameTree: new GameTree(new Chess().fen()),
   currentNode: new GameTree(new Chess().fen()).getRoot(),
+  setCurrentNode: () => {
+    /* no-op */
+  },
   goToNode: () => {
     /* no-op */
   },

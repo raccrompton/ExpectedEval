@@ -4,13 +4,11 @@ import React, { useState, useEffect, useContext } from 'react'
 import { AuthContext } from 'src/contexts'
 import { MaiaGameListEntry } from 'src/types'
 import { streamLichessGames, fetchMaiaGameList } from 'src/api'
-import { getCustomAnalysesAsWebGames } from 'src/lib/customAnalysis'
 import { FavoriteModal } from 'src/components/Common/FavoriteModal'
 import {
-  getFavoritesAsWebGames,
   addFavoriteGame,
   removeFavoriteGame,
-  isFavoriteGame,
+  getFavoritesAsWebGames,
 } from 'src/lib/favorites'
 
 interface GameData {
@@ -55,12 +53,6 @@ export const GameList = ({
     favorites: {},
   })
 
-  const [customAnalyses, setCustomAnalyses] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return getCustomAnalysesAsWebGames()
-    }
-    return []
-  })
   const [favoriteGames, setFavoriteGames] = useState<MaiaGameListEntry[]>([])
   const [favoritedGameIds, setFavoritedGameIds] = useState<Set<string>>(
     new Set(),
@@ -101,9 +93,6 @@ export const GameList = ({
 
   // Update custom analyses and favorites when component mounts
   useEffect(() => {
-    if (showCustom) {
-      setCustomAnalyses(getCustomAnalysesAsWebGames())
-    }
     // Load favorites (supports both sync and async implementations)
     Promise.resolve(getFavoritesAsWebGames())
       .then((favorites) => {
@@ -413,8 +402,6 @@ export const GameList = ({
     } else if (selected === 'hb') {
       const gameType = hbSubsection
       return gamesByPage[gameType]?.[currentPage] || []
-    } else if (selected === 'custom' && showCustom) {
-      return customAnalyses
     } else if (selected === 'lichess' && showLichess) {
       return games
     } else if (selected === 'favorites') {

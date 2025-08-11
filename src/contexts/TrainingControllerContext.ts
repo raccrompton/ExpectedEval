@@ -10,6 +10,9 @@ export interface ITrainingControllerContext extends BaseTreeControllerContext {
 const defaultContext: ITrainingControllerContext = {
   gameTree: new GameTree(new Chess().fen()),
   currentNode: new GameTree(new Chess().fen()).getRoot(),
+  setCurrentNode: () => {
+    /* no-op */
+  },
   goToNode: () => {
     /* no-op */
   },

@@ -7,5 +7,6 @@
   "[dockerfile]": {
     "editor.defaultFormatter": "ms-azuretools.vscode-docker"
   },
-  "editor.tabCompletion": "on"
+  "editor.tabCompletion": "on",
+  "github.copilot.nextEditSuggestions.enabled": true
 }

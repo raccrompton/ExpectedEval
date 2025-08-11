@@ -1,5 +1,6 @@
 import { Player } from './player'
 import { AvailableMoves } from './puzzle'
+import { Dispatch, SetStateAction } from 'react'
 import { BaseGame, GameNode, GameTree } from './common'
 
 export interface MoveValueMapping {
@@ -18,6 +19,7 @@ export interface AnalyzedGame extends BaseGame {
 export interface BaseTreeControllerContext {
   gameTree: GameTree
   currentNode: GameNode
+  setCurrentNode: Dispatch<SetStateAction<GameNode>>
   goToNode: (node: GameNode) => void
   goToNextNode: () => void
   goToPreviousNode: () => void

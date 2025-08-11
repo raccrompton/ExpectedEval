@@ -12,9 +12,6 @@ import {
   fetchAnalyzedMaiaGame,
   fetchAnalyzedPgnGame,
   fetchAnalyzedTournamentGame,
-  getAnalyzedCustomPGN,
-  getAnalyzedCustomFEN,
-  getAnalyzedCustomGame,
   retrieveGameAnalysisCache,
 } from 'src/api'
 import {
@@ -58,7 +55,6 @@ import { tourConfigs } from 'src/constants/tours'
 import type { DrawShape } from 'chessground/draw'
 import { MAIA_MODELS } from 'src/constants/common'
 import { applyEngineAnalysisData } from 'src/lib/analysis'
-import { deleteCustomAnalysis } from 'src/lib/customAnalysis'
 
 const AnalysisPage: NextPage = () => {
   const { startTour, tourState } = useTour()
@@ -121,18 +117,9 @@ const AnalysisPage: NextPage = () => {
       }
       if (setCurrentMove) setCurrentMove(0)
 
-      // Track game loaded
-      trackAnalysisGameLoaded(
-        'lichess',
-        game.moves?.length || 0,
-        game.maiaEvaluations?.length > 0 ||
-          game.stockfishEvaluations?.length > 0,
-      )
-
+      trackAnalysisGameLoaded('lichess')
       setAnalyzedGame({ ...game, type: 'tournament' })
       setCurrentId(newId)
-
-      // await loadStoredAnalysis({ ...game, type: 'tournament' })
 
       if (updateUrl) {
         router.push(`/analysis/${newId.join('/')}`, undefined, {
@@ -206,57 +193,6 @@ const AnalysisPage: NextPage = () => {
     [router, loadStoredAnalysis],
   )
 
-  const getAndSetCustomGame = useCallback(
-    async (
-      id: string,
-      setCurrentMove?: Dispatch<SetStateAction<number>>,
-      updateUrl = true,
-    ) => {
-      let game
-      try {
-        game = await getAnalyzedCustomGame(id)
-      } catch (e) {
-        toast.error((e as Error).message)
-        return
-      }
-      if (setCurrentMove) setCurrentMove(0)
-
-      setAnalyzedGame(game)
-      setCurrentId([id, 'custom'])
-
-      if (updateUrl) {
-        router.push(`/analysis/${id}/custom`, undefined, {
-          shallow: true,
-        })
-      }
-    },
-    [router],
-  )
-
-  const getAndSetCustomAnalysis = useCallback(
-    async (type: 'pgn' | 'fen', data: string, name?: string) => {
-      let game: AnalyzedGame
-      try {
-        if (type === 'pgn') {
-          game = await getAnalyzedCustomPGN(data, name)
-        } else {
-          game = await getAnalyzedCustomFEN(data, name)
-        }
-      } catch (e) {
-        toast.error((e as Error).message)
-        return
-      }
-
-      setAnalyzedGame(game)
-      setCurrentId([game.id, 'custom'])
-
-      router.push(`/analysis/${game.id}/custom`, undefined, {
-        shallow: true,
-      })
-    },
-    [router],
-  )
-
   useEffect(() => {
     ;(async () => {
       const queryId = id as string[]
@@ -266,9 +202,7 @@ const AnalysisPage: NextPage = () => {
         !analyzedGame || currentId.join('/') !== queryId.join('/')
 
       if (needsNewGame) {
-        if (queryId[1] === 'custom') {
-          getAndSetCustomGame(queryId[0], undefined, false)
-        } else if (queryId[1] === 'pgn') {
+        if (queryId[1] === 'pgn') {
           const pgn = await fetchPgnOfLichessGame(queryId[0])
           getAndSetLichessGame(queryId[0], pgn, undefined, false)
         } else if (['play', 'hand', 'brain'].includes(queryId[1])) {
@@ -289,7 +223,6 @@ const AnalysisPage: NextPage = () => {
     getAndSetTournamentGame,
     getAndSetLichessGame,
     getAndSetUserGame,
-    getAndSetCustomGame,
   ])
 
   return (
@@ -301,8 +234,6 @@ const AnalysisPage: NextPage = () => {
           getAndSetTournamentGame={getAndSetTournamentGame}
           getAndSetLichessGame={getAndSetLichessGame}
           getAndSetUserGame={getAndSetUserGame}
-          getAndSetCustomGame={getAndSetCustomGame}
-          getAndSetCustomAnalysis={getAndSetCustomAnalysis}
           router={router}
         />
       ) : (
@@ -335,16 +266,6 @@ interface Props {
     setCurrentMove?: Dispatch<SetStateAction<number>>,
     updateUrl?: boolean,
   ) => Promise<void>
-  getAndSetCustomGame: (
-    id: string,
-    setCurrentMove?: Dispatch<SetStateAction<number>>,
-    updateUrl?: boolean,
-  ) => Promise<void>
-  getAndSetCustomAnalysis: (
-    type: 'pgn' | 'fen',
-    data: string,
-    name?: string,
-  ) => Promise<void>
   router: ReturnType<typeof useRouter>
 }
 
@@ -354,8 +275,7 @@ const Analysis: React.FC<Props> = ({
   getAndSetTournamentGame,
   getAndSetLichessGame,
   getAndSetUserGame,
-  getAndSetCustomGame,
-  getAndSetCustomAnalysis,
+
   router,
 }: Props) => {
   const screens = [
@@ -409,26 +329,6 @@ const Analysis: React.FC<Props> = ({
 
     window.open(url)
   }, [controller.currentNode])
-
-  const handleCustomAnalysis = useCallback(
-    async (type: 'pgn' | 'fen', data: string, name?: string) => {
-      setShowCustomModal(false)
-      await getAndSetCustomAnalysis(type, data, name)
-      setRefreshTrigger((prev) => prev + 1)
-    },
-    [getAndSetCustomAnalysis],
-  )
-
-  const handleDeleteCustomGame = useCallback(async () => {
-    if (
-      analyzedGame.type === 'custom-pgn' ||
-      analyzedGame.type === 'custom-fen'
-    ) {
-      deleteCustomAnalysis(analyzedGame.id)
-      toast.success('Custom analysis deleted')
-      router.push('/analysis')
-    }
-  }, [analyzedGame, router])
 
   const handleAnalyzeEntireGame = useCallback(() => {
     setShowAnalysisConfigModal(true)
@@ -778,9 +678,6 @@ const Analysis: React.FC<Props> = ({
               loadNewUserGames={(id, type, setCurrentMove) =>
                 getAndSetUserGame(id, type, setCurrentMove)
               }
-              loadNewCustomGame={(id, setCurrentMove) =>
-                getAndSetCustomGame(id, setCurrentMove)
-              }
               onCustomAnalysis={() => setShowCustomModal(true)}
               refreshTrigger={refreshTrigger}
             />
@@ -918,7 +815,6 @@ const Analysis: React.FC<Props> = ({
             MAIA_MODELS={MAIA_MODELS}
             game={analyzedGame}
             currentNode={controller.currentNode as GameNode}
-            onDeleteCustomGame={handleDeleteCustomGame}
             onAnalyzeEntireGame={handleAnalyzeEntireGame}
             onLearnFromMistakes={handleLearnFromMistakes}
             isAnalysisInProgress={controller.gameAnalysis.progress.isAnalyzing}
@@ -1000,9 +896,6 @@ const Analysis: React.FC<Props> = ({
                   loadGameAndCloseList(
                     getAndSetUserGame(id, type, setCurrentMove),
                   )
-                }
-                loadNewCustomGame={(id, setCurrentMove) =>
-                  loadGameAndCloseList(getAndSetCustomGame(id, setCurrentMove))
                 }
                 onCustomAnalysis={() => {
                   setShowCustomModal(true)
@@ -1355,7 +1248,6 @@ const Analysis: React.FC<Props> = ({
               launchContinue={launchContinue}
               MAIA_MODELS={MAIA_MODELS}
               game={analyzedGame}
-              onDeleteCustomGame={handleDeleteCustomGame}
               onAnalyzeEntireGame={handleAnalyzeEntireGame}
               onLearnFromMistakes={handleLearnFromMistakes}
               isAnalysisInProgress={

@@ -1,17 +1,11 @@
 import React from 'react'
 import { Chess } from 'chess.ts'
-import { useTreeController } from 'src/hooks/useTreeController'
 import { GameTree, BaseTreeControllerContext } from 'src/types'
-
-export interface ITreeControllerContext extends BaseTreeControllerContext {
-  currentNode: ReturnType<typeof useTreeController>['currentNode']
-  setCurrentNode: ReturnType<typeof useTreeController>['setCurrentNode']
-}
 
 const defaultGameTree = new GameTree(new Chess().fen())
 
 export const TreeControllerContext =
-  React.createContext<ITreeControllerContext>({
+  React.createContext<BaseTreeControllerContext>({
     gameTree: defaultGameTree,
     currentNode: defaultGameTree.getRoot(),
     setCurrentNode: () => {

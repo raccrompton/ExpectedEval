@@ -12,7 +12,6 @@ import { Tournament } from 'src/components'
 import { FavoriteModal } from 'src/components/Common/FavoriteModal'
 import { AnalysisListContext } from 'src/contexts'
 import { fetchMaiaGameList } from 'src/api'
-import { ensureMigration } from 'src/lib/customAnalysis'
 import {
   getFavoritesAsWebGames,
   addFavoriteGame,
@@ -60,21 +59,13 @@ interface AnalysisGameListProps {
 export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   currentId,
   loadNewTournamentGame,
-  loadNewLichessGames,
-  loadNewUserGames,
-  loadNewCustomGame,
   onCustomAnalysis,
   onGameSelected,
   refreshTrigger,
 }) => {
   const router = useRouter()
-  const {
-    analysisPlayList,
-    analysisHandList,
-    analysisBrainList,
-    analysisLichessList,
-    analysisTournamentList,
-  } = useContext(AnalysisListContext)
+  const { analysisLichessList, analysisTournamentList } =
+    useContext(AnalysisListContext)
 
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -96,14 +87,12 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
   )
   const [hbSubsection, setHbSubsection] = useState<'hand' | 'brain'>('hand')
 
-  // Modal state for favoriting
   const [favoriteModal, setFavoriteModal] = useState<{
     isOpen: boolean
     game: MaiaGameListEntry | null
   }>({ isOpen: false, game: null })
 
   useEffect(() => {
-    // Load favorites asynchronously
     getFavoritesAsWebGames()
       .then((favorites) => {
         setFavoriteGames(favorites)
@@ -114,12 +103,6 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
         setFavoritedGameIds(new Set())
       })
   }, [refreshTrigger])
-
-  useEffect(() => {
-    ensureMigration().catch((error) => {
-      console.warn('Failed to migrate custom analyses:', error)
-    })
-  }, [])
 
   useEffect(() => {
     if (currentId?.[1] === 'custom') {
@@ -752,10 +735,7 @@ export const AnalysisGameList: React.FC<AnalysisGameListProps> = ({
                             setLoadingIndex(index)
                             if (game.type === 'pgn') {
                               router.push(`/analysis/${game.id}/pgn`)
-                            } else if (
-                              game.type === 'custom-pgn' ||
-                              game.type === 'custom-fen'
-                            ) {
+                            } else if (game.type === 'custom') {
                               router.push(`/analysis/${game.id}/custom`)
                             } else {
                               router.push(`/analysis/${game.id}/${game.type}`)

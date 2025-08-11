@@ -116,6 +116,7 @@ export const useTuringController = () => {
   return {
     gameTree,
     currentNode: controller.currentNode,
+    setCurrentNode: controller.setCurrentNode,
     goToNode: controller.goToNode,
     goToNextNode: controller.goToNextNode,
     goToPreviousNode: controller.goToPreviousNode,

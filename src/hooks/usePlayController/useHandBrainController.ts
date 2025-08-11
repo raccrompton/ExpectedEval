@@ -34,8 +34,8 @@ export const useHandBrainController = (
   playGameConfig: PlayGameConfig,
   simulateMaiaTime: boolean,
 ) => {
-  const controller = usePlayController(id, playGameConfig)
   const isBrain = playGameConfig.isBrain
+  const controller = usePlayController(id, playGameConfig)
 
   const [selectedPiece, setSelectedPiece] = useState<PieceSymbol | undefined>(
     undefined,

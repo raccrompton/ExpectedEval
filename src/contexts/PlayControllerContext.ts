@@ -36,7 +36,7 @@ const defaultGameTree = new GameTree(new Chess().fen())
 
 export const PlayControllerContext =
   React.createContext<IPlayControllerContext>({
-    game: { id: '', moves: [], turn: 'black', tree: defaultGameTree },
+    game: { id: '', turn: 'black', tree: defaultGameTree },
     playType: 'againstMaia',
     timeControl: 'unlimited',
     player: 'white',

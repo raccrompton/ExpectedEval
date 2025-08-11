@@ -38,6 +38,7 @@ interface AnalysisProgress {
   completed: number
   currentMove: string | null
 }
+
 const parsePgnToTree = (pgn: string, gameTree: GameTree): GameNode | null => {
   if (!pgn || pgn.trim() === '') return gameTree.getRoot()
 
