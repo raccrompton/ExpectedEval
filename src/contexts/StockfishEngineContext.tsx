@@ -1,4 +1,4 @@
-import {
+import React, {
   ReactNode,
   useRef,
   useCallback,
@@ -7,9 +7,26 @@ import {
   useMemo,
 } from 'react'
 import toast from 'react-hot-toast'
-import { StockfishEngineContext } from 'src/contexts'
-import { StockfishStatus } from 'src/types'
+import { StockfishStatus, StockfishEngine } from 'src/types'
 import Engine from 'src/lib/engine/stockfish'
+
+export const StockfishEngineContext = React.createContext<StockfishEngine>({
+  streamEvaluations: () => {
+    throw new Error(
+      'poorly provided StockfishEngineContext, missing streamEvaluations',
+    )
+  },
+  stopEvaluation: () => {
+    throw new Error(
+      'poorly provided StockfishEngineContext, missing stopEvaluation',
+    )
+  },
+  isReady: () => {
+    throw new Error('poorly provided StockfishEngineContext, missing isReady')
+  },
+  status: 'loading',
+  error: null,
+})
 
 export const StockfishEngineContextProvider: React.FC<{
   children: ReactNode

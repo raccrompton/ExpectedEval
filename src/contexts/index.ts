@@ -1,6 +1,5 @@
 export * from './AnalysisListContext'
 export * from './AuthContext'
-export * from './BaseTreeControllerContext'
 export * from './MaiaEngineContext'
 export * from './ModalContext'
 export * from './PlayControllerContext'

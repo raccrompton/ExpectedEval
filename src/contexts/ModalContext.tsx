@@ -1,7 +1,18 @@
-import { ComponentProps, ReactNode, useState } from 'react'
-
-import { ModalContext } from 'src/contexts'
 import { PlaySetupModal } from 'src/components'
+import React, { ComponentProps, ReactNode, useState } from 'react'
+
+const fn = () => {
+  throw new Error('poorly provided ModalContext')
+}
+
+interface IModalContext {
+  playSetupModalProps?: ComponentProps<typeof PlaySetupModal>
+  setPlaySetupModalProps: (arg0?: ComponentProps<typeof PlaySetupModal>) => void
+}
+
+export const ModalContext = React.createContext<IModalContext>({
+  setPlaySetupModalProps: fn,
+})
 
 export const ModalContextProvider: React.FC<{ children: ReactNode }> = ({
   children,

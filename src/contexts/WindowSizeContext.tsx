@@ -1,6 +1,17 @@
-import { ReactNode, useMemo } from 'react'
-import { WindowSizeContext } from 'src/contexts'
 import { useWindowSize } from 'src/hooks'
+import React, { ReactNode, useMemo } from 'react'
+
+interface IWindowSizeContext {
+  height: number
+  width: number
+  isMobile: boolean
+}
+
+export const WindowSizeContext = React.createContext<IWindowSizeContext>({
+  height: 0,
+  width: 0,
+  isMobile: false,
+})
 
 export const WindowSizeContextProvider: React.FC<{ children: ReactNode }> = ({
   children,

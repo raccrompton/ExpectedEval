@@ -1,7 +1,6 @@
 import Maia from '../lib/engine/maia'
-import { MaiaStatus } from 'src/types'
-import { MaiaEngineContext } from 'src/contexts'
-import {
+import { MaiaStatus, MaiaEngine } from 'src/types'
+import React, {
   ReactNode,
   useState,
   useMemo,
@@ -10,6 +9,15 @@ import {
   useRef,
 } from 'react'
 import toast from 'react-hot-toast'
+
+export const MaiaEngineContext = React.createContext<MaiaEngine>({
+  maia: undefined,
+  status: 'loading',
+  progress: 0,
+  downloadModel: async () => {
+    throw new Error('poorly provided MaiaEngineContext, missing downloadModel')
+  },
+})
 
 export const MaiaEngineContextProvider: React.FC<{ children: ReactNode }> = ({
   children,

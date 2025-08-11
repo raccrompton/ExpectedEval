@@ -1,13 +1,28 @@
 import { useRouter } from 'next/router'
-import { ReactNode, useContext, useEffect, useState } from 'react'
-
+import { AuthContext } from 'src/contexts'
+import React, { ReactNode, useContext, useEffect, useState } from 'react'
 import { AnalysisWebGame, AnalysisTournamentGame } from 'src/types'
-import { AuthContext, AnalysisListContext } from 'src/contexts'
 import {
   fetchWorldChampionshipGameList,
   streamLichessGames,
   fetchMaiaGameList,
 } from 'src/api'
+
+interface IAnalysisListContext {
+  analysisTournamentList: Map<string, AnalysisTournamentGame[]> | null
+  analysisLichessList: AnalysisWebGame[]
+  analysisPlayList: AnalysisWebGame[]
+  analysisHandList: AnalysisWebGame[]
+  analysisBrainList: AnalysisWebGame[]
+}
+
+export const AnalysisListContext = React.createContext<IAnalysisListContext>({
+  analysisTournamentList: null,
+  analysisLichessList: [],
+  analysisPlayList: [],
+  analysisHandList: [],
+  analysisBrainList: [],
+})
 
 export const AnalysisListContextProvider: React.FC<{ children: ReactNode }> = ({
   children,
