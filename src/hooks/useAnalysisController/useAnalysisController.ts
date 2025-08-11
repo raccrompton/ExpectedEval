@@ -20,12 +20,13 @@ import { useMoveRecommendations } from './useMoveRecommendations'
 import { MaiaEngineContext } from 'src/contexts/MaiaEngineContext'
 import { generateColorSanMapping, calculateBlunderMeter } from './utils'
 import { StockfishEngineContext } from 'src/contexts/StockfishEngineContext'
+import { storeGameAnalysisCache } from 'src/api/analysis'
 import {
+  extractPlayerMistakes,
+  isBestMove,
   collectEngineAnalysisData,
   generateAnalysisCacheKey,
-} from 'src/lib/analysisStorage'
-import { storeGameAnalysisCache } from 'src/api/analysis'
-import { extractPlayerMistakes, isBestMove } from 'src/lib/analysis'
+} from 'src/lib/analysis'
 import { LearnFromMistakesState, MistakePosition } from 'src/types/analysis'
 import { LEARN_FROM_MISTAKES_DEPTH } from 'src/constants/analysis'
 

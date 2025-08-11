@@ -42,7 +42,6 @@ import {
   Highlight,
   MoveMap,
   BlunderMeter,
-  MovesByRating,
   AnalysisSidebar,
 } from 'src/components'
 import { useTrainingController } from 'src/hooks/useTrainingController'
@@ -50,7 +49,7 @@ import { useAnalysisController } from 'src/hooks/useAnalysisController'
 import { AllStats, useStats } from 'src/hooks/useStats'
 import { PuzzleGame, Status } from 'src/types/puzzle'
 import { MaiaEvaluation, StockfishEvaluation } from 'src/types'
-import { ModalContext, WindowSizeContext, useTour } from 'src/contexts'
+import { WindowSizeContext, useTour } from 'src/contexts'
 import { TrainingControllerContext } from 'src/contexts/TrainingControllerContext'
 import {
   convertTrainingGameToAnalyzedGame,
@@ -58,7 +57,6 @@ import {
   getAvailableMovesArray,
   requiresPromotion,
 } from 'src/lib/train/utils'
-import { mockAnalysisData } from 'src/lib/analysis/mockAnalysisData'
 import { tourConfigs } from 'src/constants/tours'
 
 const statsLoader = async () => {

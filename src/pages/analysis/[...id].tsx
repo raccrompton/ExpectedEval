@@ -57,7 +57,7 @@ import { useAnalysisController } from 'src/hooks'
 import { tourConfigs } from 'src/constants/tours'
 import type { DrawShape } from 'chessground/draw'
 import { MAIA_MODELS } from 'src/constants/common'
-import { applyEngineAnalysisData } from 'src/lib/analysisStorage'
+import { applyEngineAnalysisData } from 'src/lib/analysis'
 import { deleteCustomAnalysis } from 'src/lib/customAnalysis'
 
 const AnalysisPage: NextPage = () => {
