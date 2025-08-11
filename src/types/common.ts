@@ -1,10 +1,11 @@
-import { Player } from '.'
 import { GameTree } from './tree'
-import { Termination } from './analysis'
 
 export * from './tree'
 
-export type Check = false | 'white' | 'black'
+export interface BaseGame {
+  id: string
+  tree: GameTree
+}
 
 export interface RawMove {
   board: string
@@ -15,16 +16,6 @@ export interface RawMove {
   uci?: string
 }
 
-export interface BaseGame {
-  id: string
-  tree: GameTree
-}
-
-export interface Game extends BaseGame {
-  gameType: string
-  blackPlayer: Player
-  whitePlayer: Player
-  termination?: Termination
-}
+export type Check = false | 'white' | 'black'
 
 export type Color = 'white' | 'black'

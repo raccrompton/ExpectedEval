@@ -1,13 +1,18 @@
+import { Player } from './player'
 import { AvailableMoves } from './puzzle'
-import { Game, GameNode, GameTree } from './common'
+import { BaseGame, GameNode, GameTree } from './common'
 
 export interface MoveValueMapping {
   [move: string]: number
 }
 
-export interface AnalyzedGame extends Game {
+export interface AnalyzedGame extends BaseGame {
   availableMoves: AvailableMoves[]
   type: EvaluationType
+  gameType: string
+  blackPlayer: Player
+  whitePlayer: Player
+  termination?: Termination
 }
 
 export interface BaseTreeControllerContext {

@@ -23,7 +23,7 @@ export interface PlayGameConfig {
   playType: PlayType
   isBrain: boolean
   sampleMoves: boolean
-  simulateMaiaTime?: boolean // Made optional since it's now managed in-game
+  simulateMaiaTime?: boolean
   startFen?: string
   maiaPartnerVersion?: string
 }
