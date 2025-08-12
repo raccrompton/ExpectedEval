@@ -16,8 +16,6 @@ import {
   getFavoritesAsWebGames,
   addFavoriteGame,
   removeFavoriteGame,
-  updateFavoriteName,
-  isFavoriteGame,
 } from 'src/lib/favorites'
 import { MaiaGameListEntry } from 'src/types'
 import { useRouter } from 'next/router'

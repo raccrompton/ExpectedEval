@@ -11,7 +11,7 @@ import {
   fetchPgnOfLichessGame,
   fetchAnalyzedMaiaGame,
   fetchAnalyzedPgnGame,
-  fetchAnalyzedTournamentGame,
+  fetchAnalyzedWorldChampionshipGame,
   retrieveGameAnalysisCache,
 } from 'src/api'
 import {
@@ -100,7 +100,7 @@ const AnalysisPage: NextPage = () => {
     ) => {
       let game
       try {
-        game = await fetchAnalyzedTournamentGame(newId)
+        game = await fetchAnalyzedWorldChampionshipGame(newId)
       } catch (e) {
         router.push('/401')
         return

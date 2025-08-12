@@ -72,7 +72,9 @@ export const fetchPgnOfLichessGame = async (id: string): Promise<string> => {
   return res.text()
 }
 
-export const fetchAnalyzedTournamentGame = async (gameId = ['FkgYSri1']) => {
+export const fetchAnalyzedWorldChampionshipGame = async (
+  gameId = ['FkgYSri1'],
+) => {
   const res = await fetch(
     buildUrl(`analysis/analysis_list/${gameId.join('/')}`),
   )

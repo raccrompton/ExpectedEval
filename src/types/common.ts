@@ -1,4 +1,5 @@
-import { GameTree } from './tree'
+import { GameNode, GameTree } from './tree'
+import { Dispatch, SetStateAction } from 'react'
 
 export * from './tree'
 
@@ -19,3 +20,16 @@ export interface RawMove {
 export type Check = false | 'white' | 'black'
 
 export type Color = 'white' | 'black'
+
+export interface BaseTreeControllerContext {
+  gameTree: GameTree
+  currentNode: GameNode
+  setCurrentNode: Dispatch<SetStateAction<GameNode>>
+  goToNode: (node: GameNode) => void
+  goToNextNode: () => void
+  goToPreviousNode: () => void
+  goToRootNode: () => void
+  plyCount: number
+  orientation: 'white' | 'black'
+  setOrientation: (orientation: 'white' | 'black') => void
+}

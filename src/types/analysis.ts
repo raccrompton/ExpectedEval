@@ -1,7 +1,6 @@
 import { Player } from './player'
+import { BaseGame } from './common'
 import { AvailableMoves } from './puzzle'
-import { Dispatch, SetStateAction } from 'react'
-import { BaseGame, GameNode, GameTree } from './common'
 
 export interface MoveValueMapping {
   [move: string]: number
@@ -14,19 +13,6 @@ export interface AnalyzedGame extends BaseGame {
   blackPlayer: Player
   whitePlayer: Player
   termination?: Termination
-}
-
-export interface BaseTreeControllerContext {
-  gameTree: GameTree
-  currentNode: GameNode
-  setCurrentNode: Dispatch<SetStateAction<GameNode>>
-  goToNode: (node: GameNode) => void
-  goToNextNode: () => void
-  goToPreviousNode: () => void
-  goToRootNode: () => void
-  plyCount: number
-  orientation: 'white' | 'black'
-  setOrientation: (orientation: 'white' | 'black') => void
 }
 
 export interface MaiaEvaluation {
