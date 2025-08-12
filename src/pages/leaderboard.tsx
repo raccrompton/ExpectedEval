@@ -43,47 +43,45 @@ const Leaderboard: React.FC = () => {
     return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`
   }
 
-  const fetchLeaderboard = useCallback(async () => {
-    setLoading(true)
-    const lb = await fetchLeaderboard()
-    setLastUpdated(new Date(lb.last_updated + 'Z'))
-    setLeaderboard([
-      {
-        id: 'regular',
-        icon: <RegularPlayIcon />,
-        name: 'Regular',
-        ranking: lb.play_leaders,
-      },
-      {
-        id: 'puzzles',
-        icon: <TrainIcon />,
-        name: 'Puzzles',
-        ranking: lb.puzzles_leaders,
-      },
-      {
-        id: 'turing',
-        icon: <BotOrNotIcon />,
-        name: 'Bot/Not',
-        ranking: lb.turing_leaders,
-      },
-      {
-        id: 'hand',
-        icon: <HandIcon />,
-        name: 'Hand',
-        ranking: lb.hand_leaders,
-      },
-      {
-        id: 'brain',
-        icon: <BrainIcon />,
-        name: 'Brain',
-        ranking: lb.brain_leaders,
-      },
-    ])
-    setLoading(false)
-  }, [])
-
   useEffect(() => {
-    fetchLeaderboard()
+    ;(async () => {
+      setLoading(true)
+      const lb = await fetchLeaderboard()
+      setLastUpdated(new Date(lb.last_updated + 'Z'))
+      setLeaderboard([
+        {
+          id: 'regular',
+          icon: <RegularPlayIcon />,
+          name: 'Regular',
+          ranking: lb.play_leaders,
+        },
+        {
+          id: 'puzzles',
+          icon: <TrainIcon />,
+          name: 'Puzzles',
+          ranking: lb.puzzles_leaders,
+        },
+        {
+          id: 'turing',
+          icon: <BotOrNotIcon />,
+          name: 'Bot/Not',
+          ranking: lb.turing_leaders,
+        },
+        {
+          id: 'hand',
+          icon: <HandIcon />,
+          name: 'Hand',
+          ranking: lb.hand_leaders,
+        },
+        {
+          id: 'brain',
+          icon: <BrainIcon />,
+          name: 'Brain',
+          ranking: lb.brain_leaders,
+        },
+      ])
+      setLoading(false)
+    })()
   }, [fetchLeaderboard])
 
   const containerVariants = {
