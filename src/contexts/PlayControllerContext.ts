@@ -24,7 +24,6 @@ export interface IPlayControllerContext extends BaseTreeControllerContext {
   makePlayerMove: ReturnType<typeof usePlayController>['makePlayerMove']
   updateClock: ReturnType<typeof usePlayController>['updateClock']
   setCurrentNode: ReturnType<typeof usePlayController>['setCurrentNode']
-  addMove: ReturnType<typeof usePlayController>['addMove']
   addMoveWithTime: ReturnType<typeof usePlayController>['addMoveWithTime']
 }
 
@@ -70,6 +69,5 @@ export const PlayControllerContext =
     goToNextNode: fn,
     goToPreviousNode: fn,
     goToRootNode: fn,
-    addMove: fn,
     addMoveWithTime: fn,
   })

@@ -119,13 +119,13 @@ export class GameTree {
     const mainLine = this.getMainLine()
     const lastNode = mainLine[mainLine.length - 1]
 
-    const chess = new Chess(lastNode.fen)
-    const result = chess.move(moveUci, { sloppy: true })
+    const board = new Chess(lastNode.fen)
+    const result = board.move(moveUci, { sloppy: true })
 
     if (result) {
       return this.addMainMove(
         lastNode,
-        chess.fen(),
+        board.fen(),
         moveUci,
         result.san,
         undefined,
@@ -260,7 +260,6 @@ export class GameNode {
     return parseInt(parts[5]) - (turn === 'w' ? 1 : 0)
   }
 
-  // Core classification logic - used by both instance and static methods
   private performMoveClassification(
     stockfishEval: StockfishEvaluation,
     maiaEval: { [rating: string]: MaiaEvaluation } | undefined,

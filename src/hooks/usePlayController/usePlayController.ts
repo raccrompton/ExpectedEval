@@ -1,11 +1,4 @@
-import {
-  Color,
-  Check,
-  GameNode,
-  GameTree,
-  Termination,
-  PlayGameConfig,
-} from 'src/types'
+import { Color, Check, GameTree, Termination, PlayGameConfig } from 'src/types'
 import { AllStats } from '../useStats'
 import { PlayedGame } from 'src/types/play'
 import { Chess, Piece, SQUARES } from 'chess.ts'
@@ -79,32 +72,36 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
   const [lastMoveTime, setLastMoveTime] = useState<number>(0)
 
   const moveList = useMemo(
-    () => controller.gameTree.toMoveArray(),
-    [controller.gameTree, treeVersion],
+    () => controller.tree.toMoveArray(),
+    [controller.tree, treeVersion],
   )
 
   const moveTimes = useMemo(
-    () => controller.gameTree.toTimeArray(),
-    [controller.gameTree, treeVersion],
+    () => controller.tree.toTimeArray(),
+    [controller.tree, treeVersion],
   )
 
   const game: PlayedGame = useMemo(() => {
-    const mainLine = controller.gameTree.getMainLine()
+    const mainLine = controller.tree.getMainLine()
+    console.log(mainLine)
     const lastNode = mainLine[mainLine.length - 1]
-    const chess = controller.gameTree.toChess()
+    const turn = lastNode.turn
+    const chess = controller.tree.toChess()
+
+    console.log('gme node', lastNode.fen)
 
     const termination = resigned
       ? Math.min(whiteClock, blackClock) > 0
         ? ({
-            result: chess.turn() == 'w' ? '0-1' : '1-0',
-            winner: chess.turn() == 'w' ? 'black' : 'white',
+            result: turn == 'w' ? '0-1' : '1-0',
+            winner: turn == 'w' ? 'black' : 'white',
             type: 'resign',
           } as Termination)
-        : computeTimeTermination(chess, chess.turn() == 'w' ? 'white' : 'black')
+        : computeTimeTermination(chess, turn == 'w' ? 'white' : 'black')
       : computeTermination(chess)
 
     const moves = []
-    const rootNode = controller.gameTree.getRoot()
+    const rootNode = controller.tree.getRoot()
     const rootChess = new Chess(rootNode.fen)
     moves.push({
       board: rootNode.fen,
@@ -131,12 +128,11 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
 
     return {
       id,
-      moves,
-      tree: controller.gameTree,
       termination,
-      turn: chess.turn() == 'b' ? 'black' : 'white',
+      tree: controller.tree,
+      turn: turn == 'b' ? 'black' : 'white',
     }
-  }, [controller.gameTree, treeVersion, resigned, whiteClock, blackClock, id])
+  }, [controller.tree, treeVersion, resigned, whiteClock, blackClock, id])
 
   const toPlay: Color | null = game.termination ? null : game.turn
   const playerActive = toPlay == config.player
@@ -228,33 +224,23 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
     whiteClock,
   ])
 
-  const addMove = useCallback(
-    (moveUci: string) => {
-      const newNode = controller.gameTree.addMoveToMainLine(moveUci)
-      if (newNode) {
-        controller.setCurrentNode(newNode)
-        // Force re-render by incrementing tree version
-        setTreeVersion((prev) => prev + 1)
-      }
-    },
-    [controller.gameTree, controller],
-  )
-
   const addMoveWithTime = useCallback(
     (moveUci: string, moveTime: number) => {
-      const newNode = controller.gameTree.addMoveToMainLine(moveUci, moveTime)
+      const newNode = controller.tree.addMoveToMainLine(moveUci, moveTime)
       if (newNode) {
+        console.log('old node', controller.currentNode.fen)
+        console.log('new move', moveUci)
+        console.log('new node', newNode.fen)
         controller.setCurrentNode(newNode)
-        // Force re-render by incrementing tree version
         setTreeVersion((prev) => prev + 1)
       }
     },
-    [controller.gameTree, controller],
+    [controller.tree, controller],
   )
 
   const reset = () => {
     const newTree = new GameTree(config.startFen || nullFen)
-    controller.gameTree = newTree
+    controller.tree = newTree
     controller.setCurrentNode(newTree.getRoot())
     setResigned(false)
     setLastMoveTime(0)
@@ -278,7 +264,7 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
 
   return {
     game,
-    gameTree: controller.gameTree,
+    gameTree: controller.tree,
     currentNode: controller.currentNode,
     player: config.player,
     playType: config.playType,
@@ -305,7 +291,6 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
     orientation: controller.orientation,
     setOrientation: controller.setOrientation,
 
-    addMove,
     addMoveWithTime,
     setResigned,
     reset,

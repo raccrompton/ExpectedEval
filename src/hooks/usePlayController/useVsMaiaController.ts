@@ -39,6 +39,7 @@ export const useVsMaiaPlayController = (
         !controller.playerActive &&
         !controller.game.termination
       ) {
+        console.log('node before move', controller.currentNode.fen)
         const maiaClock =
           (controller.player == 'white'
             ? controller.blackClock
@@ -125,10 +126,8 @@ export const useVsMaiaPlayController = (
         },
       )
 
-      // Only update stats after final move submitted
       if (controller.game.termination) {
         const winner = controller.game.termination?.winner
-        // Safely update rating - only if the response contains a valid rating
         safeUpdateRating(response.player_elo, updateRating)
         incrementStats(1, winner == playGameConfig.player ? 1 : 0)
       }

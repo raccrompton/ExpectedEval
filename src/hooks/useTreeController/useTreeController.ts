@@ -5,13 +5,14 @@ export const useTreeController = (
   gameTree: GameTree,
   initialOrientation: Color = 'white',
 ) => {
-  const [currentNode, setCurrentNode] = useState<GameNode>(gameTree.getRoot())
+  const [tree, setTree] = useState(gameTree)
+  const [currentNode, setCurrentNode] = useState<GameNode>(tree.getRoot())
   const [orientation, setOrientation] = useState<Color>(initialOrientation)
 
   const plyCount = useMemo(() => {
-    if (!gameTree) return 0
-    return gameTree.getMainLine().length
-  }, [gameTree])
+    if (!tree) return 0
+    return tree.getMainLine().length
+  }, [tree])
 
   const goToNode = useCallback(
     (node: GameNode) => {
@@ -33,17 +34,17 @@ export const useTreeController = (
   }, [currentNode, setCurrentNode])
 
   const goToRootNode = useCallback(() => {
-    if (gameTree) {
-      setCurrentNode(gameTree.getRoot())
+    if (tree) {
+      setCurrentNode(tree.getRoot())
     }
-  }, [gameTree, setCurrentNode])
+  }, [tree, setCurrentNode])
 
   useEffect(() => {
     setOrientation(initialOrientation)
   }, [initialOrientation])
 
   return {
-    gameTree,
+    tree,
     currentNode,
     setCurrentNode,
     orientation,
