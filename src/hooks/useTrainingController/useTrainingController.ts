@@ -16,12 +16,9 @@ const buildTrainingGameTree = (game: PuzzleGame): GameTree => {
   for (let i = 1; i < game.moves.length; i++) {
     const move = game.moves[i]
     if (move.uci && move.san) {
-      currentNode = tree.addMainMove(
-        currentNode,
-        move.board,
-        move.uci,
-        move.san,
-      )
+      currentNode = tree
+        .getLastMainlineNode()
+        .addChild(move.board, move.uci, move.san, true),
     }
   }
 

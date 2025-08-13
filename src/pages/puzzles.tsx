@@ -435,7 +435,7 @@ const Train: React.FC<Props> = ({
               analysisController.currentNode.mainChild,
             )
           } else {
-            const newVariation = analyzedGame.tree.addVariation(
+            const newVariation = analyzedGame.tree.addVariationNode(
               analysisController.currentNode,
               newFen,
               moveString,
@@ -525,7 +525,7 @@ const Train: React.FC<Props> = ({
               analysisController.currentNode.mainChild,
             )
           } else {
-            const newVariation = analyzedGame.tree.addVariation(
+            const newVariation = analyzedGame.tree.addVariationNode(
               analysisController.currentNode,
               newFen,
               moveString,
@@ -636,7 +636,7 @@ const Train: React.FC<Props> = ({
         if (analysisController.currentNode.mainChild?.move === moveString) {
           analysisController.goToNode(analysisController.currentNode.mainChild)
         } else {
-          const newVariation = analyzedGame.tree.addVariation(
+          const newVariation = analyzedGame.tree.addVariationNode(
             analysisController.currentNode,
             newFen,
             moveString,

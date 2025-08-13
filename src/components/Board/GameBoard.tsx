@@ -66,7 +66,7 @@ export const GameBoard: React.FC<Props> = ({
             if (currentNode.mainChild?.move === moveString) {
               goToNode(currentNode.mainChild)
             } else {
-              const newVariation = game.tree.addVariation(
+              const newVariation = game.tree.addVariationNode(
                 currentNode,
                 newFen,
                 moveString,

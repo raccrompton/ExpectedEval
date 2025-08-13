@@ -119,7 +119,7 @@ export const handleLichessStreamMove = (
   }
 
   try {
-    currentGame.tree.addMainMove(currentNode, fen, uci, san)
+    currentGame.tree.getLastMainlineNode().addChild(fen, uci, san, true)
   } catch (error) {
     console.error('Error adding move to tree:', error)
     return currentGame

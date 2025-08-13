@@ -1,4 +1,6 @@
 export * from './play'
+export * from './tree'
+export * from './node'
 export * from './player'
 export * from './analysis'
 export * from './openings'

@@ -61,12 +61,9 @@ export const fetchPuzzle = async () => {
   for (let i = 1; i < moves.length; i++) {
     const move = moves[i]
     if (move.uci && move.san) {
-      currentNode = gameTree.addMainMove(
-        currentNode,
-        move.board,
-        move.uci,
-        move.san,
-      )
+      currentNode = gameTree
+        .getLastMainlineNode()
+        .addChild(move.board, move.uci, move.san, true)
     }
   }
 

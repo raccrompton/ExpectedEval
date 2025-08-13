@@ -34,7 +34,9 @@ const buildTuringGameTree = (game: TuringGame): GameTree => {
     const move = game.moves[i]
     const uci = move.uci || (move.lastMove ? move.lastMove.join('') : undefined)
     if (uci && move.san) {
-      currentNode = tree.addMainMove(currentNode, move.board, uci, move.san)
+      currentNode = tree
+        .getLastMainlineNode()
+        .addChild(move.board, uci, move.san, true)
     }
   }
 

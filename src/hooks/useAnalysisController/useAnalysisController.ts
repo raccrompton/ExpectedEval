@@ -475,7 +475,7 @@ export const useAnalysisController = (
     const moveResult = chess.move(currentMistake.bestMove, { sloppy: true })
 
     if (moveResult) {
-      const newVariation = game.tree.addVariation(
+      const newVariation = game.tree.addVariationNode(
         controller.currentNode,
         chess.fen(),
         currentMistake.bestMove,

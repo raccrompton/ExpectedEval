@@ -1,7 +1,6 @@
-import { GameNode, GameTree } from './tree'
+import { GameNode } from './node'
+import { GameTree } from './tree'
 import { Dispatch, SetStateAction } from 'react'
-
-export * from './tree'
 
 export interface BaseGame {
   id: string

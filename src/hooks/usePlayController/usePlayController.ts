@@ -226,13 +226,27 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
 
   const addMoveWithTime = useCallback(
     (moveUci: string, moveTime: number) => {
-      const newNode = controller.tree.addMoveToMainLine(moveUci, moveTime)
-      if (newNode) {
-        console.log('old node', controller.currentNode.fen)
-        console.log('new move', moveUci)
-        console.log('new node', newNode.fen)
-        controller.setCurrentNode(newNode)
-        setTreeVersion((prev) => prev + 1)
+      const lastNode = controller.tree.getLastMainlineNode()
+      const board = new Chess(lastNode.fen)
+      const result = board.move(moveUci, { sloppy: true })
+
+      if (result) {
+        const newNode = lastNode.addChild(
+          board.fen(),
+          moveUci,
+          result.san,
+          true,
+          undefined,
+          moveTime,
+        )
+
+        if (newNode) {
+          console.log('old node', controller.currentNode.fen)
+          console.log('new move', moveUci)
+          console.log('new node', newNode.fen)
+          controller.setCurrentNode(newNode)
+          setTreeVersion((prev) => prev + 1)
+        }
       }
     },
     [controller.tree, controller],

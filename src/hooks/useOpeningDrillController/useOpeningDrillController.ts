@@ -61,12 +61,9 @@ const parsePgnToTree = (pgn: string, gameTree: GameTree): GameNode | null => {
       if (existingChild) {
         currentNode = existingChild
       } else {
-        const newNode = gameTree.addMainMove(
-          currentNode,
-          chess.fen(),
-          moveUci,
-          moveObj.san,
-        )
+        const newNode = gameTree
+          .getLastMainlineNode()
+          .addChild(chess.fen(), moveUci, moveObj.san)
         if (newNode) {
           currentNode = newNode
         } else {
@@ -810,12 +807,9 @@ export const useOpeningDrillController = (
           try {
             const moveObj = chess.move(moveUci, { sloppy: true })
             if (moveObj) {
-              const newNode = gameTree.addMainMove(
-                currentNode,
-                chess.fen(),
-                moveUci,
-                moveObj.san,
-              )
+              const newNode = gameTree
+                .getLastMainlineNode()
+                .addChild(chess.fen(), moveUci, moveObj.san)
               if (newNode) {
                 currentNode = newNode
                 finalNode = newNode
@@ -834,12 +828,10 @@ export const useOpeningDrillController = (
           try {
             const moveObj = chess.move(moveUci, { sloppy: true })
             if (moveObj) {
-              const newNode = gameTree.addMainMove(
-                currentNode,
-                chess.fen(),
-                moveUci,
-                moveObj.san,
-              )
+              const newNode = gameTree
+                .getLastMainlineNode()
+                .addChild(currentNode, chess.fen(), moveUci, true, moveObj.san)
+
               if (newNode) {
                 currentNode = newNode
                 finalNode = newNode

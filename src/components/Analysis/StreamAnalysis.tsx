@@ -92,7 +92,7 @@ export const StreamAnalysis: React.FC<Props> = ({
       } else {
         // For stream analysis, ALWAYS create variations for player moves
         // This preserves the live game mainline and allows exploration
-        const newVariation = game.tree.addVariation(
+        const newVariation = game.tree.addVariationNode(
           analysisController.currentNode,
           newFen,
           moveString,
