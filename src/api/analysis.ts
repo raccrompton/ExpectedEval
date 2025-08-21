@@ -348,11 +348,7 @@ export const storeCustomGame = async (data: {
   pgn?: string
   fen?: string
 }): Promise<{
-  id: string
-  name: string
-  pgn?: string
-  fen?: string
-  created_at: string
+  game_id: string
 }> => {
   const res = await fetch(buildUrl('analysis/store_custom_game'), {
     method: 'POST',

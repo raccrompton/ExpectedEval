@@ -13,6 +13,7 @@ import {
   fetchAnalyzedPgnGame,
   fetchAnalyzedWorldChampionshipGame,
   retrieveGameAnalysisCache,
+  storeCustomGame,
 } from 'src/api'
 import {
   AnalyzedGame,
@@ -316,6 +317,21 @@ const Analysis: React.FC<Props> = ({
   const handleToggleAnalysis = useCallback(() => {
     setAnalysisEnabled((prev) => !prev)
   }, [])
+
+  const handleCustomAnalysis = useCallback(
+    (type: 'fen' | 'pgn', data: string, name?: string) => {
+      ;(async () => {
+        const { game_id } = await storeCustomGame({
+          name: name,
+          pgn: type === 'pgn' ? data : undefined,
+          fen: type === 'fen' ? data : undefined,
+        })
+
+        router.push(`/analysis/${game_id}/custom`)
+      })()
+    },
+    [],
+  )
 
   const handleLearnFromMistakes = useCallback(() => {
     controller.learnFromMistakes.start()
