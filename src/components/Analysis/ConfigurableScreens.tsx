@@ -6,7 +6,7 @@ import { ExportGame } from 'src/components/Common/ExportGame'
 import {
   AnalyzedGame,
   GameNode,
-  LearnFromMistakesState,
+  LearnFromMistakesConfiguration,
   MistakePosition,
 } from 'src/types'
 
@@ -28,7 +28,7 @@ interface Props {
     status: 'saving' | 'unsaved' | 'saved'
   }
   // Learn from mistakes props
-  learnFromMistakesState?: LearnFromMistakesState
+  learnFromMistakesState?: LearnFromMistakesConfiguration
   learnFromMistakesCurrentInfo?: {
     mistake: MistakePosition
     progress: string

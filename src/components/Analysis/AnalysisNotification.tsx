@@ -1,9 +1,9 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { GameAnalysisProgress } from 'src/hooks/useAnalysisController/useAnalysisController'
+import { DeepAnalysisProgress } from 'src/hooks/useAnalysisController/useAnalysisController'
 
 interface Props {
-  progress: GameAnalysisProgress
+  progress: DeepAnalysisProgress
   onCancel: () => void
 }
 

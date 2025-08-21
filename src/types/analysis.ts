@@ -90,6 +90,19 @@ export interface ColorSanMapping {
   }
 }
 
+export interface DeepAnalysisConfig {
+  targetDepth: number
+}
+
+export interface DeepAnalysisProgress {
+  currentMoveIndex: number
+  totalMoves: number
+  currentMove: string
+  isAnalyzing: boolean
+  isComplete: boolean
+  isCancelled: boolean
+}
+
 export interface BlunderInfo {
   move: string
   probability: number
@@ -122,7 +135,7 @@ export interface MistakePosition {
   playerColor: 'white' | 'black'
 }
 
-export interface LearnFromMistakesState {
+export interface LearnFromMistakesConfiguration {
   isActive: boolean
   showPlayerSelection: boolean
   selectedPlayerColor: 'white' | 'black' | null

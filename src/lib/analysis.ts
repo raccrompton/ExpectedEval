@@ -298,9 +298,9 @@ export function extractPlayerMistakes(
       if (!bestMoveResult) continue
 
       mistakes.push({
-        nodeId: `move-${i}`, // Simple ID based on position in main line
-        moveIndex: i, // Index of the mistake node in the main line
-        fen: parentNode.fen, // Position before the mistake
+        nodeId: `move-${i}`,
+        moveIndex: i,
+        fen: parentNode.fen,
         playedMove: node.move,
         san: node.san,
         type: node.blunder ? 'blunder' : 'inaccuracy',

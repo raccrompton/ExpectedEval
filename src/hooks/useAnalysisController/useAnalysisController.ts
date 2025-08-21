@@ -27,21 +27,12 @@ import {
   collectEngineAnalysisData,
   generateAnalysisCacheKey,
 } from 'src/lib/analysis'
-import { LearnFromMistakesState } from 'src/types/analysis'
+import {
+  LearnFromMistakesConfiguration,
+  DeepAnalysisConfig,
+  DeepAnalysisProgress,
+} from 'src/types/analysis'
 import { LEARN_FROM_MISTAKES_DEPTH } from 'src/constants/analysis'
-
-export interface GameAnalysisProgress {
-  currentMoveIndex: number
-  totalMoves: number
-  currentMove: string
-  isAnalyzing: boolean
-  isComplete: boolean
-  isCancelled: boolean
-}
-
-export interface GameAnalysisConfig {
-  targetDepth: number
-}
 
 export const useAnalysisController = (
   game: AnalyzedGame,
@@ -61,14 +52,12 @@ export const useAnalysisController = (
   const [analysisState, setAnalysisState] = useState(0)
   const inProgressAnalyses = useMemo(() => new Set<string>(), [])
 
-  // Game analysis state
-  const [gameAnalysisConfig, setGameAnalysisConfig] =
-    useState<GameAnalysisConfig>({
+  const [deepAnalysisConfiguration, setDeepAnalysisConfig] =
+    useState<DeepAnalysisConfig>({
       targetDepth: 18,
     })
-
-  const [gameAnalysisProgress, setGameAnalysisProgress] =
-    useState<GameAnalysisProgress>({
+  const [deepAnalysisProgress, setDeepAnalysisProgress] =
+    useState<DeepAnalysisProgress>({
       currentMoveIndex: 0,
       totalMoves: 0,
       currentMove: '',
@@ -76,8 +65,7 @@ export const useAnalysisController = (
       isComplete: false,
       isCancelled: false,
     })
-
-  const gameAnalysisController = useRef<{
+  const deepAnalysisStatus = useRef<{
     cancelled: boolean
     currentNode: GameNode | null
   }>({
@@ -91,12 +79,12 @@ export const useAnalysisController = (
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const saveAnalysisToBackend = useCallback(async () => {
-    if (!enableAutoSave || !game.id || game.type === 'tournament') {
-      return
-    }
-
-    // Don't save if there are no unsaved changes
-    if (!hasUnsavedAnalysis) {
+    if (
+      !game.id ||
+      !enableAutoSave ||
+      !hasUnsavedAnalysis ||
+      game.type === 'tournament'
+    ) {
       return
     }
 
@@ -126,15 +114,9 @@ export const useAnalysisController = (
 
       await storeGameAnalysisCache(game.id, analysisData)
       setLastSavedCacheKey(cacheKey)
-      setHasUnsavedAnalysis(false) // Mark as saved
-      console.log(
-        'Analysis saved to backend:',
-        analysisData.length,
-        'positions',
-      )
+      setHasUnsavedAnalysis(false)
     } catch (error) {
       console.warn('Failed to save analysis to backend:', error)
-      // Don't show error to user as this is background functionality
     } finally {
       setIsAutoSaving(false)
     }
@@ -183,23 +165,20 @@ export const useAnalysisController = (
     }
   }, [game.id, enableAutoSave])
 
-  // Simple batch analysis functions that reuse existing analysis infrastructure
-  const startGameAnalysis = useCallback(
+  const startDeepAnalysis = useCallback(
     async (targetDepth: number) => {
-      // If already analyzing, cancel the current analysis first
-      if (gameAnalysisProgress.isAnalyzing) {
-        gameAnalysisController.current.cancelled = true
+      if (deepAnalysisProgress.isAnalyzing) {
+        deepAnalysisStatus.current.cancelled = true
         stockfish.stopEvaluation()
       }
 
-      // Reset state
-      gameAnalysisController.current.cancelled = false
-      gameAnalysisController.current.currentNode = null
+      deepAnalysisStatus.current.cancelled = false
+      deepAnalysisStatus.current.currentNode = null
 
       const mainLine = controller.tree.getMainLine()
 
-      setGameAnalysisConfig({ targetDepth })
-      setGameAnalysisProgress({
+      setDeepAnalysisConfig({ targetDepth })
+      setDeepAnalysisProgress({
         currentMoveIndex: 0,
         totalMoves: mainLine.length,
         currentMove: '',
@@ -208,21 +187,20 @@ export const useAnalysisController = (
         isCancelled: false,
       })
 
-      // Wait for engines to be ready
       let retries = 0
-      const maxRetries = 50 // 5 seconds
+      const maxRetries = 50
 
       while (
         retries < maxRetries &&
         (!stockfish.isReady() || maia.status !== 'ready') &&
-        !gameAnalysisController.current.cancelled
+        !deepAnalysisStatus.current.cancelled
       ) {
         await new Promise((resolve) => setTimeout(resolve, 100))
         retries++
       }
 
-      if (gameAnalysisController.current.cancelled) {
-        setGameAnalysisProgress((prev) => ({
+      if (deepAnalysisStatus.current.cancelled) {
+        setDeepAnalysisProgress((prev) => ({
           ...prev,
           isAnalyzing: false,
           isCancelled: true,
@@ -232,34 +210,30 @@ export const useAnalysisController = (
 
       // Analyze each position in the main line
       for (let i = 0; i < mainLine.length; i++) {
-        if (gameAnalysisController.current.cancelled) break
+        if (deepAnalysisStatus.current.cancelled) break
 
         const node = mainLine[i]
-        gameAnalysisController.current.currentNode = node
-
-        // Update the UI to show the current node being analyzed (live update)
+        deepAnalysisStatus.current.currentNode = node
         controller.setCurrentNode(node)
 
         const moveDisplay = node.san || node.move || `Position ${i + 1}`
 
-        setGameAnalysisProgress((prev) => ({
+        setDeepAnalysisProgress((prev) => ({
           ...prev,
           currentMoveIndex: i + 1,
           currentMove: moveDisplay,
         }))
 
-        // Skip analysis if this is a terminal position (checkmate/stalemate)
         const chess = new Chess(node.fen)
         const isTerminalPosition = chess.gameOver()
 
         if (!isTerminalPosition) {
-          // Wait for analysis to reach target depth or complete (mate, etc.)
           let analysisRetries = 0
           const maxAnalysisRetries = 600 // 60 seconds max per position
 
           while (
             analysisRetries < maxAnalysisRetries &&
-            !gameAnalysisController.current.cancelled &&
+            !deepAnalysisStatus.current.cancelled &&
             (!node.analysis.stockfish ||
               (node.analysis.stockfish.depth < targetDepth &&
                 node.analysis.stockfish.model_optimal_cp !== 10000 &&
@@ -271,38 +245,37 @@ export const useAnalysisController = (
         }
       }
 
-      // Analysis complete
-      setGameAnalysisProgress((prev) => ({
+      setDeepAnalysisProgress((prev) => ({
         ...prev,
         isAnalyzing: false,
-        isComplete: !gameAnalysisController.current.cancelled,
-        isCancelled: gameAnalysisController.current.cancelled,
+        isComplete: !deepAnalysisStatus.current.cancelled,
+        isCancelled: deepAnalysisStatus.current.cancelled,
       }))
 
-      gameAnalysisController.current.currentNode = null
+      deepAnalysisStatus.current.currentNode = null
     },
     [
-      controller.tree,
-      gameAnalysisProgress.isAnalyzing,
       stockfish,
       maia.status,
+      controller.tree,
+      deepAnalysisProgress.isAnalyzing,
       controller.setCurrentNode,
     ],
   )
 
-  const cancelGameAnalysis = useCallback(() => {
-    gameAnalysisController.current.cancelled = true
+  const cancelDeepAnalysis = useCallback(() => {
+    deepAnalysisStatus.current.cancelled = true
     stockfish.stopEvaluation()
 
-    setGameAnalysisProgress((prev) => ({
+    setDeepAnalysisProgress((prev) => ({
       ...prev,
       isAnalyzing: false,
       isCancelled: true,
     }))
   }, [stockfish])
 
-  const resetGameAnalysisProgress = useCallback(() => {
-    setGameAnalysisProgress({
+  const resetDeepAnalysisProgress = useCallback(() => {
+    setDeepAnalysisProgress({
       currentMoveIndex: 0,
       totalMoves: 0,
       currentMove: '',
@@ -312,9 +285,8 @@ export const useAnalysisController = (
     })
   }, [])
 
-  // Learn from mistakes state
-  const [learnFromMistakesState, setLearnFromMistakesState] =
-    useState<LearnFromMistakesState>({
+  const [learnModeState, setLearnModeState] =
+    useState<LearnFromMistakesConfiguration>({
       isActive: false,
       showPlayerSelection: false,
       selectedPlayerColor: null,
@@ -323,85 +295,75 @@ export const useAnalysisController = (
       hasCompletedAnalysis: false,
       showSolution: false,
       currentAttempt: 1,
-      maxAttempts: Infinity, // Infinite attempts
+      maxAttempts: Infinity,
       originalPosition: null,
     })
 
-  // Learn from mistakes functions
-  const startLearnFromMistakes = useCallback(async () => {
+  const requestLearnModePlayerColor = useCallback(async () => {
     // Show player selection dialog first
-    setLearnFromMistakesState((prev) => ({
+    setLearnModeState((prev) => ({
       ...prev,
       showPlayerSelection: true,
       isActive: true,
     }))
   }, [])
 
-  const startLearnFromMistakesWithColor = useCallback(
+  const checkAnalysisProgressForLearnMode = useCallback(
     async (playerColor: 'white' | 'black') => {
       // Check if we have sufficient analysis for learn from mistakes
       const mainLine = controller.tree.getMainLine()
-      // For learn from mistakes, we need reasonable analysis (depth >= 12) rather than requiring exact depth 15
-      // Most games are analyzed at depth 18 by default, so this should work
-      const minimumDepthForMistakeDetection = 12
       const hasEnoughAnalysis = mainLine.every((node) => {
-        // Skip root node (no move)
         if (!node.move) return true
 
-        // Skip terminal positions (checkmate/stalemate) - they don't need analysis
+        // Skip terminal positions (checkmate/stalemate)
         const chess = new Chess(node.fen)
         if (chess.gameOver()) return true
 
-        // Check if this position has sufficient analysis depth
         return (
-          (node.analysis.stockfish?.depth ?? 0) >=
-          minimumDepthForMistakeDetection
+          (node.analysis.stockfish?.depth ?? 0) >= LEARN_FROM_MISTAKES_DEPTH
         )
       })
 
       if (hasEnoughAnalysis) {
-        // Game already has enough analysis, initialize immediately
-        initializeLearnFromMistakesWithColor(playerColor)
+        beginLearnMode(playerColor)
         return Promise.resolve()
       } else {
-        // Need to analyze the game first
-        await startGameAnalysis(LEARN_FROM_MISTAKES_DEPTH)
+        await startDeepAnalysis(LEARN_FROM_MISTAKES_DEPTH)
 
-        // Wait for analysis to complete
         return new Promise<void>((resolve) => {
           const checkComplete = () => {
             if (
-              gameAnalysisProgress.isComplete ||
-              gameAnalysisProgress.isCancelled
+              deepAnalysisProgress.isComplete ||
+              deepAnalysisProgress.isCancelled
             ) {
-              if (gameAnalysisProgress.isComplete) {
-                initializeLearnFromMistakesWithColor(playerColor)
+              if (deepAnalysisProgress.isComplete) {
+                beginLearnMode(playerColor)
               }
               resolve()
             } else {
               setTimeout(checkComplete, 500)
             }
           }
+
           checkComplete()
         })
       }
     },
-    [gameAnalysisProgress, startGameAnalysis, controller.tree],
+    [deepAnalysisProgress, startDeepAnalysis, controller.tree],
   )
 
-  const initializeLearnFromMistakesWithColor = useCallback(
+  const beginLearnMode = useCallback(
     (playerColor: 'white' | 'black') => {
       const mistakes = extractPlayerMistakes(controller.tree, playerColor)
 
       if (mistakes.length === 0) {
-        // No mistakes found - show toast and reset state
         const colorName = playerColor === 'white' ? 'White' : 'Black'
         toast(`No clear mistakes made by ${colorName}`, {
           icon: '👑',
           duration: 3000,
         })
 
-        setLearnFromMistakesState({
+        setLearnModeState({
           isActive: false,
           showPlayerSelection: false,
           selectedPlayerColor: null,
@@ -416,13 +378,13 @@ export const useAnalysisController = (
         return
       }
 
-      // Navigate to the first mistake position (the position where the player needs to move)
+      // Navigate to the first mistake position
       const firstMistake = mistakes[0]
       const mistakeNode = controller.tree.getMainLine()[firstMistake.moveIndex]
       const originalPosition =
         mistakeNode && mistakeNode.parent ? mistakeNode.parent.fen : null
 
-      setLearnFromMistakesState({
+      setLearnModeState({
         isActive: true,
         showPlayerSelection: false,
         selectedPlayerColor: playerColor,
@@ -442,8 +404,8 @@ export const useAnalysisController = (
     [controller.tree, controller],
   )
 
-  const stopLearnFromMistakes = useCallback(() => {
-    setLearnFromMistakesState({
+  const stopLearnMode = useCallback(() => {
+    setLearnModeState({
       isActive: false,
       showPlayerSelection: false,
       selectedPlayerColor: null,
@@ -457,20 +419,14 @@ export const useAnalysisController = (
     })
   }, [])
 
-  const showSolution = useCallback(() => {
-    if (
-      !learnFromMistakesState.isActive ||
-      learnFromMistakesState.mistakes.length === 0
-    )
-      return
+  const showLearnModeSolution = useCallback(() => {
+    if (!learnModeState.isActive || learnModeState.mistakes.length === 0) return
 
     const currentMistake =
-      learnFromMistakesState.mistakes[
-        learnFromMistakesState.currentMistakeIndex
-      ]
+      learnModeState.mistakes[learnModeState.currentMistakeIndex]
     if (!currentMistake || !controller.currentNode) return
 
-    // Make the best move on the board (this will create a variation)
+    // Make the best move on the board
     const chess = new Chess(controller.currentNode.fen)
     const moveResult = chess.move(currentMistake.bestMove, { sloppy: true })
 
@@ -485,28 +441,24 @@ export const useAnalysisController = (
       controller.goToNode(newVariation)
     }
 
-    setLearnFromMistakesState((prev) => ({
+    setLearnModeState((prev) => ({
       ...prev,
       showSolution: true,
     }))
-  }, [learnFromMistakesState, controller, controller.tree])
+  }, [learnModeState, controller, controller.tree])
 
-  const goToNextMistake = useCallback(() => {
-    if (
-      !learnFromMistakesState.isActive ||
-      learnFromMistakesState.mistakes.length === 0
-    )
-      return
+  const goToNextLearnModeMistake = useCallback(() => {
+    if (!learnModeState.isActive || learnModeState.mistakes.length === 0) return
 
-    const nextIndex = learnFromMistakesState.currentMistakeIndex + 1
+    const nextIndex = learnModeState.currentMistakeIndex + 1
 
-    if (nextIndex >= learnFromMistakesState.mistakes.length) {
+    if (nextIndex >= learnModeState.mistakes.length) {
       // No more mistakes - end the session
-      stopLearnFromMistakes()
+      stopLearnMode()
       return
     }
 
-    const nextMistake = learnFromMistakesState.mistakes[nextIndex]
+    const nextMistake = learnModeState.mistakes[nextIndex]
     const mistakeNode = controller.tree.getMainLine()[nextMistake.moveIndex]
     const newOriginalPosition =
       mistakeNode && mistakeNode.parent ? mistakeNode.parent.fen : null
@@ -515,87 +467,72 @@ export const useAnalysisController = (
       controller.setCurrentNode(mistakeNode.parent)
     }
 
-    setLearnFromMistakesState((prev) => ({
+    setLearnModeState((prev) => ({
       ...prev,
       currentMistakeIndex: nextIndex,
       showSolution: false,
       currentAttempt: 1,
       originalPosition: newOriginalPosition,
     }))
-  }, [
-    learnFromMistakesState,
-    controller,
-    controller.tree,
-    stopLearnFromMistakes,
-  ])
+  }, [learnModeState, controller, controller.tree, stopLearnMode])
 
   const checkMoveInLearnMode = useCallback(
     (moveUci: string): 'correct' | 'incorrect' | 'not-learning' => {
-      if (!learnFromMistakesState.isActive || !controller.currentNode)
+      if (!learnModeState.isActive || !controller.currentNode)
         return 'not-learning'
 
       const currentMistake =
-        learnFromMistakesState.mistakes[
-          learnFromMistakesState.currentMistakeIndex
-        ]
+        learnModeState.mistakes[learnModeState.currentMistakeIndex]
       if (!currentMistake) return 'not-learning'
 
       const isCorrect = isBestMove(controller.currentNode, moveUci)
 
       if (isCorrect) {
-        setLearnFromMistakesState((prev) => ({
+        setLearnModeState((prev) => ({
           ...prev,
           showSolution: true,
         }))
         return 'correct'
       } else {
-        setLearnFromMistakesState((prev) => ({
+        setLearnModeState((prev) => ({
           ...prev,
           currentAttempt: prev.currentAttempt + 1,
         }))
         return 'incorrect'
       }
     },
-    [learnFromMistakesState, controller],
+    [learnModeState, controller],
   )
 
-  // Function to return to the original position when a move is incorrect
-  const returnToOriginalPosition = useCallback(() => {
-    if (!learnFromMistakesState.originalPosition) return
+  const returnLearnModeMistakeToOriginalPosition = useCallback(() => {
+    if (!learnModeState.originalPosition) return
 
-    // Find the node with the original FEN
     const mainLine = controller.tree.getMainLine()
     const originalNode = mainLine.find(
-      (node) => node.fen === learnFromMistakesState.originalPosition,
+      (node) => node.fen === learnModeState.originalPosition,
     )
 
     if (originalNode) {
       controller.setCurrentNode(originalNode)
     }
-  }, [learnFromMistakesState.originalPosition, controller.tree, controller])
+  }, [learnModeState.originalPosition, controller.tree, controller])
 
-  const getCurrentMistakeInfo = useCallback(() => {
-    if (
-      !learnFromMistakesState.isActive ||
-      learnFromMistakesState.mistakes.length === 0
-    ) {
+  const getCurrentLearnModeMistakeInfo = useCallback(() => {
+    if (!learnModeState.isActive || learnModeState.mistakes.length === 0) {
       return null
     }
 
     const currentMistake =
-      learnFromMistakesState.mistakes[
-        learnFromMistakesState.currentMistakeIndex
-      ]
-    const totalMistakes = learnFromMistakesState.mistakes.length
-    const currentIndex = learnFromMistakesState.currentMistakeIndex + 1
+      learnModeState.mistakes[learnModeState.currentMistakeIndex]
+    const totalMistakes = learnModeState.mistakes.length
+    const currentIndex = learnModeState.currentMistakeIndex + 1
 
     return {
       mistake: currentMistake,
       progress: `${currentIndex} of ${totalMistakes}`,
-      isLastMistake:
-        learnFromMistakesState.currentMistakeIndex === totalMistakes - 1,
+      isLastMistake: learnModeState.currentMistakeIndex === totalMistakes - 1,
     }
-  }, [learnFromMistakesState])
+  }, [learnModeState])
 
   const [currentMove, setCurrentMove] = useState<[string, string] | null>()
   const [currentMaiaModel, setCurrentMaiaModel] = useLocalStorage(
@@ -614,7 +551,9 @@ export const useAnalysisController = (
     inProgressAnalyses,
     currentMaiaModel,
     setAnalysisState,
-    gameAnalysisProgress.isAnalyzing ? gameAnalysisConfig.targetDepth : 18,
+    deepAnalysisProgress.isAnalyzing
+      ? deepAnalysisConfiguration.targetDepth
+      : 18,
   )
 
   const availableMoves = useMemo(() => {
@@ -749,12 +688,12 @@ export const useAnalysisController = (
     stockfish: stockfish,
     maia: maia,
     gameAnalysis: {
-      progress: gameAnalysisProgress,
-      config: gameAnalysisConfig,
-      setConfig: setGameAnalysisConfig,
-      startAnalysis: startGameAnalysis,
-      cancelAnalysis: cancelGameAnalysis,
-      resetProgress: resetGameAnalysisProgress,
+      progress: deepAnalysisProgress,
+      config: deepAnalysisConfiguration,
+      setConfig: setDeepAnalysisConfig,
+      startAnalysis: startDeepAnalysis,
+      cancelAnalysis: cancelDeepAnalysis,
+      resetProgress: resetDeepAnalysisProgress,
       isEnginesReady: stockfish.isReady() && maia.status === 'ready',
       saveAnalysis: saveAnalysisToBackend,
       autoSave: {
@@ -768,15 +707,15 @@ export const useAnalysisController = (
       },
     },
     learnFromMistakes: {
-      state: learnFromMistakesState,
-      start: startLearnFromMistakes,
-      startWithColor: startLearnFromMistakesWithColor,
-      stop: stopLearnFromMistakes,
-      showSolution,
-      goToNext: goToNextMistake,
+      state: learnModeState,
+      start: requestLearnModePlayerColor,
+      startWithColor: checkAnalysisProgressForLearnMode,
+      stop: stopLearnMode,
+      showSolution: showLearnModeSolution,
+      goToNext: goToNextLearnModeMistake,
       checkMove: checkMoveInLearnMode,
-      getCurrentInfo: getCurrentMistakeInfo,
-      returnToOriginalPosition,
+      getCurrentInfo: getCurrentLearnModeMistakeInfo,
+      returnToOriginalPosition: returnLearnModeMistakeToOriginalPosition,
     },
   }
 }

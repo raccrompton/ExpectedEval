@@ -1,9 +1,12 @@
 import React from 'react'
 import Image from 'next/image'
-import { LearnFromMistakesState, MistakePosition } from 'src/types/analysis'
+import {
+  LearnFromMistakesConfiguration,
+  MistakePosition,
+} from 'src/types/analysis'
 
 interface Props {
-  state: LearnFromMistakesState
+  state: LearnFromMistakesConfiguration
   currentInfo: {
     mistake: MistakePosition
     progress: string

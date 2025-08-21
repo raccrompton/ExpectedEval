@@ -303,7 +303,6 @@ const Analysis: React.FC<Props> = ({
 
   const handleAnalysisConfigConfirm = useCallback(
     (depth: number) => {
-      // Reset any previous analysis state before starting new one
       controller.gameAnalysis.resetProgress()
       controller.gameAnalysis.startAnalysis(depth)
     },
@@ -359,12 +358,11 @@ const Analysis: React.FC<Props> = ({
   const handleSelectPlayer = useCallback(
     (color: 'white' | 'black') => {
       controller.learnFromMistakes.startWithColor(color)
-      setAnalysisEnabled(false) // Auto-disable analysis when starting learn mode
+      setAnalysisEnabled(false)
     },
     [controller.learnFromMistakes],
   )
 
-  // Create empty data structures for when analysis is disabled
   const emptyBlunderMeterData = useMemo(
     () => ({
       goodMoves: { moves: [], probability: 0 },
@@ -397,14 +395,8 @@ const Analysis: React.FC<Props> = ({
     }
   }
 
-  // Mock handlers for when analysis is disabled
-  const mockHover = useCallback(() => {
-    // Intentionally empty - no interaction when analysis disabled
-  }, [])
-
-  const mockSetHoverArrow = useCallback(() => {
-    // Intentionally empty - no hover arrows when analysis disabled
-  }, [])
+  const mockHover = useCallback(() => void 0, [])
+  const mockSetHoverArrow = useCallback(() => void 0, [])
 
   const makeMove = (move: string) => {
     if (!controller.currentNode || !analyzedGame.tree) return
