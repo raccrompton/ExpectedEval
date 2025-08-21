@@ -9,6 +9,13 @@ export const useTreeController = (
   const [currentNode, setCurrentNode] = useState<GameNode>(tree.getRoot())
   const [orientation, setOrientation] = useState<Color>(initialOrientation)
 
+  useEffect(() => {
+    if (tree !== gameTree) {
+      setTree(gameTree)
+      setCurrentNode(gameTree.getRoot())
+    }
+  }, [gameTree])
+
   const plyCount = useMemo(() => {
     if (!tree) return 0
     return tree.getMainLine().length

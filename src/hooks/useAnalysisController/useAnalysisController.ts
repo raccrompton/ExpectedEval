@@ -27,7 +27,7 @@ import {
   collectEngineAnalysisData,
   generateAnalysisCacheKey,
 } from 'src/lib/analysis'
-import { LearnFromMistakesState, MistakePosition } from 'src/types/analysis'
+import { LearnFromMistakesState } from 'src/types/analysis'
 import { LEARN_FROM_MISTAKES_DEPTH } from 'src/constants/analysis'
 
 export interface GameAnalysisProgress {
@@ -102,7 +102,7 @@ export const useAnalysisController = (
 
     try {
       setIsAutoSaving(true)
-      const analysisData = collectEngineAnalysisData(game.tree)
+      const analysisData = collectEngineAnalysisData(controller.tree)
 
       if (analysisData.length === 0) {
         setIsAutoSaving(false)
@@ -142,7 +142,7 @@ export const useAnalysisController = (
     enableAutoSave,
     game.id,
     game.type,
-    game.tree,
+    controller.tree,
     lastSavedCacheKey,
     hasUnsavedAnalysis,
   ])
@@ -196,7 +196,7 @@ export const useAnalysisController = (
       gameAnalysisController.current.cancelled = false
       gameAnalysisController.current.currentNode = null
 
-      const mainLine = game.tree.getMainLine()
+      const mainLine = controller.tree.getMainLine()
 
       setGameAnalysisConfig({ targetDepth })
       setGameAnalysisProgress({
@@ -282,7 +282,7 @@ export const useAnalysisController = (
       gameAnalysisController.current.currentNode = null
     },
     [
-      game.tree,
+      controller.tree,
       gameAnalysisProgress.isAnalyzing,
       stockfish,
       maia.status,
@@ -340,7 +340,7 @@ export const useAnalysisController = (
   const startLearnFromMistakesWithColor = useCallback(
     async (playerColor: 'white' | 'black') => {
       // Check if we have sufficient analysis for learn from mistakes
-      const mainLine = game.tree.getMainLine()
+      const mainLine = controller.tree.getMainLine()
       // For learn from mistakes, we need reasonable analysis (depth >= 12) rather than requiring exact depth 15
       // Most games are analyzed at depth 18 by default, so this should work
       const minimumDepthForMistakeDetection = 12
@@ -386,12 +386,12 @@ export const useAnalysisController = (
         })
       }
     },
-    [gameAnalysisProgress, startGameAnalysis, game.tree],
+    [gameAnalysisProgress, startGameAnalysis, controller.tree],
   )
 
   const initializeLearnFromMistakesWithColor = useCallback(
     (playerColor: 'white' | 'black') => {
-      const mistakes = extractPlayerMistakes(game.tree, playerColor)
+      const mistakes = extractPlayerMistakes(controller.tree, playerColor)
 
       if (mistakes.length === 0) {
         // No mistakes found - show toast and reset state
@@ -418,7 +418,7 @@ export const useAnalysisController = (
 
       // Navigate to the first mistake position (the position where the player needs to move)
       const firstMistake = mistakes[0]
-      const mistakeNode = game.tree.getMainLine()[firstMistake.moveIndex]
+      const mistakeNode = controller.tree.getMainLine()[firstMistake.moveIndex]
       const originalPosition =
         mistakeNode && mistakeNode.parent ? mistakeNode.parent.fen : null
 
@@ -439,7 +439,7 @@ export const useAnalysisController = (
         controller.setCurrentNode(mistakeNode.parent)
       }
     },
-    [game.tree, controller],
+    [controller.tree, controller],
   )
 
   const stopLearnFromMistakes = useCallback(() => {
@@ -475,7 +475,7 @@ export const useAnalysisController = (
     const moveResult = chess.move(currentMistake.bestMove, { sloppy: true })
 
     if (moveResult) {
-      const newVariation = game.tree.addVariationNode(
+      const newVariation = controller.tree.addVariationNode(
         controller.currentNode,
         chess.fen(),
         currentMistake.bestMove,
@@ -489,7 +489,7 @@ export const useAnalysisController = (
       ...prev,
       showSolution: true,
     }))
-  }, [learnFromMistakesState, controller, game.tree])
+  }, [learnFromMistakesState, controller, controller.tree])
 
   const goToNextMistake = useCallback(() => {
     if (
@@ -507,7 +507,7 @@ export const useAnalysisController = (
     }
 
     const nextMistake = learnFromMistakesState.mistakes[nextIndex]
-    const mistakeNode = game.tree.getMainLine()[nextMistake.moveIndex]
+    const mistakeNode = controller.tree.getMainLine()[nextMistake.moveIndex]
     const newOriginalPosition =
       mistakeNode && mistakeNode.parent ? mistakeNode.parent.fen : null
 
@@ -522,7 +522,12 @@ export const useAnalysisController = (
       currentAttempt: 1,
       originalPosition: newOriginalPosition,
     }))
-  }, [learnFromMistakesState, controller, game.tree, stopLearnFromMistakes])
+  }, [
+    learnFromMistakesState,
+    controller,
+    controller.tree,
+    stopLearnFromMistakes,
+  ])
 
   const checkMoveInLearnMode = useCallback(
     (moveUci: string): 'correct' | 'incorrect' | 'not-learning' => {
@@ -559,7 +564,7 @@ export const useAnalysisController = (
     if (!learnFromMistakesState.originalPosition) return
 
     // Find the node with the original FEN
-    const mainLine = game.tree.getMainLine()
+    const mainLine = controller.tree.getMainLine()
     const originalNode = mainLine.find(
       (node) => node.fen === learnFromMistakesState.originalPosition,
     )
@@ -567,7 +572,7 @@ export const useAnalysisController = (
     if (originalNode) {
       controller.setCurrentNode(originalNode)
     }
-  }, [learnFromMistakesState.originalPosition, game.tree, controller])
+  }, [learnFromMistakesState.originalPosition, controller.tree, controller])
 
   const getCurrentMistakeInfo = useCallback(() => {
     if (

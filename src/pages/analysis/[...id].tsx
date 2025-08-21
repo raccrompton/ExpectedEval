@@ -327,6 +327,7 @@ const Analysis: React.FC<Props> = ({
           fen: type === 'fen' ? data : undefined,
         })
 
+        setShowCustomModal(false)
         router.push(`/analysis/${game_id}/custom`)
       })()
     },
@@ -665,7 +666,6 @@ const Analysis: React.FC<Props> = ({
               <MovesContainer
                 game={analyzedGame}
                 termination={analyzedGame.termination}
-                type="analysis"
                 showAnnotations={true}
                 disableKeyboardNavigation={
                   controller.gameAnalysis.progress.isAnalyzing ||
@@ -983,7 +983,6 @@ const Analysis: React.FC<Props> = ({
                 <MovesContainer
                   game={analyzedGame}
                   termination={analyzedGame.termination}
-                  type="analysis"
                   showAnnotations={true}
                   disableKeyboardNavigation={
                     controller.gameAnalysis.progress.isAnalyzing ||
