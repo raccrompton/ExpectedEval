@@ -5,7 +5,6 @@ import {
   type LiveGame,
   type Player,
   type AvailableMoves,
-  StockfishEvaluation,
 } from 'src/types'
 
 export const readLichessStream =

@@ -13,8 +13,7 @@ import {
   AuthContext,
   MaiaEngineContext,
 } from 'src/contexts'
-import { DrillConfiguration, AnalyzedGame } from 'src/types'
-import { GameNode } from 'src/types/tree'
+import { DrillConfiguration, AnalyzedGame, GameNode } from 'src/types'
 import openings from 'src/constants/openings.json'
 import { MIN_STOCKFISH_DEPTH } from 'src/constants/analysis'
 import { OpeningDrillAnalysis } from 'src/components/Openings/OpeningDrillAnalysis'
@@ -229,15 +228,14 @@ const OpeningsPage: NextPage = () => {
 
   // Create minimal AnalyzedGame for analysis controller
   const analyzedGame = useMemo((): AnalyzedGame | null => {
-    if (!treeController.gameTree || !controller.currentDrill || !playerNames)
+    if (!treeController.tree || !controller.currentDrill || !playerNames)
       return null
 
     return {
       id: `opening-drill-${controller.currentDrill.id}`,
-      tree: treeController.gameTree,
+      tree: treeController.tree,
       blackPlayer: playerNames.blackPlayer,
       whitePlayer: playerNames.whitePlayer,
-      moves: [], // Tree will be used directly
       availableMoves: [],
       gameType: 'play' as const,
       termination: {
@@ -245,20 +243,17 @@ const OpeningsPage: NextPage = () => {
         winner: 'none' as const,
         condition: 'Normal',
       },
-      maiaEvaluations: [],
-      stockfishEvaluations: [],
       type: 'play' as const,
     }
-  }, [treeController.gameTree, controller.currentDrill?.id, playerNames])
+  }, [treeController.tree, controller.currentDrill?.id, playerNames])
 
   // Analysis controller for the components
   const analysisController = useAnalysisController(
     analyzedGame || {
       id: 'empty',
-      tree: treeController.gameTree,
+      tree: treeController.tree,
       blackPlayer: { name: 'Black' },
       whitePlayer: { name: 'White' },
-      moves: [],
       availableMoves: [],
       gameType: 'play' as const,
       termination: {
@@ -266,8 +261,6 @@ const OpeningsPage: NextPage = () => {
         winner: 'none' as const,
         condition: 'Normal',
       },
-      maiaEvaluations: [],
-      stockfishEvaluations: [],
       type: 'play' as const,
     },
     controller.currentDrill?.playerColor || 'white',
@@ -378,14 +371,14 @@ const OpeningsPage: NextPage = () => {
 
   // Create game object for MovesContainer
   const gameForContainer = useMemo(() => {
-    if (!treeController.gameTree) return null
+    if (!treeController.tree) return null
 
     return {
       id: `opening-drill-${controller.currentDrill?.id || 'current'}`,
-      tree: treeController.gameTree,
+      tree: treeController.tree,
       moves: [], // Not used when tree is provided
     }
-  }, [treeController.gameTree, controller.currentDrill?.id])
+  }, [treeController.tree, controller.currentDrill?.id])
 
   // Show selection modal when no drill configuration exists
   useEffect(() => {
@@ -521,13 +514,15 @@ const OpeningsPage: NextPage = () => {
             controller.setCurrentNode(controller.currentNode.mainChild)
           } else {
             // Create variation for different move
-            const newVariation = controller.gameTree.addVariation(
-              controller.currentNode,
+
+            const newVariation = controller.currentNode.addChild(
               newFen,
               moveString,
               san,
+              false,
               'maia_kdd_1500',
             )
+
             controller.setCurrentNode(newVariation)
           }
         }
@@ -831,7 +826,7 @@ const OpeningsPage: NextPage = () => {
           {analyzedGame && (
             <OpeningDrillAnalysis
               currentNode={controller.currentNode}
-              gameTree={treeController.gameTree}
+              gameTree={treeController.tree}
               analysisEnabled={controller.analysisEnabled}
               onToggleAnalysis={() =>
                 controller.setAnalysisEnabled(!controller.analysisEnabled)
@@ -1025,7 +1020,7 @@ const OpeningsPage: NextPage = () => {
             {analyzedGame && (
               <OpeningDrillAnalysis
                 currentNode={controller.currentNode}
-                gameTree={treeController.gameTree}
+                gameTree={treeController.tree}
                 analysisEnabled={controller.analysisEnabled}
                 onToggleAnalysis={() =>
                   controller.setAnalysisEnabled(!controller.analysisEnabled)

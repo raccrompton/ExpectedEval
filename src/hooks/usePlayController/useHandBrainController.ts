@@ -116,8 +116,9 @@ export const useHandBrainController = (
       const destinationSquare = moveUci.slice(2, 4)
       const isCapture = !!chess.get(destinationSquare)
 
-      controller.updateClock()
-      controller.addMove(moveUci)
+      const moveTime = controller.updateClock()
+
+      controller.addMoveWithTime(moveUci, moveTime)
       setSelectedPiece(undefined)
 
       chessSoundManager.playMoveSound(isCapture)

@@ -716,7 +716,7 @@ export const useAnalysisController = (
   }, [controller.currentNode, moveEvaluation])
 
   return {
-    gameTree: controller.gameTree,
+    gameTree: controller.tree,
     currentNode: controller.currentNode,
     setCurrentNode: controller.setCurrentNode,
     goToNode: controller.goToNode,

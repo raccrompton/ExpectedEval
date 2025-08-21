@@ -241,9 +241,6 @@ export const usePlayController = (id: string, config: PlayGameConfig) => {
         )
 
         if (newNode) {
-          console.log('old node', controller.currentNode.fen)
-          console.log('new move', moveUci)
-          console.log('new node', newNode.fen)
           controller.setCurrentNode(newNode)
           setTreeVersion((prev) => prev + 1)
         }

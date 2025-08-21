@@ -830,7 +830,7 @@ export const useOpeningDrillController = (
             if (moveObj) {
               const newNode = gameTree
                 .getLastMainlineNode()
-                .addChild(currentNode, chess.fen(), moveUci, true, moveObj.san)
+                .addChild(chess.fen(), moveUci, moveObj.san, true)
 
               if (newNode) {
                 currentNode = newNode
@@ -1060,19 +1060,20 @@ export const useOpeningDrillController = (
           if (nodeToMoveFrom.mainChild?.move === moveUci) {
             newNode = nodeToMoveFrom.mainChild
           } else if (nodeToMoveFrom.mainChild) {
-            newNode = controller.gameTree.addVariation(
-              nodeToMoveFrom,
+            newNode = nodeToMoveFrom.addChild(
               chess.fen(),
               moveUci,
               moveObj.san,
+              false,
               currentMaiaModel,
             )
           } else {
-            newNode = controller.gameTree.addMainMove(
-              nodeToMoveFrom,
+            newNode = nodeToMoveFrom.addChild(
               chess.fen(),
               moveUci,
               moveObj.san,
+              true,
+              currentMaiaModel,
             )
           }
         }
@@ -1080,7 +1081,7 @@ export const useOpeningDrillController = (
         if (newNode) {
           controller.setCurrentNode(newNode)
 
-          const mainLine = controller.gameTree.getMainLine()
+          const mainLine = controller.tree.getMainLine()
           const openingLength = currentDrillGame.openingEndNode
             ? currentDrillGame.openingEndNode.getPath().length
             : 1
@@ -1174,11 +1175,11 @@ export const useOpeningDrillController = (
             const moveObj = chess.move(maiaMove, { sloppy: true })
 
             if (moveObj) {
-              newNode = controller.gameTree.addMainMove(
-                fromNode,
+              newNode = fromNode.addChild(
                 chess.fen(),
                 maiaMove,
                 moveObj.san,
+                true,
               )
             }
           }
@@ -1191,7 +1192,7 @@ export const useOpeningDrillController = (
             const isCapture = tempMoveObj?.captured !== undefined
             chessSoundManager.playMoveSound(isCapture)
 
-            const mainLine = controller.gameTree.getMainLine()
+            const mainLine = controller.tree.getMainLine()
             const openingLength = currentDrillGame.openingEndNode
               ? currentDrillGame.openingEndNode.getPath().length
               : 1
@@ -1237,9 +1238,9 @@ export const useOpeningDrillController = (
 
   // Helper function to get the latest position in the game tree (where Maia should move from)
   const getLatestPosition = useCallback((): GameNode | null => {
-    if (!controller.gameTree) return null
+    if (!controller.tree) return null
 
-    const mainLine = controller.gameTree.getMainLine()
+    const mainLine = controller.tree.getMainLine()
     if (mainLine.length === 0) return null
 
     for (let i = mainLine.length - 1; i >= 0; i--) {
@@ -1250,7 +1251,7 @@ export const useOpeningDrillController = (
     }
 
     return mainLine[mainLine.length - 1]
-  }, [controller.gameTree])
+  }, [controller.tree])
 
   // This ref stores the move-making function to ensure the `useEffect` has the latest version
   const makeMaiaMoveRef = useRef(makeMaiaMove)
@@ -1369,7 +1370,7 @@ export const useOpeningDrillController = (
     isAtOpeningEnd,
 
     // Tree controller
-    gameTree: controller.gameTree,
+    gameTree: controller.tree,
     currentNode: controller.currentNode,
     setCurrentNode: controller.setCurrentNode,
     goToNode: controller.goToNode,
