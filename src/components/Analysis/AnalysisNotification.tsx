@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { DeepAnalysisProgress } from 'src/hooks/useAnalysisController/useAnalysisController'
+import { DeepAnalysisProgress } from 'src/types/analysis'
 
 interface Props {
   progress: DeepAnalysisProgress
