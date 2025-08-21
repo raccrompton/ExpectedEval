@@ -29,7 +29,9 @@ export const Feedback: React.FC<Props> = ({
   const { targetIndex } = game
 
   const turn =
-    new Chess(game.moves[targetIndex].board).turn() === 'w' ? 'white' : 'black'
+    new Chess(controller.gameTree.getLastMainlineNode().fen).turn() === 'w'
+      ? 'white'
+      : 'black'
 
   const archivedContent = `
   ##### PUZZLE COMPLETED

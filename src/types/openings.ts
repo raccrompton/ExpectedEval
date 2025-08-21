@@ -1,4 +1,4 @@
-import { GameTree, GameNode } from './common'
+import { GameTree, GameNode } from '.'
 
 export interface Opening {
   id: string

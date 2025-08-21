@@ -26,15 +26,13 @@ import { DrillPerformanceData, MoveAnalysis } from 'src/types/openings'
 import { MaiaRatingInsights } from './MaiaRatingInsights'
 import { WindowSizeContext, TreeControllerContext } from 'src/contexts'
 import {
+  BlunderIcon,
   ExcellentIcon,
   InaccuracyIcon,
-  BlunderIcon,
-  MoveClassificationIcon,
 } from 'src/components/Common/MoveIcons'
-import { MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/analysis'
 import { useTreeController } from 'src/hooks'
 import { generateColorSanMapping } from 'src/hooks/useAnalysisController/utils'
-import { GameNode, GameTree } from 'src/types/tree'
+import { GameNode, GameTree } from 'src/types'
 
 interface Props {
   performanceData: DrillPerformanceData
@@ -237,7 +235,6 @@ const AnimatedGameReplay: React.FC<{
             game={{
               id: 'drill-performance',
               tree: gameTree,
-              moves: [], // Not used when tree is provided
             }}
             type="analysis"
             showAnnotations={true}
@@ -787,7 +784,12 @@ const DesktopLayout: React.FC<{
     <div className="flex flex-1 overflow-hidden">
       {/* Left Panel - Animated Game Replay */}
       <div className="flex w-1/3 flex-col border-r border-white/10">
-        <TreeControllerContext.Provider value={treeController}>
+        <TreeControllerContext.Provider
+          value={{
+            gameTree: treeController.tree,
+            ...treeController,
+          }}
+        >
           <AnimatedGameReplay
             openingFen={openingFen}
             playerColor={drill.selection.playerColor}
@@ -1127,7 +1129,12 @@ const MobileLayout: React.FC<{
     {/* Tab Content */}
     <div className="flex-1 overflow-hidden">
       {activeTab === 'replay' && (
-        <TreeControllerContext.Provider value={treeController}>
+        <TreeControllerContext.Provider
+          value={{
+            gameTree: treeController.tree,
+            ...treeController,
+          }}
+        >
           <AnimatedGameReplay
             openingFen={openingFen}
             playerColor={drill.selection.playerColor}
