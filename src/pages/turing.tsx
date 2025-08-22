@@ -195,11 +195,7 @@ const Turing: React.FC<Props> = (props: Props) => {
             className="flex h-[75vh] min-w-64 flex-grow flex-col gap-1"
           >
             <div className="relative bottom-0 h-full min-h-[38px] flex-1">
-              <MovesContainer
-                game={game}
-                termination={game.termination}
-                type="turing"
-              />
+              <MovesContainer game={game} termination={game.termination} />
             </div>
             <div id="turing-submission">
               <TuringSubmission rating={stats.rating ?? 0} />
@@ -251,11 +247,7 @@ const Turing: React.FC<Props> = (props: Props) => {
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="relative bottom-0 h-full flex-1 overflow-auto">
-              <MovesContainer
-                game={game}
-                termination={game.termination}
-                type="turing"
-              />
+              <MovesContainer game={game} termination={game.termination} />
             </div>
             <div className="flex-none">
               <BoardController
@@ -311,6 +303,12 @@ const Turing: React.FC<Props> = (props: Props) => {
       </TuringControllerContext.Provider>
     </>
   )
+}
+
+export const getServerSideProps = async () => {
+  return {
+    props: {},
+  }
 }
 
 export default TuringPage

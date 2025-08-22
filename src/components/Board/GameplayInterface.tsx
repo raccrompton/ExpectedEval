@@ -215,11 +215,7 @@ export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
               />
             ) : null}
             <div className="relative bottom-0 h-full min-h-[38px] flex-1">
-              <MovesContainer
-                game={game}
-                termination={game.termination}
-                type="play"
-              />
+              <MovesContainer game={game} termination={game.termination} />
             </div>
             <div>{props.children}</div>
             <div className="flex-none">
@@ -295,11 +291,7 @@ export const GameplayInterface: React.FC<React.PropsWithChildren<Props>> = (
             </div>
             <div className="w-full overflow-x-auto">
               <div className="flex flex-row whitespace-nowrap py-2">
-                <MovesContainer
-                  game={game}
-                  termination={game.termination}
-                  type="play"
-                />
+                <MovesContainer game={game} termination={game.termination} />
               </div>
             </div>
             <div className="w-screen">{props.children}</div>

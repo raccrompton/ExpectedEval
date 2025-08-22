@@ -236,7 +236,6 @@ const AnimatedGameReplay: React.FC<{
               id: 'drill-performance',
               tree: gameTree,
             }}
-            type="analysis"
             showAnnotations={true}
             showVariations={false}
           />

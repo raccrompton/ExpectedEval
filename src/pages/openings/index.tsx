@@ -697,7 +697,6 @@ const OpeningsPage: NextPage = () => {
                         moves: [],
                       }
                     }
-                    type="analysis"
                     showAnnotations={
                       controller.analysisEnabled ||
                       controller.continueAnalyzingMode
@@ -946,7 +945,6 @@ const OpeningsPage: NextPage = () => {
                     moves: [],
                   }
                 }
-                type="analysis"
                 showAnnotations={
                   controller.analysisEnabled || controller.continueAnalyzingMode
                 }

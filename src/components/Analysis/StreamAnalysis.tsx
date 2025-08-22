@@ -298,7 +298,6 @@ export const StreamAnalysis: React.FC<Props> = ({
               <MovesContainer
                 game={game}
                 termination={game.termination}
-                type="analysis"
                 showAnnotations={true}
                 disableKeyboardNavigation={false}
                 disableMoveClicking={false}
@@ -510,7 +509,6 @@ export const StreamAnalysis: React.FC<Props> = ({
               <MovesContainer
                 game={game}
                 termination={game.termination}
-                type="analysis"
                 showAnnotations={true}
                 disableKeyboardNavigation={false}
                 disableMoveClicking={false}
