@@ -39,7 +39,6 @@ export const useVsMaiaPlayController = (
         !controller.playerActive &&
         !controller.game.termination
       ) {
-        console.log('node before move', controller.currentNode.fen)
         const maiaClock =
           (controller.player == 'white'
             ? controller.blackClock
@@ -98,7 +97,15 @@ export const useVsMaiaPlayController = (
     return () => {
       canceled = true
     }
-  }, [controller, playGameConfig, simulateMaiaTime])
+  }, [
+    controller.game.id,
+    controller.playerActive,
+    controller.game.termination,
+    controller.moveList.length,
+    playGameConfig.maiaVersion,
+    playGameConfig.startFen,
+    simulateMaiaTime,
+  ])
 
   useEffect(() => {
     const gameOverState = controller.game.termination?.type || 'not_over'
