@@ -1,9 +1,8 @@
 import { useRouter } from 'next/router'
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { Chess } from 'chess.ts'
 
 import { useStats } from '../useStats'
-import { Color, GameTree } from 'src/types'
+import { Color } from 'src/types'
 import { TuringGame } from 'src/types/turing'
 import { useTreeController } from '../useTreeController'
 import {

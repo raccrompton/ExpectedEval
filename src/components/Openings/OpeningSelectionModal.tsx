@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect, useContext } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import Chessground from '@react-chess/chessground'
-import { useWindowSize } from 'src/hooks/useWindowSize'
 import {
   Opening,
   OpeningVariation,
@@ -610,8 +609,6 @@ const SelectedPanel: React.FC<{
   activeTab: MobileTab
   selections: OpeningSelection[]
   removeSelection: (id: string) => void
-  drillCount: number
-  setDrillCount: (count: number) => void
   handleStartDrilling: () => void
   selectedMaiaVersion: (typeof MAIA_MODELS_WITH_NAMES)[0]
   setSelectedMaiaVersion: (version: (typeof MAIA_MODELS_WITH_NAMES)[0]) => void
@@ -621,8 +618,6 @@ const SelectedPanel: React.FC<{
   activeTab,
   selections,
   removeSelection,
-  drillCount,
-  setDrillCount,
   handleStartDrilling,
   selectedMaiaVersion,
   setSelectedMaiaVersion,
@@ -752,38 +747,13 @@ const SelectedPanel: React.FC<{
         </div>
       </div>
 
-      {/* Drill Count Configuration */}
-      <div className="mb-3 md:mb-4">
-        <p className="mb-1 text-xs font-medium md:mb-2 md:text-sm">
-          Number of Drills: {drillCount}
-        </p>
-        <input
-          type="range"
-          min="1"
-          max="20"
-          value={drillCount}
-          onChange={(e) => setDrillCount(parseInt(e.target.value) || 5)}
-          className="w-full accent-human-4"
-        />
-        <div className="mt-1 flex justify-between text-xs text-secondary">
-          <span>1</span>
-          <span>20</span>
-        </div>
-        <p className="mt-1 text-xs text-secondary">
-          {drillCount <= selections.length
-            ? `You'll play ${drillCount} of your selected openings`
-            : selections.length > 0
-              ? `Each opening played at least once, with ${drillCount - selections.length} repeats`
-              : 'Total number of opening drills to complete'}
-        </p>
-      </div>
-
       <button
         onClick={handleStartDrilling}
         disabled={selections.length === 0}
         className="w-full rounded bg-human-4 py-2 text-sm font-medium transition-colors hover:bg-human-4/80 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Start Drilling ({drillCount} drill{drillCount !== 1 ? 's' : ''})
+        Start Drilling ({selections.length} opening
+        {selections.length !== 1 ? 's' : ''})
       </button>
     </div>
   </div>
@@ -807,7 +777,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
   )
   const [selectedColor, setSelectedColor] = useState<'white' | 'black'>('white')
   const [targetMoveNumber, setTargetMoveNumber] = useState(10)
-  const [drillCount, setDrillCount] = useState(5)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeTab, setActiveTab] = useState<MobileTab>('browse')
   const [initialTourCheck, setInitialTourCheck] = useState(false)
@@ -1022,57 +991,8 @@ export const OpeningSelectionModal: React.FC<Props> = ({
     }
   }
 
-  // Helper function to generate drill sequenc
-  const generateDrillSequence = (
-    selections: OpeningSelection[],
-    count: number,
-  ): OpeningSelection[] => {
-    if (selections.length === 0) return []
-
-    const createUniqueDrill = (
-      selection: OpeningSelection,
-      index: number,
-    ): OpeningSelection => {
-      const timestamp = Date.now()
-      const uniqueId = `${selection.id}-${timestamp}-${index}`
-      return {
-        ...selection,
-        id: uniqueId,
-      }
-    }
-
-    if (count <= selections.length) {
-      const shuffled = [...selections].sort(() => Math.random() - 0.5)
-      return shuffled
-        .slice(0, count)
-        .map((selection, index) => createUniqueDrill(selection, index))
-    }
-
-    // If drill count is more than selections, ensure each opening is played at least once
-    const sequence: OpeningSelection[] = []
-
-    // Add each selection once
-    selections.forEach((selection, index) => {
-      sequence.push(createUniqueDrill(selection, index))
-    })
-
-    const remaining = count - selections.length
-
-    // Fill remaining slots by randomly picking from selections
-    for (let i = 0; i < remaining; i++) {
-      const randomSelection =
-        selections[Math.floor(Math.random() * selections.length)]
-      sequence.push(createUniqueDrill(randomSelection, selections.length + i))
-    }
-
-    // Shuffle the final sequence
-    return sequence.sort(() => Math.random() - 0.5)
-  }
-
   const handleStartDrilling = async () => {
     if (selections.length > 0) {
-      const drillSequence = generateDrillSequence(selections, drillCount)
-
       try {
         // Prepare API request data
         const openings = selections.map((selection) => ({
@@ -1087,13 +1007,11 @@ export const OpeningSelectionModal: React.FC<Props> = ({
           openings,
           opponent: selectedMaiaVersion.id,
           num_moves: targetMoveNumber,
-          num_drills: drillCount,
+          num_drills: selections.length, // Use selections length instead of separate drill count
         })
 
         const configuration: DrillConfiguration = {
           selections,
-          drillCount,
-          drillSequence,
           sessionId: response.session_id,
         }
 
@@ -1115,7 +1033,7 @@ export const OpeningSelectionModal: React.FC<Props> = ({
 
         trackDrillConfigurationCompleted(
           selections.length,
-          drillCount,
+          selections.length, // Use selections length for drill count
           uniqueOpenings,
           averageTargetMoves,
           maiaVersionsUsed,
@@ -1128,8 +1046,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
         // Still allow the drill to start even if API call fails
         const configuration: DrillConfiguration = {
           selections,
-          drillCount,
-          drillSequence,
         }
         onComplete(configuration)
       }
@@ -1219,8 +1135,6 @@ export const OpeningSelectionModal: React.FC<Props> = ({
             activeTab={activeTab}
             selections={selections}
             removeSelection={removeSelection}
-            drillCount={drillCount}
-            setDrillCount={setDrillCount}
             handleStartDrilling={handleStartDrilling}
             selectedMaiaVersion={selectedMaiaVersion}
             setSelectedMaiaVersion={setSelectedMaiaVersion}
