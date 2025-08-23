@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { MaiaEngineContext } from 'src/contexts'
-import { MaiaModelStorage } from 'src/providers/MaiaEngineContextProvider/storage'
+import { MaiaModelStorage } from 'src/lib/engine/storage'
 
 interface StorageInfo {
   supported: boolean

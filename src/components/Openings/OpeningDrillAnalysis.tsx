@@ -7,7 +7,7 @@ import {
   AnalysisSidebar,
 } from '../Analysis'
 import { GameNode } from 'src/types'
-import { GameTree } from 'src/types/base/tree'
+import { GameTree } from 'src/types/tree'
 import type { DrawShape } from 'chessground/draw'
 import { useAnalysisController } from 'src/hooks/useAnalysisController'
 import { WindowSizeContext } from 'src/contexts'

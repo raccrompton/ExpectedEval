@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 import { motion } from 'framer-motion'
 import { Chess } from 'chess.ts'
 import Chessground from '@react-chess/chessground'
-import { getLichessTVGame, streamLichessGame } from 'src/api/lichess/streaming'
+import { fetchLichessTVGame, streamLichessGameMoves } from 'src/api'
 import { StreamedGame, StreamedMove } from 'src/types/stream'
 
 interface LiveGameData {
@@ -62,7 +62,7 @@ export const LiveChessBoardShowcase: React.FC = () => {
   const fetchNewGame = useCallback(async () => {
     try {
       setError(null)
-      const tvGame = await getLichessTVGame()
+      const tvGame = await fetchLichessTVGame()
 
       // Stop current stream if any
       if (abortController.current) {
@@ -79,7 +79,7 @@ export const LiveChessBoardShowcase: React.FC = () => {
         isLive: true,
       })
 
-      streamLichessGame(
+      streamLichessGameMoves(
         tvGame.gameId,
         handleGameStart,
         handleMove,

@@ -6,7 +6,7 @@ import {
   getLichessBroadcasts,
   getLichessTopBroadcasts,
   convertTopBroadcastToBroadcast,
-} from 'src/api/lichess/broadcasts'
+} from 'src/api/broadcasts'
 import { Broadcast } from 'src/types'
 
 interface BroadcastWidgetProps {

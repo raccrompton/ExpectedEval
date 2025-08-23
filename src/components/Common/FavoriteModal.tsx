@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 interface FavoriteModalProps {
   isOpen: boolean
@@ -16,6 +16,13 @@ export const FavoriteModal: React.FC<FavoriteModalProps> = ({
   onRemove,
 }) => {
   const [name, setName] = useState(currentName)
+
+  // Reset the name when modal opens with a new currentName
+  useEffect(() => {
+    if (isOpen) {
+      setName(currentName)
+    }
+  }, [isOpen, currentName])
 
   if (!isOpen) return null
 

@@ -8,7 +8,7 @@ import posthog from 'posthog-js'
 import { Open_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import { PostHogProvider } from 'posthog-js/react'
-import { chessSoundManager } from 'src/lib/chessSoundManager'
+import { chessSoundManager } from 'src/lib/sound'
 
 import {
   AuthContextProvider,
@@ -18,8 +18,8 @@ import {
   MaiaEngineContextProvider,
   StockfishEngineContextProvider,
   SettingsProvider,
-} from 'src/providers'
-import { TourProvider as TourContextProvider } from 'src/contexts'
+  TourProvider as TourContextProvider,
+} from 'src/contexts'
 import 'src/styles/tailwind.css'
 import 'src/styles/themes.css'
 import 'react-tooltip/dist/react-tooltip.css'
@@ -83,7 +83,7 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
             <link rel="icon" type="image/png" href="/favicon.png" />
             <link
               rel="stylesheet"
-              href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+              href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
             />
 
             <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -100,15 +100,17 @@ function MaiaPlatform({ Component, pageProps }: AppProps) {
             <link rel="apple-touch-icon" href="/maia-ios-icon.png" />
 
             {/* Open Graph meta tags for social media embeds */}
-            <meta property="og:image" content="/maia-no-bg.png" />
-            <meta property="og:image:alt" content="Maia Chess Logo" />
+            <meta property="og:image" content="/embed.png" />
+            <meta property="og:image:alt" content="Maia Chess" />
             <meta property="og:image:type" content="image/png" />
+            <meta property="og:image:width" content="1200" />
+            <meta property="og:image:height" content="630" />
             <meta property="og:site_name" content="Maia Chess" />
 
             {/* Twitter Card meta tags */}
-            <meta name="twitter:card" content="summary" />
-            <meta name="twitter:image" content="/maia-no-bg.png" />
-            <meta name="twitter:image:alt" content="Maia Chess Logo" />
+            <meta name="twitter:card" content="summary_large_image" />
+            <meta name="twitter:image" content="/embed.png" />
+            <meta name="twitter:image:alt" content="Maia Chess" />
           </Head>
           <div className={`${OpenSans.className} app-container`}>
             <Header />

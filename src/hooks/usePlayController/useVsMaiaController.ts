@@ -4,12 +4,12 @@ import { PlayGameConfig } from 'src/types'
 import { backOff } from 'exponential-backoff'
 import { useStats } from 'src/hooks/useStats'
 import { usePlayController } from 'src/hooks/usePlayController'
-import { getGameMove, submitGameMove, getPlayPlayerStats } from 'src/api'
-import { chessSoundManager } from 'src/lib/chessSoundManager'
+import { fetchGameMove, logGameMove, fetchPlayPlayerStats } from 'src/api'
+import { chessSoundManager } from 'src/lib/sound'
 import { safeUpdateRating } from 'src/lib/ratingUtils'
 
 const playStatsLoader = async () => {
-  const stats = await getPlayPlayerStats()
+  const stats = await fetchPlayPlayerStats()
   return {
     gamesPlayed: stats.playGamesPlayed,
     gamesWon: stats.playWon,
@@ -49,7 +49,7 @@ export const useVsMaiaPlayController = (
 
         const maiaMoves = await backOff(
           () =>
-            getGameMove(
+            fetchGameMove(
               controller.moveList,
               playGameConfig.maiaVersion,
               playGameConfig.startFen,
@@ -97,7 +97,15 @@ export const useVsMaiaPlayController = (
     return () => {
       canceled = true
     }
-  }, [controller, playGameConfig, simulateMaiaTime])
+  }, [
+    controller.game.id,
+    controller.playerActive,
+    controller.game.termination,
+    controller.moveList.length,
+    playGameConfig.maiaVersion,
+    playGameConfig.startFen,
+    simulateMaiaTime,
+  ])
 
   useEffect(() => {
     const gameOverState = controller.game.termination?.type || 'not_over'
@@ -111,7 +119,7 @@ export const useVsMaiaPlayController = (
     const submitFn = async () => {
       const response = await backOff(
         () =>
-          submitGameMove(
+          logGameMove(
             controller.game.id,
             controller.moveList,
             controller.moveTimes,
@@ -125,10 +133,8 @@ export const useVsMaiaPlayController = (
         },
       )
 
-      // Only update stats after final move submitted
       if (controller.game.termination) {
         const winner = controller.game.termination?.winner
-        // Safely update rating - only if the response contains a valid rating
         safeUpdateRating(response.player_elo, updateRating)
         incrementStats(1, winner == playGameConfig.player ? 1 : 0)
       }

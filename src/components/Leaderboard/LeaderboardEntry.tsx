@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { PlayerStats } from 'src/types'
-import { getPlayerStats } from 'src/api'
+import { fetchPlayerStats } from 'src/api'
 import { useLeaderboardContext } from './LeaderboardContext'
 
 interface Props {
@@ -97,7 +97,7 @@ export const LeaderboardEntry = ({
 
   const fetchStats = useCallback(async () => {
     try {
-      const playerStats = await getPlayerStats(display_name)
+      const playerStats = await fetchPlayerStats(display_name)
       setStats(playerStats)
       // Only show popup if we're still supposed to (user still hovering)
       if (shouldShowPopupRef.current && hover) {

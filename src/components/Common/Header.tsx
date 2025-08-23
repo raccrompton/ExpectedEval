@@ -370,6 +370,19 @@ export const Header: React.FC = () => {
             >
               Feedback
             </a>
+            {user?.lichessId && (
+              <>
+                <Link href="/profile" className="uppercase">
+                  Profile
+                </Link>
+                <Link href="/settings" className="uppercase">
+                  Settings
+                </Link>
+                <button onClick={logout} className="text-left uppercase">
+                  Logout
+                </button>
+              </>
+            )}
           </div>
           <div className="flex w-full flex-row items-center gap-3 px-4">
             <a
@@ -385,7 +398,20 @@ export const Header: React.FC = () => {
                 loading={leaderboardLoading}
               />
             )}
-            {userInfo}
+            {user?.lichessId ? (
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-xl text-primary/80">
+                  account_circle
+                </span>
+                <span className="text-sm font-medium text-primary/90">
+                  {user?.displayName}
+                </span>
+              </div>
+            ) : (
+              <button onClick={connectLichess} className="uppercase">
+                Sign in
+              </button>
+            )}
           </div>
         </div>
       )}

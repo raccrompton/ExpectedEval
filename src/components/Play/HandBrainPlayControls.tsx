@@ -1,8 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable jsx-a11y/alt-text */
+import { useState } from 'react'
 import { PieceSymbol } from 'chess.ts'
 
 import { BaseGame, Color } from 'src/types'
+import { ResignationConfirmModal } from 'src/components'
 
 const pieceTypes: PieceSymbol[] = ['k', 'q', 'r', 'b', 'n', 'p']
 
@@ -52,6 +54,17 @@ export const HandBrainPlayControls: React.FC<Props> = ({
   simulateMaiaTime,
   setSimulateMaiaTime,
 }: Props) => {
+  const [showResignConfirm, setShowResignConfirm] = useState(false)
+
+  const handleResignClick = () => {
+    setShowResignConfirm(true)
+  }
+
+  const handleConfirmResign = () => {
+    if (resign) {
+      resign()
+    }
+  }
   const status = playerActive
     ? isBrain
       ? selectedPiece
@@ -114,7 +127,7 @@ export const HandBrainPlayControls: React.FC<Props> = ({
                   <p className="text-center text-xs font-semibold uppercase tracking-wide text-human-2">
                     SELECT PIECE
                   </p>
-                  <div className="mx-auto grid max-w-48 grid-cols-3 gap-2">
+                  <div className="mx-auto grid max-w-full grid-cols-6 gap-1 md:max-w-48 md:grid-cols-3 md:gap-2">
                     {pieceTypes.map((p) => (
                       <button
                         key={p}
@@ -124,7 +137,7 @@ export const HandBrainPlayControls: React.FC<Props> = ({
                           !playerActive ||
                           !!selectedPiece
                         }
-                        className={`flex h-12 w-12 items-center justify-center border transition-colors duration-200 ${
+                        className={`flex h-10 w-10 items-center justify-center border transition-colors duration-200 md:h-12 md:w-12 ${
                           movablePieceTypes.indexOf(p) !== -1 &&
                           playerActive &&
                           !selectedPiece
@@ -134,7 +147,7 @@ export const HandBrainPlayControls: React.FC<Props> = ({
                       >
                         <img
                           src={`/assets/pieces/${pieceColorMap[color[0] + p]}.svg`}
-                          className="h-6 w-6"
+                          className="h-5 w-5 md:h-6 md:w-6"
                           alt={pieceColorMap[color[0] + p]}
                         />
                       </button>
@@ -218,7 +231,7 @@ export const HandBrainPlayControls: React.FC<Props> = ({
                 {/* Resign Button - Smaller and Less Prominent */}
                 <div className="flex justify-center">
                   <button
-                    onClick={resign}
+                    onClick={handleResignClick}
                     disabled={!resign || !playerActive}
                     className={`rounded px-3 py-1 text-xs font-medium transition-colors duration-200 ${
                       resign && playerActive
@@ -234,6 +247,12 @@ export const HandBrainPlayControls: React.FC<Props> = ({
           </>
         )}
       </div>
+
+      <ResignationConfirmModal
+        isOpen={showResignConfirm}
+        onClose={() => setShowResignConfirm(false)}
+        onConfirm={handleConfirmResign}
+      />
     </div>
   )
 }

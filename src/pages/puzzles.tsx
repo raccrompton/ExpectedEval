@@ -18,9 +18,9 @@ import type { DrawShape } from 'chessground/draw'
 import { Chess, PieceSymbol } from 'chess.ts'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  getTrainingGame,
+  fetchPuzzle,
   logPuzzleGuesses,
-  getTrainingPlayerStats,
+  fetchTrainingPlayerStats,
 } from 'src/api'
 import {
   trackPuzzleStarted,
@@ -42,27 +42,24 @@ import {
   Highlight,
   MoveMap,
   BlunderMeter,
-  MovesByRating,
   AnalysisSidebar,
 } from 'src/components'
 import { useTrainingController } from 'src/hooks/useTrainingController'
 import { useAnalysisController } from 'src/hooks/useAnalysisController'
 import { AllStats, useStats } from 'src/hooks/useStats'
-import { TrainingGame, Status } from 'src/types/training'
-import { MaiaEvaluation, StockfishEvaluation } from 'src/types'
-import { ModalContext, WindowSizeContext, useTour } from 'src/contexts'
+import { PuzzleGame, Status } from 'src/types/puzzle'
+import { AnalyzedGame, MaiaEvaluation, StockfishEvaluation } from 'src/types'
+import { WindowSizeContext, useTour } from 'src/contexts'
 import { TrainingControllerContext } from 'src/contexts/TrainingControllerContext'
 import {
-  convertTrainingGameToAnalyzedGame,
   getCurrentPlayer,
   getAvailableMovesArray,
   requiresPromotion,
-} from 'src/lib/train/utils'
-import { mockAnalysisData } from 'src/lib/analysis/mockAnalysisData'
+} from 'src/lib/puzzle'
 import { tourConfigs } from 'src/constants/tours'
 
 const statsLoader = async () => {
-  const stats = await getTrainingPlayerStats()
+  const stats = await fetchTrainingPlayerStats()
   return {
     gamesPlayed: Math.max(0, stats.totalPuzzles),
     gamesWon: stats.puzzlesSolved,
@@ -74,13 +71,13 @@ const TrainPage: NextPage = () => {
   const router = useRouter()
   const { startTour, tourState } = useTour()
 
-  const [trainingGames, setTrainingGames] = useState<TrainingGame[]>([])
+  const [trainingGames, setTrainingGames] = useState<PuzzleGame[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [status, setStatus] = useState<Status>('default')
   const [stats, incrementStats, updateRating] = useStats(statsLoader)
   const [userGuesses, setUserGuesses] = useState<string[]>([])
   const [previousGameResults, setPreviousGameResults] = useState<
-    (TrainingGame & { result?: boolean; ratingDiff?: number })[]
+    (PuzzleGame & { result?: boolean; ratingDiff?: number })[]
   >([])
   const [initialTourCheck, setInitialTourCheck] = useState(false)
   const [loadingGame, setLoadingGame] = useState(false)
@@ -100,7 +97,7 @@ const TrainPage: NextPage = () => {
     setLoadingGame(true)
     let game
     try {
-      game = await getTrainingGame()
+      game = await fetchPuzzle()
     } catch (e) {
       router.push('/401')
       return
@@ -269,7 +266,7 @@ const TrainPage: NextPage = () => {
 }
 
 interface Props {
-  trainingGame: TrainingGame
+  trainingGame: PuzzleGame
   gamesController: React.ReactNode
   stats: AllStats
   status: Status
@@ -301,7 +298,7 @@ const Train: React.FC<Props> = ({
   const controller = useTrainingController(trainingGame)
 
   const analyzedGame = useMemo(() => {
-    return convertTrainingGameToAnalyzedGame(trainingGame)
+    return { ...trainingGame, type: 'play', availableMoves: [] } as AnalyzedGame
   }, [trainingGame])
 
   const analysisController = useAnalysisController(
@@ -438,7 +435,7 @@ const Train: React.FC<Props> = ({
               analysisController.currentNode.mainChild,
             )
           } else {
-            const newVariation = analyzedGame.tree.addVariation(
+            const newVariation = analyzedGame.tree.addVariationNode(
               analysisController.currentNode,
               newFen,
               moveString,
@@ -528,7 +525,7 @@ const Train: React.FC<Props> = ({
               analysisController.currentNode.mainChild,
             )
           } else {
-            const newVariation = analyzedGame.tree.addVariation(
+            const newVariation = analyzedGame.tree.addVariationNode(
               analysisController.currentNode,
               newFen,
               moveString,
@@ -639,7 +636,7 @@ const Train: React.FC<Props> = ({
         if (analysisController.currentNode.mainChild?.move === moveString) {
           analysisController.goToNode(analysisController.currentNode.mainChild)
         } else {
-          const newVariation = analyzedGame.tree.addVariation(
+          const newVariation = analyzedGame.tree.addVariationNode(
             analysisController.currentNode,
             newFen,
             moveString,

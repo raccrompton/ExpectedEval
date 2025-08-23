@@ -26,15 +26,13 @@ import { DrillPerformanceData, MoveAnalysis } from 'src/types/openings'
 import { MaiaRatingInsights } from './MaiaRatingInsights'
 import { WindowSizeContext, TreeControllerContext } from 'src/contexts'
 import {
+  BlunderIcon,
   ExcellentIcon,
   InaccuracyIcon,
-  BlunderIcon,
-  MoveClassificationIcon,
 } from 'src/components/Common/MoveIcons'
-import { MOVE_CLASSIFICATION_THRESHOLDS } from 'src/constants/analysis'
 import { useTreeController } from 'src/hooks'
 import { generateColorSanMapping } from 'src/hooks/useAnalysisController/utils'
-import { GameNode, GameTree } from 'src/types/base/tree'
+import { GameNode, GameTree } from 'src/types'
 
 interface Props {
   performanceData: DrillPerformanceData
@@ -90,7 +88,8 @@ const AnimatedGameReplay: React.FC<{
   openingFen: string
   playerColor: 'white' | 'black'
   gameTree: GameTree
-}> = ({ openingFen, playerColor, gameTree }) => {
+  openingEndNode: GameNode
+}> = ({ openingFen, playerColor, gameTree, openingEndNode }) => {
   const [currentFen, setCurrentFen] = useState(openingFen)
   const [currentNode, setCurrentNode] = useState<GameNode | null>(null)
 
@@ -232,18 +231,15 @@ const AnimatedGameReplay: React.FC<{
 
       {/* Move History - Use MovesContainer for consistency */}
       <div className="flex min-h-0 flex-1 flex-col border-t border-white/10">
-        <TreeControllerContext.Provider value={treeController}>
-          <MovesContainer
-            game={{
-              id: 'drill-performance',
-              tree: gameTree,
-              moves: [], // Not used when tree is provided
-            }}
-            type="analysis"
-            showAnnotations={true}
-            showVariations={false}
-          />
-        </TreeControllerContext.Provider>
+        <MovesContainer
+          game={{
+            id: 'drill-performance',
+            tree: gameTree,
+          }}
+          startFromNode={openingEndNode}
+          showAnnotations={true}
+          showVariations={false}
+        />
       </div>
     </div>
   )
@@ -732,6 +728,7 @@ const DesktopLayout: React.FC<{
   onNextDrill: () => void
   isLastDrill: boolean
   gameTree: GameTree
+  openingEndNode: GameNode
   playerMoveCount: number
   treeController: ReturnType<typeof useTreeController>
   gameNodesMap: Map<string, GameNode>
@@ -749,6 +746,7 @@ const DesktopLayout: React.FC<{
   onNextDrill,
   isLastDrill,
   gameTree,
+  openingEndNode,
   playerMoveCount,
   treeController,
   gameNodesMap,
@@ -787,11 +785,17 @@ const DesktopLayout: React.FC<{
     <div className="flex flex-1 overflow-hidden">
       {/* Left Panel - Animated Game Replay */}
       <div className="flex w-1/3 flex-col border-r border-white/10">
-        <TreeControllerContext.Provider value={treeController}>
+        <TreeControllerContext.Provider
+          value={{
+            gameTree: gameTree,
+            ...treeController,
+          }}
+        >
           <AnimatedGameReplay
             openingFen={openingFen}
             playerColor={drill.selection.playerColor}
             gameTree={gameTree}
+            openingEndNode={openingEndNode}
           />
         </TreeControllerContext.Provider>
       </div>
@@ -859,43 +863,36 @@ const DesktopLayout: React.FC<{
           </div>
           <div className="flex flex-col gap-2 px-3 pb-3">
             {(() => {
-              // Get critical moves directly from game tree (like MovesContainer)
-              const mainLineNodes = gameTree.getMainLine().slice(1) // Skip root
-              const criticalMoves = mainLineNodes
-                .filter((node, index) => {
-                  // Determine if this is a player move
-                  const chess = new Chess(node.fen)
+              // Get critical moves from moveAnalyses instead of relying on GameNode properties
+              const criticalMoves = performanceData.moveAnalyses
+                .filter((move) => {
+                  // Determine if this is a player move using the same logic as elsewhere
+                  const isWhiteMove = isMoveByWhite(move.fen)
                   const isPlayerMove =
                     drill.selection.playerColor === 'white'
-                      ? chess.turn() === 'b' // If black to move, white just played
-                      : chess.turn() === 'w' // If white to move, black just played
+                      ? isWhiteMove
+                      : !isWhiteMove
                   return isPlayerMove
                 })
-                .filter((node) => {
-                  // Filter for critical moves (same logic as MovesContainer)
-                  return node.blunder || node.inaccuracy || node.excellentMove
-                })
-                .map((node) => {
-                  // Convert to MoveAnalysis format for display
-                  let classification: 'blunder' | 'inaccuracy' | 'excellent' =
-                    'excellent'
-                  if (node.blunder) {
-                    classification = 'blunder'
-                  } else if (node.inaccuracy) {
-                    classification = 'inaccuracy'
-                  }
-
+                .map((move) => {
+                  // Get classification from our helper function
+                  const classification = getChartClassification(
+                    move,
+                    gameNodesMap,
+                  )
+                  // Get the correct move number from the FEN
+                  const actualMoveNumber = getMoveNumberFromFen(move.fen)
                   return {
-                    move: node.move || '',
-                    san: node.san || '',
-                    fen: node.fen,
-                    fenBeforeMove: node.parent?.fen,
-                    moveNumber: node.moveNumber,
-                    isPlayerMove: true,
-                    evaluation: 0, // Will be filled if needed
+                    ...move,
                     classification,
-                    evaluationLoss: 0,
+                    moveNumber: actualMoveNumber,
                   }
+                })
+                .filter((move) => {
+                  // Filter for critical moves (not just 'good')
+                  return ['excellent', 'inaccuracy', 'blunder'].includes(
+                    move.classification,
+                  )
                 })
                 .sort((a, b) => {
                   // Sort by move number (chronological order)
@@ -1040,6 +1037,7 @@ const MobileLayout: React.FC<{
   activeTab: 'replay' | 'analysis' | 'insights'
   setActiveTab: (tab: 'replay' | 'analysis' | 'insights') => void
   gameTree: GameTree
+  openingEndNode: GameNode
   playerMoveCount: number
   treeController: ReturnType<typeof useTreeController>
   gameNodesMap: Map<string, GameNode>
@@ -1059,6 +1057,7 @@ const MobileLayout: React.FC<{
   activeTab,
   setActiveTab,
   gameTree,
+  openingEndNode,
   playerMoveCount,
   treeController,
   gameNodesMap,
@@ -1127,11 +1126,17 @@ const MobileLayout: React.FC<{
     {/* Tab Content */}
     <div className="flex-1 overflow-hidden">
       {activeTab === 'replay' && (
-        <TreeControllerContext.Provider value={treeController}>
+        <TreeControllerContext.Provider
+          value={{
+            gameTree: gameTree,
+            ...treeController,
+          }}
+        >
           <AnimatedGameReplay
             openingFen={openingFen}
             playerColor={drill.selection.playerColor}
             gameTree={gameTree}
+            openingEndNode={openingEndNode}
           />
         </TreeControllerContext.Provider>
       )}
@@ -1235,62 +1240,82 @@ export const DrillPerformanceModal: React.FC<Props> = ({
   // For now, let's work directly with the nodes instead of trying to recreate the full tree
   // This is a temporary solution until we can properly access the GameTree
 
-  // Create a proper GameTree starting from the opening end node
-  const gameTree = useMemo(() => {
-    // Get the root node and build the tree from there
-    let root = drill.finalNode
-    while (root.parent) {
-      root = root.parent
+  // Get the original game tree and opening end node for the drill context
+  const { gameTree, openingEndNode } = useMemo(() => {
+    // Get the original game tree from the drill
+    const originalRoot = (() => {
+      let root = drill.finalNode
+      while (root.parent) {
+        root = root.parent
+      }
+      return root
+    })()
+
+    // Create the original GameTree from root
+    const originalGameTree = new GameTree(originalRoot.fen)
+    // Set the root to be the actual root node
+    Object.defineProperty(originalGameTree, 'root', { value: originalRoot })
+
+    // Find the opening end node by working backwards from the final node
+    // The opening end should be the first move analysis that is NOT a player move
+    const firstPlayerMoveAnalysis = moveAnalyses.find(
+      (move) => move.isPlayerMove,
+    )
+    if (firstPlayerMoveAnalysis && firstPlayerMoveAnalysis.fenBeforeMove) {
+      // Find the node that represents the position before the first player move
+      const findNodeByFen = (
+        node: GameNode,
+        targetFen: string,
+      ): GameNode | null => {
+        if (node.fen === targetFen) {
+          return node
+        }
+        // Check main child
+        if (node.mainChild) {
+          const found = findNodeByFen(node.mainChild, targetFen)
+          if (found) return found
+        }
+        // Check all children
+        for (const child of node.children) {
+          const found = findNodeByFen(child, targetFen)
+          if (found) return found
+        }
+        return null
+      }
+
+      const foundOpeningEndNode = findNodeByFen(
+        originalRoot,
+        firstPlayerMoveAnalysis.fenBeforeMove,
+      )
+      if (foundOpeningEndNode) {
+        return {
+          gameTree: originalGameTree,
+          openingEndNode: foundOpeningEndNode,
+        }
+      }
     }
 
-    // Find the opening end node from the drill selection
+    // Fallback: use the selection-based approach
     const openingEndFen = drill.selection.variation
       ? drill.selection.variation.fen
       : drill.selection.opening.fen
 
     // Find the actual opening end node in the tree
-    let openingEndTreeNode = root
-    let current: GameNode | null = root
+    let foundOpeningEndNode = originalRoot
+    let current: GameNode | null = originalRoot
     while (current) {
       if (current.fen === openingEndFen) {
-        openingEndTreeNode = current
+        foundOpeningEndNode = current
         break
       }
       current = current.mainChild
     }
 
-    // Create a new GameTree starting from the opening end node
-    const newTree = new (class extends GameTree {
-      constructor(startNode: GameNode) {
-        super(startNode.fen)
-        // Replace the root with our opening end node
-        this.setRoot(startNode)
-      }
-
-      private setRoot(node: GameNode) {
-        // Use reflection to set the private root field
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(this as any).root = node
-      }
-
-      getRoot(): GameNode {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (this as any).root
-      }
-
-      getMainLine(): GameNode[] {
-        const mainLine = []
-        let current: GameNode | null = this.getRoot()
-        while (current) {
-          mainLine.push(current)
-          current = current.mainChild
-        }
-        return mainLine
-      }
-    })(openingEndTreeNode)
-
-    return newTree
-  }, [drill.finalNode, drill.selection])
+    return {
+      gameTree: originalGameTree,
+      openingEndNode: foundOpeningEndNode,
+    }
+  }, [drill.finalNode, drill.selection, moveAnalyses])
 
   // Create tree controller for navigation
   const treeController = useTreeController(
@@ -1371,10 +1396,8 @@ export const DrillPerformanceModal: React.FC<Props> = ({
     return evaluationChart.slice(startIndex)
   }, [evaluationChart, moveAnalyses])
 
-  // Get opening FEN from the drill
-  const openingFen = drill.selection.variation
-    ? drill.selection.variation.fen
-    : drill.selection.opening.fen
+  // Get opening FEN from the opening end node
+  const openingFen = openingEndNode.fen
 
   return (
     <ModalContainer dismiss={onContinueAnalyzing}>
@@ -1390,6 +1413,7 @@ export const DrillPerformanceModal: React.FC<Props> = ({
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           gameTree={gameTree}
+          openingEndNode={openingEndNode}
           playerMoveCount={playerMoveCount}
           treeController={treeController}
           gameNodesMap={gameNodesMap}
@@ -1406,6 +1430,7 @@ export const DrillPerformanceModal: React.FC<Props> = ({
           onNextDrill={onNextDrill}
           isLastDrill={isLastDrill}
           gameTree={gameTree}
+          openingEndNode={openingEndNode}
           playerMoveCount={playerMoveCount}
           treeController={treeController}
           gameNodesMap={gameNodesMap}

@@ -16,8 +16,8 @@ import {
   Broadcast,
   BroadcastStreamController,
   LiveGame,
+  GameTree,
 } from 'src/types'
-import { GameTree } from 'src/types/base/tree'
 
 const BroadcastAnalysisPage: NextPage = () => {
   const router = useRouter()

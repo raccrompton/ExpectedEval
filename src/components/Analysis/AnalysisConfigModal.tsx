@@ -122,9 +122,8 @@ export const AnalysisConfigModal: React.FC<Props> = ({
             </span>
             <p className="text-xs text-secondary">
               Higher depths provide more accurate analysis but take longer to
-              complete. You can cancel the analysis at any time. Currently,
-              analysis only persists until you close the tab, but we are working
-              on a persistent analysis feature!
+              complete. You can cancel the analysis at any time. Analysis will
+              persist even after you close the tab,
             </p>
           </div>
         </div>

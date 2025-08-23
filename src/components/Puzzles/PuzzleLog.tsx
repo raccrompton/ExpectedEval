@@ -1,9 +1,9 @@
 import { Dispatch, SetStateAction } from 'react'
 
-import { TrainingGame } from 'src/types/training'
+import { PuzzleGame } from 'src/types/puzzle'
 
 interface Props {
-  previousGameResults: (TrainingGame & {
+  previousGameResults: (PuzzleGame & {
     result?: boolean
     ratingDiff?: number
   })[]

@@ -12,7 +12,7 @@ import { useAnalysisController } from 'src/hooks'
 import { TreeControllerContext } from 'src/contexts'
 import { StreamAnalysis } from 'src/components/Analysis/StreamAnalysis'
 import { AnalyzedGame } from 'src/types'
-import { GameTree } from 'src/types/base/tree'
+import { GameTree } from 'src/types/tree'
 
 const StreamAnalysisPage: NextPage = () => {
   const router = useRouter()

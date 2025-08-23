@@ -1,40 +1,23 @@
 import { useRouter } from 'next/router'
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { Chess } from 'chess.ts'
 
 import { useStats } from '../useStats'
-import { Color, GameTree } from 'src/types'
+import { Color } from 'src/types'
 import { TuringGame } from 'src/types/turing'
 import { useTreeController } from '../useTreeController'
-import { getTuringGame, getTuringPlayerStats, submitTuringGuess } from 'src/api'
+import {
+  fetchTuringGame,
+  fetchTuringPlayerStats,
+  submitTuringGuess,
+} from 'src/api'
 
 const statsLoader = async () => {
-  const stats = await getTuringPlayerStats()
+  const stats = await fetchTuringPlayerStats()
   return {
     gamesPlayed: stats.correctGuesses + stats.wrongGuesses,
     gamesWon: stats.correctGuesses,
     rating: stats.rating,
   }
-}
-
-const buildTuringGameTree = (game: TuringGame): GameTree => {
-  if (!game.moves || game.moves.length === 0) {
-    return new GameTree(new Chess().fen())
-  }
-
-  const initialFen = game.moves[0].board
-  const tree = new GameTree(initialFen)
-  let currentNode = tree.getRoot()
-
-  for (let i = 1; i < game.moves.length; i++) {
-    const move = game.moves[i]
-    const uci = move.uci || (move.lastMove ? move.lastMove.join('') : undefined)
-    if (uci && move.san) {
-      currentNode = tree.addMainMove(currentNode, move.board, uci, move.san)
-    }
-  }
-
-  return tree
 }
 
 export const useTuringController = () => {
@@ -51,7 +34,7 @@ export const useTuringController = () => {
     setLoading(true)
     let game
     try {
-      game = await getTuringGame()
+      game = await fetchTuringGame()
     } catch (e) {
       router.push('/401')
       return
@@ -71,16 +54,11 @@ export const useTuringController = () => {
     [turingGames, currentGameId],
   )
 
-  const gameTree = useMemo(() => {
-    if (!game) return new GameTree(new Chess().fen())
-    return buildTuringGameTree(game)
-  }, [game])
-
-  const controller = useTreeController(gameTree, 'white')
+  const controller = useTreeController(game?.tree, 'white')
 
   useEffect(() => {
-    if (gameTree && game) {
-      const mainLine = gameTree.getMainLine()
+    if (controller.tree && game) {
+      const mainLine = controller.tree.getMainLine()
       controller.setCurrentNode(mainLine[0])
     }
   }, [game])
@@ -110,8 +88,9 @@ export const useTuringController = () => {
   const commentController = useState('')
 
   return {
-    gameTree,
+    gameTree: controller.tree,
     currentNode: controller.currentNode,
+    setCurrentNode: controller.setCurrentNode,
     goToNode: controller.goToNode,
     goToNextNode: controller.goToNextNode,
     goToPreviousNode: controller.goToPreviousNode,

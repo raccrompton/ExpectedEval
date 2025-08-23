@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction } from 'react'
-import { AnalysisTournamentGame } from 'src/types'
+import { WorldChampionshipGameListEntry } from 'src/types'
 import { useRouter } from 'next/router'
 type Props = {
   id: string
@@ -11,11 +11,7 @@ type Props = {
   setLoadingIndex: (index: number | null) => void
   openElement: React.RefObject<HTMLDivElement>
   selectedGameElement: React.RefObject<HTMLButtonElement>
-  analysisTournamentList: Map<string, AnalysisTournamentGame[]>
-  loadNewTournamentGame: (
-    id: string[],
-    setCurrentMove?: Dispatch<SetStateAction<number>>,
-  ) => Promise<void>
+  analysisTournamentList: Map<string, WorldChampionshipGameListEntry[]>
   setCurrentMove?: Dispatch<SetStateAction<number>>
 }
 
@@ -30,8 +26,6 @@ export const Tournament = ({
   setLoadingIndex,
   selectedGameElement,
   analysisTournamentList,
-  loadNewTournamentGame,
-  setCurrentMove,
 }: Props) => {
   const router = useRouter()
   const games = analysisTournamentList.get(id)

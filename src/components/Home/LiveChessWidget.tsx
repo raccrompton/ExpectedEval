@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { getLichessTVGame } from 'src/api/lichess/streaming'
+import { fetchLichessTVGame } from 'src/api/lichess'
 
 interface LiveGameData {
   gameId: string
@@ -31,7 +31,7 @@ export const LiveChessWidget: React.FC = () => {
     setIsLoading(true)
     try {
       setError(null)
-      const tvGame = await getLichessTVGame()
+      const tvGame = await fetchLichessTVGame()
 
       setLiveGame({
         gameId: tvGame.gameId,

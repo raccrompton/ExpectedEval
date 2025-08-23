@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Chess } from 'chess.ts'
-import { GameTree } from 'src/types/base/tree'
-import { AvailableMoves } from 'src/types/training'
 import {
+  GameTree,
   Broadcast,
   BroadcastRound,
   BroadcastGame,
@@ -11,6 +10,7 @@ import {
   BroadcastStreamController,
   BroadcastSection,
   LiveGame,
+  AvailableMoves,
 } from 'src/types'
 import {
   getLichessBroadcasts,
@@ -20,7 +20,7 @@ import {
   getBroadcastRoundPGN,
   streamBroadcastRound,
   parsePGNData,
-} from 'src/api/lichess/broadcasts'
+} from 'src/api/broadcasts'
 
 export const useBroadcastController = (): BroadcastStreamController => {
   const [broadcastSections, setBroadcastSections] = useState<
@@ -315,8 +315,7 @@ export const useBroadcastController = (): BroadcastStreamController => {
       if (existingLiveGame && existingLiveGame.tree) {
         // Reuse existing tree and states - preserve all analysis and variations
         tree = existingLiveGame.tree
-        movesList = [...existingLiveGame.moves]
-        existingMoveCount = movesList.length - 1 // Subtract 1 for initial position
+        existingMoveCount = tree.getMainLine().length - 1 // Subtract 1 for initial position
         console.log(
           `Reusing existing tree with ${existingMoveCount} moves, adding ${broadcastGame.moves.length - existingMoveCount} new moves`,
         )
@@ -368,15 +367,9 @@ export const useBroadcastController = (): BroadcastStreamController => {
               const uci =
                 move.from + move.to + (move.promotion ? move.promotion : '')
 
-              movesList.push({
-                board: newFen,
-                lastMove: [move.from, move.to],
-                san: move.san,
-                check: chess.inCheck(),
-                maia_values: {},
-              })
-
-              currentNode = tree.addMainMove(currentNode, newFen, uci, move.san)
+              currentNode = tree
+                .getLastMainlineNode()
+                .addChild(newFen, uci, move.san, true)
               console.log(`Added new move: ${move.san}`)
             }
           } catch (error) {
@@ -391,10 +384,11 @@ export const useBroadcastController = (): BroadcastStreamController => {
 
       // Preserve existing availableMoves array (legacy) and extend if needed
       const availableMoves =
-        existingLiveGame?.availableMoves || new Array(movesList.length).fill({})
+        existingLiveGame?.availableMoves ||
+        new Array(tree.getMainLine().length).fill({})
 
       // Extend availableMoves array if we have new moves
-      while (availableMoves.length < movesList.length) {
+      while (availableMoves.length < tree.getMainLine().length) {
         availableMoves.push({})
       }
 
@@ -410,7 +404,6 @@ export const useBroadcastController = (): BroadcastStreamController => {
         },
         gameType: 'broadcast',
         type: 'stream' as const,
-        moves: movesList,
         availableMoves: availableMoves as AvailableMoves[],
         termination:
           broadcastGame.result === '*'
@@ -424,8 +417,6 @@ export const useBroadcastController = (): BroadcastStreamController => {
                       ? 'black'
                       : 'none',
               },
-        maiaEvaluations: existingLiveGame?.maiaEvaluations || [],
-        stockfishEvaluations: existingLiveGame?.stockfishEvaluations || [],
         loadedFen: broadcastGame.fen,
         loaded: true,
         tree,
@@ -483,7 +474,8 @@ export const useBroadcastController = (): BroadcastStreamController => {
             currentGameId &&
             game.id === currentGameId &&
             existingGameState &&
-            newLiveGame.moves.length > existingGameState.moves.length
+            newLiveGame.tree.getMainLine().length >
+              existingGameState.tree.getMainLine().length
           ) {
             try {
               const audio = new Audio('/assets/sound/move.mp3')

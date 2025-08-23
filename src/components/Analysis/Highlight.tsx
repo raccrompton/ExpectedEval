@@ -1,3 +1,4 @@
+import { cpToWinrate } from 'src/lib'
 import { MoveTooltip } from './MoveTooltip'
 import { InteractiveDescription } from './InteractiveDescription'
 import { useState, useEffect, useRef, useContext } from 'react'
@@ -8,7 +9,6 @@ import {
   ColorSanMapping,
   GameNode,
 } from 'src/types'
-import { cpToWinrate } from 'src/lib/stockfish'
 import { MAIA_MODELS } from 'src/constants/common'
 import { WindowSizeContext } from 'src/contexts'
 

@@ -6,13 +6,13 @@ import { useCallback, useEffect, useMemo } from 'react'
 interface Props {
   orientation: 'white' | 'black'
   setOrientation: (orientation: 'white' | 'black') => void
-  currentNode: GameNode
+  currentNode: GameNode | null
   plyCount: number
   goToNode: (node: GameNode) => void
   goToNextNode: () => void
   goToPreviousNode: () => void
   goToRootNode: () => void
-  gameTree: GameTree
+  gameTree: GameTree | null
   setCurrentMove?: (move: [string, string] | null) => void
   disableFlip?: boolean
   disablePrevious?: boolean
@@ -43,17 +43,11 @@ export const BoardController: React.FC<Props> = ({
   }, [orientation, setOrientation])
 
   const hasPrevious = useMemo(() => {
-    if (currentNode !== undefined) {
-      return !!currentNode?.parent
-    }
-    return false
+    return !!currentNode?.parent
   }, [currentNode])
 
   const hasNext = useMemo(() => {
-    if (currentNode !== undefined) {
-      return !!currentNode?.mainChild
-    }
-    return false
+    return !!currentNode?.mainChild
   }, [currentNode])
 
   const getFirst = useCallback(() => {
@@ -72,6 +66,8 @@ export const BoardController: React.FC<Props> = ({
   }, [goToNextNode, setCurrentMove])
 
   const getLast = useCallback(() => {
+    if (!currentNode) return
+    
     let lastNode = currentNode
     while (lastNode?.mainChild) {
       lastNode = lastNode.mainChild

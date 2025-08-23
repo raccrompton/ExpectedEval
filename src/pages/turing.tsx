@@ -6,6 +6,7 @@ import { trackTuringGameStarted } from 'src/lib/analytics'
 import {
   WindowSizeContext,
   TuringControllerContext,
+  TreeControllerContext,
   useTour,
 } from 'src/contexts'
 import {
@@ -188,18 +189,18 @@ const Turing: React.FC<Props> = (props: Props) => {
             id="turing-page"
             className="relative flex aspect-square w-full max-w-[75vh] flex-shrink-0"
           >
-            <GameBoard game={game} currentNode={controller.currentNode} />
+            <GameBoard 
+              game={game} 
+              currentNode={controller.currentNode} 
+              orientation={controller.orientation}
+            />
           </motion.div>
           <motion.div
             variants={itemVariants}
             className="flex h-[75vh] min-w-64 flex-grow flex-col gap-1"
           >
             <div className="relative bottom-0 h-full min-h-[38px] flex-1">
-              <MovesContainer
-                game={game}
-                termination={game.termination}
-                type="turing"
-              />
+              <MovesContainer game={game} termination={game.termination} />
             </div>
             <div id="turing-submission">
               <TuringSubmission rating={stats.rating ?? 0} />
@@ -247,15 +248,15 @@ const Turing: React.FC<Props> = (props: Props) => {
             id="turing-page"
             className="relative flex aspect-square h-[100vw] w-screen"
           >
-            <GameBoard game={game} currentNode={controller.currentNode} />
+            <GameBoard 
+              game={game} 
+              currentNode={controller.currentNode} 
+              orientation={controller.orientation}
+            />
           </div>
           <div className="flex h-auto w-full flex-col gap-1">
             <div className="relative bottom-0 h-full flex-1 overflow-auto">
-              <MovesContainer
-                game={game}
-                termination={game.termination}
-                type="turing"
-              />
+              <MovesContainer game={game} termination={game.termination} />
             </div>
             <div className="flex-none">
               <BoardController
@@ -305,12 +306,20 @@ const Turing: React.FC<Props> = (props: Props) => {
         />
       </Head>
       <TuringControllerContext.Provider value={controller}>
-        <AnimatePresence mode="wait">
-          {isMobile ? mobileLayout : desktopLayout}
-        </AnimatePresence>
+        <TreeControllerContext.Provider value={controller}>
+          <AnimatePresence mode="wait">
+            {isMobile ? mobileLayout : desktopLayout}
+          </AnimatePresence>
+        </TreeControllerContext.Provider>
       </TuringControllerContext.Provider>
     </>
   )
+}
+
+export const getServerSideProps = async () => {
+  return {
+    props: {},
+  }
 }
 
 export default TuringPage

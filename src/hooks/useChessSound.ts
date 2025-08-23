@@ -1,4 +1,4 @@
-import { useChessSoundManager } from 'src/lib/chessSoundManager'
+import { useChessSoundManager } from 'src/lib/sound'
 
 /**
  * @deprecated Use useChessSoundManager directly instead

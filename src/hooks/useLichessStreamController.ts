@@ -6,11 +6,11 @@ import {
   StreamedMove,
   StreamedGame,
 } from 'src/types'
+import { streamLichessGameMoves } from 'src/api/lichess'
 import {
-  streamLichessGame,
-  createAnalyzedGameFromLichessStream,
-  parseLichessStreamMove,
-} from 'src/api/lichess/streaming'
+  handleLichessStreamMove,
+  convertLichessStreamToLiveGame,
+} from 'src/lib'
 
 export interface LichessStreamController {
   game: LiveGame | undefined
@@ -109,7 +109,7 @@ export const useLichessStreamController = (): LichessStreamController => {
           }
         }
 
-        return createAnalyzedGameFromLichessStream(gameData)
+        return convertLichessStreamToLiveGame(gameData)
       })
 
       setStreamState((prev) => ({
@@ -153,7 +153,7 @@ export const useLichessStreamController = (): LichessStreamController => {
         }
 
         try {
-          const newGame = parseLichessStreamMove(moveData, prev)
+          const newGame = handleLichessStreamMove(moveData, prev)
 
           return {
             ...newGame,
@@ -201,7 +201,7 @@ export const useLichessStreamController = (): LichessStreamController => {
       try {
         // Start streaming directly - the stream API will handle invalid game IDs
         // Note: isConnected will be set when we receive the first data (in handleStreamedGameInfo or handleMove)
-        await streamLichessGame(
+        await streamLichessGameMoves(
           gameId,
           handleStreamedGameInfo,
           handleMove,

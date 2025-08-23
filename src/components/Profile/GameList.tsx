@@ -2,15 +2,13 @@ import { motion } from 'framer-motion'
 import React, { useState, useEffect, useContext } from 'react'
 
 import { AuthContext } from 'src/contexts'
-import { AnalysisWebGame } from 'src/types'
-import { getLichessGames, getAnalysisGameList } from 'src/api'
-import { getCustomAnalysesAsWebGames } from 'src/lib/customAnalysis'
+import { MaiaGameListEntry } from 'src/types'
+import { streamLichessGames, fetchMaiaGameList } from 'src/api'
 import { FavoriteModal } from 'src/components/Common/FavoriteModal'
 import {
-  getFavoritesAsWebGames,
   addFavoriteGame,
   removeFavoriteGame,
-  isFavoriteGame,
+  getFavoritesAsWebGames,
 } from 'src/lib/favorites'
 
 interface GameData {
@@ -44,28 +42,21 @@ export const GameList = ({
     'play' | 'hb' | 'custom' | 'lichess' | 'favorites'
   >(showCustom ? 'favorites' : 'play')
   const [hbSubsection, setHbSubsection] = useState<'hand' | 'brain'>('hand')
-  const [games, setGames] = useState<AnalysisWebGame[]>([])
+  const [games, setGames] = useState<MaiaGameListEntry[]>([])
 
   const [gamesByPage, setGamesByPage] = useState<{
-    [gameType: string]: { [page: number]: AnalysisWebGame[] }
+    [gameType: string]: { [page: number]: MaiaGameListEntry[] }
   }>({
     play: {},
     hand: {},
     brain: {},
+    favorites: {},
   })
 
-  const [customAnalyses, setCustomAnalyses] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return getCustomAnalysesAsWebGames()
-    }
-    return []
-  })
-  const [favoriteGames, setFavoriteGames] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return getFavoritesAsWebGames()
-    }
-    return []
-  })
+  const [favoriteGames, setFavoriteGames] = useState<MaiaGameListEntry[]>([])
+  const [favoritedGameIds, setFavoritedGameIds] = useState<Set<string>>(
+    new Set(),
+  )
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -73,7 +64,7 @@ export const GameList = ({
   // Modal state for favoriting
   const [favoriteModal, setFavoriteModal] = useState<{
     isOpen: boolean
-    game: AnalysisWebGame | null
+    game: MaiaGameListEntry | null
   }>({ isOpen: false, game: null })
 
   const [fetchedCache, setFetchedCache] = useState<{
@@ -83,6 +74,7 @@ export const GameList = ({
     hand: {},
     brain: {},
     lichess: {},
+    favorites: {},
   })
 
   const [totalPagesCache, setTotalPagesCache] = useState<{
@@ -96,14 +88,21 @@ export const GameList = ({
     hand: 1,
     brain: 1,
     lichess: 1,
+    favorites: 1,
   })
 
   // Update custom analyses and favorites when component mounts
   useEffect(() => {
-    if (showCustom) {
-      setCustomAnalyses(getCustomAnalysesAsWebGames())
-    }
-    setFavoriteGames(getFavoritesAsWebGames())
+    // Load favorites (supports both sync and async implementations)
+    Promise.resolve(getFavoritesAsWebGames())
+      .then((favorites) => {
+        setFavoriteGames(favorites)
+        setFavoritedGameIds(new Set(favorites.map((f) => f.id)))
+      })
+      .catch(() => {
+        setFavoriteGames([])
+        setFavoritedGameIds(new Set())
+      })
   }, [])
 
   useEffect(() => {
@@ -114,14 +113,14 @@ export const GameList = ({
         lichess: { ...prev.lichess, 1: true },
       }))
 
-      getLichessGames(targetUser, (data) => {
+      streamLichessGames(targetUser, (data) => {
         const result = data.pgn.match(/\[Result\s+"(.+?)"\]/)[1] || '?'
 
-        const game: AnalysisWebGame = {
+        const game: MaiaGameListEntry = {
           id: data.id,
           label: `${data.players.white.user?.id || 'Unknown'} vs. ${data.players.black.user?.id || 'Unknown'}`,
           result: result,
-          type: 'pgn',
+          type: 'lichess',
         }
 
         setGames((x) => [...x, game])
@@ -131,12 +130,7 @@ export const GameList = ({
 
   useEffect(() => {
     const targetUser = lichessId || user?.lichessId
-    if (
-      targetUser &&
-      selected !== 'lichess' &&
-      selected !== 'custom' &&
-      selected !== 'favorites'
-    ) {
+    if (targetUser && selected !== 'lichess' && selected !== 'custom') {
       const gameType = selected === 'hb' ? hbSubsection : selected
       const isAlreadyFetched = fetchedCache[gameType]?.[currentPage]
 
@@ -148,36 +142,59 @@ export const GameList = ({
           [gameType]: { ...prev[gameType], [currentPage]: true },
         }))
 
-        getAnalysisGameList(gameType, currentPage, lichessId)
+        fetchMaiaGameList(gameType, currentPage, lichessId)
           .then((data) => {
-            const parse = (
-              game: {
-                game_id: string
-                maia_name: string
-                result: string
-                player_color: 'white' | 'black'
-              },
-              type: string,
-            ) => {
-              const raw = game.maia_name.replace('_kdd_', ' ')
-              const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
+            let parsedGames: MaiaGameListEntry[] = []
 
-              const playerLabel = userName || 'You'
+            if (gameType === 'favorites') {
+              // Handle favorites response format
+              parsedGames = data.games.map((game: any) => ({
+                id: game.game_id || game.id,
+                type: game.game_type || game.type,
+                label: game.custom_name || game.label || 'Untitled',
+                result: game.result || '*',
+                pgn: game.pgn,
+                is_favorited: true, // All games in favorites are favorited
+                custom_name: game.custom_name,
+              }))
+            } else {
+              // Handle regular games response format
+              const parse = (
+                game: {
+                  game_id: string
+                  maia_name: string
+                  result: string
+                  player_color: 'white' | 'black'
+                  is_favorited?: boolean
+                  custom_name?: string
+                },
+                type: string,
+              ) => {
+                const raw = game.maia_name.replace('_kdd_', ' ')
+                const maia = raw.charAt(0).toUpperCase() + raw.slice(1)
 
-              return {
-                id: game.game_id,
-                label:
+                const playerLabel = userName || 'You'
+
+                // Use custom name if available, otherwise generate default label
+                const defaultLabel =
                   game.player_color === 'white'
                     ? `${playerLabel} vs. ${maia}`
-                    : `${maia} vs. ${playerLabel}`,
-                result: game.result,
-                type,
-              }
-            }
+                    : `${maia} vs. ${playerLabel}`
 
-            const parsedGames = data.games.map((game: GameData) =>
-              parse(game, gameType),
-            )
+                return {
+                  id: game.game_id,
+                  label: game.custom_name || defaultLabel,
+                  result: game.result,
+                  type,
+                  is_favorited: game.is_favorited || false,
+                  custom_name: game.custom_name,
+                }
+              }
+
+              parsedGames = data.games.map((game: GameData) =>
+                parse(game, gameType),
+              )
+            }
             const calculatedTotalPages =
               data.total_pages || Math.ceil(data.total_games / 25)
 
@@ -194,6 +211,14 @@ export const GameList = ({
                 [currentPage]: parsedGames,
               },
             }))
+
+            // Update favoritedGameIds from the actual games data
+            const favoritedIds = new Set(
+              parsedGames
+                .filter((game: any) => game.is_favorited)
+                .map((game: any) => game.id),
+            )
+            setFavoritedGameIds((prev) => new Set([...prev, ...favoritedIds]))
 
             setLoading(false)
           })
@@ -273,21 +298,101 @@ export const GameList = ({
     setSelected(newTab)
   }
 
-  const handleFavoriteGame = (game: AnalysisWebGame) => {
+  const handleFavoriteGame = (game: MaiaGameListEntry) => {
     setFavoriteModal({ isOpen: true, game })
   }
 
-  const handleSaveFavorite = (customName: string) => {
+  const handleSaveFavorite = async (customName: string) => {
     if (favoriteModal.game) {
-      addFavoriteGame(favoriteModal.game, customName)
-      setFavoriteGames(getFavoritesAsWebGames())
+      await addFavoriteGame(favoriteModal.game, customName)
+      const updatedFavorites = await getFavoritesAsWebGames()
+      setFavoriteGames(updatedFavorites)
+      setFavoritedGameIds(new Set(updatedFavorites.map((f) => f.id)))
+
+      // Clear favorites cache to force re-fetch
+      setFetchedCache((prev) => ({
+        ...prev,
+        favorites: {},
+      }))
+      setGamesByPage((prev) => ({
+        ...prev,
+        favorites: {},
+      }))
+
+      // Also clear current section cache to show updated favorite status
+      if (selected !== 'favorites') {
+        const currentSection = selected === 'hb' ? hbSubsection : selected
+        setFetchedCache((prev) => ({
+          ...prev,
+          [currentSection]: {},
+        }))
+        setGamesByPage((prev) => ({
+          ...prev,
+          [currentSection]: {},
+        }))
+      }
     }
   }
 
-  const handleRemoveFavorite = () => {
+  const handleRemoveFavorite = async () => {
     if (favoriteModal.game) {
-      removeFavoriteGame(favoriteModal.game.id)
-      setFavoriteGames(getFavoritesAsWebGames())
+      await removeFavoriteGame(favoriteModal.game.id, favoriteModal.game.type)
+      const updatedFavorites = await getFavoritesAsWebGames()
+      setFavoriteGames(updatedFavorites)
+      setFavoritedGameIds(new Set(updatedFavorites.map((f) => f.id)))
+
+      // Clear favorites cache to force re-fetch
+      setFetchedCache((prev) => ({
+        ...prev,
+        favorites: {},
+      }))
+      setGamesByPage((prev) => ({
+        ...prev,
+        favorites: {},
+      }))
+
+      // Also clear current section cache to show updated favorite status
+      if (selected !== 'favorites') {
+        const currentSection = selected === 'hb' ? hbSubsection : selected
+        setFetchedCache((prev) => ({
+          ...prev,
+          [currentSection]: {},
+        }))
+        setGamesByPage((prev) => ({
+          ...prev,
+          [currentSection]: {},
+        }))
+      }
+    }
+  }
+
+  const handleDirectUnfavorite = async (game: MaiaGameListEntry) => {
+    await removeFavoriteGame(game.id, game.type)
+    const updatedFavorites = await getFavoritesAsWebGames()
+    setFavoriteGames(updatedFavorites)
+    setFavoritedGameIds(new Set(updatedFavorites.map((f) => f.id)))
+
+    // Clear favorites cache to force re-fetch
+    setFetchedCache((prev) => ({
+      ...prev,
+      favorites: {},
+    }))
+    setGamesByPage((prev) => ({
+      ...prev,
+      favorites: {},
+    }))
+
+    // Also clear current section cache to show updated favorite status
+    if (selected !== 'favorites') {
+      const currentSection = selected === 'hb' ? hbSubsection : selected
+      setFetchedCache((prev) => ({
+        ...prev,
+        [currentSection]: {},
+      }))
+      setGamesByPage((prev) => ({
+        ...prev,
+        [currentSection]: {},
+      }))
     }
   }
 
@@ -297,14 +402,32 @@ export const GameList = ({
     } else if (selected === 'hb') {
       const gameType = hbSubsection
       return gamesByPage[gameType]?.[currentPage] || []
-    } else if (selected === 'custom' && showCustom) {
-      return customAnalyses
     } else if (selected === 'lichess' && showLichess) {
       return games
     } else if (selected === 'favorites') {
-      return favoriteGames
+      return gamesByPage.favorites[currentPage] || []
     }
     return []
+  }
+
+  const getModalCurrentName = () => {
+    if (!favoriteModal.game) return ''
+
+    // If we're in the favorites section, the label is already the custom name
+    if (selected === 'favorites') {
+      return favoriteModal.game.label
+    }
+
+    // For other sections, check if the game is favorited and get its custom name
+    const favorite = favoriteGames.find(
+      (fav) => fav.id === favoriteModal.game!.id,
+    )
+    if (favorite) {
+      return favorite.label // In AnalysisWebGame, the label contains the custom name
+    }
+
+    // Otherwise, use the game's label
+    return favoriteModal.game.label
   }
 
   return (
@@ -409,7 +532,8 @@ export const GameList = ({
         ) : (
           <>
             {getCurrentGames().map((game, index) => {
-              const isFavorited = isFavoriteGame(game.id)
+              const isFavorited = (game as any).is_favorited || false
+              const displayName = game.label // This now contains the custom name if favorited
               return (
                 <div
                   key={index}
@@ -421,7 +545,9 @@ export const GameList = ({
                 >
                   <div className="flex h-full w-10 items-center justify-center bg-background-2 py-1 group-hover:bg-white/5">
                     <p className="text-sm text-secondary">
-                      {selected === 'play' || selected === 'hb'
+                      {selected === 'play' ||
+                      selected === 'hb' ||
+                      selected === 'favorites'
                         ? (currentPage - 1) * 25 + index + 1
                         : index + 1}
                     </p>
@@ -432,7 +558,7 @@ export const GameList = ({
                   >
                     <div className="flex items-center gap-2 overflow-hidden">
                       <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-primary">
-                        {game.label}
+                        {displayName}
                       </p>
                       {selected === 'favorites' &&
                         (game.type === 'hand' || game.type === 'brain') && (
@@ -493,48 +619,51 @@ export const GameList = ({
       </div>
 
       {/* Pagination */}
-      {(selected === 'play' || selected === 'hb') && totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 border-t border-white border-opacity-10 bg-background-1 py-2">
-          <button
-            onClick={() => handlePageChange(1)}
-            disabled={currentPage === 1}
-            className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined">first_page</span>
-          </button>
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined">arrow_back_ios</span>
-          </button>
-          <span className="text-sm text-secondary">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined">arrow_forward_ios</span>
-          </button>
-          <button
-            onClick={() => handlePageChange(totalPages)}
-            disabled={currentPage === totalPages}
-            className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined">last_page</span>
-          </button>
-        </div>
-      )}
+      {(selected === 'play' || selected === 'hb' || selected === 'favorites') &&
+        totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 border-t border-white border-opacity-10 bg-background-1 py-2">
+            <button
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined">first_page</span>
+            </button>
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined">arrow_back_ios</span>
+            </button>
+            <span className="text-sm text-secondary">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined">
+                arrow_forward_ios
+              </span>
+            </button>
+            <button
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              className="flex items-center justify-center text-secondary hover:text-primary disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined">last_page</span>
+            </button>
+          </div>
+        )}
       <FavoriteModal
         isOpen={favoriteModal.isOpen}
-        currentName={favoriteModal.game?.label || ''}
+        currentName={getModalCurrentName()}
         onClose={() => setFavoriteModal({ isOpen: false, game: null })}
         onSave={handleSaveFavorite}
         onRemove={
-          favoriteModal.game && isFavoriteGame(favoriteModal.game.id)
+          favoriteModal.game && favoritedGameIds.has(favoriteModal.game.id)
             ? handleRemoveFavorite
             : undefined
         }

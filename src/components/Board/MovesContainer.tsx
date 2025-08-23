@@ -1,52 +1,23 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useContext, useMemo, Fragment, useEffect, useRef } from 'react'
-import { WindowSizeContext } from 'src/contexts'
-import { GameNode, AnalyzedGame, Termination, BaseGame } from 'src/types'
-import { TuringGame } from 'src/types/turing'
-import { useBaseTreeController } from 'src/hooks/useBaseTreeController'
+import { GameNode, Termination, BaseGame } from 'src/types'
+import { TreeControllerContext, WindowSizeContext } from 'src/contexts'
 import { MoveClassificationIcon } from 'src/components/Common/MoveIcons'
+import React, { useContext, useMemo, Fragment, useEffect, useRef } from 'react'
 
-interface AnalysisProps {
-  game: BaseGame | AnalyzedGame
-  highlightIndices?: number[]
-  termination?: Termination
-  type: 'analysis'
-  showAnnotations?: boolean
-  showVariations?: boolean
-  disableKeyboardNavigation?: boolean
-  disableMoveClicking?: boolean
-}
-
-interface TuringProps {
-  game: TuringGame
-  highlightIndices?: number[]
-  termination?: Termination
-  type: 'turing'
-  showAnnotations?: boolean
-  showVariations?: boolean
-  disableKeyboardNavigation?: boolean
-  disableMoveClicking?: boolean
-}
-
-interface PlayProps {
+interface Props {
   game: BaseGame
   highlightIndices?: number[]
   termination?: Termination
-  type: 'play'
   showAnnotations?: boolean
   showVariations?: boolean
   disableKeyboardNavigation?: boolean
   disableMoveClicking?: boolean
+  startFromNode?: GameNode
+  restrictNavigationBefore?: GameNode
 }
 
-type Props = AnalysisProps | TuringProps | PlayProps
-
-// Helper function to get move classification for display
-const getMoveClassification = (
-  node: GameNode | null,
-  currentMaiaModel?: string,
-) => {
+const getMoveClassification = (node: GameNode | null) => {
   if (!node) {
     return {
       blunder: false,
@@ -67,54 +38,103 @@ const getMoveClassification = (
 export const MovesContainer: React.FC<Props> = (props) => {
   const {
     game,
-    highlightIndices,
     termination,
-    type,
+    highlightIndices,
     showAnnotations = true,
     showVariations = true,
     disableKeyboardNavigation = false,
     disableMoveClicking = false,
+    startFromNode,
+    restrictNavigationBefore,
   } = props
   const { isMobile } = useContext(WindowSizeContext)
   const containerRef = useRef<HTMLDivElement>(null)
   const currentMoveRef = useRef<HTMLDivElement>(null)
 
-  // Helper function to determine if move indicators should be shown
   const shouldShowIndicators = (node: GameNode | null) => {
     if (!node || !showAnnotations) return false
 
-    // Calculate ply from start: (moveNumber - 1) * 2 + (turn === 'b' ? 1 : 0)
     const moveNumber = node.moveNumber
     const turn = node.turn
     const plyFromStart = (moveNumber - 1) * 2 + (turn === 'b' ? 1 : 0)
 
-    // Only show indicators after the first 6 ply (moves 1, 2, and 3)
     return plyFromStart >= 6
   }
 
-  const baseController = useBaseTreeController(type)
+  const controller = useContext(TreeControllerContext)
 
   const mainLineNodes = useMemo(() => {
-    return baseController.gameTree.getMainLine() ?? game.tree.getMainLine()
-  }, [game, type, baseController.gameTree, baseController.currentNode])
+    const fullMainLine =
+      controller.gameTree?.getMainLine() ?? game.tree?.getMainLine() ?? []
+
+    if (startFromNode) {
+      // Find the index of the start node in the full main line
+      const startIndex = fullMainLine.findIndex(
+        (node) => node.fen === startFromNode.fen,
+      )
+
+      if (startIndex !== -1) {
+        // Return the main line starting from the specified node
+        const customMainLine = fullMainLine.slice(startIndex)
+        console.log('MovesContainer mainLineNodes (custom start):', {
+          fullMainLineLength: fullMainLine.length,
+          startIndex,
+          customMainLineLength: customMainLine.length,
+          startNodeFen: startFromNode.fen,
+          currentNode: controller.currentNode?.fen,
+        })
+        return customMainLine
+      } else {
+        // If start node not found in main line, build from start node
+        const customMainLine = [startFromNode]
+        let current = startFromNode.mainChild
+        while (current) {
+          customMainLine.push(current)
+          current = current.mainChild
+        }
+        console.log('MovesContainer mainLineNodes (built from start):', {
+          customMainLineLength: customMainLine.length,
+          startNodeFen: startFromNode.fen,
+          currentNode: controller.currentNode?.fen,
+        })
+        return customMainLine
+      }
+    }
+
+    console.log('MovesContainer mainLineNodes (default):', {
+      controllerTreeMainLine: controller.gameTree?.getMainLine()?.length || 0,
+      gameTreeMainLine: game?.tree?.getMainLine()?.length || 0,
+      finalMainLineLength: fullMainLine?.length || 0,
+      currentNode: controller.currentNode?.fen,
+    })
+    return fullMainLine
+  }, [game, controller.gameTree, controller.currentNode, startFromNode])
 
   useEffect(() => {
     if (disableKeyboardNavigation) return
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!baseController.currentNode) return
+      if (!controller.currentNode) return
 
       switch (event.key) {
         case 'ArrowRight':
           event.preventDefault()
-          if (baseController.currentNode.mainChild) {
-            baseController.goToNode(baseController.currentNode.mainChild)
+          if (controller.currentNode.mainChild) {
+            controller.goToNode(controller.currentNode.mainChild)
           }
           break
         case 'ArrowLeft':
           event.preventDefault()
-          if (baseController.currentNode.parent) {
-            baseController.goToNode(baseController.currentNode.parent)
+          if (controller.currentNode.parent) {
+            // Check if navigation is restricted
+            if (
+              restrictNavigationBefore &&
+              controller.currentNode.parent.fen === restrictNavigationBefore.fen
+            ) {
+              // Don't navigate before the restriction point
+              return
+            }
+            controller.goToNode(controller.currentNode.parent)
           }
           break
         default:
@@ -125,12 +145,12 @@ export const MovesContainer: React.FC<Props> = (props) => {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [
-    baseController.currentNode,
-    baseController.goToNode,
+    controller.currentNode,
+    controller.goToNode,
     disableKeyboardNavigation,
+    restrictNavigationBefore,
   ])
 
-  // Auto-scroll to current move
   useEffect(() => {
     if (currentMoveRef.current && containerRef.current) {
       currentMoveRef.current.scrollIntoView({
@@ -139,10 +159,26 @@ export const MovesContainer: React.FC<Props> = (props) => {
         inline: 'nearest',
       })
     }
-  }, [baseController.currentNode])
+  }, [controller.currentNode])
 
   const moves = useMemo(() => {
-    const nodes = mainLineNodes.slice(1)
+    // When using startFromNode, we want to show moves AFTER that node
+    // When using default behavior, we want to skip the root node (slice(1))
+    const nodes = startFromNode
+      ? mainLineNodes.slice(1)
+      : mainLineNodes.slice(1)
+    console.log('MovesContainer moves calculation:', {
+      mainLineNodesLength: mainLineNodes.length,
+      nodesAfterSliceLength: nodes.length,
+      firstNodeTurn: nodes[0]?.turn,
+      startFromNode: startFromNode?.fen,
+      allNodes: nodes.map((n, i) => ({
+        index: i,
+        move: n?.san,
+        turn: n?.turn,
+      })),
+    })
+
     const rows: (GameNode | null)[][] = []
 
     const firstNode = nodes[0]
@@ -159,8 +195,9 @@ export const MovesContainer: React.FC<Props> = (props) => {
       }, [])
     }
 
+    console.log('MovesContainer final rows:', rows.length)
     return rows
-  }, [mainLineNodes])
+  }, [mainLineNodes, startFromNode])
 
   const highlightSet = useMemo(
     () => new Set(highlightIndices ?? []),
@@ -176,7 +213,10 @@ export const MovesContainer: React.FC<Props> = (props) => {
   const mobileMovePairs = useMemo(() => {
     if (!isMobile) return []
 
-    const nodes = mainLineNodes.slice(1)
+    // Use the same logic as the moves calculation for consistency
+    const nodes = startFromNode
+      ? mainLineNodes.slice(1)
+      : mainLineNodes.slice(1)
     const pairs: MovePair[] = []
     let currentPair: MovePair | null = null
 
@@ -224,17 +264,17 @@ export const MovesContainer: React.FC<Props> = (props) => {
               {pair.whiteMove && (
                 <div
                   ref={
-                    baseController.currentNode === pair.whiteMove
+                    controller.currentNode === pair.whiteMove
                       ? currentMoveRef
                       : null
                   }
                   onClick={() => {
                     if (!disableMoveClicking) {
-                      baseController.goToNode(pair.whiteMove as GameNode)
+                      controller.goToNode(pair.whiteMove as GameNode)
                     }
                   }}
                   className={`flex min-w-fit cursor-pointer flex-row items-center rounded px-2 py-1 text-sm ${
-                    baseController.currentNode === pair.whiteMove
+                    controller.currentNode === pair.whiteMove
                       ? 'bg-human-4/20'
                       : 'hover:bg-background-2'
                   } ${highlightSet.has(pairIndex * 2 + 1) ? 'bg-human-3/80' : ''}`}
@@ -254,7 +294,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
                       size="medium"
                       onClick={() => {
                         if (pair.whiteMove?.parent) {
-                          baseController.goToNode(pair.whiteMove.parent)
+                          controller.goToNode(pair.whiteMove.parent)
                         }
                       }}
                     />
@@ -264,17 +304,17 @@ export const MovesContainer: React.FC<Props> = (props) => {
               {pair.blackMove && (
                 <div
                   ref={
-                    baseController.currentNode === pair.blackMove
+                    controller.currentNode === pair.blackMove
                       ? currentMoveRef
                       : null
                   }
                   onClick={() => {
                     if (!disableMoveClicking) {
-                      baseController.goToNode(pair.blackMove as GameNode)
+                      controller.goToNode(pair.blackMove as GameNode)
                     }
                   }}
                   className={`flex min-w-fit cursor-pointer flex-row items-center rounded px-2 py-1 text-sm ${
-                    baseController.currentNode === pair.blackMove
+                    controller.currentNode === pair.blackMove
                       ? 'bg-human-4/20'
                       : 'hover:bg-background-2'
                   } ${highlightSet.has(pairIndex * 2 + 2) ? 'bg-human-3/80' : ''}`}
@@ -294,7 +334,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
                       size="medium"
                       onClick={() => {
                         if (pair.blackMove?.parent) {
-                          baseController.goToNode(pair.blackMove.parent)
+                          controller.goToNode(pair.blackMove.parent)
                         }
                       }}
                     />
@@ -308,9 +348,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
               className="min-w-fit cursor-pointer border border-primary/10 bg-background-1/90 px-4 py-1 text-sm opacity-90"
               onClick={() => {
                 if (!disableMoveClicking) {
-                  baseController.goToNode(
-                    mainLineNodes[mainLineNodes.length - 1],
-                  )
+                  controller.goToNode(mainLineNodes[mainLineNodes.length - 1])
                 }
               }}
             >
@@ -338,16 +376,14 @@ export const MovesContainer: React.FC<Props> = (props) => {
               {(whiteNode || blackNode)?.moveNumber}
             </span>
             <div
-              ref={
-                baseController.currentNode === whiteNode ? currentMoveRef : null
-              }
+              ref={controller.currentNode === whiteNode ? currentMoveRef : null}
               onClick={() => {
                 if (whiteNode && !disableMoveClicking) {
-                  baseController.goToNode(whiteNode)
+                  controller.goToNode(whiteNode)
                 }
               }}
               data-index={index * 2 + 1}
-              className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${baseController.currentNode === whiteNode && 'bg-human-4/10'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
+              className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${controller.currentNode === whiteNode && 'bg-human-4/10'} ${highlightSet.has(index * 2 + 1) && 'bg-human-3/80'}`}
             >
               <span
                 style={{
@@ -364,7 +400,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
                   size="medium"
                   onClick={() => {
                     if (whiteNode?.parent) {
-                      baseController.goToNode(whiteNode.parent)
+                      controller.goToNode(whiteNode.parent)
                     }
                   }}
                 />
@@ -374,23 +410,21 @@ export const MovesContainer: React.FC<Props> = (props) => {
               <FirstVariation
                 color="white"
                 node={whiteNode}
-                currentNode={baseController.currentNode}
-                goToNode={baseController.goToNode}
+                currentNode={controller.currentNode}
+                goToNode={controller.goToNode}
                 showAnnotations={showAnnotations}
                 disableMoveClicking={disableMoveClicking}
               />
             ) : null}
             <div
-              ref={
-                baseController.currentNode === blackNode ? currentMoveRef : null
-              }
+              ref={controller.currentNode === blackNode ? currentMoveRef : null}
               onClick={() => {
                 if (blackNode && !disableMoveClicking) {
-                  baseController.goToNode(blackNode)
+                  controller.goToNode(blackNode)
                 }
               }}
               data-index={index * 2 + 2}
-              className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${baseController.currentNode === blackNode && 'bg-human-4/10'} ${highlightSet.has(index * 2 + 2) && 'bg-human-3/80'}`}
+              className={`col-span-2 flex h-7 flex-1 cursor-pointer flex-row items-center justify-between px-2 text-sm hover:bg-background-2 ${controller.currentNode === blackNode && 'bg-human-4/10'} ${highlightSet.has(index * 2 + 2) && 'bg-human-3/80'}`}
             >
               <span
                 style={{
@@ -407,7 +441,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
                   size="medium"
                   onClick={() => {
                     if (blackNode?.parent) {
-                      baseController.goToNode(blackNode.parent)
+                      controller.goToNode(blackNode.parent)
                     }
                   }}
                 />
@@ -417,8 +451,8 @@ export const MovesContainer: React.FC<Props> = (props) => {
               <FirstVariation
                 color="black"
                 node={blackNode}
-                currentNode={baseController.currentNode}
-                goToNode={baseController.goToNode}
+                currentNode={controller.currentNode}
+                goToNode={controller.goToNode}
                 showAnnotations={showAnnotations}
                 disableMoveClicking={disableMoveClicking}
               />
@@ -431,7 +465,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
           className="col-span-5 cursor-pointer rounded-sm border border-primary/10 bg-background-1/90 p-5 text-center opacity-90"
           onClick={() => {
             if (!disableMoveClicking) {
-              baseController.goToNode(mainLineNodes[mainLineNodes.length - 1])
+              controller.goToNode(mainLineNodes[mainLineNodes.length - 1])
             }
           }}
         >
@@ -501,7 +535,6 @@ function VariationTree({
 }) {
   const variations = node.getVariations()
 
-  // Helper function to determine if move indicators should be shown in variations
   const shouldShowVariationIndicators = (node: GameNode) => {
     if (!showAnnotations) return false
     const moveNumber = node.moveNumber
@@ -589,7 +622,6 @@ function InlineChain({
   const chain: GameNode[] = []
   let current = node
 
-  // Helper function to determine if move indicators should be shown in inline chains
   const shouldShowInlineIndicators = (node: GameNode) => {
     if (!showAnnotations) return false
     const moveNumber = node.moveNumber
