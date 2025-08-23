@@ -6,7 +6,7 @@ export const useTreeController = (
   initialOrientation: Color = 'white',
 ) => {
   const [currentNode, setCurrentNode] = useState<GameNode | null>(
-    gameTree?.getRoot() || null
+    gameTree?.getRoot() || null,
   )
   const [orientation, setOrientation] = useState<Color>(initialOrientation)
 

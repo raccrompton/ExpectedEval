@@ -39,6 +39,9 @@ module.exports = {
       fontSize: {
         xxs: ['0.625rem', { lineHeight: '0.875rem' }],
       },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+      },
     },
   },
   plugins: [require('@tailwindcss/typography')],

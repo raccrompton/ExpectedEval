@@ -189,9 +189,9 @@ const Turing: React.FC<Props> = (props: Props) => {
             id="turing-page"
             className="relative flex aspect-square w-full max-w-[75vh] flex-shrink-0"
           >
-            <GameBoard 
-              game={game} 
-              currentNode={controller.currentNode} 
+            <GameBoard
+              game={game}
+              currentNode={controller.currentNode}
               orientation={controller.orientation}
             />
           </motion.div>
@@ -248,9 +248,9 @@ const Turing: React.FC<Props> = (props: Props) => {
             id="turing-page"
             className="relative flex aspect-square h-[100vw] w-screen"
           >
-            <GameBoard 
-              game={game} 
-              currentNode={controller.currentNode} 
+            <GameBoard
+              game={game}
+              currentNode={controller.currentNode}
               orientation={controller.orientation}
             />
           </div>
