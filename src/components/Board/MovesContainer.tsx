@@ -13,6 +13,8 @@ interface Props {
   showVariations?: boolean
   disableKeyboardNavigation?: boolean
   disableMoveClicking?: boolean
+  startFromNode?: GameNode
+  restrictNavigationBefore?: GameNode
 }
 
 const getMoveClassification = (node: GameNode | null) => {
@@ -42,6 +44,8 @@ export const MovesContainer: React.FC<Props> = (props) => {
     showVariations = true,
     disableKeyboardNavigation = false,
     disableMoveClicking = false,
+    startFromNode,
+    restrictNavigationBefore,
   } = props
   const { isMobile } = useContext(WindowSizeContext)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -60,8 +64,51 @@ export const MovesContainer: React.FC<Props> = (props) => {
   const controller = useContext(TreeControllerContext)
 
   const mainLineNodes = useMemo(() => {
-    return controller.gameTree.getMainLine() ?? game.tree.getMainLine()
-  }, [game, controller.gameTree, controller.currentNode])
+    const fullMainLine =
+      controller.gameTree.getMainLine() ?? game.tree.getMainLine()
+
+    if (startFromNode) {
+      // Find the index of the start node in the full main line
+      const startIndex = fullMainLine.findIndex(
+        (node) => node.fen === startFromNode.fen,
+      )
+
+      if (startIndex !== -1) {
+        // Return the main line starting from the specified node
+        const customMainLine = fullMainLine.slice(startIndex)
+        console.log('MovesContainer mainLineNodes (custom start):', {
+          fullMainLineLength: fullMainLine.length,
+          startIndex,
+          customMainLineLength: customMainLine.length,
+          startNodeFen: startFromNode.fen,
+          currentNode: controller.currentNode?.fen,
+        })
+        return customMainLine
+      } else {
+        // If start node not found in main line, build from start node
+        const customMainLine = [startFromNode]
+        let current = startFromNode.mainChild
+        while (current) {
+          customMainLine.push(current)
+          current = current.mainChild
+        }
+        console.log('MovesContainer mainLineNodes (built from start):', {
+          customMainLineLength: customMainLine.length,
+          startNodeFen: startFromNode.fen,
+          currentNode: controller.currentNode?.fen,
+        })
+        return customMainLine
+      }
+    }
+
+    console.log('MovesContainer mainLineNodes (default):', {
+      controllerTreeMainLine: controller.gameTree?.getMainLine()?.length || 0,
+      gameTreeMainLine: game.tree?.getMainLine()?.length || 0,
+      finalMainLineLength: fullMainLine?.length || 0,
+      currentNode: controller.currentNode?.fen,
+    })
+    return fullMainLine
+  }, [game, controller.gameTree, controller.currentNode, startFromNode])
 
   useEffect(() => {
     if (disableKeyboardNavigation) return
@@ -79,6 +126,14 @@ export const MovesContainer: React.FC<Props> = (props) => {
         case 'ArrowLeft':
           event.preventDefault()
           if (controller.currentNode.parent) {
+            // Check if navigation is restricted
+            if (
+              restrictNavigationBefore &&
+              controller.currentNode.parent.fen === restrictNavigationBefore.fen
+            ) {
+              // Don't navigate before the restriction point
+              return
+            }
             controller.goToNode(controller.currentNode.parent)
           }
           break
@@ -89,7 +144,12 @@ export const MovesContainer: React.FC<Props> = (props) => {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [controller.currentNode, controller.goToNode, disableKeyboardNavigation])
+  }, [
+    controller.currentNode,
+    controller.goToNode,
+    disableKeyboardNavigation,
+    restrictNavigationBefore,
+  ])
 
   useEffect(() => {
     if (currentMoveRef.current && containerRef.current) {
@@ -102,7 +162,23 @@ export const MovesContainer: React.FC<Props> = (props) => {
   }, [controller.currentNode])
 
   const moves = useMemo(() => {
-    const nodes = mainLineNodes.slice(1)
+    // When using startFromNode, we want to show moves AFTER that node
+    // When using default behavior, we want to skip the root node (slice(1))
+    const nodes = startFromNode
+      ? mainLineNodes.slice(1)
+      : mainLineNodes.slice(1)
+    console.log('MovesContainer moves calculation:', {
+      mainLineNodesLength: mainLineNodes.length,
+      nodesAfterSliceLength: nodes.length,
+      firstNodeTurn: nodes[0]?.turn,
+      startFromNode: startFromNode?.fen,
+      allNodes: nodes.map((n, i) => ({
+        index: i,
+        move: n?.san,
+        turn: n?.turn,
+      })),
+    })
+
     const rows: (GameNode | null)[][] = []
 
     const firstNode = nodes[0]
@@ -119,6 +195,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
       }, [])
     }
 
+    console.log('MovesContainer final rows:', rows.length)
     return rows
   }, [game, mainLineNodes, controller.gameTree])
 
@@ -136,7 +213,10 @@ export const MovesContainer: React.FC<Props> = (props) => {
   const mobileMovePairs = useMemo(() => {
     if (!isMobile) return []
 
-    const nodes = mainLineNodes.slice(1)
+    // Use the same logic as the moves calculation for consistency
+    const nodes = startFromNode
+      ? mainLineNodes.slice(1)
+      : mainLineNodes.slice(1)
     const pairs: MovePair[] = []
     let currentPair: MovePair | null = null
 

@@ -663,6 +663,13 @@ export const useOpeningDrillController = (
 
           setCurrentDrillGame(updatedGame)
 
+          console.log('After player move - game tree state:', {
+            mainLineLength: gameTree.getMainLine().length,
+            updatedGameMovesLength: updatedGame.moves.length,
+            currentNodeFen: newNode.fen,
+            playerMoveCount: updatedPlayerMoveCount,
+          })
+
           if (!continueAnalyzingMode) {
             console.log(
               'Setting waitingForMaiaResponse to true after player move',
@@ -703,20 +710,7 @@ export const useOpeningDrillController = (
       if (!currentDrillGame || !currentDrill || !fromNode) return
 
       try {
-        // Construct move list from the path to the current node
         const path = fromNode.getPath()
-        const moveList = path
-          .slice(1)
-          .map((node) => node.move)
-          .filter(Boolean) as string[]
-
-        console.log('Making Maia move request:', {
-          moveList,
-          maiaVersion: currentDrill.maiaVersion,
-          fen: fromNode.fen,
-          pathLength: path.length,
-        })
-
         const response = await fetchGameMove(
           [],
           currentDrill.maiaVersion,
@@ -779,6 +773,12 @@ export const useOpeningDrillController = (
 
             setCurrentDrillGame(updatedGame)
             setWaitingForMaiaResponse(false)
+
+            console.log('After Maia move - game tree state:', {
+              mainLineLength: gameTree.getMainLine().length,
+              updatedGameMovesLength: updatedGame.moves.length,
+              currentNodeFen: newNode.fen,
+            })
           }
         }
       } catch (error) {

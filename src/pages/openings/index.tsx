@@ -190,10 +190,10 @@ const OpeningsPage: NextPage = () => {
 
     return {
       id: `opening-drill-${controller.currentDrill?.id || 'current'}`,
-      tree: controller.gameTree,
+      tree: controller.gameTree, // Use the original tree
       moves: [], // Not used when tree is provided
     }
-  }, [controller.gameTree, controller.currentDrill?.id, controller.currentNode])
+  }, [controller.gameTree, controller.currentDrill?.id])
 
   // Show selection modal when no drill configuration exists
   useEffect(() => {
@@ -512,6 +512,12 @@ const OpeningsPage: NextPage = () => {
                         moves: [],
                       }
                     }
+                    startFromNode={
+                      controller.currentDrillGame?.openingEndNode || undefined
+                    }
+                    restrictNavigationBefore={
+                      controller.currentDrillGame?.openingEndNode || undefined
+                    }
                     showAnnotations={
                       controller.analysisEnabled ||
                       controller.continueAnalyzingMode
@@ -747,6 +753,12 @@ const OpeningsPage: NextPage = () => {
                     tree: controller.gameTree,
                     moves: [],
                   }
+                }
+                startFromNode={
+                  controller.currentDrillGame?.openingEndNode || undefined
+                }
+                restrictNavigationBefore={
+                  controller.currentDrillGame?.openingEndNode || undefined
                 }
                 showAnnotations={
                   controller.analysisEnabled || controller.continueAnalyzingMode
