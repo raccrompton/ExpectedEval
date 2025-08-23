@@ -863,43 +863,30 @@ const DesktopLayout: React.FC<{
           </div>
           <div className="flex flex-col gap-2 px-3 pb-3">
             {(() => {
-              // Get critical moves directly from game tree (like MovesContainer)
-              const mainLineNodes = gameTree.getMainLine().slice(1) // Skip root
-              const criticalMoves = mainLineNodes
-                .filter((node, index) => {
-                  // Determine if this is a player move
-                  const chess = new Chess(node.fen)
-                  const isPlayerMove =
-                    drill.selection.playerColor === 'white'
-                      ? chess.turn() === 'b' // If black to move, white just played
-                      : chess.turn() === 'w' // If white to move, black just played
+              // Get critical moves from moveAnalyses instead of relying on GameNode properties
+              const criticalMoves = performanceData.moveAnalyses
+                .filter((move) => {
+                  // Determine if this is a player move using the same logic as elsewhere
+                  const isWhiteMove = isMoveByWhite(move.fen)
+                  const isPlayerMove = drill.selection.playerColor === 'white' 
+                    ? isWhiteMove 
+                    : !isWhiteMove
                   return isPlayerMove
                 })
-                .filter((node) => {
-                  // Filter for critical moves (same logic as MovesContainer)
-                  return node.blunder || node.inaccuracy || node.excellentMove
-                })
-                .map((node) => {
-                  // Convert to MoveAnalysis format for display
-                  let classification: 'blunder' | 'inaccuracy' | 'excellent' =
-                    'excellent'
-                  if (node.blunder) {
-                    classification = 'blunder'
-                  } else if (node.inaccuracy) {
-                    classification = 'inaccuracy'
-                  }
-
+                .map((move) => {
+                  // Get classification from our helper function
+                  const classification = getChartClassification(move, gameNodesMap)
+                  // Get the correct move number from the FEN
+                  const actualMoveNumber = getMoveNumberFromFen(move.fen)
                   return {
-                    move: node.move || '',
-                    san: node.san || '',
-                    fen: node.fen,
-                    fenBeforeMove: node.parent?.fen,
-                    moveNumber: node.moveNumber,
-                    isPlayerMove: true,
-                    evaluation: 0, // Will be filled if needed
+                    ...move,
                     classification,
-                    evaluationLoss: 0,
+                    moveNumber: actualMoveNumber,
                   }
+                })
+                .filter((move) => {
+                  // Filter for critical moves (not just 'good')
+                  return ['excellent', 'inaccuracy', 'blunder'].includes(move.classification)
                 })
                 .sort((a, b) => {
                   // Sort by move number (chronological order)
