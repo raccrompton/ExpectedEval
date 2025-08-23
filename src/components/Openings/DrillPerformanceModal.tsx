@@ -868,14 +868,18 @@ const DesktopLayout: React.FC<{
                 .filter((move) => {
                   // Determine if this is a player move using the same logic as elsewhere
                   const isWhiteMove = isMoveByWhite(move.fen)
-                  const isPlayerMove = drill.selection.playerColor === 'white' 
-                    ? isWhiteMove 
-                    : !isWhiteMove
+                  const isPlayerMove =
+                    drill.selection.playerColor === 'white'
+                      ? isWhiteMove
+                      : !isWhiteMove
                   return isPlayerMove
                 })
                 .map((move) => {
                   // Get classification from our helper function
-                  const classification = getChartClassification(move, gameNodesMap)
+                  const classification = getChartClassification(
+                    move,
+                    gameNodesMap,
+                  )
                   // Get the correct move number from the FEN
                   const actualMoveNumber = getMoveNumberFromFen(move.fen)
                   return {
@@ -886,7 +890,9 @@ const DesktopLayout: React.FC<{
                 })
                 .filter((move) => {
                   // Filter for critical moves (not just 'good')
-                  return ['excellent', 'inaccuracy', 'blunder'].includes(move.classification)
+                  return ['excellent', 'inaccuracy', 'blunder'].includes(
+                    move.classification,
+                  )
                 })
                 .sort((a, b) => {
                   // Sort by move number (chronological order)
@@ -1252,10 +1258,15 @@ export const DrillPerformanceModal: React.FC<Props> = ({
 
     // Find the opening end node by working backwards from the final node
     // The opening end should be the first move analysis that is NOT a player move
-    const firstPlayerMoveAnalysis = moveAnalyses.find(move => move.isPlayerMove)
+    const firstPlayerMoveAnalysis = moveAnalyses.find(
+      (move) => move.isPlayerMove,
+    )
     if (firstPlayerMoveAnalysis && firstPlayerMoveAnalysis.fenBeforeMove) {
       // Find the node that represents the position before the first player move
-      const findNodeByFen = (node: GameNode, targetFen: string): GameNode | null => {
+      const findNodeByFen = (
+        node: GameNode,
+        targetFen: string,
+      ): GameNode | null => {
         if (node.fen === targetFen) {
           return node
         }
@@ -1272,7 +1283,10 @@ export const DrillPerformanceModal: React.FC<Props> = ({
         return null
       }
 
-      const foundOpeningEndNode = findNodeByFen(originalRoot, firstPlayerMoveAnalysis.fenBeforeMove)
+      const foundOpeningEndNode = findNodeByFen(
+        originalRoot,
+        firstPlayerMoveAnalysis.fenBeforeMove,
+      )
       if (foundOpeningEndNode) {
         return {
           gameTree: originalGameTree,
