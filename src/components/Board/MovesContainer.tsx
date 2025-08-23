@@ -65,7 +65,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
 
   const mainLineNodes = useMemo(() => {
     const fullMainLine =
-      controller.gameTree.getMainLine() ?? game.tree.getMainLine()
+      controller.gameTree?.getMainLine() ?? game.tree?.getMainLine() ?? []
 
     if (startFromNode) {
       // Find the index of the start node in the full main line
@@ -103,7 +103,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
 
     console.log('MovesContainer mainLineNodes (default):', {
       controllerTreeMainLine: controller.gameTree?.getMainLine()?.length || 0,
-      gameTreeMainLine: game.tree?.getMainLine()?.length || 0,
+      gameTreeMainLine: game?.tree?.getMainLine()?.length || 0,
       finalMainLineLength: fullMainLine?.length || 0,
       currentNode: controller.currentNode?.fen,
     })
@@ -197,7 +197,7 @@ export const MovesContainer: React.FC<Props> = (props) => {
 
     console.log('MovesContainer final rows:', rows.length)
     return rows
-  }, [game, mainLineNodes, controller.gameTree])
+  }, [mainLineNodes, startFromNode])
 
   const highlightSet = useMemo(
     () => new Set(highlightIndices ?? []),

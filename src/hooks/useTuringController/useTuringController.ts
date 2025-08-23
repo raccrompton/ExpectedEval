@@ -54,7 +54,7 @@ export const useTuringController = () => {
     [turingGames, currentGameId],
   )
 
-  const controller = useTreeController(game.tree, 'white')
+  const controller = useTreeController(game?.tree, 'white')
 
   useEffect(() => {
     if (controller.tree && game) {
