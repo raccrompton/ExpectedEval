@@ -49,7 +49,7 @@ export const Footer: React.FC = () => {
             <p className="text-xl font-bold text-primary">ExpectedEval</p>
           </div>
           <p className="max-w-[200px] text-left text-sm text-secondary md:max-w-[160px] md:text-center md:text-xs">
-            Based on MaiaChess by the{' '}
+            Built on top of Maia Chess by the{' '}
             <a
               target="_blank"
               rel="noreferrer"
