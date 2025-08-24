@@ -2,7 +2,7 @@ import { useContext } from 'react'
 import { TuringControllerContext } from 'src/contexts'
 
 export const TuringLog: React.FC = () => {
-  const { games, gameIds, setCurrentGameId, currentGameId } = useContext(
+  const { games, gameIds, setCurrentIndex, currentIndex } = useContext(
     TuringControllerContext,
   )
 
@@ -18,8 +18,8 @@ export const TuringLog: React.FC = () => {
           </div>
         ) : (
           gameIds.map((gameId, index) => {
-            const game = games[gameId]
-            const isCurrentGame = gameId === currentGameId
+            const game = games[index]
+            const isCurrentGame = index === currentIndex
             const getStatusInfo = () => {
               if (game.result?.correct === true) {
                 return {
@@ -48,7 +48,7 @@ export const TuringLog: React.FC = () => {
             return (
               <button
                 key={gameId}
-                onClick={() => setCurrentGameId(gameId)}
+                onClick={() => setCurrentIndex(index)}
                 className={`group flex w-full cursor-pointer items-center gap-2 border-b border-white/5 px-3 py-2 text-left transition-colors ${
                   isCurrentGame
                     ? 'bg-background-2 font-medium'

@@ -6,14 +6,14 @@ import { GameTree, Color, BaseTreeControllerContext } from 'src/types'
 
 export interface ITuringControllerContext extends BaseTreeControllerContext {
   game?: TuringGame
-  games: { [id: string]: TuringGame }
+  games: TuringGame[]
   loading: boolean
   gameIds: string[]
   stats: AllStats
 
   getNewGame: () => Promise<void>
-  currentGameId: string
-  setCurrentGameId: (id: string) => void
+  currentIndex: number
+  setCurrentIndex: (index: number) => void
   submitGuess: (
     guess: Color,
     comment?: string,
@@ -40,8 +40,8 @@ const defaultContext: ITuringControllerContext = {
   goToRootNode: () => {
     /* no-op */
   },
-  currentGameId: '',
-  setCurrentGameId: () => {
+  currentIndex: 0,
+  setCurrentIndex: () => {
     /* no-op */
   },
   plyCount: 0,
@@ -50,7 +50,7 @@ const defaultContext: ITuringControllerContext = {
     /* no-op */
   },
   game: undefined,
-  games: {},
+  games: [],
   loading: false,
   gameIds: [],
   stats: {
