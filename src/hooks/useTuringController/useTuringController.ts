@@ -22,12 +22,10 @@ const statsLoader = async () => {
 
 export const useTuringController = () => {
   const router = useRouter()
-  const [turingGames, setTuringGames] = useState<{ [id: string]: TuringGame }>(
-    {},
-  )
+  const [turingGames, setTuringGames] = useState<TuringGame[]>([])
 
   const [loading, setLoading] = useState(false)
-  const [currentGameId, setCurrentGameId] = useState<string>('')
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [stats, incrementStats, updateRating] = useStats(statsLoader)
 
   const getNewGame = useCallback(async () => {
@@ -41,20 +39,20 @@ export const useTuringController = () => {
     }
 
     setLoading(false)
-    setTuringGames({ ...turingGames, [game.id]: game })
-    setCurrentGameId(game.id)
+    setCurrentIndex(turingGames.length)
+    setTuringGames(turingGames.concat([game]))
   }, [turingGames, router])
 
   useEffect(() => {
-    if (Object.keys(turingGames).length === 0) getNewGame()
-  }, [getNewGame, turingGames])
+    if (turingGames.length === 0 && !loading) getNewGame()
+  }, [getNewGame, turingGames.length, loading])
 
   const game = useMemo(
-    () => turingGames[currentGameId ?? ''],
-    [turingGames, currentGameId],
+    () => turingGames[currentIndex],
+    [turingGames, currentIndex],
   )
 
-  const controller = useTreeController(game?.tree, 'white')
+  const controller = useTreeController(game.tree, 'white')
 
   useEffect(() => {
     if (controller.tree && game) {
@@ -63,26 +61,32 @@ export const useTuringController = () => {
     }
   }, [game])
 
-  const gameIds = useMemo(() => Object.keys(turingGames), [turingGames])
+  const gameIds = useMemo(() => turingGames.map((g) => g.id), [turingGames])
 
   const submitGuess = useCallback(
     async (guess: Color, comment = '', rating?: number) => {
       if (game && !game.result) {
         const result = await submitTuringGuess(game.id, guess, comment)
-        setTuringGames({
-          ...turingGames,
-          [game.id]: {
-            ...game,
-            result: { ...result, ratingDiff: result.turingElo - (rating || 0) },
-          },
-        })
+        setTuringGames(
+          turingGames.map((g, index) =>
+            index === currentIndex
+              ? {
+                  ...g,
+                  result: {
+                    ...result,
+                    ratingDiff: result.turingElo - (rating || 0),
+                  },
+                }
+              : g,
+          ),
+        )
         commentController[1]('')
 
         updateRating(result.turingElo)
         incrementStats(1, result.correct ? 1 : 0)
       }
     },
-    [game, incrementStats, turingGames, updateRating],
+    [game, incrementStats, turingGames, updateRating, currentIndex],
   )
 
   const commentController = useState('')
@@ -104,8 +108,8 @@ export const useTuringController = () => {
     getNewGame,
     loading,
     gameIds,
-    currentGameId,
-    setCurrentGameId,
+    currentIndex,
+    setCurrentIndex,
     submitGuess,
     commentController,
     stats,

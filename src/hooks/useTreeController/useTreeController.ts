@@ -2,20 +2,17 @@ import { Color, GameTree, GameNode } from 'src/types'
 import { useState, useMemo, useCallback, useEffect } from 'react'
 
 export const useTreeController = (
-  gameTree: GameTree | null | undefined,
+  gameTree: GameTree,
   initialOrientation: Color = 'white',
 ) => {
-  const [currentNode, setCurrentNode] = useState<GameNode | null>(
-    gameTree?.getRoot() || null,
-  )
+  const [currentNode, setCurrentNode] = useState<GameNode>(gameTree.getRoot())
   const [orientation, setOrientation] = useState<Color>(initialOrientation)
 
   useEffect(() => {
-    setCurrentNode(gameTree?.getRoot() || null)
+    setCurrentNode(gameTree.getRoot())
   }, [gameTree])
 
   const plyCount = useMemo(() => {
-    if (!gameTree) return 0
     return gameTree.getMainLine().length
   }, [gameTree])
 

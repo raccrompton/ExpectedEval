@@ -46,13 +46,17 @@ const TuringPage: NextPage = () => {
     }
   }, [controller.game, controller.stats?.rating])
 
+  if (controller.loading || !controller.game) {
+    return (
+      <DelayedLoading isLoading={true}>
+        <div></div>
+      </DelayedLoading>
+    )
+  }
+
   return (
     <TuringControllerContext.Provider value={controller}>
-      <DelayedLoading isLoading={!controller.game}>
-        {controller.game && (
-          <Turing game={controller.game} stats={controller.stats} />
-        )}
-      </DelayedLoading>
+      <Turing game={controller.game} stats={controller.stats} />
     </TuringControllerContext.Provider>
   )
 }
@@ -66,7 +70,6 @@ const Turing: React.FC<Props> = (props: Props) => {
   const { game, stats } = props
 
   const { isMobile } = useContext(WindowSizeContext)
-
   const controller = useContext(TuringControllerContext)
 
   const containerVariants = {

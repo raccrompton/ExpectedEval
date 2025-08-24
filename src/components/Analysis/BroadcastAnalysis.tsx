@@ -86,13 +86,15 @@ export const BroadcastAnalysis: React.FC<Props> = ({
       if (analysisController.currentNode.mainChild?.move === moveString) {
         analysisController.goToNode(analysisController.currentNode.mainChild)
       } else {
-        const newVariation = game.tree.addVariation(
-          analysisController.currentNode,
-          newFen,
-          moveString,
-          san,
-          analysisController.currentMaiaModel,
-        )
+        const newVariation = game.tree
+          .getLastMainlineNode()
+          .addChild(
+            newFen,
+            moveString,
+            san,
+            false,
+            analysisController.currentMaiaModel,
+          )
         analysisController.goToNode(newVariation)
       }
     }
@@ -289,7 +291,6 @@ export const BroadcastAnalysis: React.FC<Props> = ({
                 <MovesContainer
                   game={game}
                   termination={game.termination}
-                  type="analysis"
                   showAnnotations={true}
                   disableKeyboardNavigation={false}
                   disableMoveClicking={false}
@@ -494,7 +495,6 @@ export const BroadcastAnalysis: React.FC<Props> = ({
               <MovesContainer
                 game={game}
                 termination={game.termination}
-                type="analysis"
                 showAnnotations={true}
                 disableKeyboardNavigation={false}
                 disableMoveClicking={false}
