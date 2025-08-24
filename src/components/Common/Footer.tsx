@@ -1,5 +1,3 @@
-import Image from 'next/image'
-
 // Define footer data structure
 interface FooterLink {
   href: string
@@ -15,53 +13,19 @@ interface FooterSection {
 export const Footer: React.FC = () => {
   const footerSections: FooterSection[] = [
     {
-      title: 'Research',
-      links: [
-        {
-          href: 'https://arxiv.org/abs/2006.01855',
-          text: "Maia Paper (KDD '20)",
-        },
-        {
-          href: 'https://www.cs.toronto.edu/~ashton/pubs/maia2-neurips2024.pdf',
-          text: "Maia-2 Paper (NeurIPS '24)",
-        },
-        {
-          href: 'https://csslab.cs.toronto.edu/research/',
-          text: 'CSSLab Research',
-        },
-      ],
-    },
-    {
       title: 'Opensource',
       links: [
-        {
-          href: 'https://github.com/CSSLab/maia-chess',
-          text: 'Maia Model',
-        },
         {
           href: 'https://github.com/CSSLab/maia2',
           text: 'Maia-2 Model',
         },
         {
+          href: 'https://github.com/raccrompton/ExpectedEval',
+          text: 'ExpectedEval Platform',
+        },
+        {
           href: 'https://github.com/csslab/maia-platform-frontend',
-          text: 'Maia Web Platform',
-        },
-      ],
-    },
-    {
-      title: 'Lichess Bots',
-      links: [
-        {
-          href: 'https://lichess.org/@/maia1',
-          text: 'Maia 1100',
-        },
-        {
-          href: 'https://lichess.org/@/maia5',
-          text: 'Maia 1500',
-        },
-        {
-          href: 'https://lichess.org/@/maia9',
-          text: 'Maia 1900',
+          text: 'Maia Chess',
         },
       ],
     },
@@ -69,19 +33,9 @@ export const Footer: React.FC = () => {
       title: 'Contact',
       links: [
         {
-          href: 'https://discord.gg/hHb6gqFpxZ',
-          text: 'Discord Community',
-          icon: 'link',
-        },
-        {
-          href: 'mailto:maiachess@cs.toronto.edu',
-          text: 'maiachess@cs.toronto.edu',
+          href: 'mailto:alex@alexcrompton.com',
+          text: 'alex@alexcrompton.com',
           icon: 'mail',
-        },
-        {
-          href: 'https://x.com/maiachess',
-          text: '@maiachess',
-          icon: 'link',
         },
       ],
     },
@@ -92,16 +46,10 @@ export const Footer: React.FC = () => {
       <div className="flex w-full max-w-4xl flex-col items-start justify-start gap-4 md:flex-row md:items-center md:justify-center md:gap-8">
         <div className="mb-2 flex flex-col items-start gap-1 md:mb-0 md:items-center md:gap-0.5">
           <div className="flex items-center gap-2">
-            <Image
-              src="/maia-no-bg.png"
-              alt="Maia Chess"
-              width={26}
-              height={26}
-            />
-            <p className="text-xl font-bold text-primary">Maia Chess</p>
+            <p className="text-xl font-bold text-primary">ExpectedEval</p>
           </div>
           <p className="max-w-[200px] text-left text-sm text-secondary md:max-w-[160px] md:text-center md:text-xs">
-            A project by the{' '}
+            Based on MaiaChess by the{' '}
             <a
               target="_blank"
               rel="noreferrer"
@@ -149,7 +97,7 @@ export const Footer: React.FC = () => {
         </div>
       </div>
       <p className="text-left text-sm text-secondary md:text-center md:text-xs">
-        © 2025 Maia Chess. All rights reserved.
+        © 2025 ExpectedEval. All rights reserved.
       </p>
     </div>
   )

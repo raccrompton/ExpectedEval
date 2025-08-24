@@ -1,7 +1,6 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import Link from 'next/link'
-import Image from 'next/image'
 import { PlayType } from 'src/types'
 import { useRouter } from 'next/router'
 import { DiscordIcon } from './Icons'
@@ -131,8 +130,7 @@ export const Header: React.FC = () => {
     <div className="flex w-[90%] flex-row items-center justify-between">
       <div className="flex flex-row items-center justify-start gap-6">
         <Link href="/" className="flex flex-row items-center gap-2">
-          <Image src="/maia.png" width={40} height={40} alt="Chess Analysis Logo" />
-          <h2 className="text-2xl font-bold">Chess Analysis</h2>
+          <h2 className="text-2xl font-bold">ExpectedEval</h2>
         </Link>
       </div>
     </div>
@@ -142,8 +140,7 @@ export const Header: React.FC = () => {
     <div className="flex w-full flex-row justify-between px-4">
       <Link href="/" passHref>
         <div className="flex flex-row items-center gap-2">
-          <Image src="/maia.png" width={40} height={40} alt="Chess Analysis Logo" />
-          <h2 className="text-2xl font-bold">Chess Analysis</h2>
+          <h2 className="text-2xl font-bold">ExpectedEval</h2>
         </div>
       </Link>
       <button
@@ -157,8 +154,7 @@ export const Header: React.FC = () => {
           <div className="flex w-full flex-row justify-between px-4">
             <Link href="/" passHref>
               <div className="flex flex-row items-center gap-2">
-                <Image src="/maia.png" width={40} height={40} alt="Chess Analysis Logo" />
-                <h2 className="text-2xl font-bold">Chess Analysis</h2>
+                <h2 className="text-2xl font-bold">ExpectedEval</h2>
               </div>
             </Link>
             <button
@@ -170,7 +166,7 @@ export const Header: React.FC = () => {
           </div>
           <div className="flex flex-col gap-6 px-12">
             <Link href="/" className="uppercase text-xl font-bold">
-              Chess Analysis
+              ExpectedEval
             </Link>
           </div>
         </div>

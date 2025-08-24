@@ -222,4 +222,4 @@ ExpectedEval can be deployed on [Vercel](https://vercel.com/) or any Node.js hos
 
 ## Attribution
 
-This project is based on the original [Maia Chess Platform](https://github.com/csslab/maia-platform-frontend) developed by the University of Toronto's Computational Social Science Lab. We extend our gratitude to the original developers for creating this excellent foundation for chess analysis and training.
+This project is based on MaiaChess by the University of Toronto's Computational Social Science Lab. We extend our gratitude to the original developers for creating this excellent foundation for chess analysis and training.
