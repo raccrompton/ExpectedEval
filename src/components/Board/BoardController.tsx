@@ -67,7 +67,7 @@ export const BoardController: React.FC<Props> = ({
 
   const getLast = useCallback(() => {
     if (!currentNode) return
-    
+
     let lastNode = currentNode
     while (lastNode?.mainChild) {
       lastNode = lastNode.mainChild

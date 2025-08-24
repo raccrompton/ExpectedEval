@@ -144,7 +144,7 @@ export const AnalysisSidebar: React.FC<Props> = ({
                         ],
                       }
                 }
-                currentNode={controller.currentNode}
+                currentNode={controller.currentNode ?? undefined}
               />
             </div>
             <div className="flex h-full w-full bg-background-1">
@@ -254,7 +254,7 @@ export const AnalysisSidebar: React.FC<Props> = ({
                       ],
                     }
               }
-              currentNode={controller.currentNode}
+              currentNode={controller.currentNode ?? undefined}
             />
           </div>
           <div className="flex h-full w-auto min-w-[40%] max-w-[40%] bg-background-1 p-3">

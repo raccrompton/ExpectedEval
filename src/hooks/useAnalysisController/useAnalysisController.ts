@@ -40,7 +40,6 @@ export const useAnalysisController = (
   const [analysisState, setAnalysisState] = useState(0)
   const inProgressAnalyses = useMemo(() => new Set<string>(), [])
 
-  // Use auto-save hook
   const autoSaveController = useAutoSave({
     game,
     gameTree: controller.tree,
