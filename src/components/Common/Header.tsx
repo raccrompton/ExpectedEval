@@ -131,157 +131,9 @@ export const Header: React.FC = () => {
     <div className="flex w-[90%] flex-row items-center justify-between">
       <div className="flex flex-row items-center justify-start gap-6">
         <Link href="/" className="flex flex-row items-center gap-2">
-          <Image src="/maia.png" width={40} height={40} alt="Maia Logo" />
-          <h2 className="text-2xl font-bold">Maia Chess</h2>
+          <Image src="/maia.png" width={40} height={40} alt="Chess Analysis Logo" />
+          <h2 className="text-2xl font-bold">Chess Analysis</h2>
         </Link>
-        <div className="hidden flex-row gap-1 text-sm tracking-wider md:flex">
-          <div
-            className="relative"
-            onMouseEnter={() => setShowPlayDropdown(true)}
-            onMouseLeave={() => setShowPlayDropdown(false)}
-          >
-            <button
-              className={`-gap-1 flex items-center px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/play') ? '!text-primary' : '!text-primary/80'}`}
-            >
-              <p>PLAY</p>
-              <motion.i
-                className="material-symbols-outlined text-sm"
-                animate={{ rotate: showPlayDropdown ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                arrow_drop_down
-              </motion.i>
-            </button>
-            <AnimatePresence>
-              {showPlayDropdown && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute left-0 top-[100%] z-30 w-48 overflow-hidden rounded border border-white/10 bg-background-1 shadow-lg"
-                >
-                  <button
-                    onClick={() => startGame('againstMaia')}
-                    className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
-                  >
-                    Play Maia
-                  </button>
-                  <button
-                    onClick={() => startGame('handAndBrain')}
-                    className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
-                  >
-                    Play Hand and Brain
-                  </button>
-                  <a
-                    className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
-                    href="https://lichess.org/@/maia1"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Play Maia on Lichess
-                  </a>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          <Link
-            href="/analysis"
-            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/analysis') ? '!text-primary' : '!text-primary/80'}`}
-          >
-            ANALYSIS
-          </Link>
-          <Link
-            href="/puzzles"
-            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/puzzles') ? '!text-primary' : '!text-primary/80'}`}
-          >
-            PUZZLES
-          </Link>
-          <Link
-            href="/openings"
-            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/openings') ? '!text-primary' : '!text-primary/80'}`}
-          >
-            OPENINGS
-          </Link>
-          <Link
-            href="/turing"
-            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/turing') ? '!text-primary' : '!text-primary/80'}`}
-          >
-            BOT-OR-NOT
-          </Link>
-          <Link
-            href="/leaderboard"
-            className={`px-2 py-1 transition-all duration-200 hover:!text-primary ${router.pathname.startsWith('/leaderboard') ? '!text-primary' : '!text-primary/80'}`}
-          >
-            LEADERBOARD
-          </Link>
-          <div
-            className="relative"
-            onMouseEnter={() => setShowMoreDropdown(true)}
-            onMouseLeave={() => setShowMoreDropdown(false)}
-          >
-            <button className="-gap-1 flex items-center px-2 py-1 !text-primary/80 transition-all duration-200 hover:!text-primary">
-              <p>MORE</p>
-              <motion.i
-                className="material-symbols-outlined text-sm"
-                animate={{ rotate: showMoreDropdown ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                arrow_drop_down
-              </motion.i>
-            </button>
-            <AnimatePresence>
-              {showMoreDropdown && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute left-0 top-[100%] z-30 w-32 overflow-hidden rounded border border-white/10 bg-background-1 shadow-lg"
-                >
-                  <Link
-                    href="/blog"
-                    className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
-                  >
-                    Blog
-                  </Link>
-                  <a
-                    target="_blank"
-                    rel="noreferrer"
-                    href="https://twitch.tv/maiachess"
-                    className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
-                  >
-                    Watch
-                  </a>
-                  <a
-                    target="_blank"
-                    rel="noreferrer"
-                    href="https://forms.gle/XYeoTJF4YgUu4Vq28"
-                    className="flex w-full items-center justify-start px-3 py-2 text-sm hover:bg-background-2/60"
-                  >
-                    Feedback
-                  </a>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-      </div>
-      <div className="hidden flex-row items-center gap-3 md:flex">
-        <a
-          target="_blank"
-          rel="noreferrer"
-          href="https://discord.gg/Az93GqEAs7"
-        >
-          {DiscordIcon}
-        </a>
-        {user?.lichessId && (
-          <LeaderboardNavBadge
-            status={leaderboardStatus}
-            loading={leaderboardLoading}
-          />
-        )}
-        {userInfo}
       </div>
     </div>
   )
@@ -290,8 +142,8 @@ export const Header: React.FC = () => {
     <div className="flex w-full flex-row justify-between px-4">
       <Link href="/" passHref>
         <div className="flex flex-row items-center gap-2">
-          <Image src="/maia.png" width={40} height={40} alt="Maia Logo" />
-          <h2 className="text-2xl font-bold">Maia Chess</h2>
+          <Image src="/maia.png" width={40} height={40} alt="Chess Analysis Logo" />
+          <h2 className="text-2xl font-bold">Chess Analysis</h2>
         </div>
       </Link>
       <button
@@ -305,8 +157,8 @@ export const Header: React.FC = () => {
           <div className="flex w-full flex-row justify-between px-4">
             <Link href="/" passHref>
               <div className="flex flex-row items-center gap-2">
-                <Image src="/maia.png" width={40} height={40} alt="Maia Logo" />
-                <h2 className="text-2xl font-bold">Maia Chess</h2>
+                <Image src="/maia.png" width={40} height={40} alt="Chess Analysis Logo" />
+                <h2 className="text-2xl font-bold">Chess Analysis</h2>
               </div>
             </Link>
             <button
@@ -317,75 +169,9 @@ export const Header: React.FC = () => {
             </button>
           </div>
           <div className="flex flex-col gap-6 px-12">
-            <div className="flex flex-col items-start justify-center gap-6">
-              <button>PLAY</button>
-              <div className="flex flex-col items-start justify-center gap-4">
-                <button onClick={() => startGame('againstMaia')}>
-                  Play Maia
-                </button>
-
-                <button onClick={() => startGame('handAndBrain')}>
-                  Play Hand and Brain
-                </button>
-                <a
-                  href="https://lichess.org/@/maia1"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Play Maia on Lichess
-                </a>
-              </div>
-            </div>
-            <Link href="/analysis" className="uppercase">
-              Analysis
+            <Link href="/" className="uppercase text-xl font-bold">
+              Chess Analysis
             </Link>
-            <Link href="/puzzles" className="uppercase">
-              Puzzles
-            </Link>
-            <Link href="/openings" className="uppercase">
-              Openings
-            </Link>
-            <Link href="/turing" className="uppercase">
-              Bot-or-not
-            </Link>
-            <Link href="/leaderboard" className="uppercase">
-              Leaderboard
-            </Link>
-            <Link href="/blog" className="uppercase">
-              Blog
-            </Link>
-            <a
-              target="_blank"
-              rel="noreferrer"
-              href="https://twitch.tv/maiachess"
-              className="uppercase"
-            >
-              Watch
-            </a>
-            <a
-              target="_blank"
-              rel="noreferrer"
-              href="https://forms.gle/XYeoTJF4YgUu4Vq28"
-              className="uppercase"
-            >
-              Feedback
-            </a>
-          </div>
-          <div className="flex w-full flex-row items-center gap-3 px-4">
-            <a
-              target="_blank"
-              rel="noreferrer"
-              href="https://discord.gg/Az93GqEAs7"
-            >
-              <div className="h-6 w-6">{DiscordIcon}</div>
-            </a>
-            {user?.lichessId && (
-              <LeaderboardNavBadge
-                status={leaderboardStatus}
-                loading={leaderboardLoading}
-              />
-            )}
-            {userInfo}
           </div>
         </div>
       )}

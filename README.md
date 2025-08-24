@@ -2,17 +2,17 @@
   <p align="center">
    <img width="150" src="public/maia-no-bg.png" alt="Logo">
   </p>
-	<h1 align="center"><b>Maia Chess</b></h1>
+	<h1 align="center"><b>ExpectedEval</b></h1>
 	<p align="center">
-		A human-like chess engine.
+		A human-like chess engine with expected evaluation features.
     <br />
-    <a href="https://www.maiachess.com"><strong>maiachess.com »</strong></a>
+    <a href="https://github.com/raccrompton/ExpectedEval"><strong>ExpectedEval »</strong></a>
     <br />
     <br />
   </p>
 </p>
 
-This repository contains the source code for the [Maia Chess Platform](https://www.maiachess.com), a modern web application designed for chess training and analysis. It leverages the Maia chess engine, developed by the University of Toronto's Computational Social Science Lab, to provide human-like move predictions and insights. The platform is built with Next.js, TypeScript, and Tailwind CSS. Join our [Discord server](https://discord.gg/hHb6gqFpxZ) for discussions, questions, and to connect with the community.
+This repository contains the source code for **ExpectedEval**, a modern chess analysis and training platform based on the Maia Chess Platform. This forked version enhances the original Maia chess engine capabilities with additional expected evaluation features and improvements. The platform leverages the Maia chess engine, developed by the University of Toronto's Computational Social Science Lab, to provide human-like move predictions and insights, while adding new functionality for advanced chess analysis. Built with Next.js, TypeScript, and Tailwind CSS.
 
 ## Getting Started
 
@@ -28,8 +28,8 @@ Follow these instructions to set up the development environment on your local ma
 1.  Clone the repository to your local machine:
 
     ```bash
-    git clone https://github.com/maia-chess/maia-platform-frontend.git
-    cd maia-platform-frontend
+    git clone https://github.com/raccrompton/ExpectedEval.git
+    cd ExpectedEval
     ```
 
 2.  Install the project dependencies using npm:
@@ -66,9 +66,18 @@ The repository follows a simple branching model:
 - `main`: This branch is synced with the live deployment on Vercel. All code on this branch is considered production-ready.
 - **Feature Branches**: All development work, including new features and bug fixes, should be done on separate feature branches. These branches are then merged into `main` via pull requests.
 
+## ExpectedEval Features
+
+This fork includes additional features and improvements over the original Maia Chess Platform:
+
+- **Expected Evaluation Analysis**: Advanced position evaluation with expected value calculations
+- **Enhanced Training Modes**: Improved puzzle and training systems
+- **Custom Analysis Tools**: Additional analysis features for deeper chess insights
+- **Performance Optimizations**: Various improvements to engine performance and UI responsiveness
+
 ### Conventional Commits
 
-We use the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification for our commit messages. This standard creates a more readable and structured commit history. Each commit message should follow the format:
+This project uses the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification for commit messages. This standard creates a more readable and structured commit history. Each commit message should follow the format:
 
 `{type}: {description}`
 
@@ -134,7 +143,7 @@ These context providers are consumed by higher-level controller hooks (like `use
 
 ## Contributing Guidelines
 
-Before contributing to the Maia Chess Platform, please review these guidelines to ensure consistency and quality.
+Before contributing to ExpectedEval, please review these guidelines to ensure consistency and quality.
 
 ### Code Style and Formatting
 
@@ -205,4 +214,12 @@ This architecture separates concerns and avoids prop drilling while maintaining 
 
 ## Deployment
 
-The Maia Chess Platform is deployed on [Vercel](https://vercel.com/). The `main` branch is automatically built and deployed to the production URL. Pull requests also generate unique preview deployments, allowing for easy testing and review before merging.
+ExpectedEval can be deployed on [Vercel](https://vercel.com/) or any Node.js hosting platform. The `main` branch contains the production-ready code. For deployment:
+
+1. Build the production version: `npm run build`
+2. Start the production server: `npm run start`
+3. Or deploy to Vercel with automatic builds from the main branch
+
+## Attribution
+
+This project is based on the original [Maia Chess Platform](https://github.com/csslab/maia-platform-frontend) developed by the University of Toronto's Computational Social Science Lab. We extend our gratitude to the original developers for creating this excellent foundation for chess analysis and training.
