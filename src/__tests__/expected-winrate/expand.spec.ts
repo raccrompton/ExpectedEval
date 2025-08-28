@@ -3,7 +3,10 @@ import React from 'react'
 import { MaiaEngineContext } from '../../contexts/MaiaEngineContext/MaiaEngineContext'
 import { useMaiaExpand } from '../../lib/expectedWinrate/expand'
 
-const MockProvider: React.FC<{ children: React.ReactNode; policy: Record<string, number> }> = ({ children, policy }) => {
+const MockProvider: React.FC<{
+  children: React.ReactNode
+  policy: Record<string, number>
+}> = ({ children, policy }) => {
   const maia = {
     evaluate: async (fen: string, eloWhite: number, eloBlack: number) => {
       return { policy }
@@ -11,8 +14,15 @@ const MockProvider: React.FC<{ children: React.ReactNode; policy: Record<string,
   } as any
   return React.createElement(
     MaiaEngineContext.Provider,
-    { value: { maia, status: 'ready', progress: 1, downloadModel: async () => {} } },
-    children
+    {
+      value: {
+        maia,
+        status: 'ready',
+        progress: 1,
+        downloadModel: async () => null,
+      },
+    },
+    children,
   )
 }
 
@@ -21,9 +31,10 @@ describe('useMaiaExpand', () => {
     const policy = { e2e4: 0.6, d2d4: 0.3, g1f3: 0.1 }
     const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       React.createElement(MockProvider, { policy } as any, children as any)
-    const { result } = renderHook(() => useMaiaExpand(), { wrapper: Wrapper as any })
-    const startFen =
-      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+    const { result } = renderHook(() => useMaiaExpand(), {
+      wrapper: Wrapper as any,
+    })
+    const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
     const nodes = await result.current.expandTree(startFen, {
       probThreshold: 0.15,
       depth: 12,

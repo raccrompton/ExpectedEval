@@ -13,14 +13,21 @@ const makeEval = (depth: number, winrate_vec: Record<string, number>) => ({
   winrate_loss_vec: {},
 })
 
-const MockProvider: React.FC<{ children: React.ReactNode; seq: any[] }> = ({ children, seq }) => {
+const MockProvider: React.FC<{ children: React.ReactNode; seq: any[] }> = ({
+  children,
+  seq,
+}) => {
   const engine = {
-    streamEvaluations: async function* (_fen: string, _legal: number, target: number) {
+    streamEvaluations: async function* (
+      _fen: string,
+      _legal: number,
+      target: number,
+    ) {
       for (const ev of seq) {
         yield ev
       }
     },
-    stopEvaluation: () => {},
+    stopEvaluation: () => null,
     isReady: () => true,
     status: 'ready',
     error: null,
@@ -28,7 +35,7 @@ const MockProvider: React.FC<{ children: React.ReactNode; seq: any[] }> = ({ chi
   return React.createElement(
     StockfishEngineContext.Provider,
     { value: engine },
-    children
+    children,
   )
 }
 
@@ -44,8 +51,7 @@ describe('useStockfishExpected', () => {
     const { result } = renderHook(() => useStockfishExpected(), {
       wrapper: Wrapper as any,
     })
-    const startFen =
-      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+    const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
     const ev = await result.current.evaluateAtDepth(startFen, 12)
     expect(ev?.depth).toBe(12)
     expect(ev?.winrate_vec?.e2e4).toBeCloseTo(0.55, 5)
