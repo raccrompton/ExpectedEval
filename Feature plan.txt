@@ -1,0 +1,151 @@
+# Expected Winrate Analysis Feature
+
+## Overview
+Replace the current analysis pane (Maia analysis, Stockfish analysis, moves by rating, move map, blunder meter) with a new "Expected Winrate" analysis that combines Maia 2 and Stockfish models running client-side to predict realistic game outcomes.
+
+## Core Concept
+**Expected Winrate** = The weighted average win probability across all likely future game continuations, where move probabilities come from Maia 2 (human-like behavior) and evaluations come from Stockfish (optimal analysis).
+
+## 1. Algorithm Specification
+
+### 1.1 User Parameters
+- **Probability Threshold**: Dropdown (10%, 1%, 0.1%) - Controls how deep the analysis tree goes
+- **Stockfish Depth**: Dropdown (15, 20, 25) - Analysis depth for position evaluation
+- **Minimum Win Rate Filter**: Float input (win rate threshold, e.g., 0.45) - Only consider legal moves in the initial position with win rates better than this threshold
+- **Maia Rating Level**: Use current user-selected rating (1100-1900) for move probability predictions
+
+### 1.2 Calculation Process
+
+#### Step 1: Initial Move Filtering
+```
+current_position = board.fen()
+legal_moves = stockfish.getLegalMoves(current_position)
+stockfish_winrates = stockfish.evaluateMovesAsWinRate(legal_moves, depth=user_depth)
+candidate_moves = moves where win_rate > minimum_winrate_filter
+```
+
+#### Step 2: Probability Tree Generation
+For each candidate_move:
+```
+position_after_move = makeMove(current_position, candidate_move)
+probability_tree = generateMaiaTree(position_after_move, threshold=user_threshold)
+```
+
+**Tree Generation Logic**:
+- Start from position after candidate move
+- Get Maia 2 move probabilities for both sides alternately
+- Continue until cumulative path probability < threshold
+- Track: [move_sequence, cumulative_probability, leaf_position]
+
+#### Step 3: Stockfish Win Rate Evaluation of Tree Endpoints
+```
+for each leaf_position in probability_tree:
+    leaf_win_rate = stockfish.evaluateAsWinRate(leaf_position, depth=user_depth)
+```
+
+#### Step 4: Player-Aware Tree Pruning
+**Key Insight**: We want to capture the win rate when the analyzing player makes bad moves (to show the cost of blunders), but not allow recovery via opponent counter-blunders. Opponent blunders should continue normally as they benefit us.
+
+```
+for each path in probability_tree:
+    for each move in path.move_sequence:
+        position_after_move = makeMove(current_position, move)
+        if move.player == analyzing_player:
+            move_winrate = stockfish.evaluateAsWinRate(position_after_move, depth=user_depth)
+            if move_winrate < minimum_winrate_filter:
+                # Stop here and capture the damage from our blunder
+                path.leaf_position = position_after_move     # After our bad move
+                path.leaf_win_rate = move_winrate            # The bad win rate
+                path.is_pruned = true
+                path.pruning_reason = "analyzing_player_blunder"
+                break
+        # If opponent makes bad move, continue - we benefit from their mistakes
+```
+
+#### Step 5: Expected Win Rate Calculation
+```
+expected_win_rate = Σ(path_probability × leaf_win_rate) for all valid/pruned paths
+normalization_factor = Σ(all_path_probabilities)
+normalized_expected_win_rate = expected_win_rate + (1 - normalization_factor) × base_position_win_rate
+```
+
+
+
+## 2. User Interface Specification
+
+### 2.1 Parameter Controls
+- **Top Panel**: Four dropdowns/inputs in a horizontal row
+  - Probability Threshold: [10% | 1% | 0.1%] (default: 1%)
+  - Stockfish Depth: [15 | 20 | 25] (default: 20)
+  - Min Win Rate: Input field (default: 45%)
+  - Maia Level: Current user selection (1100-1900)
+
+### 2.2 Results Display
+
+#### Main View: Ranked Move List
+```
+Move            Expected Win Rate    Confidence    Tree Depth
+1. Nf3              67.3%             High          4.2 plies
+2. e4               65.8%             High          3.8 plies
+3. d4               63.1%             Medium        3.1 plies
+...
+```
+
+**Columns Explained**:
+- **Move**: Standard algebraic notation
+- **Expected Win Rate**: Probability of winning after this move (higher is better)
+- **Confidence**: Based on tree coverage (High: >80%, Medium: 60-80%, Low: <60%)
+- **Tree Depth**: Average depth of analyzed branches
+
+#### Detail View: Tree Visualization
+When clicking a move, display:
+- **Interactive Tree**: Expandable nodes showing move sequences
+- **Probability Flow**: Visual representation of cumulative probabilities
+- **Win Rate Annotations**: Stockfish win rates at key nodes
+- **Summary Stats**:
+  - Total branches analyzed: X
+  - Coverage: Y% of likely continuations
+  - Calculation time: Z ms
+
+### 2.3 Performance Indicators
+- **Loading State**: Progress bar during calculation
+- **Calculation Time**: Display total computation time
+- **Cache Status**: Show if results are cached/fresh
+
+## 3. Technical Implementation Notes
+
+### 3.1 Performance Considerations
+- **Maximum Tree Depth**: Check the position is not terminal or repeating
+- **Batch Processing**: Process multiple positions simultaneously where possible
+- **Result Caching**: Cache results by position + parameters hash
+
+### 3.2 Data Structures
+```typescript
+interface ExpectedWinRateNode {
+  position: string; // FEN
+  move: string;     // SAN
+  probability: number;
+  cumulativeProbability: number;
+  stockfishWinRate: number;
+  children: ExpectedWinRateNode[];
+}
+
+interface ExpectedWinRateResult {
+  move: string;
+  expectedWinRate: number;
+  confidence: number;
+  treeDepth: number;
+  calculationTime: number;
+  tree: ExpectedWinRateNode;
+}
+```
+
+### 3.3 Error Handling
+- **Game end or repetition**: Neeed to not get stuck in a loop on repetitions or error if a game ends (eg mate)
+- **Calculation Timeout**: Return partial results with warning
+- **Engine Errors**: Display clear error message if Maia/Stockfish fails - no fallback calculations
+
+## 4. Success Metrics
+- **Accuracy**: Calculations should be correct
+- **Performance**: <10 seconds calculation time for typical positions
+- **Usability**: User can understand and interpret results within 30 seconds

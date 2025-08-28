@@ -23,9 +23,18 @@ This is the Maia Chess Platform Frontend - a sophisticated chess analysis and tr
 npm run dev          # Start development server on localhost:3000
 npm run build        # Build for production
 npm run start        # Start production server
+npm run export       # Export static site
 npm run lint         # Run ESLint with auto-fix (ALWAYS run before committing)
 npm test             # Run Jest tests
 npx tsc --noEmit     # Check TypeScript errors without emitting files
+```
+
+### Test Commands
+```bash
+npm test             # Run all tests
+npm test -- --watch # Run tests in watch mode
+npm test -- --coverage # Run tests with coverage report
+npm test specific.test.ts # Run specific test file
 ```
 
 ## Project Architecture
@@ -146,8 +155,9 @@ Uses CSS custom properties for consistent theming:
 
 ### Code Quality
 - **ESLint**: Next.js + TypeScript + Prettier integration
-- **Prettier**: No semicolons, single quotes, 2-space indentation
+- **Prettier**: No semicolons, single quotes, 2-space indentation, Tailwind CSS class sorting
 - **Pre-commit**: Always run `npm run lint` before committing
+- **TypeScript**: Strict mode enabled with absolute imports via `src/` prefix
 
 ### Branching Strategy
 - **Main Branch**: `main` (synced with production deployment)
@@ -201,5 +211,21 @@ export const FeatureProvider = ({ children }) => {
 3. **`src/providers/MaiaEngineContextProvider/`** - ONNX Maia model handling
 4. **`src/components/Analysis/`** - Analysis UI components and interactions
 5. **`src/types/`** - TypeScript definitions for chess data structures
-6. **`next.config.js`** - Build configuration with WebAssembly support
+6. **`next.config.js`** - Build configuration with WebAssembly support and API proxy
 7. **`tailwind.config.js`** - Custom theme and responsive breakpoints
+8. **`jest.config.js`** - Test configuration with module mapping for absolute imports
+
+## Project-Specific Information
+
+### ExpectedEval Fork
+This is a fork of the original Maia Chess Platform with additional features:
+- **Expected Evaluation Analysis**: Advanced position evaluation with expected value calculations
+
+### Conventional Commits
+The project follows [Conventional Commits](https://www.conventionalcommits.org/) specification:
+- `feat:` - New features
+- `fix:` - Bug fixes
+- `chore:` - Build process or auxiliary tool changes
+- `style:` - Code style changes (formatting, etc.)
+- `refactor:` - Code changes that neither fix bugs nor add features
+- `docs:` - Documentation only changes
