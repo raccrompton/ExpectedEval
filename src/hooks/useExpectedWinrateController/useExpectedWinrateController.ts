@@ -77,10 +77,15 @@ export const useExpectedWinrateController = (game: AnalyzedGame) => {
     for (const c of candidates) {
       if (cancelRef.current.cancelled) break
       const nodes = await expandTree(c.fen, params)
-      const { expected, coverage, avgDepth, confidence } = summarize(
-        nodes,
-        baseWinrate,
-      )
+
+      for (const n of nodes) {
+        if (cancelRef.current.cancelled) break
+        const ev = await evaluateAtDepth(n.fen, params.depth)
+        const wr = ev?.winrate_vec ? Object.values(ev.winrate_vec)[0] ?? 0.5 : 0.5
+        n.leaf = { winrate: wr, depth: ev?.depth ?? params.depth }
+      }
+
+      const { expected, coverage, avgDepth, confidence } = summarize(nodes, baseWinrate)
       moveResults.push({
         move: c.uci,
         san: c.san,
