@@ -165,7 +165,7 @@ export const Header: React.FC = () => {
             </button>
           </div>
           <div className="flex flex-col gap-6 px-12">
-            <Link href="/" className="uppercase text-xl font-bold">
+            <Link href="/" className="text-xl font-bold uppercase">
               ExpectedEval
             </Link>
           </div>

@@ -1,9 +1,7 @@
 import { useCallback, useContext, useMemo, useRef, useState } from 'react'
 import { AnalyzedGame } from 'src/types'
 import { Chess } from 'chess.ts'
-import {
-  EXPECTED_WINRATE_DEFAULTS,
-} from 'src/constants/expectedWinrate'
+import { EXPECTED_WINRATE_DEFAULTS } from 'src/constants/expectedWinrate'
 import {
   ExpectedWinrateParams,
   ExpectedWinrateResult,
@@ -54,7 +52,11 @@ export const useExpectedWinrateController = (game: AnalyzedGame) => {
     const key = cacheKeyFrom(baseFen, params)
     const cached = getCache(key)
     if (cached) {
-      setResult({ ...cached, cacheHit: true, elapsedMs: performance.now() - startAt })
+      setResult({
+        ...cached,
+        cacheHit: true,
+        elapsedMs: performance.now() - startAt,
+      })
       setIsRunning(false)
       if (timerRef.current) window.clearInterval(timerRef.current)
       return
@@ -62,7 +64,7 @@ export const useExpectedWinrateController = (game: AnalyzedGame) => {
 
     const baseEval = await evaluateAtDepth(baseFen, params.depth)
     const baseWinrate = baseEval?.winrate_vec
-      ? Object.values(baseEval.winrate_vec)[0] ?? 0.5
+      ? (Object.values(baseEval.winrate_vec)[0] ?? 0.5)
       : 0.5
 
     const root = new Chess(baseFen)
@@ -70,7 +72,11 @@ export const useExpectedWinrateController = (game: AnalyzedGame) => {
     const candidates = legal.map((m) => {
       const next = new Chess(baseFen)
       next.move(m)
-      return { uci: `${m.from}${m.to}${m.promotion || ''}`, san: m.san, fen: next.fen() }
+      return {
+        uci: `${m.from}${m.to}${m.promotion || ''}`,
+        san: m.san,
+        fen: next.fen(),
+      }
     })
 
     const moveResults: ExpectedWinrateMoveResult[] = []
@@ -81,11 +87,16 @@ export const useExpectedWinrateController = (game: AnalyzedGame) => {
       for (const n of nodes) {
         if (cancelRef.current.cancelled) break
         const ev = await evaluateAtDepth(n.fen, params.depth)
-        const wr = ev?.winrate_vec ? Object.values(ev.winrate_vec)[0] ?? 0.5 : 0.5
+        const wr = ev?.winrate_vec
+          ? (Object.values(ev.winrate_vec)[0] ?? 0.5)
+          : 0.5
         n.leaf = { winrate: wr, depth: ev?.depth ?? params.depth }
       }
 
-      const { expected, coverage, avgDepth, confidence } = summarize(nodes, baseWinrate)
+      const { expected, coverage, avgDepth, confidence } = summarize(
+        nodes,
+        baseWinrate,
+      )
       moveResults.push({
         move: c.uci,
         san: c.san,

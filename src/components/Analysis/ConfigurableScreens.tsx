@@ -80,7 +80,11 @@ export const ConfigurableScreens: React.FC<Props> = ({
     dynamicScreens.push({ id: 'expected-winrate', name: 'Expected Winrate' })
   }
 
-  const [screen, setScreen] = useState((EXPECTED_WINRATE_ENABLED ? { id: 'expected-winrate', name: 'Expected Winrate' } : dynamicScreens[0]))
+  const [screen, setScreen] = useState(
+    EXPECTED_WINRATE_ENABLED
+      ? { id: 'expected-winrate', name: 'Expected Winrate' }
+      : dynamicScreens[0],
+  )
 
   // If learn from mistakes is active, show only the learning interface
   if (

@@ -9,13 +9,20 @@ export const useMaiaExpand = () => {
   const expandOnce = async (
     fen: string,
     params: ExpectedWinrateParams,
-  ): Promise<{ move: string; san: string; prob: number; nextFen: string }[]> => {
+  ): Promise<
+    { move: string; san: string; prob: number; nextFen: string }[]
+  > => {
     if (!maia) return []
     const elo = 1500
     const { policy } = await maia.evaluate(fen, elo, elo)
     const board = new Chess(fen)
     const moves = board.moves({ verbose: true })
-    const results: { move: string; san: string; prob: number; nextFen: string }[] = []
+    const results: {
+      move: string
+      san: string
+      prob: number
+      nextFen: string
+    }[] = []
     for (const m of moves) {
       const uci = `${m.from}${m.to}${m.promotion || ''}`
       const prob = policy[uci] ?? 0

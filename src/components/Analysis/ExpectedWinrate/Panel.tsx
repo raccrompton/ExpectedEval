@@ -18,7 +18,10 @@ export const ExpectedWinratePanel: React.FC<{
     }
   }, [controller])
 
-  const moves = useMemo(() => controller.result?.moves ?? [], [controller.result])
+  const moves = useMemo(
+    () => controller.result?.moves ?? [],
+    [controller.result],
+  )
 
   return (
     <div className="flex w-full flex-col">
@@ -62,9 +65,7 @@ export const ExpectedWinratePanel: React.FC<{
         </div>
         <div className="rounded bg-white/5">
           <ExpectedWinrateTree
-            move={
-              selected !== null && moves[selected] ? moves[selected] : null
-            }
+            move={selected !== null && moves[selected] ? moves[selected] : null}
           />
         </div>
       </div>

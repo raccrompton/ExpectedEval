@@ -66,8 +66,12 @@ const AnalysisHomePage: NextPage = () => {
       <DelayedLoading isLoading={loading}>
         <div className="flex min-h-screen items-center justify-center bg-background-1">
           <div className="text-center">
-            <h1 className="mb-8 text-4xl font-bold text-primary">Chess Analysis</h1>
-            <p className="mb-8 text-lg text-secondary">Loading analysis interface...</p>
+            <h1 className="mb-8 text-4xl font-bold text-primary">
+              Chess Analysis
+            </h1>
+            <p className="mb-8 text-lg text-secondary">
+              Loading analysis interface...
+            </p>
           </div>
         </div>
       </DelayedLoading>

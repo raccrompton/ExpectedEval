@@ -20,7 +20,9 @@ export const ExpectedWinrateList: React.FC<{
             onClick={() => onSelect && onSelect(m)}
           >
             <div className="text-white">{m.san}</div>
-            <div className="text-white">{Math.round(m.expectedWinrate * 100)}%</div>
+            <div className="text-white">
+              {Math.round(m.expectedWinrate * 100)}%
+            </div>
             <div className="text-white">{m.confidence}</div>
             <div className="text-white">{m.avgDepth.toFixed(1)}</div>
           </button>

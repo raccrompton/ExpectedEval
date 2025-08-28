@@ -65,8 +65,9 @@ export const ParameterControlsExpectedWinrate: React.FC<{
         </span>
       </div>
       <div className="ml-auto text-xs text-secondary">
-        Defaults: {(EXPECTED_WINRATE_DEFAULTS.probThreshold * 100).toFixed(1)}% /{' '}
-        {EXPECTED_WINRATE_DEFAULTS.depth} / {EXPECTED_WINRATE_DEFAULTS.minWinPct}%
+        Defaults: {(EXPECTED_WINRATE_DEFAULTS.probThreshold * 100).toFixed(1)}%
+        / {EXPECTED_WINRATE_DEFAULTS.depth} /{' '}
+        {EXPECTED_WINRATE_DEFAULTS.minWinPct}%
       </div>
     </div>
   )
