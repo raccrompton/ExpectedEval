@@ -15,7 +15,7 @@ export const useMaiaExpand = () => {
     const { policy } = await maia.evaluate(fen, elo, elo)
     const board = new Chess(fen)
     const moves = board.moves({ verbose: true })
-    const results = []
+    const results: { move: string; san: string; prob: number; nextFen: string }[] = []
     for (const m of moves) {
       const uci = `${m.from}${m.to}${m.promotion || ''}`
       const prob = policy[uci] ?? 0
