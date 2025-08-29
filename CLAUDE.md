@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the Maia Chess Platform Frontend - a sophisticated chess analysis and training application featuring human-like chess AI (Maia) alongside traditional Stockfish engine capabilities.
+This is **ExpectedEval** - a sophisticated chess analysis and training platform based on the Maia Chess Platform. This forked version enhances the original Maia chess engine capabilities with additional expected evaluation features and improvements, leveraging human-like chess AI (Maia) alongside traditional Stockfish engine capabilities.
 
 ## Technology Stack
 
@@ -13,8 +13,9 @@ This is the Maia Chess Platform Frontend - a sophisticated chess analysis and tr
 - **Tailwind CSS 3.4.10** with custom theme system
 - **Stockfish WebAssembly** (`lila-stockfish-web`) + **ONNX Runtime Web** for chess engines
 - **Jest** with Testing Library for testing
-- **Framer Motion** for animations
-- **Recharts** for data visualization
+- **Framer Motion 11.18.2** for animations
+- **Recharts 2.15.0** for data visualization
+- **Chess.ts 0.16.2** for chess game logic
 
 ## Essential Commands
 
@@ -35,6 +36,7 @@ npm test             # Run all tests
 npm test -- --watch # Run tests in watch mode
 npm test -- --coverage # Run tests with coverage report
 npm test specific.test.ts # Run specific test file
+npm test -- --testPathPattern=expectedWinrate # Run tests matching pattern
 ```
 
 ## Project Architecture
@@ -48,11 +50,13 @@ The application follows a **Controller Hook + Context + Presentational Component
    - `usePlayController` - Game playing state and move handling  
    - `useTreeController` - Chess move tree navigation and variations
    - `useTrainingController` - Puzzle and training session management
+   - `useTuringController` - Human vs AI discrimination testing
+   - `useOpeningDrillController` - Opening practice and drills
 
 2. **Context Providers** (`src/contexts/`, `src/providers/`): Share controller state across components
    - Wrap controller hook state and methods
    - Enable consumption by child components without prop drilling
-   - Examples: `AuthContext`, `ModalContext`, `StockfishEngineContext`, `MaiaEngineContext`
+   - Examples: `AuthContext`, `ModalContext`, `StockfishEngineContext`, `MaiaEngineContext`, `SettingsContext`, `TourContext`
 
 3. **Presentational Components** (`src/components/`): Pure UI components that receive data via props
    - Organized by feature domain (Analysis, Play, Openings, Training)
@@ -130,8 +134,9 @@ Uses CSS custom properties for consistent theming:
 ### Jest Configuration (`jest.config.js`)
 - **Environment**: jsdom for React component testing
 - **Coverage**: Configured to exclude pages, types, and declaration files
-- **Module Mapping**: Supports absolute imports with `src/` prefix
+- **Module Mapping**: Supports absolute imports with `src/` prefix and `@/` alias
 - **Transform**: Handles TypeScript and JSX via Next.js babel presets
+- **Transform Ignore**: Configured for chess libraries (`@react-chess`, `chess.ts`)
 
 ### Test Organization
 - **Location**: `__tests__/` directory mirrors `src/` structure

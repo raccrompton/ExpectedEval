@@ -1,0 +1,321 @@
+# Expected Winrate Analysis Feature
+
+## Overview
+Replace the current analysis pane (Maia analysis, Stockfish analysis, moves by rating, move map, blunder meter) with a new "Expected Winrate" analysis that combines Maia 2 and Stockfish models running client-side to predict realistic game outcomes.
+We should replace the MoveMap component (lines 177-186 in AnalysisSidebar.tsx) with the user parameters controls
+We should replace the MovesByRating component (lines 327-333 in AnalysisSidebar.tsx) with the sorted expected winrate results.
+
+
+## Core Concept
+**Expected Winrate** = The weighted average win probability across all likely future game continuations, where move probabilities come from Maia 2 (human-like behavior) and evaluations come from Stockfish (optimal analysis).
+
+## 1. Algorithm Specification
+
+### 1.1 User Parameters
+- **Probability Threshold**: Dropdown (10%, 1%, 0.1%) - Controls how deep the analysis tree goes
+- **Stockfish Depth**: Dropdown (15, 20, 25) - Analysis depth for position evaluation
+- **Winrate Loss Threshold**: Float input (e.g., -0.1) - Maximum acceptable winrate loss from initial position. If initial position is 0.5 winrate and acceptable loss is -0.1, then consider all moves >= 0.4 winrate
+- **Maia Rating Level**: Use current user-selected rating (1100-1900) for move probability predictions
+
+### 1.2 Calculation Process
+
+#### Step 1: Initial Move Filtering
+```
+current_position = board.fen()
+legal_moves = stockfish.getLegalMoves(current_position)
+initial_position_winrate = stockfish.evaluateAsWinRate(current_position, depth=user_depth)
+winrate_threshold = initial_position_winrate + winrate_loss_threshold  // e.g., 0.5 + (-0.1) = 0.4
+stockfish_winrates = stockfish.evaluateMovesAsWinRate(legal_moves, depth=user_depth)
+candidate_moves = moves where win_rate >= winrate_threshold
+```
+
+#### Step 2: Probability Tree Generation
+For each candidate_move:
+```
+position_after_move = makeMove(current_position, candidate_move)
+probability_tree = generateMaiaTree(position_after_move, threshold=user_threshold)
+```
+
+**Tree Generation Logic**:
+- Start from position after candidate move
+- Get Maia 2 move probabilities for both sides alternately
+- Continue until cumulative path probability < threshold
+- Track: [move_sequence, cumulative_probability, leaf_position]
+
+Once we have the tree we should display it in the UI panel.
+
+#### Step 3: Stockfish Win Rate Evaluation of Tree Endpoints
+```
+for each leaf_position in probability_tree:
+    leaf_win_rate = stockfish.evaluateAsWinRate(leaf_position, depth=user_depth)
+```
+
+
+#### Step 4: Player-Aware Tree Pruning
+**Key Insight**: We want to capture the win rate when the analyzing player makes bad moves (to show the cost of blunders), but not allow recovery via opponent counter-blunders. Opponent blunders should continue normally as they benefit us.
+
+```
+for each path in probability_tree:
+    for each move in path.move_sequence:
+        position_after_move = makeMove(current_position, move)
+        if move.player == analyzing_player:
+            move_winrate = stockfish.evaluateAsWinRate(position_after_move, depth=user_depth)
+            if move_winrate < winrate_threshold:
+                # Stop here and capture the damage from our blunder
+                path.leaf_position = position_after_move     # After our bad move
+                path.leaf_win_rate = move_winrate            # The bad win rate
+                path.is_pruned = true
+                path.pruning_reason = "analyzing_player_blunder"
+                break
+        # If opponent makes bad move, continue - we benefit from their mistakes
+```
+
+Once we have a win rate estimate for each node, we should display it with the SAN of the node in the tree of the UI panel.
+
+
+#### Step 5: Expected Win Rate Calculation
+```
+expected_win_rate = Σ(path_probability × leaf_win_rate) for all valid/pruned paths
+normalization_factor = Σ(all_path_probabilities)
+normalized_expected_win_rate = expected_win_rate + (1 - normalization_factor) × base_position_win_rate
+```
+
+
+
+## 2. User Interface Specification
+
+### 2.1 Parameter Controls
+- **Top Panel**: Four dropdowns/inputs in a horizontal row
+  - Probability Threshold: [10% | 1% | 0.1%] (default: 10%)
+  - Stockfish Depth: [15 | 20 | 25] (default: 15)
+  - Winrate Loss: Input field (default: -0.1)
+  - Maia Level: Current user selection (1100-1900)
+
+### 2.2 Results Display
+
+#### Main View: Ranked Move List
+```
+Move            Expected Win Rate    Confidence    Tree Depth
+1. Nf3              67.3%             High          4.2 plies
+2. e4               65.8%             High          3.8 plies
+3. d4               63.1%             Medium        3.1 plies
+...
+```
+
+**Columns Explained**:
+- **Move**: Standard algebraic notation
+- **Expected Win Rate**: Probability of winning after this move (higher is better)
+- **Confidence**: Based on tree coverage (High: >80%, Medium: 60-80%, Low: <60%)
+- **Tree Depth**: Average depth of analyzed branches
+
+We can reuse the container structure and responsive patterns from MovesByRating.tsx (lines 42-48) to make this display consistent with existing analysis components.
+We should sort the moves by expected winrate (best to worse)
+
+#### Detail View: Tree Visualization
+When clicking a move, display:
+- **Interactive Tree**: Expandable nodes showing move sequences
+- **UI Pattern Reuse**: Leverage existing tree visualization patterns from MovesContainer.tsx
+  - Reuse `VariationTree` and `InlineChain` visual styling and CSS tree connectors
+  - Adapt responsive mobile (horizontal scroll) vs desktop (tree view) layouts
+  - Maintain existing interaction patterns (click handlers, hover states, keyboard navigation)
+- **New Architecture**: Purpose-built `ExpectedWinrateTree` component with `ExpectedWinRateNode` data structure
+
+**Tree Node Click Behavior - Board Preview Mode**:
+- **Click Action**: When user clicks a node in the probability tree, update chess board to show position after that move sequence
+- **Preview Mode**: Board shows "preview" of the potential future position, not a permanent analysis position change
+- **Visual Indicators**: 
+  - Board has subtle visual overlay indicating "preview mode"
+  - Clicked tree node remains highlighted
+  - Clear "Return to Analysis" button or ESC key to exit preview
+- **Non-Disruptive**: Main Expected Winrate analysis position and calculations remain unchanged
+- **Educational Value**: Users can visualize where different probability paths lead without losing analysis context
+
+- **Probability Flow**: Visual representation of cumulative probabilities with tree indentation
+- **Win Rate Annotations**: Stockfish win rates at key nodes with color coding
+- **Summary Stats**:
+  - Total branches analyzed: X
+  - Coverage: Y% of likely continuations
+  - Calculation time: Z ms
+
+### 2.3 Performance Indicators
+- **Loading State**: Progress bar during calculation
+- **Calculation Time**: Display total computation time
+- **Cache Status**: Show if results are cached/fresh
+
+## 3. Technical Implementation Notes
+
+### 3.1 Architecture Integration Requirements
+- **Engine Coordination**: Integrate with existing `useEngineAnalysis` hook (useAnalysisController.ts:612-618)
+- **State Management**: Work within existing `analysisState` reactive system (line 60, 615)  
+- **Caching Integration**: Extend existing `generateAnalysisCacheKey` and auto-save system (lines 92-189)
+- **Responsive Design**: Follow existing patterns from AnalysisSidebar.tsx (lines 104-348)
+
+### 3.1.1 Analysis State Integration Requirements
+- **Analysis Toggle**: Integrate with existing analysis enabled/disabled system (AnalysisSidebar.tsx:84-102)
+- **Overlay System**: Use existing disabled state overlay pattern (lines 159-212) for consistency
+- **Move Highlighting**: Coordinate with existing move highlighting system in analysis components
+- **Keyboard Navigation**: Maintain existing keyboard shortcut compatibility for analysis navigation
+- **Engine Status**: Display engine readiness status consistent with existing analysis components
+
+### 3.1.2 Tree UI Reuse Strategy - Approach 2: UI Pattern Reuse
+**Decision**: Reuse visual patterns from existing game tree navigation while creating purpose-built data structures
+
+**What to Reuse from MovesContainer.tsx**:
+- **Visual tree styling**: `VariationTree` and `InlineChain` CSS patterns and tree connectors (lines 487-572, 574-664)
+- **Responsive layouts**: Mobile horizontal scroll vs desktop tree view patterns (lines 215-327 vs 329-446)
+- **Interaction patterns**: Click handlers, hover states, current node highlighting (lines 231-235, 271-275)
+- **Accessibility features**: Keyboard navigation patterns and ARIA support
+
+**What NOT to Reuse**:
+- **GameNode data structure**: Designed for chess moves, not probability trees
+- **useBaseTreeController**: Game state management not needed for display-only probability trees
+- **Direct game progression logic**: Expected winrate trees use board preview mode instead
+
+**Tree Interaction Behavior - Adapted from Game Tree**:
+- **Click Handling**: Adapt existing click patterns (lines 231-235, 271-275) for board preview mode
+- **Board Preview**: Unlike game tree permanent navigation, Expected Winrate tree shows temporary position previews
+- **Preview State Management**: New state management for preview mode vs analysis mode
+- **Return Mechanism**: ESC key or click outside to return from preview (similar to modal patterns)
+
+**New Components to Create**:
+- **ExpectedWinrateTree.tsx**: Main tree container component using existing visual patterns
+- **ExpectedWinrateBranch.tsx**: Individual tree branch component (equivalent to VariationTree)
+- **ExpectedWinrateSequence.tsx**: Linear sequence component (equivalent to InlineChain)
+- **BoardPreviewController**: State management for temporary position display without affecting main analysis
+- **ExpectedWinRateNode interface**: Unified data structure for both algorithm and UI (includes optional UI state fields)
+
+### 3.2 Performance Considerations with Existing Infrastructure
+- **Maximum Tree Depth**: Check the position is not terminal or repeating, integrate with existing game end detection
+- **Batch Processing**: Use existing Stockfish evaluation queuing, coordinate with `inProgressAnalyses` Set
+- **Result Caching**: Extend existing cache system rather than creating parallel caching
+- **Engine Coordination**: Work within existing depth management (line 617) and model management (lines 601-610)
+
+### 3.3 Data Structures with Architecture Integration
+**Canonical Data Structure Definitions** (defined in `src/types/expectedWinrate.ts`):
+
+```typescript
+// Unified tree node structure for both algorithm and UI
+interface ExpectedWinRateNode {
+  // Core algorithm data
+  position: string;        // FEN position
+  move: string;           // SAN notation
+  probability: number;    // Maia move probability (0-1)
+  cumulativeProbability: number; // Path probability to this node
+  stockfishWinRate?: number;     // Stockfish evaluation (-1 to 1), undefined until evaluated
+  children: ExpectedWinRateNode[];
+  
+  // UI state for tree display (optional, used by tree components)
+  id?: string;            // Unique node identifier for UI
+  parent?: ExpectedWinRateNode; // Parent node reference
+  depth?: number;         // Tree depth for styling indentation
+  isExpanded?: boolean;   // UI expansion state for tree navigation
+}
+
+// Individual move analysis result
+interface ExpectedWinRateResult {
+  move: string;
+  expectedWinRate: number;
+  confidence: number;
+  treeDepth: number;
+  calculationTime: number;
+  tree: ExpectedWinRateNode;
+}
+
+// Controller state and progress tracking
+interface ExpectedWinRateParams {
+  probabilityThreshold: number; // 0.1, 0.01, 0.001
+  stockfishDepth: number;       // 15, 20, 25
+  winrateLossThreshold: number; // e.g., -0.1
+  maiaRatingLevel: number;      // 1100-1900
+}
+
+interface ExpectedWinrateProgress {
+  phase: 'maia-trees' | 'stockfish-eval' | 'complete';
+  currentMove: number;
+  totalMoves: number;
+  treeNodesEvaluated: number;
+  totalTreeNodes: number;
+}
+
+// Integration type extending existing architecture patterns
+interface ExpectedWinrateAnalysis extends AnalysisResult {
+  expectedWinrates: ExpectedWinRateResult[];
+  parameters: ExpectedWinRateParams;
+  progress: ExpectedWinrateProgress;
+  cacheStatus: 'fresh' | 'cached' | 'calculating';
+}
+```
+
+**Reference**: All other documents should reference these canonical definitions rather than duplicating them.
+
+### 3.4 Error Handling with Existing Patterns
+- **Game end or repetition**: Use existing game end detection patterns, integrate with Chess.ts gameOver() checks
+- **Engine Integration**: Leverage existing error handling from StockfishEngineContext and MaiaEngineContext
+- **Calculation Progress**: Use existing progress indication patterns, ensure non-blocking calculations
+- **Engine Errors**: Follow existing error display patterns from analysis components, graceful degradation
+
+## 4. Testing Strategy
+
+### 4.1 Unit Testing
+- **Algorithm Functions**: Test each algorithm step (1-5) with known chess positions
+  ```bash
+  npm test -- --testPathPattern=expectedWinrate/treeGeneration
+  npm test -- --testPathPattern=expectedWinrate/calculation
+  npm test -- --testPathPattern=expectedWinrate/pruning
+  ```
+- **Data Structure Validation**: Test ExpectedWinRateNode and ExpectedWinRateResult creation
+- **Engine Integration**: Mock Stockfish/Maia responses for consistent testing
+- **Edge Cases**: Terminal positions, repetitions, invalid inputs
+
+### 4.2 Integration Testing
+- **Controller Hook**: Test `useExpectedWinrateController` with actual engine contexts
+- **Engine Coordination**: Verify no conflicts with existing `inProgressAnalyses` Set
+- **Cache Integration**: Test cache key generation and auto-save integration
+- **State Management**: Test integration with existing `analysisState` reactive system
+  ```bash
+  npm test -- --testPathPattern=useExpectedWinrateController
+  npm test -- --testPathPattern=expectedWinrate/integration
+  ```
+
+### 4.3 Component Testing  
+- **Parameter Controls**: Test responsive behavior, validation, persistence
+- **Results Display**: Test sorting, progressive updates, responsive layout
+- **Tree Visualization**: Test node expansion, mobile interaction, accessibility
+- **UI Pattern Reuse Validation**: Test that adapted patterns match existing UX quality
+- **Analysis State Integration**: Test enabled/disabled overlay system
+  ```bash
+  npm test -- --testPathPattern=ExpectedWinrateControls
+  npm test -- --testPathPattern=ExpectedWinrateResults
+  npm test -- --testPathPattern=ExpectedWinrateTree
+  npm test -- --testPathPattern=expectedWinrate/uiPatterns
+  ```
+
+### 4.4 Performance Testing
+- **Large Tree Handling**: Test with deep probability trees (>100 nodes)
+- **Memory Management**: Test cleanup after calculation completion
+- **Calculation Interruption**: Test canceling mid-calculation
+- **UI Responsiveness**: Test non-blocking during long calculations
+
+### 4.5 E2E Testing
+- **Full Workflow**: Parameter adjustment → calculation → results display → tree exploration → board preview
+- **Progressive Display**: Verify Phase A (Maia trees) → Phase B (Stockfish evaluation)  
+- **Board Preview Workflow**: Tree node click → board position preview → return to analysis
+- **Preview Mode Testing**: 
+  - Visual indicators (board overlay, highlighted nodes) work correctly
+  - Return mechanisms (ESC key, return button, click outside) function properly
+  - Preview doesn't affect main analysis state or calculations
+  - Multiple tree node previews work in sequence
+- **Mobile Experience**: Complete workflow including touch-friendly tree preview on tablet/phone viewports
+- **UI Pattern Integration**: Verify tree navigation feels consistent with existing game tree UX
+- **Analysis Toggle**: Test integration with existing analysis enable/disable system
+- **Tree Interaction Parity**: Ensure Expected Winrate tree interaction quality matches MovesContainer tree navigation
+
+## 5. Success Metrics & Architecture Compliance
+- **Testing Coverage**: >80% code coverage with focus on algorithm accuracy
+- **Accuracy**: Calculations should be correct with proper Stockfish perspective conversion
+- **Performance**: Calculation time acceptable with visible progress, leveraging existing engine infrastructure
+- **Architecture Integration**: Must work seamlessly with existing Controller Hook + Context + Components pattern
+- **Engine Coordination**: No conflicts with existing Stockfish/Maia evaluation systems
+- **Responsive Design**: Mobile and desktop experience matches existing quality standards  
+- **Usability**: User can understand and interpret results within 30 seconds
+- **No Regressions**: Existing analysis functionality remains unaffected
