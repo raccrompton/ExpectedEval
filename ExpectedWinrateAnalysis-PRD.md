@@ -90,7 +90,7 @@ Move            Expected Win Rate    Confidence    Tree Depth
   - Total branches analyzed: X
   - Coverage: Y% of likely continuations
   - Calculation time: Z ms
-- **Cache Status**: Show if results are cached/fresh (as specified in feature plan)
+- **Session Status**: Show if results are calculated this session or need fresh analysis
 
 #### 2.2.4 Progressive Display & Performance Indicators
 **Two-Phase Progress Display**:
@@ -140,8 +140,8 @@ Move            Expected Win Rate    Confidence    Tree Depth
 - **Stockfish Integration**: Work within existing depth management system (useAnalysisController.ts:617)
 - **Maia Integration**: Coordinate with existing `currentMaiaModel` state and model loading (lines 601-610)
 - **Evaluation Coordination**: Use existing `inProgressAnalyses` Set to prevent conflicts
-- **Caching Strategy**: Extend existing `generateAnalysisCacheKey` rather than creating parallel system
-- **Auto-save Integration**: Work with existing backend sync and unsaved changes tracking (lines 92-189)
+- **Caching Strategy**: Use session-only caching with Map-based storage for performance
+- **Session Storage**: No persistent backend storage - analysis results available within browser session only
 
 #### 2.3.5 Performance Requirements with Architecture Compliance  
 - **Calculation**: No time limit, visible progress using existing progress patterns
@@ -289,7 +289,7 @@ normalized_expected_win_rate = expected_win_rate + (1 - normalization_factor) ×
 ## 5. Acceptance Criteria
 
 ### 5.1 Functional Acceptance
-- [ ] All 4 user parameters work correctly and persist across sessions using existing localStorage patterns
+- [ ] All 4 user parameters work correctly and persist within session using existing localStorage patterns
 - [ ] Move filtering uses winrate loss threshold correctly (e.g., 0.5 + (-0.1) = 0.4) with proper Stockfish perspective conversion
 - [ ] **Phase A**: Maia trees generate and display immediately using existing engine coordination patterns
 - [ ] **Phase B**: Stockfish evaluations added progressively to existing trees without evaluation conflicts
@@ -300,7 +300,7 @@ normalized_expected_win_rate = expected_win_rate + (1 - normalization_factor) ×
 - [ ] **Tree Node Click Behavior**: Clicking tree nodes shows board preview of position after move sequence
 - [ ] **Board Preview Mode**: Preview shows position without affecting main analysis, with clear return mechanism
 - [ ] **Preview Visual Indicators**: Board overlay and highlighted tree node clearly indicate preview mode active
-- [ ] Cache status display integrated with existing cache system and auto-save indicators
+- [ ] Session status display integrated with existing analysis state indicators
 - [ ] Analysis enabled/disabled state integration with existing overlay patterns
 
 ### 5.2 UI/UX Acceptance with Architecture Integration
@@ -329,9 +329,9 @@ normalized_expected_win_rate = expected_win_rate + (1 - normalization_factor) ×
 #### 5.4.1 Functional Testing Methods
 - [ ] **Algorithm Testing**: Unit tests with known chess positions for accuracy validation
 - [ ] **Integration Testing**: Mock engine responses to test controller coordination
-- [ ] **Parameter Validation**: Automated tests for input validation and persistence
+- [ ] **Parameter Validation**: Automated tests for input validation and session storage
 - [ ] **Progressive Display**: Manual testing of Phase A → Phase B calculation flow
-- [ ] **Cache Testing**: Automated tests for cache hits/misses and invalidation
+- [ ] **Session Testing**: Automated tests for session storage and invalidation on refresh
 
 #### 5.4.2 UI/UX Testing Methods  
 - [ ] **Responsive Testing**: Automated viewport testing across breakpoints
@@ -360,7 +360,7 @@ normalized_expected_win_rate = expected_win_rate + (1 - normalization_factor) ×
 - **Calculation Accuracy**: Manual verification against known positions
 - **UI Responsiveness**: No blocking operations during calculations
 - **Error Rate**: < 1% of calculations result in errors
-- **Cache Hit Rate**: > 70% of repeated calculations use cache
+- **Session Cache Rate**: > 70% of repeated calculations within session use cached results
 
 ### 6.2 User Experience Metrics
 - **Time to Understanding**: Users interpret results within 30 seconds
@@ -399,5 +399,5 @@ normalized_expected_win_rate = expected_win_rate + (1 - normalization_factor) ×
 
 ### 8.2 Scaling Considerations
 - **Performance Optimization**: WebWorkers for background calculations
-- **Caching Strategy**: Persistent storage for frequently analyzed positions
+- **Session Storage**: In-memory caching for session-based performance optimization
 - **Memory Management**: Garbage collection for large analysis trees

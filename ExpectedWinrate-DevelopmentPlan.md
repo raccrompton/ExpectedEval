@@ -5,7 +5,7 @@
 - **Analyze**: How `useEngineAnalysis` hook coordinates Stockfish/Maia requests (useAnalysisController.ts:612-618)
 - **Map**: Integration points with existing `analysisState` reactive system (line 60, 615)
 - **Identify**: Reusable evaluation patterns from `useMoveRecommendations` (lines 659-667)
-- **Study**: Existing caching with `generateAnalysisCacheKey` and auto-save (lines 92-189)
+- **Study**: Existing session-based caching patterns using Map storage for performance
 
 ### 0.2 UI Architecture Patterns
 - **Study**: AnalysisSidebar.tsx responsive patterns (lines 104-348) for container reuse
@@ -54,9 +54,9 @@
 - **Phase A Integration**: Generate Maia trees using existing engine coordination patterns
 - **Phase B Coordination**: Batch Stockfish requests within existing depth management system
 - **Progress Integration**: Update existing UI progress patterns for two-phase calculation
-- **Cache Integration**: Extend existing `generateAnalysisCacheKey` to include expected winrate params
-- **Auto-save Integration**: Work with existing `saveAnalysisToBackend` system (lines 92-153)
-- **Testing**: Progress state updates, calculation interruption, cache validation
+- **Session Storage**: Implement Map-based caching for expected winrate results within session
+- **Memory Management**: Efficient cleanup of session analysis data
+- **Testing**: Progress state updates, calculation interruption, session storage validation
 
 ## Phase 3: UI Components with Architecture Compliance (Days 7-9)
 ### 3.1 Parameter Controls Component - Responsive Integration
@@ -145,13 +145,13 @@
 - **Performance**: Reuse existing model download and caching mechanisms
 - **Testing**: Probability extraction, tree building, model switching
 
-### 5.3 Enhanced Caching Strategy
-- **Implementation**: Extend existing cache system rather than creating parallel caching
-- **Integration**: Enhance `generateAnalysisCacheKey` to include expected winrate parameters
-- **Backend Integration**: Work with existing `storeEngineAnalysis` system (lines 92-189)
-- **Auto-save**: Integrate with existing auto-save timer and unsaved changes tracking
-- **Features**: Cache status display, fresh/cached indicators, backend persistence
-- **Testing**: Cache hits/misses, invalidation, backend sync, auto-save integration
+### 5.3 Session-Based Storage Strategy
+- **Implementation**: Use Map-based caching for session performance optimization
+- **Storage**: In-memory storage for analysis results within browser session only
+- **Session Management**: Efficient cleanup and memory management for analysis data
+- **State Integration**: Coordinate with existing analysis state reactive system
+- **Features**: Session status display, fresh/calculated indicators, memory optimization
+- **Testing**: Session storage hits/misses, invalidation on refresh, memory cleanup
 
 ## Phase 6: Error Handling & Performance Polish (Days 14-15)
 ### 6.1 Error Boundaries & Comprehensive Validation
@@ -231,8 +231,8 @@ npm test -- --testPathPattern=Analysis/ExpectedWinrate
 ### Critical Architecture Integration Points
 - **Engine Coordination**: Must work within existing `useEngineAnalysis` and engine context patterns
 - **State Management**: Integrate with existing `analysisState` reactive system, don't create parallel state
-- **Caching**: Extend existing cache system, don't replace it
-- **Auto-save**: Work with existing backend sync and unsaved changes tracking
+- **Session Storage**: Use Map-based session caching, not persistent backend storage
+- **Memory Management**: Efficient cleanup of analysis data within session lifecycle
 - **Responsive Design**: Follow existing patterns from AnalysisSidebar, MoveMap, MovesByRating
 - **Component Architecture**: Use existing Controller Hook + Context + Presentational Components pattern
 
