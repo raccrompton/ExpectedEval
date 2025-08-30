@@ -1,6 +1,7 @@
 export * from './play'
 export * from './player'
 export * from './analysis'
+export * from './expectedWinrate'
 export * from './openings'
 export * from './base'
 export * from './auth'

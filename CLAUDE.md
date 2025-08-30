@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is **ExpectedEval** - a sophisticated chess analysis and training platform based on the Maia Chess Platform. This forked version is designed to enhance the original Maia chess engine capabilities with additional expected evaluation features, leveraging human-like chess AI (Maia) alongside traditional Stockfish engine capabilities.
 
-**Current Implementation Status**: The platform currently provides comprehensive chess analysis using dual Stockfish/Maia engines with winrate-based move evaluation. Expected Winrate analysis feature is documented (see `ExpectedWinrateAnalysis-PRD.md` and `ExpectedWinrate-DevelopmentPlan.md`) but not yet implemented.
+**Current Implementation Status**: The platform currently provides comprehensive chess analysis using dual Stockfish/Maia engines with winrate-based move evaluation. Expected Winrate analysis feature is documented with comprehensive specifications (see `ExpectedWinrateAnalysis-PRD.md`, `ExpectedWinrate-DevelopmentPlan.md`, and `ExpectedWinrate-Phase0-Analysis.md`). **Development Progress: Phase 0 (Architecture Analysis) and Phase 1.1 (Type Definitions) are complete**. Currently ready to begin Phase 1.2 (Core Algorithm Functions).
 
 ## Technology Stack
 
@@ -39,6 +39,7 @@ npm test -- --watch # Run tests in watch mode
 npm test -- --coverage # Run tests with coverage report
 npm test specific.test.ts # Run specific test file
 npm test -- --testPathPattern=expectedWinrate # Run tests matching pattern
+npm run typecheck    # Check TypeScript with project version (5.1.6)
 ```
 
 ## Project Architecture
@@ -217,31 +218,87 @@ export const FeatureProvider = ({ children }) => {
 ## Critical Files for Understanding
 
 1. **`src/hooks/useAnalysisController/`** - Core chess analysis logic and engine coordination
-2. **`src/providers/StockfishEngineContextProvider/`** - WebAssembly Stockfish integration  
+   - `useAnalysisController.ts` (lines 612-618) - Engine coordination patterns for Expected Winrate integration
+   - `useEngineAnalysis.ts` - Engine readiness waits, conflict prevention, retry logic
+   - `useMoveRecommendations.ts` (lines 659-667) - Move evaluation and processing patterns
+2. **`src/providers/StockfishEngineContextProvider/`** - WebAssembly Stockfish integration
+   - `engine.ts` (lines 195-219) - Critical perspective handling for current player evaluations
 3. **`src/providers/MaiaEngineContextProvider/`** - ONNX Maia model handling
-4. **`src/components/Analysis/`** - Analysis UI components (AnalysisSidebar, MoveMap, MovesByRating, BlunderMeter, Highlight)
+4. **`src/components/Analysis/`** - Analysis UI components with integration patterns
+   - `AnalysisSidebar.tsx` (lines 177-186, 327-333) - Component replacement points for Expected Winrate
+   - `MoveMap.tsx` - Responsive font sizing patterns using WindowSizeContext
+   - `MovesByRating.tsx` (lines 42-48) - Container structure patterns for reuse
+   - `MovesContainer.tsx` (lines 487-572, 574-664) - Tree visualization patterns for Expected Winrate tree UI
 5. **`src/types/`** - TypeScript definitions for chess data structures
-6. **`next.config.js`** - Build configuration with WebAssembly support and API proxy
-7. **`tailwind.config.js`** - Custom theme and responsive breakpoints
-8. **`jest.config.js`** - Test configuration with module mapping for absolute imports
+   - `expectedWinrate.ts` - Complete type definitions for Expected Winrate feature (Phase 1.1 complete)
+   - `index.ts` - Barrel export includes Expected Winrate types
+6. **Documentation Files** - Expected Winrate specifications and architecture analysis
+   - `ExpectedWinrateAnalysis-PRD.md` - Complete feature specification
+   - `ExpectedWinrate-DevelopmentPlan.md` - 17-day systematic development plan
+   - `ExpectedWinrate-Phase0-Analysis.md` - Architecture integration analysis (completed)
+7. **`next.config.js`** - Build configuration with WebAssembly support and API proxy
+8. **`tailwind.config.js`** - Custom theme and responsive breakpoints
+9. **`jest.config.js`** - Test configuration with module mapping for absolute imports
 
 ## Current Analysis Components
 
 The platform currently implements sophisticated chess analysis through several key components:
-- **AnalysisSidebar**: Main analysis interface container with responsive layout (lines 177-186 contain MoveMap, lines 327-333 contain MovesByRating)
-- **MoveMap**: Visual representation of position evaluation and move quality
-- **MovesByRating**: Ranked list of moves by engine evaluation
+- **AnalysisSidebar**: Main analysis interface container with responsive layout featuring two layout modes:
+  - **Desktop Layout (xl+)**: 2-row layout with MoveMap at lines 177-186, MovesByRating at lines 151-156
+  - **Mobile Layout (<xl)**: 3-row layout with MovesByRating at lines 327-333
+- **MoveMap**: Visual representation of position evaluation and move quality with progressive font sizing
+- **MovesByRating**: Ranked list of moves by engine evaluation with responsive container patterns
 - **BlunderMeter**: Visual indicator of move quality and position assessment
-- **Highlight**: Engine recommendations and move analysis display
+- **Highlight**: Engine recommendations and move analysis display with Maia model selection
 - **ConfigurableScreens**: Customizable analysis layout options
+
+All components integrate with the analysis enabled/disabled toggle system and provide appropriate overlay states for disabled analysis mode.
 
 ## Project-Specific Information
 
 ### ExpectedEval Fork
-This is a fork of the original Maia Chess Platform with planned additional features:
-- **Expected Winrate Analysis**: Advanced position evaluation with expected value calculations (documented but not yet implemented - see `ExpectedWinrateAnalysis-PRD.md`)
+This is a fork of the original Maia Chess Platform with additional Expected Winrate analysis capabilities:
+- **Expected Winrate Analysis**: Advanced position evaluation with expected value calculations
+  - **Status**: Phase 0 (Architecture Analysis) and Phase 1.1 (Type Definitions) complete
+  - **Current**: Ready for Phase 1.2 (Core Algorithm Functions with Engine Integration)
+  - **Implementation**: Complete type system (`src/types/expectedWinrate.ts`) integrated with existing analysis patterns
 - **Enhanced Move Evaluation**: Current implementation uses winrate-based move categorization instead of centipawn loss
 - **Dual Engine Analysis**: Combines Stockfish objective evaluation with Maia human-like predictions
+
+### Expected Winrate Development Progress and Integration Requirements
+
+**Completed Phases:**
+- **Phase 0.1 & 0.2**: Architecture integration analysis complete (`ExpectedWinrate-Phase0-Analysis.md`)
+- **Phase 1.1**: Type definitions implemented and integrated
+  - **File**: `src/types/expectedWinrate.ts` - 264 lines of comprehensive type definitions
+  - **Export**: Added to `src/types/index.ts` for barrel export pattern
+  - **Validation**: TypeScript compilation successful with project version 5.1.6
+  - **Integration**: Types extend existing analysis patterns and engine interfaces
+  - **Development Tool**: Added `npm run typecheck` script for clean testing
+
+**Current Phase**: Phase 1.2 (Core Algorithm Functions with Engine Integration)
+- **Next Steps**: Implement core algorithm functions in `src/lib/expectedWinrate/`
+- **Key Components**: Tree generation, batch engine coordination, expected value calculation
+- **Integration Points**: Coordinate with existing engine contexts and follow established patterns
+
+Based on Phase 0 analysis, the Expected Winrate feature integrates with existing architecture patterns:
+
+#### Engine Integration Requirements:
+- **Reuse Existing Engine Contexts**: Work within `StockfishEngineContext` and `MaiaEngineContext` rather than creating parallel systems
+- **Follow `useEngineAnalysis` Patterns**: Use same engine readiness waits (3-second timeout), conflict prevention via `inProgressAnalyses` Set
+- **Maintain Perspective Consistency**: Preserve current player perspective in evaluations (critical implementation detail)
+- **Coordinate with Analysis State**: Use existing `setAnalysisState` counter for UI reactivity, integrate with auto-save system
+
+#### UI Integration Requirements:
+- **Component Replacement Strategy**: Replace MoveMap (lines 177-186) with `ExpectedWinrateControls`, replace MovesByRating (lines 327-333, 151-156) with `ExpectedWinrateResults`
+- **Responsive Design Compliance**: Follow existing `xl:` breakpoint patterns (1280px), maintain container styling with `bg-background-1/60` and border patterns
+- **Analysis Enabled/Disabled Integration**: Use existing overlay system for disabled states with appropriate messaging
+- **WindowSizeContext Integration**: Implement progressive font sizing following existing patterns from MoveMap component
+
+#### Data Processing Patterns:
+- **Extend Existing Cache System**: Enhance `generateAnalysisCacheKey` rather than creating parallel caching, work with existing auto-save infrastructure
+- **Reuse Move Processing Logic**: Adapt legal move enumeration and evaluation normalization from `useMoveRecommendations`
+- **Maintain Data Quality Thresholds**: Follow existing patterns for meaningful analysis storage and backend sync
 
 ### Conventional Commits
 The project follows [Conventional Commits](https://www.conventionalcommits.org/) specification:
