@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is **ExpectedEval** - a sophisticated chess analysis and training platform based on the Maia Chess Platform. This forked version enhances the original Maia chess engine capabilities with additional expected evaluation features and improvements, leveraging human-like chess AI (Maia) alongside traditional Stockfish engine capabilities.
+This is **ExpectedEval** - a sophisticated chess analysis and training platform based on the Maia Chess Platform. This forked version is designed to enhance the original Maia chess engine capabilities with additional expected evaluation features, leveraging human-like chess AI (Maia) alongside traditional Stockfish engine capabilities.
+
+**Current Implementation Status**: The platform currently provides comprehensive chess analysis using dual Stockfish/Maia engines with winrate-based move evaluation. Expected Winrate analysis feature is documented (see `ExpectedWinrateAnalysis-PRD.md` and `ExpectedWinrate-DevelopmentPlan.md`) but not yet implemented.
 
 ## Technology Stack
 
@@ -68,13 +70,15 @@ The application follows a **Controller Hook + Context + Presentational Component
 src/
 ├── api/             # Feature-based API client functions
 ├── components/      # UI components organized by feature domain
+├── constants/       # Application constants and configuration
 ├── contexts/        # React Context definitions
 ├── hooks/           # Custom React hooks (business logic layer)
+├── lib/             # Utility functions and helpers
 ├── pages/           # Next.js pages (Pages Router)
 ├── providers/       # Context provider implementations
+├── styles/          # Global styles and Tailwind config
 ├── types/           # TypeScript type definitions by feature
-├── lib/             # Utility functions and helpers
-└── styles/          # Global styles and Tailwind config
+└── test-utils.tsx   # Testing utilities and setup
 ```
 
 ### Import Strategy
@@ -105,7 +109,8 @@ The platform runs two chess engines client-side:
 
 **IMPORTANT**: Stockfish evaluations are processed to be from the **current player's perspective**, not White's perspective:
 - Stockfish's raw output is always from White's perspective
-- The platform multiplies by -1 when it's Black's turn
+- The platform adjusts centipawn scores: `cp *= -1` when `isBlackTurn`
+- For winrate calculations: `cpToWinrate(cp * (isBlackTurn ? -1 : 1), false)`
 - This ensures positive values always mean "good for whoever is moving next"
 - Implementation in `src/providers/StockfishEngineContextProvider/engine.ts`
 
@@ -214,17 +219,29 @@ export const FeatureProvider = ({ children }) => {
 1. **`src/hooks/useAnalysisController/`** - Core chess analysis logic and engine coordination
 2. **`src/providers/StockfishEngineContextProvider/`** - WebAssembly Stockfish integration  
 3. **`src/providers/MaiaEngineContextProvider/`** - ONNX Maia model handling
-4. **`src/components/Analysis/`** - Analysis UI components and interactions
+4. **`src/components/Analysis/`** - Analysis UI components (AnalysisSidebar, MoveMap, MovesByRating, BlunderMeter, Highlight)
 5. **`src/types/`** - TypeScript definitions for chess data structures
 6. **`next.config.js`** - Build configuration with WebAssembly support and API proxy
 7. **`tailwind.config.js`** - Custom theme and responsive breakpoints
 8. **`jest.config.js`** - Test configuration with module mapping for absolute imports
 
+## Current Analysis Components
+
+The platform currently implements sophisticated chess analysis through several key components:
+- **AnalysisSidebar**: Main analysis interface container with responsive layout (lines 177-186 contain MoveMap, lines 327-333 contain MovesByRating)
+- **MoveMap**: Visual representation of position evaluation and move quality
+- **MovesByRating**: Ranked list of moves by engine evaluation
+- **BlunderMeter**: Visual indicator of move quality and position assessment
+- **Highlight**: Engine recommendations and move analysis display
+- **ConfigurableScreens**: Customizable analysis layout options
+
 ## Project-Specific Information
 
 ### ExpectedEval Fork
-This is a fork of the original Maia Chess Platform with additional features:
-- **Expected Evaluation Analysis**: Advanced position evaluation with expected value calculations
+This is a fork of the original Maia Chess Platform with planned additional features:
+- **Expected Winrate Analysis**: Advanced position evaluation with expected value calculations (documented but not yet implemented - see `ExpectedWinrateAnalysis-PRD.md`)
+- **Enhanced Move Evaluation**: Current implementation uses winrate-based move categorization instead of centipawn loss
+- **Dual Engine Analysis**: Combines Stockfish objective evaluation with Maia human-like predictions
 
 ### Conventional Commits
 The project follows [Conventional Commits](https://www.conventionalcommits.org/) specification:
