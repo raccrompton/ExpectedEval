@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is **ExpectedEval** - a sophisticated chess analysis and training platform based on the Maia Chess Platform. This forked version is designed to enhance the original Maia chess engine capabilities with additional expected evaluation features, leveraging human-like chess AI (Maia) alongside traditional Stockfish engine capabilities.
 
-**Current Implementation Status**: The platform currently provides comprehensive chess analysis using dual Stockfish/Maia engines with winrate-based move evaluation. Expected Winrate analysis feature is documented with comprehensive specifications (see `ExpectedWinrateAnalysis-PRD.md`, `ExpectedWinrate-DevelopmentPlan.md`, and `ExpectedWinrate-Phase0-Analysis.md`). **Development Progress: Phase 0 (Architecture Analysis) and Phase 1.1 (Type Definitions) are complete**. Currently ready to begin Phase 1.2 (Core Algorithm Functions).
+**Current Implementation Status**: The platform currently provides comprehensive chess analysis using dual Stockfish/Maia engines with winrate-based move evaluation. Expected Winrate analysis feature is documented with comprehensive specifications (see `ExpectedWinrateAnalysis-PRD.md`, `ExpectedWinrate-DevelopmentPlan.md`, and `ExpectedWinrate-Phase0-Analysis.md`). **Development Progress: Phase 0 (Architecture Analysis), Phase 1.1 (Type Definitions), Phase 2.1 (Controller Hook), and Phase 2.2 (UI Components) are complete**. Currently ready to implement Phase 2.5 (Core Algorithm Functions in `src/lib/expectedWinrate/`).
 
 ## Technology Stack
 

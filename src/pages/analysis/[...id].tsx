@@ -15,7 +15,6 @@ import {
   getAnalyzedCustomPGN,
   getAnalyzedCustomFEN,
   getAnalyzedCustomGame,
-  getEngineAnalysis,
 } from 'src/api'
 import {
   AnalyzedGame,
@@ -57,7 +56,6 @@ import { useAnalysisController } from 'src/hooks'
 import { tourConfigs } from 'src/constants/tours'
 import type { DrawShape } from 'chessground/draw'
 import { MAIA_MODELS } from 'src/constants/common'
-import { applyEngineAnalysisData } from 'src/lib/analysisStorage'
 
 const AnalysisPage: NextPage = () => {
   const { startTour, tourState } = useTour()
@@ -80,30 +78,6 @@ const AnalysisPage: NextPage = () => {
   }, [initialTourCheck, startTour, tourState.ready])
   const [currentId, setCurrentId] = useState<string[]>(id as string[])
 
-  const loadStoredAnalysis = useCallback(async (game: AnalyzedGame) => {
-    if (
-      !game.id ||
-      game.type === 'custom-pgn' ||
-      game.type === 'custom-fen' ||
-      game.type === 'tournament'
-    ) {
-      return
-    }
-
-    try {
-      const storedAnalysis = await getEngineAnalysis(game.id)
-      if (storedAnalysis && storedAnalysis.positions.length > 0) {
-        applyEngineAnalysisData(game.tree, storedAnalysis.positions)
-        console.log(
-          'Loaded stored analysis:',
-          storedAnalysis.positions.length,
-          'positions',
-        )
-      }
-    } catch (error) {
-      console.warn('Failed to load stored analysis:', error)
-    }
-  }, [])
 
   const getAndSetTournamentGame = useCallback(
     async (
@@ -131,8 +105,6 @@ const AnalysisPage: NextPage = () => {
       setAnalyzedGame({ ...game, type: 'tournament' })
       setCurrentId(newId)
 
-      // Load stored analysis
-      await loadStoredAnalysis({ ...game, type: 'tournament' })
 
       if (updateUrl) {
         router.push(`/analysis/${newId.join('/')}`, undefined, {
@@ -140,7 +112,7 @@ const AnalysisPage: NextPage = () => {
         })
       }
     },
-    [router, loadStoredAnalysis],
+    [router],
   )
 
   const getAndSetLichessGame = useCallback(
@@ -165,14 +137,12 @@ const AnalysisPage: NextPage = () => {
       })
       setCurrentId([id, 'pgn'])
 
-      // Load stored analysis
-      await loadStoredAnalysis({ ...game, type: 'pgn' })
 
       if (updateUrl) {
         router.push(`/analysis/${id}/pgn`, undefined, { shallow: true })
       }
     },
-    [router, loadStoredAnalysis],
+    [router],
   )
 
   const getAndSetUserGame = useCallback(
@@ -194,8 +164,6 @@ const AnalysisPage: NextPage = () => {
       setAnalyzedGame({ ...game, type })
       setCurrentId([id, type])
 
-      // Load stored analysis
-      await loadStoredAnalysis({ ...game, type })
 
       if (updateUrl) {
         router.push(`/analysis/${id}/${type}`, undefined, {
@@ -203,7 +171,7 @@ const AnalysisPage: NextPage = () => {
         })
       }
     },
-    [router, loadStoredAnalysis],
+    [router],
   )
 
   const getAndSetCustomGame = useCallback(

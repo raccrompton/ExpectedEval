@@ -1,6 +1,6 @@
 /**
  * Expected Winrate Analysis Types
- * 
+ *
  * Core type definitions for the Expected Winrate feature that integrates
  * with existing analysis infrastructure while providing specialized types
  * for probability tree calculations and expected value analysis.
@@ -22,24 +22,24 @@ export interface ExpectedWinRateNode {
   move: string // UCI notation (e.g., "e2e4")
   san: string // Standard algebraic notation (e.g., "e4")
   fen: string // Position after this move
-  
+
   // Probability data
   probability: number // Maia probability of this move being played
   cumulativeProbability: number // Cumulative probability from root to this node
-  
+
   // Evaluation data
   stockfishWinrate?: number // Stockfish evaluation as winrate
   expectedWinrate?: number // Calculated expected winrate (only for leaf nodes)
-  
+
   // Tree structure
   parent: string | null // Parent node ID
   children: ExpectedWinRateNode[] // Child nodes
   depth: number // Depth from root (0 = candidate move, 1+ = response tree)
-  
+
   // Calculation metadata
   isLeafNode: boolean // True if no further expansion
   isPruned: boolean // True if pruned due to low probability or poor play
-  
+
   // Optional UI state (not used in calculations)
   isExpanded?: boolean // UI expansion state
   isHighlighted?: boolean // UI highlight state
@@ -53,11 +53,11 @@ export interface ExpectedWinRateParams {
   probabilityThreshold: number // Minimum probability to include move (default: 0.05)
   maxDepth: number // Maximum tree depth to analyze (default: 3)
   maiaLevel: string // Maia model to use (e.g., "1600")
-  
+
   // Stockfish evaluation parameters
   stockfishDepth: number // Stockfish analysis depth (default: 18)
   winrateLossThreshold: number // Maximum winrate loss to consider (default: -0.15)
-  
+
   // Tree pruning parameters
   playerAwarePruning: boolean // Enable player-aware pruning (default: true)
   pruningThreshold: number // Probability below which to prune bad moves (default: 0.02)
@@ -87,23 +87,28 @@ export interface ExpectedWinRateResult {
  */
 export interface ExpectedWinrateProgress {
   isCalculating: boolean
-  currentPhase: 'filtering' | 'tree_generation' | 'evaluation' | 'calculation' | 'complete'
+  currentPhase:
+    | 'filtering'
+    | 'tree_generation'
+    | 'evaluation'
+    | 'calculation'
+    | 'complete'
   phaseProgress: number // 0-1 for current phase
   overallProgress: number // 0-1 for entire calculation
-  
+
   // Phase-specific details
   currentMove?: string // Move being processed
   movesProcessed: number
   totalMoves: number
-  
+
   // Tree generation details
   nodesGenerated?: number
   nodesEvaluated?: number
-  
+
   // Timing
   startTime?: number
   estimatedTimeRemaining?: number
-  
+
   // Error tracking
   warnings: string[]
 }
@@ -130,12 +135,12 @@ export interface ExpectedWinrateAnalysis {
   results: ExpectedWinRateResult[]
   progress: ExpectedWinrateProgress
   cache?: ExpectedWinrateCache
-  
+
   // Integration with existing analysis
   requiresStockfish: boolean // Whether Stockfish evaluation is needed
   requiresMaia: boolean // Whether Maia evaluation is needed
   maiaModel: string // Current Maia model being used
-  
+
   // Error handling
   error?: string
   warnings: string[]

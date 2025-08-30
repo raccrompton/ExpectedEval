@@ -24,7 +24,6 @@ import {
   collectEngineAnalysisData,
   generateAnalysisCacheKey,
 } from 'src/lib/analysisStorage'
-import { storeEngineAnalysis } from 'src/api/analysis/analysis'
 import { extractPlayerMistakes, isBestMove } from 'src/lib/analysis'
 import { LearnFromMistakesState, MistakePosition } from 'src/types/analysis'
 import { LEARN_FROM_MISTAKES_DEPTH } from 'src/constants/analysis'
@@ -129,11 +128,10 @@ export const useAnalysisController = (
         return
       }
 
-      await storeEngineAnalysis(game.id, analysisData)
       setLastSavedCacheKey(cacheKey)
       setHasUnsavedAnalysis(false) // Mark as saved
       console.log(
-        'Analysis saved to backend:',
+        'Analysis processed:',
         analysisData.length,
         'positions',
       )
