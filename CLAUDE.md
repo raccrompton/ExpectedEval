@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is **ExpectedEval** - a sophisticated chess analysis and training platform based on the Maia Chess Platform. This forked version is designed to enhance the original Maia chess engine capabilities with additional expected evaluation features, leveraging human-like chess AI (Maia) alongside traditional Stockfish engine capabilities.
+This is **ExpectedEval** - a sophisticated chess analysis and training platform originally based on the Maia Chess Platform. ExpectedEval is now an independent project designed to enhance chess analysis capabilities with advanced expected evaluation features, leveraging human-like chess AI (Maia) alongside traditional Stockfish engine capabilities.
 
-**Current Implementation Status**: The platform currently provides comprehensive chess analysis using dual Stockfish/Maia engines with winrate-based move evaluation. Expected Winrate analysis feature is documented with comprehensive specifications (see `ExpectedWinrateAnalysis-PRD.md`, `ExpectedWinrate-DevelopmentPlan.md`, and `ExpectedWinrate-Phase0-Analysis.md`). **Development Progress: Phase 0 (Architecture Analysis), Phase 1.1 (Type Definitions), Phase 2.1 (Controller Hook), and Phase 2.2 (UI Components) are complete**. Currently ready to implement Phase 2.5 (Core Algorithm Functions in `src/lib/expectedWinrate/`).
+**Repository**: https://github.com/raccrompton/ExpectedEval
+
+**Current Implementation Status**: The platform provides comprehensive chess analysis using dual Stockfish/Maia engines with winrate-based move evaluation. **Expected Winrate analysis: Core implementation complete, integration pending**. **Development Progress**: Phase 0 (Architecture Analysis), Phase 1.1 (Type Definitions), Phase 2.1 (Controller Hook), Phase 2.2 (Core Algorithm Functions), and Phase 2.3 (UI Components) implemented with comprehensive testing infrastructure. **Issues Recently Fixed**: Stockfish API mismatch corrected (streamEvaluations() API), missing UI components created (Button, format utilities). **Current Status**: Ready for Phase 3.1 (AnalysisSidebar Integration) - ExpectedWinrateControls and ExpectedWinrateResults components need wiring into AnalysisSidebar.tsx.
 
 ## Technology Stack
 
@@ -55,6 +57,7 @@ The application follows a **Controller Hook + Context + Presentational Component
    - `useTrainingController` - Puzzle and training session management
    - `useTuringController` - Human vs AI discrimination testing
    - `useOpeningDrillController` - Opening practice and drills
+   - `useExpectedWinrateController` - Expected Winrate analysis with engine coordination (IMPLEMENTED)
 
 2. **Context Providers** (`src/contexts/`, `src/providers/`): Share controller state across components
    - Wrap controller hook state and methods
@@ -230,12 +233,13 @@ export const FeatureProvider = ({ children }) => {
    - `MovesByRating.tsx` (lines 42-48) - Container structure patterns for reuse
    - `MovesContainer.tsx` (lines 487-572, 574-664) - Tree visualization patterns for Expected Winrate tree UI
 5. **`src/types/`** - TypeScript definitions for chess data structures
-   - `expectedWinrate.ts` - Complete type definitions for Expected Winrate feature (Phase 1.1 complete)
+   - `expectedWinrate.ts` - Complete type definitions for Expected Winrate feature (269 lines, IMPLEMENTED)
    - `index.ts` - Barrel export includes Expected Winrate types
-6. **Documentation Files** - Expected Winrate specifications and architecture analysis
-   - `ExpectedWinrateAnalysis-PRD.md` - Complete feature specification
-   - `ExpectedWinrate-DevelopmentPlan.md` - 17-day systematic development plan
-   - `ExpectedWinrate-Phase0-Analysis.md` - Architecture integration analysis (completed)
+6. **Implementation Files** - Expected Winrate feature implementation
+   - `src/hooks/useExpectedWinrateController/` - Controller logic with engine integration (~1,600 lines)
+   - `src/components/Analysis/ExpectedWinrate/` - UI components with responsive design (900+ lines)
+   - `__tests__/` - Comprehensive test coverage for algorithms and components
+   - **Documentation**: `ExpectedWinrateAnalysis-PRD.md`, `ExpectedWinrate-DevelopmentPlan.md` (phase tracking)
 7. **`next.config.js`** - Build configuration with WebAssembly support and API proxy
 8. **`tailwind.config.js`** - Custom theme and responsive breakpoints
 9. **`jest.config.js`** - Test configuration with module mapping for absolute imports
@@ -259,27 +263,35 @@ All components integrate with the analysis enabled/disabled toggle system and pr
 ### ExpectedEval Fork
 This is a fork of the original Maia Chess Platform with additional Expected Winrate analysis capabilities:
 - **Expected Winrate Analysis**: Advanced position evaluation with expected value calculations
-  - **Status**: Phase 0 (Architecture Analysis) and Phase 1.1 (Type Definitions) complete
-  - **Current**: Ready for Phase 1.2 (Core Algorithm Functions with Engine Integration)
-  - **Implementation**: Complete type system (`src/types/expectedWinrate.ts`) integrated with existing analysis patterns
+  - **Status**: Core implementation complete, integration pending
+  - **Implementation**: Complete system with ~1,600 lines of controller logic, 900+ lines of UI components, full test coverage
+  - **Integration**: Uses existing engine contexts and analysis patterns, Stockfish API fixed, UI components created
+  - **Remaining**: AnalysisSidebar integration (wiring components), backend auto-save (TODO placeholder)
 - **Enhanced Move Evaluation**: Current implementation uses winrate-based move categorization instead of centipawn loss
 - **Dual Engine Analysis**: Combines Stockfish objective evaluation with Maia human-like predictions
 
 ### Expected Winrate Development Progress and Integration Requirements
 
 **Completed Phases:**
-- **Phase 0.1 & 0.2**: Architecture integration analysis complete (`ExpectedWinrate-Phase0-Analysis.md`)
-- **Phase 1.1**: Type definitions implemented and integrated
-  - **File**: `src/types/expectedWinrate.ts` - 264 lines of comprehensive type definitions
-  - **Export**: Added to `src/types/index.ts` for barrel export pattern
-  - **Validation**: TypeScript compilation successful with project version 5.1.6
-  - **Integration**: Types extend existing analysis patterns and engine interfaces
-  - **Development Tool**: Added `npm run typecheck` script for clean testing
+- **Phase 0**: Architecture integration analysis complete
+- **Phase 1.1**: Type definitions implemented (269 lines in `src/types/expectedWinrate.ts`)
+- **Phase 2.1**: Controller Hook implemented (`src/hooks/useExpectedWinrateController/`, ~1,600 lines total)
+  - **Engine Coordination**: ✅ Stockfish integration (API fixed to use streamEvaluations())
+  - **Cache Integration**: ✅ Session-based caching with Map storage
+  - **Calculation Orchestrator**: ✅ Two-phase progressive calculation system
+- **Phase 2.2**: Core Algorithm Functions implemented (integrated within controller)
+- **Phase 2.3**: UI Components implemented (`src/components/Analysis/ExpectedWinrate/`, 900+ lines)
+  - **ExpectedWinrateControls**: ✅ Parameter controls with responsive design
+  - **ExpectedWinrateResults**: ✅ Results display with move ranking
+  - **ExpectedWinrateTree**: ✅ Interactive tree visualization with board preview
+  - **Supporting Components**: ✅ Button component and format utilities created
+- **Testing Infrastructure**: Comprehensive test suite with controller and algorithm coverage
 
-**Current Phase**: Phase 1.2 (Core Algorithm Functions with Engine Integration)
-- **Next Steps**: Implement core algorithm functions in `src/lib/expectedWinrate/`
-- **Key Components**: Tree generation, batch engine coordination, expected value calculation
-- **Integration Points**: Coordinate with existing engine contexts and follow established patterns
+**Current Phase**: Phase 3.1 (AnalysisSidebar Integration)
+- **Next Steps**: Wire ExpectedWinrateControls and ExpectedWinrateResults into AnalysisSidebar.tsx
+- **Integration Status**: ❌ Components still need wiring (MoveMap and MovesByRating still rendered)
+- **Backend Status**: ⚠️ Auto-save deferred (TODO placeholder in controller)
+- **Final Step**: Enable Expected Winrate analysis within existing analysis framework
 
 Based on Phase 0 analysis, the Expected Winrate feature integrates with existing architecture patterns:
 

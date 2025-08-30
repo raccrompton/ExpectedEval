@@ -27,19 +27,8 @@ export const coordinateStockfishBatch = async (
 ): Promise<Map<string, StockfishEvaluation>> => {
   const results = new Map<string, StockfishEvaluation>()
 
-  if (!stockfish?.stockfish) {
+  if (!stockfish?.isReady?.()) {
     throw new Error('Stockfish engine not initialized')
-  }
-
-  // Wait for engine readiness (following existing patterns)
-  let readyWaitCount = 0
-  while (!stockfish?.stockfish && readyWaitCount < 30) {
-    await new Promise((resolve) => setTimeout(resolve, 100))
-    readyWaitCount++
-  }
-
-  if (!stockfish?.stockfish) {
-    throw new Error('Stockfish engine failed to initialize within timeout')
   }
 
   // Process positions sequentially to avoid overwhelming the engine
@@ -61,27 +50,42 @@ export const coordinateStockfishBatch = async (
     }
 
     try {
-      // Use existing Stockfish evaluation method
-      const evaluation = await stockfish.stockfish.evaluatePosition(
+      // Use actual Stockfish API - streamEvaluations returns AsyncIterable
+      const legalMoves = chess.moves().length
+      const evaluationStream = stockfish.streamEvaluations(
         position.fen,
+        legalMoves,
         position.depth,
       )
 
-      if (evaluation) {
-        // Convert to current player perspective (critical implementation detail)
-        const isBlackTurn = chess.turn() === 'b'
-        const adjustedEvaluation = {
-          ...evaluation,
-          // StockfishEvaluation uses model_optimal_cp, not cp
-          model_optimal_cp:
-            evaluation.model_optimal_cp * (isBlackTurn ? -1 : 1),
+      if (evaluationStream) {
+        let finalEvaluation: StockfishEvaluation | null = null
+        
+        // Consume the stream to get the final evaluation
+        for await (const evaluation of evaluationStream) {
+          finalEvaluation = evaluation
+          if (abortSignal?.aborted) {
+            stockfish.stopEvaluation()
+            throw new Error('Calculation aborted')
+          }
         }
 
-        results.set(position.id, adjustedEvaluation)
+        if (finalEvaluation) {
+          // Convert to current player perspective (critical implementation detail)
+          const isBlackTurn = chess.turn() === 'b'
+          const adjustedEvaluation = {
+            ...finalEvaluation,
+            // StockfishEvaluation uses model_optimal_cp, not cp
+            model_optimal_cp:
+              finalEvaluation.model_optimal_cp * (isBlackTurn ? -1 : 1),
+          }
 
-        // Call progress callback
-        request.onProgress?.(i + 1, request.positions.length)
-        request.onResult?.(position.id, adjustedEvaluation)
+          results.set(position.id, adjustedEvaluation)
+
+          // Call progress callback
+          request.onProgress?.(i + 1, request.positions.length)
+          request.onResult?.(position.id, adjustedEvaluation)
+        }
       }
     } catch (error) {
       console.warn(`Stockfish evaluation failed for ${position.fen}:`, error)
@@ -89,7 +93,7 @@ export const coordinateStockfishBatch = async (
     }
 
     // Small delay to prevent engine overload
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    await new Promise((resolve) => setTimeout(resolve, 50))
   }
 
   return results
