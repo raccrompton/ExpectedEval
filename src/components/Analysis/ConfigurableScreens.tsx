@@ -9,6 +9,8 @@ import {
   LearnFromMistakesState,
   MistakePosition,
 } from 'src/types'
+import { EXPECTED_WINRATE_ENABLED } from 'src/constants/expectedWinrate'
+import { ExpectedWinratePanel } from 'src/components/Analysis/ExpectedWinrate/Panel'
 
 interface Props {
   currentMaiaModel: string
@@ -73,7 +75,16 @@ export const ConfigurableScreens: React.FC<Props> = ({
     },
   ]
 
-  const [screen, setScreen] = useState(screens[0])
+  const dynamicScreens = [...screens]
+  if (EXPECTED_WINRATE_ENABLED) {
+    dynamicScreens.push({ id: 'expected-winrate', name: 'Expected Winrate' })
+  }
+
+  const [screen, setScreen] = useState(
+    EXPECTED_WINRATE_ENABLED
+      ? { id: 'expected-winrate', name: 'Expected Winrate' }
+      : dynamicScreens[0],
+  )
 
   // If learn from mistakes is active, show only the learning interface
   if (
@@ -122,7 +133,7 @@ export const ConfigurableScreens: React.FC<Props> = ({
   return (
     <div className="flex w-full flex-1 flex-col overflow-hidden bg-background-1/60 md:w-auto md:rounded">
       <div className="flex flex-row border-b border-white/10">
-        {screens.map((s) => {
+        {dynamicScreens.map((s) => {
           const selected = s.id === screen.id
           return (
             <div
@@ -176,6 +187,11 @@ export const ConfigurableScreens: React.FC<Props> = ({
               type="analysis"
             />
           </div>
+        ) : screen.id === 'expected-winrate' ? (
+          <ExpectedWinratePanel
+            game={game}
+            currentMaiaModel={currentMaiaModel}
+          />
         ) : null}
       </div>
     </div>
