@@ -4,28 +4,24 @@ node_modules/
 # Build outputs
 .next/
 out/
+dist/
 build/
 
-# Testing
-coverage/
+# IDE and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
 
 # Environment
 .env
 .env.local
 .env.*.local
 
-# OS
-.DS_Store
-
-# Debug
+# Logs
+*.log
 npm-debug.log*
-yarn-debug.log*
 
-# TypeScript
-*.tsbuildinfo
-
-# Claude Code local settings
-.claude/settings.local.json
-
-# Reference codebase (separate git repo)
+# Reference code (not tracked - local only)
 maia-platform-frontend/
