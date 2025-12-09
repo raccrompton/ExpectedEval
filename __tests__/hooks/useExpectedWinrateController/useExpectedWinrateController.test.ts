@@ -5,6 +5,7 @@
  * and validates state management, caching, and calculation coordination.
  */
 
+import React from 'react'
 import { renderHook, act } from '@testing-library/react'
 import { useExpectedWinrateController } from 'src/hooks/useExpectedWinrateController'
 import { GameNode } from 'src/types'
@@ -210,17 +211,16 @@ describe('useExpectedWinrateController', () => {
       }
       const mockNotReadyMaia = { maia: null }
 
-      jest
-        .mocked(require('react').useContext)
-        .mockImplementation((context: any) => {
-          if (context.displayName === 'StockfishEngineContext') {
-            return mockNotReadyStockfish
-          }
-          if (context.displayName === 'MaiaEngineContext') {
-            return mockNotReadyMaia
-          }
-          return {}
-        })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.mocked(React.useContext).mockImplementation((context: any) => {
+        if (context.displayName === 'StockfishEngineContext') {
+          return mockNotReadyStockfish
+        }
+        if (context.displayName === 'MaiaEngineContext') {
+          return mockNotReadyMaia
+        }
+        return {}
+      })
 
       const { result } = renderHook(() =>
         useExpectedWinrateController(mockGameNode, mockInProgressAnalyses),

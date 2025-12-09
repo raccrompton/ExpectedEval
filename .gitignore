@@ -1,42 +1,31 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+node_modules/
+
+# Build outputs
+.next/
+out/
+build/
+
+# Testing
+coverage/
+
+# Environment
 .env
+.env.local
+.env.*.local
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
+# OS
 .DS_Store
-*.pem
 
-# debug
+# Debug
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 
-# local env files
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# vercel
-.vercel
-
-# typescript
+# TypeScript
 *.tsbuildinfo
 
 # Claude Code local settings
 .claude/settings.local.json
-CLAUDE-*.md
+
+# Reference codebase (separate git repo)
+maia-platform-frontend/
