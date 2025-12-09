@@ -1,322 +1,236 @@
-# CLAUDE.md
+# Project Development Guidelines
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> This file contains project-specific rules and coding standards. Claude reads this automatically.
 
-## Project Overview
+---
 
-This is **ExpectedEval** - a sophisticated chess analysis and training platform originally based on the Maia Chess Platform. ExpectedEval is now an independent project designed to enhance chess analysis capabilities with advanced expected evaluation features, leveraging human-like chess AI (Maia) alongside traditional Stockfish engine capabilities.
+## Documentation Standards
 
-**Repository**: https://github.com/raccrompton/ExpectedEval
+> **MANDATORY**: All code must follow educational documentation standards.
 
-**Current Implementation Status**: The platform provides comprehensive chess analysis using dual Stockfish/Maia engines with winrate-based move evaluation. **Expected Winrate analysis: Core implementation complete, integration pending**. **Development Progress**: Phase 0 (Architecture Analysis), Phase 1.1 (Type Definitions), Phase 2.1 (Controller Hook), Phase 2.2 (Core Algorithm Functions), and Phase 2.3 (UI Components) implemented with comprehensive testing infrastructure. **Issues Recently Fixed**: Stockfish API mismatch corrected (streamEvaluations() API), missing UI components created (Button, format utilities). **Current Status**: Ready for Phase 3.1 (AnalysisSidebar Integration) - ExpectedWinrateControls and ExpectedWinrateResults components need wiring into AnalysisSidebar.tsx.
+**Reference**: `.claude/skills/educational-documentation.md`
 
-## Technology Stack
+### Requirements
+- **Line-by-line comments** explaining purpose and reasoning in plain English
+- **File-level documentation** explaining the file's role and dependencies
+- **Function-level documentation** with parameters, returns, and examples
+- **Explain programming concepts** that beginners might not know
+- Comments should teach the "why", not just restate the code
 
-- **Next.js 15.2.3** (Pages Router, not App Router)
-- **React 18.3.1** with TypeScript 5.1.6
-- **Tailwind CSS 3.4.10** with custom theme system
-- **Stockfish WebAssembly** (`lila-stockfish-web`) + **ONNX Runtime Web** for chess engines
-- **Jest** with Testing Library for testing
-- **Framer Motion 11.18.2** for animations
-- **Recharts 2.15.0** for data visualization
-- **Chess.ts 0.16.2** for chess game logic
+Write code as if teaching a friend who is learning to program.
 
-## Essential Commands
+---
 
-### Development
-```bash
-npm run dev          # Start development server on localhost:3000
-npm run build        # Build for production
-npm run start        # Start production server
-npm run export       # Export static site
-npm run lint         # Run ESLint with auto-fix (ALWAYS run before committing)
-npm test             # Run Jest tests
-npx tsc --noEmit     # Check TypeScript errors without emitting files
-```
+## Core Principles
 
-### Test Commands
-```bash
-npm test             # Run all tests
-npm test -- --watch # Run tests in watch mode
-npm test -- --coverage # Run tests with coverage report
-npm test specific.test.ts # Run specific test file
-npm test -- --testPathPattern=expectedWinrate # Run tests matching pattern
-npm run typecheck    # Check TypeScript with project version (5.1.6)
-```
+### 1. Verification Before Action
+- **Never assume** - Always verify current state before making changes
+- **Read before writing** - Understand existing code patterns before modifying
+- **Test after changes** - Verify changes work as expected
 
-## Project Architecture
+### 2. Minimal Changes
+- Make the smallest change that solves the problem
+- Avoid refactoring code unrelated to the current task
+- Don't add features or "improvements" unless explicitly requested
 
-### State Management Pattern
+### 3. Consistency Over Preference
+- Follow existing patterns in the codebase
+- Match the style of surrounding code
+- Use established project conventions, not personal preferences
 
-The application follows a **Controller Hook + Context + Presentational Components** pattern:
+---
 
-1. **Controller Hooks** (`src/hooks/`): Contain all business logic and state management
-   - `useAnalysisController` - Core chess position analysis logic
-   - `usePlayController` - Game playing state and move handling  
-   - `useTreeController` - Chess move tree navigation and variations
-   - `useTrainingController` - Puzzle and training session management
-   - `useTuringController` - Human vs AI discrimination testing
-   - `useOpeningDrillController` - Opening practice and drills
-   - `useExpectedWinrateController` - Expected Winrate analysis with engine coordination (IMPLEMENTED)
+## Mandatory Workflows
 
-2. **Context Providers** (`src/contexts/`, `src/providers/`): Share controller state across components
-   - Wrap controller hook state and methods
-   - Enable consumption by child components without prop drilling
-   - Examples: `AuthContext`, `ModalContext`, `StockfishEngineContext`, `MaiaEngineContext`, `SettingsContext`, `TourContext`
+### After Every Code Change
+Claude **MUST** invoke the `code-standards-reviewer` agent to verify:
+- Code follows project style guidelines
+- No regressions introduced
+- Patterns match existing codebase
 
-3. **Presentational Components** (`src/components/`): Pure UI components that receive data via props
-   - Organized by feature domain (Analysis, Play, Openings, Training)
-   - Consume contexts for state and actions
+### For Architecture Decisions
+Claude **MUST** invoke the `architect` agent when:
+- Adding new files or modules
+- Changing project structure
+- Implementing new features
+- Making security-related changes
 
-### File Organization
+---
+
+## Project Structure
+
+> **Example**: Replace with your actual project layout.
 
 ```
-src/
-├── api/             # Feature-based API client functions
-├── components/      # UI components organized by feature domain
-├── constants/       # Application constants and configuration
-├── contexts/        # React Context definitions
-├── hooks/           # Custom React hooks (business logic layer)
-├── lib/             # Utility functions and helpers
-├── pages/           # Next.js pages (Pages Router)
-├── providers/       # Context provider implementations
-├── styles/          # Global styles and Tailwind config
-├── types/           # TypeScript type definitions by feature
-└── test-utils.tsx   # Testing utilities and setup
+# Example: React/TypeScript web project
+├── src/
+│   ├── components/         # Reusable UI components
+│   ├── pages/              # Page/route components
+│   ├── utils/              # Utility functions
+│   ├── hooks/              # Custom React hooks
+│   ├── services/           # API/external service integrations
+│   └── types/              # Type definitions
+├── tests/
+├── public/
+
+# Example: Python project
+├── src/
+│   ├── core/               # Core business logic
+│   ├── api/                # API endpoints
+│   ├── models/             # Data models
+│   └── utils/
+├── tests/
+
+# Always present (Claude configuration)
+├── .claude/
+│   ├── agents/             # Subagent definitions
+│   ├── hooks/              # Automation scripts
+│   └── skills/             # Domain knowledge files
+└── CLAUDE.md
 ```
 
-### Import Strategy
+---
 
-- **Absolute imports**: Use `src/` prefix (configured in tsconfig.json)
-- **Barrel exports**: Most directories have `index.ts` for clean imports
-- **Example**: `import { useAnalysisController } from 'src/hooks'`
+## File Naming Conventions
 
-## Chess Engine Integration
+| Type | Convention | Example |
+|------|------------|---------|
+| Components | PascalCase | `UserProfile.tsx` |
+| Utilities | camelCase | `formatDate.ts` |
+| Constants | SCREAMING_SNAKE_CASE | `API_ENDPOINTS.ts` |
+| Test files | *.test.* or *.spec.* | `auth.test.ts` |
+| Config files | lowercase with dots | `eslint.config.js` |
 
-### Dual-Engine Architecture
+---
 
-The platform runs two chess engines client-side:
+## Code Quality Standards
 
-#### Stockfish Engine (`src/contexts/StockfishEngineContext/`)
-- **Implementation**: WebAssembly via `lila-stockfish-web` 
-- **Purpose**: Provides "objective" best moves and evaluations
-- **Files**: `public/stockfish/` (WASM + neural network files)
-- **Key Feature**: Evaluations are converted to current player's perspective (not always White's)
+### General Rules
+- **No magic numbers** - Use named constants
+- **No commented-out code** - Delete it; use git history
+- **No console.log in production** - Use proper logging
+- **Handle errors explicitly** - Don't swallow exceptions
 
-#### Maia Engine (`src/contexts/MaiaEngineContext/`)
-- **Implementation**: ONNX neural network with `onnxruntime-web`
-- **Purpose**: Provides "human-like" move predictions at different skill levels
-- **Models**: Multiple variants (1100-1900 rating levels) in `public/maia2/`
-- **Key Feature**: Downloads models on-demand and caches them locally
+### Type Safety (TypeScript)
+- Explicit type annotations for function parameters and return types
+- Avoid `any` - Use `unknown` and type guards instead
+- No type assertions (`as Type`) - Use proper type narrowing
+- Prefer `interface` for objects, `type` for unions/intersections
 
-### Critical Implementation Detail: Stockfish Evaluation Perspective
+### Functions
+- Single responsibility - One function, one job
+- Keep functions small - Under 50 lines ideally
+- Descriptive names that indicate behavior
+- Return early for edge cases (guard clauses)
 
-**IMPORTANT**: Stockfish evaluations are processed to be from the **current player's perspective**, not White's perspective:
-- Stockfish's raw output is always from White's perspective
-- The platform adjusts centipawn scores: `cp *= -1` when `isBlackTurn`
-- For winrate calculations: `cpToWinrate(cp * (isBlackTurn ? -1 : 1), false)`
-- This ensures positive values always mean "good for whoever is moving next"
-- Implementation in `src/providers/StockfishEngineContextProvider/engine.ts`
+### Comments
+- Follow educational documentation standards (see Documentation Standards above)
+- Every line should have a comment explaining purpose and reasoning
+- No TODO comments in production code
+- JSDoc for public APIs
 
-## API Integration
+---
 
-- **Proxy Setup**: Next.js rewrites `/api/*` to `https://dock2.csslab.ca/api/*`
-- **Organization**: Feature-based modules in `src/api/`
-- **Pattern**: Each feature exports functions through barrel exports
-- **Base Path**: All calls use `/api/v1/` prefix
+## Testing Requirements
 
-## Theme and Styling
-
-### Tailwind Configuration (`tailwind.config.js`)
-- **Custom Breakpoints**: `3xl` (1920px), `4xl` (2560px) for ultra-wide displays
-- **CSS Custom Properties**: Color system uses CSS variables for theme switching
-- **Dark Mode**: Class-based dark mode support
-
-### Color System (`src/styles/themes.css`)
-Uses CSS custom properties for consistent theming:
-- `--color-backdrop`, `--color-text-primary`, `--color-text-secondary`
-- Separate color schemes for human vs engine moves
-- Responsive design considerations for mobile and large displays
-
-## Testing Setup
-
-### Jest Configuration (`jest.config.js`)
-- **Environment**: jsdom for React component testing
-- **Coverage**: Configured to exclude pages, types, and declaration files
-- **Module Mapping**: Supports absolute imports with `src/` prefix and `@/` alias
-- **Transform**: Handles TypeScript and JSX via Next.js babel presets
-- **Transform Ignore**: Configured for chess libraries (`@react-chess`, `chess.ts`)
+### Before Submitting Changes
+1. All existing tests must pass
+2. New functionality requires new tests
+3. Bug fixes should include regression tests
 
 ### Test Organization
-- **Location**: `__tests__/` directory mirrors `src/` structure
-- **Patterns**: `*.test.ts`, `*.test.tsx`, `*.spec.ts`, `*.spec.tsx`
-- **Tools**: Testing Library for React component testing
+- Co-locate tests with source files OR use dedicated test directory
+- Name tests descriptively: `should_return_null_when_input_is_empty`
+- One assertion concept per test
 
-## Build Configuration
+---
 
-### Next.js Config (`next.config.js`)
-- **Transpilation**: Uses `next-transpile-modules` for `@react-chess/chessground`
-- **Headers**: COOP/COEP headers for WebAssembly and SharedArrayBuffer support
-- **Rewrites**: API proxy and PostHog analytics routing
-- **Output**: Standalone mode for deployment
+## Development Commands
 
-### Key Requirements
-- **WebAssembly Support**: Requires specific headers for Stockfish WASM
-- **CORS Configuration**: Handles chess engine and analytics integrations
-- **Static Assets**: Chess piece SVGs, engine files, and model weights
+> **Example**: Replace with your project's actual commands.
 
-## Development Workflow
+```bash
+# Example: Node.js/TypeScript project
+npm run dev              # Start development server
+npm run build            # Production build
+npm test                 # Run all tests
+npm run lint             # Check for lint errors
+npm run typecheck        # TypeScript type checking
 
-### Code Quality
-- **ESLint**: Next.js + TypeScript + Prettier integration
-- **Prettier**: No semicolons, single quotes, 2-space indentation, Tailwind CSS class sorting
-- **Pre-commit**: Always run `npm run lint` before committing
-- **TypeScript**: Strict mode enabled with absolute imports via `src/` prefix
-
-### Branching Strategy
-- **Main Branch**: `main` (synced with production deployment)
-- **Development**: Feature branches merged via pull requests
-- **Deployment**: Vercel automatic deployment from main branch
-
-## Key Implementation Patterns
-
-### Component Pattern
-```typescript
-interface ComponentNameProps {
-  // Props interface
-}
-
-export const ComponentName = ({ prop1, prop2 }: ComponentNameProps) => {
-  // Component implementation
-}
+# Example: Python project
+python -m pytest         # Run tests
+ruff check .             # Lint
+mypy src/                # Type checking
+black --check .          # Format check
 ```
 
-### Controller Hook Pattern
-```typescript
-export const useFeatureController = () => {
-  // State and business logic
-  // Chess engine interactions
-  // API calls
-  
-  return {
-    // State and methods for components
-  }
-}
-```
+---
 
-### Context Provider Pattern
-```typescript
-const FeatureContext = createContext<ControllerState | null>(null)
+## Git Workflow
 
-export const FeatureProvider = ({ children }) => {
-  const controller = useFeatureController()
-  return (
-    <FeatureContext.Provider value={controller}>
-      {children}
-    </FeatureContext.Provider>
-  )
-}
-```
+### Commit Messages
+- Use conventional commits: `type(scope): description`
+- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+- Keep subject line under 72 characters
+- Use imperative mood: "Add feature" not "Added feature"
 
-## Critical Files for Understanding
+### Before Committing
+1. Run linter and fix issues
+2. Run tests
+3. Review changes with `git diff`
 
-1. **`src/hooks/useAnalysisController/`** - Core chess analysis logic and engine coordination
-   - `useAnalysisController.ts` (lines 612-618) - Engine coordination patterns for Expected Winrate integration
-   - `useEngineAnalysis.ts` - Engine readiness waits, conflict prevention, retry logic
-   - `useMoveRecommendations.ts` (lines 659-667) - Move evaluation and processing patterns
-2. **`src/providers/StockfishEngineContextProvider/`** - WebAssembly Stockfish integration
-   - `engine.ts` (lines 195-219) - Critical perspective handling for current player evaluations
-3. **`src/providers/MaiaEngineContextProvider/`** - ONNX Maia model handling
-4. **`src/components/Analysis/`** - Analysis UI components with integration patterns
-   - `AnalysisSidebar.tsx` (lines 177-186, 327-333) - Component replacement points for Expected Winrate
-   - `MoveMap.tsx` - Responsive font sizing patterns using WindowSizeContext
-   - `MovesByRating.tsx` (lines 42-48) - Container structure patterns for reuse
-   - `MovesContainer.tsx` (lines 487-572, 574-664) - Tree visualization patterns for Expected Winrate tree UI
-5. **`src/types/`** - TypeScript definitions for chess data structures
-   - `expectedWinrate.ts` - Complete type definitions for Expected Winrate feature (269 lines, IMPLEMENTED)
-   - `index.ts` - Barrel export includes Expected Winrate types
-6. **Implementation Files** - Expected Winrate feature implementation
-   - `src/hooks/useExpectedWinrateController/` - Controller logic with engine integration (~1,600 lines)
-   - `src/components/Analysis/ExpectedWinrate/` - UI components with responsive design (900+ lines)
-   - `__tests__/` - Comprehensive test coverage for algorithms and components
-   - **Documentation**: `ExpectedWinrateAnalysis-PRD.md`, `ExpectedWinrate-DevelopmentPlan.md` (phase tracking)
-7. **`next.config.js`** - Build configuration with WebAssembly support and API proxy
-8. **`tailwind.config.js`** - Custom theme and responsive breakpoints
-9. **`jest.config.js`** - Test configuration with module mapping for absolute imports
+### Commit Attribution
+- Do not include "Generated with Claude Code" or "Co-Authored-By: Claude" lines
+- Commits should have clean messages with no AI attribution
+- This is enforced via `gitCommitCoAuthor: false` in `.claude/settings.json`
 
-## Current Analysis Components
+---
 
-The platform currently implements sophisticated chess analysis through several key components:
-- **AnalysisSidebar**: Main analysis interface container with responsive layout featuring two layout modes:
-  - **Desktop Layout (xl+)**: 2-row layout with MoveMap at lines 177-186, MovesByRating at lines 151-156
-  - **Mobile Layout (<xl)**: 3-row layout with MovesByRating at lines 327-333
-- **MoveMap**: Visual representation of position evaluation and move quality with progressive font sizing
-- **MovesByRating**: Ranked list of moves by engine evaluation with responsive container patterns
-- **BlunderMeter**: Visual indicator of move quality and position assessment
-- **Highlight**: Engine recommendations and move analysis display with Maia model selection
-- **ConfigurableScreens**: Customizable analysis layout options
+## Security Checklist
 
-All components integrate with the analysis enabled/disabled toggle system and provide appropriate overlay states for disabled analysis mode.
+- [ ] No secrets in code (use environment variables)
+- [ ] Input validation on all user data
+- [ ] Output encoding to prevent XSS
+- [ ] Parameterized queries to prevent SQL injection
+- [ ] Authentication checks on protected routes
+- [ ] Rate limiting on public endpoints
 
-## Project-Specific Information
+---
 
-### ExpectedEval Fork
-This is a fork of the original Maia Chess Platform with additional Expected Winrate analysis capabilities:
-- **Expected Winrate Analysis**: Advanced position evaluation with expected value calculations
-  - **Status**: Core implementation complete, integration pending
-  - **Implementation**: Complete system with ~1,600 lines of controller logic, 900+ lines of UI components, full test coverage
-  - **Integration**: Uses existing engine contexts and analysis patterns, Stockfish API fixed, UI components created
-  - **Remaining**: AnalysisSidebar integration (wiring components), backend auto-save (TODO placeholder)
-- **Enhanced Move Evaluation**: Current implementation uses winrate-based move categorization instead of centipawn loss
-- **Dual Engine Analysis**: Combines Stockfish objective evaluation with Maia human-like predictions
+## Skills Reference
 
-### Expected Winrate Development Progress and Integration Requirements
+For detailed coding standards, Claude should reference:
+- `.claude/skills/typescript-standards.md` - TypeScript/JavaScript patterns
+- `.claude/skills/python-standards.md` - Python patterns (if applicable)
+- `.claude/skills/testing-standards.md` - Testing best practices
+- `.claude/skills/educational-documentation.md` - **Required** educational comment standards
 
-**Completed Phases:**
-- **Phase 0**: Architecture integration analysis complete
-- **Phase 1.1**: Type definitions implemented (269 lines in `src/types/expectedWinrate.ts`)
-- **Phase 2.1**: Controller Hook implemented (`src/hooks/useExpectedWinrateController/`, ~1,600 lines total)
-  - **Engine Coordination**: ✅ Stockfish integration (API fixed to use streamEvaluations())
-  - **Cache Integration**: ✅ Session-based caching with Map storage
-  - **Calculation Orchestrator**: ✅ Two-phase progressive calculation system
-- **Phase 2.2**: Core Algorithm Functions implemented (integrated within controller)
-- **Phase 2.3**: UI Components implemented (`src/components/Analysis/ExpectedWinrate/`, 900+ lines)
-  - **ExpectedWinrateControls**: ✅ Parameter controls with responsive design
-  - **ExpectedWinrateResults**: ✅ Results display with move ranking
-  - **ExpectedWinrateTree**: ✅ Interactive tree visualization with board preview
-  - **Supporting Components**: ✅ Button component and format utilities created
-- **Testing Infrastructure**: Comprehensive test suite with controller and algorithm coverage
+---
 
-**Current Phase**: Phase 3.1 (AnalysisSidebar Integration)
-- **Next Steps**: Wire ExpectedWinrateControls and ExpectedWinrateResults into AnalysisSidebar.tsx
-- **Integration Status**: ❌ Components still need wiring (MoveMap and MovesByRating still rendered)
-- **Backend Status**: ⚠️ Auto-save deferred (TODO placeholder in controller)
-- **Final Step**: Enable Expected Winrate analysis within existing analysis framework
+## MCP Servers
 
-Based on Phase 0 analysis, the Expected Winrate feature integrates with existing architecture patterns:
+This project uses MCP (Model Context Protocol) servers configured in `.mcp.json`.
 
-#### Engine Integration Requirements:
-- **Reuse Existing Engine Contexts**: Work within `StockfishEngineContext` and `MaiaEngineContext` rather than creating parallel systems
-- **Follow `useEngineAnalysis` Patterns**: Use same engine readiness waits (3-second timeout), conflict prevention via `inProgressAnalyses` Set
-- **Maintain Perspective Consistency**: Preserve current player perspective in evaluations (critical implementation detail)
-- **Coordinate with Analysis State**: Use existing `setAnalysisState` counter for UI reactivity, integrate with auto-save system
+### Required Servers
 
-#### UI Integration Requirements:
-- **Component Replacement Strategy**: Replace MoveMap (lines 177-186) with `ExpectedWinrateControls`, replace MovesByRating (lines 327-333, 151-156) with `ExpectedWinrateResults`
-- **Responsive Design Compliance**: Follow existing `xl:` breakpoint patterns (1280px), maintain container styling with `bg-background-1/60` and border patterns
-- **Analysis Enabled/Disabled Integration**: Use existing overlay system for disabled states with appropriate messaging
-- **WindowSizeContext Integration**: Implement progressive font sizing following existing patterns from MoveMap component
+| Server | When to Use |
+|--------|-------------|
+| **context7** | **Always** check library docs before suggesting API usage for external libraries |
+| **github** | For PR reviews, issue management, and repository operations |
 
-#### Data Processing Patterns:
-- **Extend Existing Cache System**: Enhance `generateAnalysisCacheKey` rather than creating parallel caching, work with existing auto-save infrastructure
-- **Reuse Move Processing Logic**: Adapt legal move enumeration and evaluation normalization from `useMoveRecommendations`
-- **Maintain Data Quality Thresholds**: Follow existing patterns for meaningful analysis storage and backend sync
+### Usage Guidelines
 
-### Conventional Commits
-The project follows [Conventional Commits](https://www.conventionalcommits.org/) specification:
-- `feat:` - New features
-- `fix:` - Bug fixes
-- `chore:` - Build process or auxiliary tool changes
-- `style:` - Code style changes (formatting, etc.)
-- `refactor:` - Code changes that neither fix bugs nor add features
-- `docs:` - Documentation only changes
+- **context7**: Before writing code that uses external libraries, use `resolve-library-id` then `get-library-docs` to get current API documentation. This prevents outdated API suggestions.
+- **github**: Prefer MCP tools over raw `gh` CLI commands for structured data access to PRs, issues, and repository content.
+
+---
+
+## On-Stop Hook
+
+When Claude finishes a task, the `on-stop.sh` hook automatically runs to verify:
+- Type checking passes
+- All tests pass
+- Linting rules satisfied
+- Code is properly formatted
+
+**Claude must address any failures** before considering the task complete.
