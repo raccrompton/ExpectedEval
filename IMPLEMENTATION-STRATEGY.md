@@ -1,5 +1,63 @@
 # ExpectedEval MVP Implementation Strategy
 
+---
+
+## 📋 CURRENT PROGRESS
+
+> This section is updated as implementation progresses.
+
+### Phase 1: Foundation + Test Setup ✅ COMPLETE
+- [x] Initialize clean project (package.json, tsconfig, etc.)
+- [x] Install core dependencies (next, react, chessops, etc.)
+- [x] Configure Vitest for unit testing
+- [x] Configure Playwright for E2E testing
+- [x] Create `src/core/chess/types.ts` - Re-export chessops types
+- [x] Create `src/core/chess/annotations.ts` with unit tests (29 tests)
+- [x] Create `src/core/chess/game.ts` with unit tests (30 tests)
+- [x] Create `src/core/chess/navigation.ts` with unit tests (38 tests)
+- [x] Verify: `npm test` passes
+
+### Phase 2: Engine Integration ✅ COMPLETE
+- [x] Create `src/core/engine/types.ts` - EngineAdapter interfaces (17 tests)
+- [x] Create mock engine implementations for testing (34 tests)
+- [x] Integrate Stockfish WASM (real implementation)
+  - Created `src/core/engine/stockfish.ts` - RealStockfish class with UCI protocol
+  - Created `src/core/engine/stockfish-module.d.ts` - Type declarations for WASM module
+  - Copied WASM files to `public/stockfish/` (sf17-79.js, sf17-79.wasm, NNUE files)
+- [x] Copy/integrate Maia ONNX files (real implementation)
+  - Created `src/core/engine/maia.ts` - RealMaia class with ONNX runtime
+  - Created `src/core/engine/tensor.ts` - FEN to tensor preprocessing
+  - Created `src/core/engine/storage.ts` - IndexedDB caching for model
+  - Copied `maia_rapid.onnx` to `public/maia2/`
+
+### Phase 3: Core Analysis Logic ✅ COMPLETE
+- [x] Create `src/core/analysis/types.ts` - Analysis type definitions
+- [x] Create `src/core/analysis/treeBuilder.ts` with unit tests (30 tests)
+- [x] Create `src/core/analysis/expectedWinrate.ts` with unit tests (18 tests)
+- [x] Verify: All unit tests pass (196/196 tests passing)
+
+### Phase 4: UI Components
+- [ ] Create `src/components/Board/GameBoard.tsx` - Chessground wrapper
+- [ ] Create `src/components/Board/MoveList.tsx` with tests
+- [ ] Create `src/components/Analysis/PgnInput.tsx` with tests
+- [ ] Create `src/components/Analysis/EnginePanel.tsx`
+- [ ] Create `src/components/Analysis/EWTree.tsx` with tests
+- [ ] Create React hooks (`useChessGame`, `useExpectedWinrate`)
+- [ ] Verify: Component tests pass
+
+### Phase 5: Integration + E2E
+- [ ] Wire up analysis page (`src/pages/analysis.tsx`)
+- [ ] Connect components to real engines
+- [ ] Write full E2E tests (PGN loading, navigation, eval display)
+- [ ] Verify: All Playwright tests pass
+
+### Phase 6: Polish
+- [ ] Styling and error handling
+- [ ] Performance optimization
+- [ ] Final test pass
+
+---
+
 ## Executive Summary
 
 **Recommendation: Start Fresh + Copy Engines + Testability First**
@@ -12,6 +70,109 @@ After extensive attempts to adapt `maia-platform-frontend/`, the "copy and strip
 3. **Separate logic from UI** - all core logic in pure functions/classes that are easily unit tested
 4. Build new, simplified UI components that consume the tested logic
 5. Use open source alternatives where maia-platform integration proves difficult
+
+---
+
+## Target UI Layout
+
+The analysis page displays **four evaluation methods** for any position, each providing different insights:
+
+### The Four Evaluation Methods
+
+| Method | What It Shows | Source |
+|--------|---------------|--------|
+| **1. Stockfish Baseline** | Traditional engine eval + best moves | SF evaluates position directly |
+| **2. Maia Baseline** | Human win probability + predicted moves | Maia policy (moves) + value (eval) |
+| **3. EW (Maia leaves)** | Expected outcome if humans play human-like | Tree search: Maia probs → Maia values |
+| **4. EW (SF leaves)** | Expected outcome with accurate leaf evals | Tree search: Maia probs → SF values |
+
+**Key insight**: Maia gives us:
+- `policy`: Probability distribution over ALL legal moves (what move will a human play?)
+- `value`: Single position evaluation (how good is this position for White?)
+
+### UI Mockup
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ExpectedEval Analysis                                           [Settings]  │
+├─────────────┬───────────────────────────┬───────────────────────────────────┤
+│             │                           │                                   │
+│   PGN       │                           │  ┌─ EVALUATION PANEL ───────────┐ │
+│   INPUT     │                           │  │                              │ │
+│             │                           │  │  Stockfish 17    +0.35 (54%) │ │
+│  [Paste     │       CHESSBOARD          │  │  ══════════════════════      │ │
+│   game      │                           │  │  Best: e4, d4, Nf3           │ │
+│   here]     │      (interactive)        │  │                              │ │
+│             │                           │  │  Maia 1500        52.1%      │ │
+│  [Load PGN] │                           │  │  ══════════════════════      │ │
+│             │                           │  │  Predicted: e4 (35%), d4 (28%)│ │
+│             │                           │  │                              │ │
+│─────────────│                           │  │  EW (Maia)        53.2%      │ │
+│             │                           │  │  EW (SF)          54.1%      │ │
+│   MOVE      │                           │  │                              │ │
+│   LIST      ├───────────────────────────┤  └──────────────────────────────┘ │
+│             │                           │                                   │
+│  1. e4  e5  │  [Prob Threshold: 1%  ▼]  │  ┌─ EXPECTED WINRATE TREE ──────┐ │
+│  2. Nf3 Nc6 │  [Maia Level: 1500   ▼]  │  │                              │ │
+│  3. Bb5 ... │  [SF Depth: 12       ▼]  │  │  Sort by: [SF▼] [Maia] [Prob]│ │
+│             │                           │  │                              │ │
+│  (click to  │  [Calculate EW]           │  │  ▼ e4   EW: 54.2%  prob: 35% │ │
+│   navigate) │                           │  │    ├─ e5   52%   (45%)       │ │
+│             │                           │  │    │  ├─ Nf3  51%  (40%)     │ │
+│             │  [Export PGN]             │  │    │  └─ Bc4  50%  (25%)     │ │
+│             │                           │  │    └─ c5   53%   (30%)       │ │
+│             │                           │  │                              │ │
+│             │                           │  │  ▶ d4   EW: 52.8%  prob: 28% │ │
+│             │                           │  │  ▶ Nf3  EW: 51.1%  prob: 20% │ │
+│             │                           │  │                              │ │
+│             │                           │  │  (hover: preview on board)   │ │
+│             │                           │  │  (click: navigate to pos)    │ │
+│             │                           │  └──────────────────────────────┘ │
+└─────────────┴───────────────────────────┴───────────────────────────────────┘
+```
+
+### Evaluation Panel Details
+
+The evaluation panel shows all four methods stacked:
+
+```
+┌─────────────────────────────────────────────────────┐
+│  STOCKFISH 17                          Depth: 18   │
+│  ┌──────────────────────────────────────────────┐  │
+│  │████████████████████░░░░░░░░░░│  +0.35 (54.2%)│  │
+│  └──────────────────────────────────────────────┘  │
+│  Best moves: e4 (+0.38), d4 (+0.35), Nf3 (+0.32)   │
+├─────────────────────────────────────────────────────┤
+│  MAIA 1500                                         │
+│  ┌──────────────────────────────────────────────┐  │
+│  │█████████████████████░░░░░░░░░│  52.1% (White)│  │
+│  └──────────────────────────────────────────────┘  │
+│  Predicted moves:                                  │
+│    e4  ████████████████░░░░  35%                   │
+│    d4  ███████████░░░░░░░░░  28%                   │
+│    Nf3 ████████░░░░░░░░░░░░  20%                   │
+│    c4  ████░░░░░░░░░░░░░░░░  10%                   │
+├─────────────────────────────────────────────────────┤
+│  EXPECTED WINRATE                                  │
+│                                                    │
+│  Using SF at leaves:    54.1%  (best: e4)          │
+│  Using Maia at leaves:  53.2%  (best: e4)          │
+│                                                    │
+│  Difference from baseline SF:  -0.1%               │
+│  (position plays out slightly worse than SF eval)  │
+└─────────────────────────────────────────────────────┘
+```
+
+### EW Tree Sorting Options
+
+The EW tree can be sorted by different criteria:
+
+| Sort | Description | Use Case |
+|------|-------------|----------|
+| **EW (SF)** | Highest expected winrate using SF leaf evals | "What's objectively best given human play?" |
+| **EW (Maia)** | Highest expected winrate using Maia leaf evals | "What feels best to a human?" |
+| **Probability** | Most likely human moves first | "What will my opponent probably play?" |
+| **SF Eval** | Traditional engine ranking | "What's theoretically best?" |
 
 ---
 
@@ -100,17 +261,49 @@ export interface EngineAdapter {
 }
 
 export interface EWConfig {
-  maxDepth: number
+  // Minimum cumulative probability to explore a branch
+  // Lower = deeper/wider trees (slower, more accurate)
+  // Higher = shallower trees (faster, less accurate)
+  // Typical: 0.01 (1%) to 0.05 (5%)
   probabilityThreshold: number
+
+  // Max SF winrate loss to include as candidate move
+  // E.g., 0.05 = only consider moves within 5% of best
   winrateLossThreshold: number
+
+  // Maia ELO level for move predictions (1100-1900)
+  eloLevel: number
+
+  // Stockfish search depth for leaf evaluations
+  sfDepth: number
 }
 
 export interface EWResult {
+  // Per-move results for all explored candidate moves
   candidateMoves: Array<{
     move: string
-    expectedWinrate: number
-    exploredTree: TreeNode
+    probability: number        // Maia's probability for this move
+    sfEval: number             // Stockfish eval after this move
+    ewSF: number               // Expected Winrate using SF at leaves
+    ewMaia: number             // Expected Winrate using Maia at leaves
+    exploredTree: TreeNode     // The probability tree for this move
   }>
+
+  // Aggregate results for the position
+  baselineSF: number           // Stockfish eval of root position
+  baselineMaia: number         // Maia value of root position
+  overallEW_SF: number         // Position's EW using SF at leaves
+  overallEW_Maia: number       // Position's EW using Maia at leaves
+
+  // Best moves according to each method
+  bestMove_SF: string          // Best by Stockfish baseline
+  bestMove_EW_SF: string       // Best by EW(SF)
+  bestMove_EW_Maia: string     // Best by EW(Maia)
+  bestMove_Prob: string        // Most likely human move (highest Maia prob)
+
+  // Statistics
+  nodesExplored: number
+  uniquePositions: number
   calculationTimeMs: number
 }
 
@@ -119,6 +312,21 @@ export interface EWResult {
  *
  * This is a PURE function - given the same inputs, returns the same outputs.
  * Engine calls are abstracted through the adapter interface for easy mocking.
+ *
+ * Returns FOUR evaluation methods:
+ * 1. Baseline SF - Stockfish eval of the root position
+ * 2. Baseline Maia - Maia's win probability for the root position
+ * 3. EW (Maia leaves) - Tree search with Maia probs, Maia values at leaves
+ * 4. EW (SF leaves) - Tree search with Maia probs, SF values at leaves
+ *
+ * Per-move breakdown: For each candidate move, returns its individual EW.
+ * The tree for each candidate is built AFTER that move is made, showing
+ * opponent responses and subsequent play.
+ *
+ * Example: Position X has candidates [e4, d4, Nf3]
+ *   - e4's tree: starts at FEN after e4, explores Black responses (e5, c5, etc.)
+ *   - d4's tree: starts at FEN after d4, explores Black responses (d5, Nf6, etc.)
+ *   - Result: "If you play e4, EW=54%. If you play d4, EW=52%"
  */
 export async function calculateExpectedWinrate(
   fen: string,
@@ -126,17 +334,27 @@ export async function calculateExpectedWinrate(
   stockfish: EngineAdapter,
   maia: EngineAdapter
 ): Promise<EWResult> {
-  // Phase 1: Filter candidate moves
-  const candidates = await filterCandidateMoves(fen, config, stockfish)
+  // Phase 1: Filter candidate moves + get baselines
+  // SF evaluates all legal moves from root FEN
+  // Keep moves within winrateLossThreshold of best move
+  const { candidates, baselineSF, baselineMaia } =
+    await filterCandidateMoves(fen, config, stockfish, maia)
 
-  // Phase 2: Build probability trees
-  const trees = await buildProbabilityTrees(candidates, config, maia)
+  // Phase 2: Build probability tree for EACH candidate
+  // IMPORTANT: Each tree starts AFTER the candidate move is played
+  // E.g., for candidate "e4", we apply e4 to get newFEN, then build tree from there
+  const trees = await Promise.all(
+    candidates.map(async (move) => {
+      const fenAfterMove = applyMove(fen, move)  // Position AFTER candidate move
+      return buildProbabilityTree(fenAfterMove, config, maia)
+    })
+  )
 
-  // Phase 3: Evaluate leaf positions
-  const evaluatedTrees = await evaluateTreeLeaves(trees, stockfish)
+  // Phase 3: Batch evaluate leaf positions with Stockfish
+  const evaluatedTrees = await evaluateTreeLeaves(trees, stockfish, config)
 
-  // Phase 4: Calculate weighted averages
-  return computeExpectedWinrates(evaluatedTrees)
+  // Phase 4: Calculate Expected Winrates (both SF and Maia at leaves)
+  return computeExpectedWinrates(evaluatedTrees, candidates, baselineSF, baselineMaia)
 }
 ```
 
@@ -485,6 +703,525 @@ export function goBack(state: NavigationState): NavigationState {
     │   variations)                                              │
     └────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Data Flow Architecture
+
+This section documents **exactly how data moves through the system** for each user action. Understanding this is critical for implementing Phase 4+ correctly.
+
+### State Ownership
+
+| State | Owner | Type | Consumers |
+|-------|-------|------|-----------|
+| **Game tree** | `useChessGame` hook | `Game<PgnNodeData>` from chessops | MoveList, EWTree, navigation |
+| **Current path** | `useChessGame` hook | `number[]` (path indices) | Board position, move highlighting |
+| **Current FEN** | Computed in `useChessGame` | `string` (derived from path) | GameBoard, engine adapters |
+| **Stockfish results** | `useStockfish` hook | `StockfishEvaluation` | EnginePanel, EW calculation |
+| **Maia results** | `useMaia` hook | `MaiaResult` | EnginePanel, EW calculation |
+| **EW calculation** | `useExpectedWinrate` hook | `EWResult` | EWTree component |
+| **Engine instances** | `EngineContext` | Singleton adapters | All engine hooks |
+
+### Key Data Structures
+
+```typescript
+// The central data structure - a chessops Game with our annotations
+type GameTree = Game<PgnNodeData>;
+
+// Navigation uses path indices into the tree
+type NavigationPath = number[];  // e.g., [0, 0, 1] = mainline[0].children[0].children[1]
+
+// FEN is computed on-demand from game + path
+type ComputedFEN = string;  // e.g., "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
+
+// Engine results flow back as these types
+interface StockfishEvaluation {
+  fen: string;
+  depth: number;
+  cp: number;           // centipawns
+  winrate: number;      // 0.0-1.0
+  bestMove: string;
+  pv: string[];         // principal variation
+}
+
+interface MaiaResult {
+  fen: string;
+  policy: Record<string, number>;  // move → probability
+  value: number;                    // win probability
+}
+
+// EW results get attached as variations to the game tree
+interface EWCandidate {
+  move: string;
+  probability: number;      // from Maia
+  evaluation: number;       // from Stockfish
+  expectedWinrate: number;  // computed EW
+  exploredTree: TreeNode;   // the exploration tree
+}
+```
+
+---
+
+### Flow 1: User Pastes PGN
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ USER ACTION: Paste PGN into textarea, click "Load"                       │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PgnInput.tsx                                                             │
+│   • Captures textarea value (raw PGN string)                             │
+│   • Calls: onLoadPgn(pgnString)  ← prop from parent                      │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ pgnString: "1. e4 e5 2. Nf3 Nc6"
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ analysis.tsx (page)                                                      │
+│   • Receives PGN string via callback                                     │
+│   • Calls: gameActions.loadPgn(pgnString)                                │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ pgnString
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ useChessGame hook                                                        │
+│   • Calls core function: loadGame(pgnString)                             │
+│   • Updates state: setGame(parsedGame)                                   │
+│   • Resets navigation: setCurrentPath([])                                │
+│   • Computes initial FEN: getCurrentFen(game, [])                        │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ pgnString
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ core/chess/game.ts → loadGame()                                          │
+│   • Calls chessops: parsePgn(pgnString)                                  │
+│   • Returns: Game<PgnNodeData> (the tree structure)                      │
+│   • Throws: ParseError if invalid PGN                                    │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ Game<PgnNodeData>
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ React re-render cascade                                                  │
+│                                                                          │
+│   useChessGame returns: { game, currentPath, currentFen, actions }       │
+│                              │         │           │                     │
+│                              ▼         ▼           ▼                     │
+│   ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                  │
+│   │  MoveList    │  │  GameBoard   │  │ EnginePanel  │                  │
+│   │  renders     │  │  renders     │  │  triggers    │                  │
+│   │  game tree   │  │  position    │  │  evaluation  │                  │
+│   └──────────────┘  └──────────────┘  └──────────────┘                  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Interface Contract:**
+```typescript
+// PgnInput → Parent
+interface PgnInputProps {
+  onLoadPgn: (pgn: string) => void;
+  onError?: (error: Error) => void;
+}
+
+// useChessGame return type
+interface UseChessGameReturn {
+  game: Game<PgnNodeData> | null;
+  currentPath: number[];
+  currentFen: string;
+  currentNode: PgnNodeData | null;
+  actions: {
+    loadPgn: (pgn: string) => void;
+    goForward: () => void;
+    goBack: () => void;
+    goToPath: (path: number[]) => void;
+    goToStart: () => void;
+    goToEnd: () => void;
+  };
+}
+```
+
+---
+
+### Flow 2: User Clicks Move in MoveList
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ USER ACTION: Click on "Nf3" in move list                                 │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ MoveList.tsx                                                             │
+│   • Click handler receives the path to clicked node                      │
+│   • Calls: onNavigate(path)  ← prop from parent                          │
+│   Path example: [0, 0, 1] means mainline→child[0]→child[0]→child[1]     │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ path: [0, 0, 1]
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ analysis.tsx (page)                                                      │
+│   • Receives path via callback                                           │
+│   • Calls: gameActions.goToPath(path)                                    │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ path: [0, 0, 1]
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ useChessGame hook                                                        │
+│   • Updates state: setCurrentPath(path)                                  │
+│   • Recomputes FEN: getCurrentFen(game, newPath)                         │
+│   • NO call to core - this is just state update                          │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ path: [0, 0, 1]
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ core/chess/navigation.ts → getCurrentFen()                               │
+│   • Takes game tree + path                                               │
+│   • Replays moves from start position                                    │
+│   • Returns FEN string for that position                                 │
+│                                                                          │
+│   Also: getCurrentNode() returns the PgnNodeData at that path            │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ newFen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2"
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ React re-render cascade                                                  │
+│                                                                          │
+│   currentFen changed → GameBoard re-renders with new position            │
+│   currentPath changed → MoveList highlights new current move             │
+│   currentFen changed → EnginePanel triggers new evaluation               │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Interface Contract:**
+```typescript
+// MoveList → Parent
+interface MoveListProps {
+  game: Game<PgnNodeData>;
+  currentPath: number[];
+  onNavigate: (path: number[]) => void;
+}
+
+// GameBoard receives FEN
+interface GameBoardProps {
+  fen: string;
+  onMove?: (from: string, to: string) => void;  // for interactive moves
+}
+```
+
+---
+
+### Flow 3: Engine Evaluates Position (Triggered by FEN Change)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ TRIGGER: currentFen changes (from navigation or PGN load)                │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ useEffect dependency: [currentFen]
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ useStockfish hook                                                        │
+│   • Detects FEN change via useEffect                                     │
+│   • Calls: stockfishAdapter.evaluate(currentFen, depth)                  │
+│   • Sets loading state: setIsEvaluating(true)                            │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ fen, depth
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ core/engine/stockfish.ts → StockfishAdapter.evaluate()                   │
+│   • Sends UCI commands to WASM worker                                    │
+│   • Streams depth updates (optional)                                     │
+│   • Returns final evaluation                                             │
+│   • Converts centipawns → winrate                                        │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ StockfishEvaluation
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ useStockfish hook (continued)                                            │
+│   • Receives result via Promise or callback                              │
+│   • Updates state: setEvaluation(result)                                 │
+│   • Clears loading: setIsEvaluating(false)                               │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ { evaluation, isEvaluating }
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ EnginePanel.tsx                                                          │
+│   • Receives evaluation via props or context                             │
+│   • Displays: eval bar, centipawns, winrate %, best move                 │
+└─────────────────────────────────────────────────────────────────────────┘
+
+─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+PARALLEL: Same flow for Maia
+─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ useMaia hook                                                             │
+│   • Detects FEN change via useEffect                                     │
+│   • Calls: maiaAdapter.getPolicy(currentFen)                             │
+│   • Returns move probabilities                                           │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ MaiaResult
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ EnginePanel.tsx (Maia section)                                           │
+│   • Displays top moves with probabilities                                │
+│   • Shows Maia's win probability estimate                                │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Interface Contract:**
+```typescript
+// Engine adapters (in EngineContext)
+interface EngineContextValue {
+  stockfish: StockfishAdapter | null;
+  maia: MaiaAdapter | null;
+  isStockfishReady: boolean;
+  isMaiaReady: boolean;
+}
+
+// useStockfish return type
+interface UseStockfishReturn {
+  evaluation: StockfishEvaluation | null;
+  isEvaluating: boolean;
+  error: Error | null;
+}
+
+// useMaia return type
+interface UseMaiaReturn {
+  result: MaiaResult | null;
+  isCalculating: boolean;
+  error: Error | null;
+}
+```
+
+---
+
+### Flow 4: Calculate Expected Winrate
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ USER ACTION: Click "Calculate Expected Winrate" button                   │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ EnginePanel.tsx or EWTree.tsx                                            │
+│   • Click handler calls: calculateEW()                                   │
+│   • Passes current config (depth, thresholds, etc.)                      │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ config: EWConfig
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ useExpectedWinrate hook                                                  │
+│   • Sets loading: setIsCalculating(true)                                 │
+│   • Gets currentFen from useChessGame                                    │
+│   • Gets adapters from EngineContext                                     │
+│   • Calls core: calculateExpectedWinrate(fen, config, sf, maia)          │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ fen, config, stockfishAdapter, maiaAdapter
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ core/analysis/expectedWinrate.ts → calculateExpectedWinrate()            │
+│                                                                          │
+│   PHASE 1: Filter Candidates                                             │
+│   ├─ Call SF for all legal moves                                         │
+│   └─ Keep moves within winrateLossThreshold                              │
+│                              │                                           │
+│                              ▼                                           │
+│   PHASE 2: Build Probability Trees                                       │
+│   ├─ For each candidate, call Maia for opponent responses                │
+│   ├─ Recursively build tree up to maxDepth                               │
+│   └─ Prune branches below probabilityThreshold                           │
+│                              │                                           │
+│                              ▼                                           │
+│   PHASE 3: Evaluate Leaves                                               │
+│   ├─ Batch-evaluate all leaf positions with SF                           │
+│   └─ Also evaluate internal nodes with uncovered mass                    │
+│                              │                                           │
+│                              ▼                                           │
+│   PHASE 4: Compute Weighted Averages                                     │
+│   └─ EW = Σ(leaf_winrate × leaf_prob) + Σ(node_winrate × uncovered)     │
+│                                                                          │
+│   Returns: EWResult with candidates and their trees                      │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ EWResult
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ useExpectedWinrate hook (continued)                                      │
+│   • Receives EWResult                                                    │
+│   • Updates state: setResult(ewResult)                                   │
+│   • Clears loading: setIsCalculating(false)                              │
+│   •                                                                      │
+│   • OPTIONAL: Attach results to game tree as variations                  │
+│     Calls: gameActions.addEWVariations(currentPath, ewResult.candidates) │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ ewResult (also potentially updates game tree)
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ EWTree.tsx                                                               │
+│   • Receives EWResult via props                                          │
+│   • Renders expandable tree visualization                                │
+│   • Each node shows: move, probability, evaluation, expectedWinrate      │
+│   • Click node → navigate to that position                               │
+│   • Hover node → preview position on board                               │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Interface Contract:**
+```typescript
+// useExpectedWinrate hook
+interface UseExpectedWinrateReturn {
+  result: EWResult | null;
+  isCalculating: boolean;
+  error: Error | null;
+  calculate: (config?: Partial<EWConfig>) => Promise<void>;
+}
+
+// EWTree component props
+interface EWTreeProps {
+  result: EWResult | null;
+  onNavigate: (path: number[]) => void;
+  onHover: (fen: string | null) => void;  // for board preview
+}
+
+// How EW results attach to game tree
+// In useChessGame:
+interface UseChessGameReturn {
+  // ... existing ...
+  actions: {
+    // ... existing ...
+    addEWVariations: (atPath: number[], candidates: EWCandidate[]) => void;
+  };
+}
+```
+
+---
+
+### Flow 5: Export PGN (with EW Annotations)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ USER ACTION: Click "Export PGN" button                                   │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Analysis page or header                                                  │
+│   • Click handler calls: gameActions.exportPgn()                         │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ useChessGame hook                                                        │
+│   • Calls core: exportGame(game)                                         │
+│   • Returns PGN string                                                   │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ game: Game<PgnNodeData>
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ core/chess/game.ts → exportGame()                                        │
+│   • Calls chessops: makePgn(game)                                        │
+│   • Game tree already contains EW variations with annotations            │
+│   • Annotations in comments: {[%prob 0.35][%eval 0.52][%ew 0.54]}       │
+│   • Returns complete PGN string                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ pgnString with annotations
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ UI handles export                                                        │
+│   • Copy to clipboard, or                                                │
+│   • Download as .pgn file                                                │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Complete Wiring Diagram
+
+This shows how all components connect on the analysis page:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ analysis.tsx                                                                 │
+│                                                                              │
+│   ┌─ EngineContext.Provider ────────────────────────────────────────────┐   │
+│   │   stockfish: StockfishAdapter                                        │   │
+│   │   maia: MaiaAdapter                                                  │   │
+│   │                                                                      │   │
+│   │   ┌─ useChessGame() ──────────────────────────────────────────────┐ │   │
+│   │   │   game: Game<PgnNodeData>                                      │ │   │
+│   │   │   currentPath: number[]                                        │ │   │
+│   │   │   currentFen: string  ◄─── derived from game + path            │ │   │
+│   │   │   actions: { loadPgn, goToPath, addEWVariations, ... }         │ │   │
+│   │   └────────────────────────────────────────────────────────────────┘ │   │
+│   │        │              │              │                               │   │
+│   │        │              │              │                               │   │
+│   │   ┌────▼────┐   ┌────▼────┐   ┌────▼────────────────────────────┐   │   │
+│   │   │PgnInput │   │MoveList │   │        Main Content Area         │   │   │
+│   │   │         │   │         │   │                                  │   │   │
+│   │   │ onLoad ─┼───┼─► loads │   │  ┌──────────┐  ┌─────────────┐  │   │   │
+│   │   │   Pgn   │   │   game  │   │  │GameBoard │  │EnginePanel  │  │   │   │
+│   │   │         │   │         │   │  │          │  │             │  │   │   │
+│   │   │         │   │ onClick─┼───┼──┼─► nav    │  │ useStockfish│  │   │   │
+│   │   │         │   │         │   │  │   path   │  │ useMaia     │  │   │   │
+│   │   └─────────┘   └─────────┘   │  │          │  │             │  │   │   │
+│   │                               │  │  fen ◄───┼──┼── triggers  │  │   │   │
+│   │                               │  │          │  │   eval      │  │   │   │
+│   │                               │  └──────────┘  └─────────────┘  │   │   │
+│   │                               │                                  │   │   │
+│   │                               │  ┌───────────────────────────┐  │   │   │
+│   │                               │  │        EWTree             │  │   │   │
+│   │                               │  │                           │  │   │   │
+│   │                               │  │  useExpectedWinrate() ────┼──┼───┼───┤
+│   │                               │  │    ├─ uses currentFen     │  │   │   │
+│   │                               │  │    ├─ uses SF adapter     │  │   │   │
+│   │                               │  │    └─ uses Maia adapter   │  │   │   │
+│   │                               │  │                           │  │   │   │
+│   │                               │  │  onClick ─► goToPath()    │  │   │   │
+│   │                               │  │  onHover ─► preview FEN   │  │   │   │
+│   │                               │  └───────────────────────────┘  │   │   │
+│   │                               └──────────────────────────────────┘   │   │
+│   └──────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Data Flow Summary:
+─────────────────
+1. PGN string → loadGame() → Game<PgnNodeData> → stored in useChessGame
+2. User navigation → path update → FEN recomputed → triggers engine eval
+3. Engine results flow back to EnginePanel for display
+4. EW calculation uses FEN + both engines → result displayed in EWTree
+5. EW results optionally added as variations to game tree (for export)
+```
+
+---
+
+### State Synchronization Rules
+
+To prevent bugs, follow these rules:
+
+1. **Single Source of Truth**: The `game` object in `useChessGame` is the authoritative game state
+2. **FEN is Always Derived**: Never store FEN separately - always compute from game + path
+3. **Path Drives Everything**: Changing `currentPath` triggers FEN recomputation and engine re-evaluation
+4. **Engines Are Stateless**: Engine adapters don't cache - each call is independent
+5. **EW Results Are Ephemeral OR Persisted**: Either display EWResult directly, OR add as variations to game tree - not both
 
 ---
 

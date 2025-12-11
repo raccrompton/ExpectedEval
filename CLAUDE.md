@@ -35,16 +35,21 @@ It combines:
 │ Phase 1: FILTER CANDIDATE MOVES                                 │
 │   • Stockfish evaluates all legal moves                         │
 │   • Keep moves within winrate loss threshold (e.g., <5%)        │
-│   • Also get base position winrate for later                    │
+│   • Also get base position winrate for baseline display         │
+│   • Maia predicts move probabilities for baseline display       │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ Phase 2: BUILD PROBABILITY TREES                                │
-│   For each candidate move:                                      │
-│   • Maia predicts opponent's likely responses                   │
-│   • Recursively build tree up to maxDepth                       │
-│   • Prune branches below probabilityThreshold                   │
-│   • Track cumulativeProbability at each node                    │
+│   For EACH candidate move:                                      │
+│   • Apply the candidate move to get the resulting FEN           │
+│   • Build tree starting from that FEN (opponent's responses)    │
+│   • Maia predicts likely moves at each position                 │
+│   • Prune branches where cumProb < probabilityThreshold         │
+│   • NO maxDepth limit - termination is probability-based only   │
+│                                                                 │
+│   Example: candidate "e4" → tree starts after e4 is played      │
+│   showing Black's responses (e5: 45%, c5: 30%, etc.)            │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -78,8 +83,10 @@ Where:
 ### Example Tree
 
 ```
-Position: White to move after e4 e5
-Candidate move: Nf3 → position after Nf3 (SF: 51%)
+ROOT POSITION: White to move after 1. e4 e5
+
+Candidate move: Nf3 (one of several candidates within winrateLossThreshold)
+Tree below shows what happens AFTER Nf3 is played (Black to move):
 
 ├─ Nc6 (45%) → cumulative: 0.45, SF at this node: 52%
 │   ├─ Bb5 (40%) → cumulative: 0.18 → LEAF, SF: 54%
@@ -104,19 +111,23 @@ UNCOVERED MASS CONTRIBUTIONS (each at its own node's SF eval):
   = 0.0585 + 0.0588 + 0.051 = 0.1683
 
 TOTAL: 0.3616 + 0.1683 = 52.99% ≈ 53%
+
+RESULT: If White plays Nf3, their Expected Winrate is ~53%
+(Compare to other candidates: e4's EW, d4's EW, etc. to find best practical move)
 ```
 
 ---
 
 ## Configuration Parameters
 
-| Parameter              | Description                             | Typical Value |
-| ---------------------- | --------------------------------------- | ------------- |
-| `maxDepth`             | How many half-moves deep to explore     | 4-6           |
-| `probabilityThreshold` | Minimum move probability to explore     | 0.05 (5%)     |
-| `winrateLossThreshold` | Max SF winrate loss for candidate moves | 0.05 (5%)     |
-| `maiaLevel`            | ELO rating for Maia predictions         | 1100-1900     |
-| `stockfishDepth`       | SF search depth for evaluations         | 12-18         |
+| Parameter              | Description                                      | Typical Value |
+| ---------------------- | ------------------------------------------------ | ------------- |
+| `probabilityThreshold` | Min cumulative probability to explore a branch   | 0.01-0.05     |
+| `winrateLossThreshold` | Max SF winrate loss to include as candidate move | 0.05 (5%)     |
+| `eloLevel`             | Maia ELO rating for move predictions             | 1100-1900     |
+| `sfDepth`              | Stockfish search depth for evaluations           | 10-18         |
+
+**Note**: No `maxDepth` parameter - tree termination is purely probability-based. Branches are pruned when their cumulative probability falls below `probabilityThreshold`.
 
 ---
 
