@@ -1,0 +1,598 @@
+/**
+ * Stockfish WebAssembly Engine Implementation
+ *
+ * This file provides a real Stockfish chess engine that runs in the browser
+ * using WebAssembly. Stockfish is the strongest open-source chess engine,
+ * and this implementation wraps the lila-stockfish-web package (used by Lichess).
+ *
+ * How it works:
+ * 1. Load Stockfish WASM module into browser
+ * 2. Load NNUE (neural network) files for modern evaluation
+ * 3. Send UCI commands to analyze positions
+ * 4. Parse engine output to extract evaluations
+ *
+ * UCI (Universal Chess Interface) is a protocol for communicating with chess engines.
+ * Commands like "go depth 15" tell the engine to analyze to a certain depth.
+ *
+ * Requirements:
+ * - SharedArrayBuffer support (needs CORS headers)
+ * - WASM files in /public/stockfish/
+ * - NNUE files in /public/stockfish/
+ *
+ * @example
+ * const stockfish = new RealStockfish()
+ * await stockfish.init()
+ *
+ * const result = await stockfish.evaluate(
+ *   'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+ *   { depth: 15 }
+ * )
+ * console.log(result.cp)       // Centipawn evaluation
+ * console.log(result.bestMove) // Best move like "e7e5"
+ */
+
+import type StockfishWeb from 'lila-stockfish-web'
+import type { StockfishAdapter, StockfishConfig, StockfishEvaluation } from './types'
+import { cpToWinrate } from './types'
+import { Chess } from 'chessops/chess'
+import { parseFen } from 'chessops/fen'
+import { makeSquare, opposite } from 'chessops/util'
+import { SquareSet } from 'chessops/squareSet'
+import type { Role, Square } from 'chessops/types'
+
+/**
+ * Creates shared WebAssembly memory for Stockfish.
+ *
+ * Stockfish uses multi-threading for parallel search, which requires
+ * SharedArrayBuffer. This function tries to allocate the requested
+ * amount of memory, falling back to smaller amounts if necessary.
+ *
+ * Memory is specified in 64KB "pages":
+ * - 2560 pages = 160MB (good for strong analysis)
+ * - Lower values use less memory but may be slower
+ *
+ * @param lo - Minimum pages to allocate
+ * @param hi - Maximum pages to try (default: 32767 = ~2GB)
+ * @returns WebAssembly.Memory instance with shared buffer
+ */
+function sharedWasmMemory(lo: number, hi = 32767): WebAssembly.Memory {
+  let shrink = 4 // Shrink factor for retry attempts
+
+  // Keep trying with smaller maximum until we succeed
+  while (true) {
+    try {
+      // Try to create shared memory with current maximum
+      return new WebAssembly.Memory({
+        shared: true,   // Required for multi-threading
+        initial: lo,    // Minimum pages to allocate
+        maximum: hi,    // Maximum pages allowed
+      })
+    } catch (e) {
+      // If we can't allocate, try with smaller maximum
+      if (hi <= lo || !(e instanceof RangeError)) throw e
+
+      // Reduce maximum and try again
+      hi = Math.max(lo, Math.ceil(hi - hi / shrink))
+      // Alternate between shrinking by 1/4 and 1/3
+      shrink = shrink === 4 ? 3 : 4
+    }
+  }
+}
+
+/**
+ * Loads and initializes the Stockfish WASM module.
+ *
+ * This involves:
+ * 1. Dynamically importing the JS wrapper
+ * 2. Creating shared memory for threading
+ * 3. Loading the WASM binary
+ * 4. Downloading and loading NNUE neural network files
+ *
+ * The NNUE files are essential for modern Stockfish evaluation accuracy.
+ * Without them, evaluation quality drops significantly.
+ *
+ * @returns Promise resolving to initialized Stockfish instance
+ */
+async function setupStockfish(): Promise<StockfishWeb> {
+  return new Promise<StockfishWeb>((resolve, reject) => {
+    // Dynamically import the Stockfish module
+    // Using dynamic import because it's a heavy WASM file
+    import('lila-stockfish-web/sf171-79.js').then((makeModule) => {
+      // Initialize the WASM module with configuration
+      makeModule
+        .default({
+          // Allocate shared memory for multi-threading
+          // 2560 pages ≈ 160MB, good balance of memory vs performance
+          wasmMemory: sharedWasmMemory(2560),
+
+          // Handle initialization errors
+          onError: (msg: string) => reject(new Error(msg)),
+
+          // Tell the module where to find its files
+          // Looks in /public/stockfish/ for .wasm and .nnue files
+          locateFile: (name: string) => `/stockfish/${name}`,
+        })
+        .then(async (instance: StockfishWeb) => {
+          // Load NNUE (neural network) evaluation files
+          // Stockfish 17 uses two NNUE files for different position types
+
+          // Fetch both NNUE files in parallel for faster loading
+          Promise.all([
+            fetch(`/stockfish/${instance.getRecommendedNnue(0)}`),
+            fetch(`/stockfish/${instance.getRecommendedNnue(1)}`),
+          ])
+            .then((responses) => {
+              // Convert responses to ArrayBuffers
+              return Promise.all([
+                responses[0].arrayBuffer(),
+                responses[1].arrayBuffer(),
+              ])
+            })
+            .then((buffers) => {
+              // Load NNUE data into the engine
+              instance.setNnueBuffer(new Uint8Array(buffers[0]), 0)
+              instance.setNnueBuffer(new Uint8Array(buffers[1]), 1)
+
+              // Now Stockfish is fully ready
+              resolve(instance)
+            })
+            .catch((error) => {
+              console.error('Failed to load NNUE models:', error)
+              reject(error)
+            })
+        })
+    })
+  })
+}
+
+/**
+ * Real Stockfish engine implementation using WebAssembly.
+ *
+ * This class implements the StockfishAdapter interface, providing:
+ * - Initialization with WASM and NNUE loading
+ * - Position evaluation with configurable depth
+ * - Per-move evaluations using MultiPV mode
+ * - Proper perspective handling (White vs Black)
+ *
+ * @example
+ * const sf = new RealStockfish()
+ * await sf.init()  // Downloads and loads ~75MB of files
+ *
+ * const eval = await sf.evaluate(fen, { depth: 18 })
+ * console.log(`Best move: ${eval.bestMove}`)
+ * console.log(`Evaluation: ${eval.cp} centipawns`)
+ *
+ * sf.destroy()  // Clean up when done
+ */
+export class RealStockfish implements StockfishAdapter {
+  // The actual Stockfish WASM instance
+  private stockfish: StockfishWeb | null = null
+
+  // Track engine state
+  private ready = false
+  private nnueLoaded = false
+  private isEvaluating = false
+
+  // For managing evaluation results
+  private currentFen = ''
+  private legalMoveCount = 0
+  private legalMoves: string[] = []
+  private targetDepth = 18  // Target search depth
+
+  // Promise resolution for evaluation results
+  private evaluationResolver: ((value: StockfishEvaluation) => void) | null = null
+  private evaluationRejecter: ((reason?: unknown) => void) | null = null
+
+  // Store evaluations as they come in (keyed by depth)
+  private store: Record<number, EvaluationData> = {}
+
+  /**
+   * Checks if the engine is ready to receive commands.
+   *
+   * @returns true if initialized and ready
+   */
+  isReady(): boolean {
+    return this.ready && this.stockfish !== null && this.nnueLoaded
+  }
+
+  /**
+   * Initializes the Stockfish engine.
+   *
+   * This downloads and loads:
+   * - WASM binary (~470KB)
+   * - NNUE file 1 (~71MB)
+   * - NNUE file 2 (~3.5MB)
+   *
+   * Total: ~75MB on first load (subsequent loads use browser cache)
+   *
+   * @throws Error if initialization fails
+   */
+  async init(): Promise<void> {
+    try {
+      // Load the Stockfish WASM module with NNUE
+      this.stockfish = await setupStockfish()
+
+      // Configure the engine using UCI commands
+      this.stockfish.uci('uci')       // Initialize UCI mode
+      this.stockfish.uci('isready')   // Wait for engine ready
+
+      // Set MultiPV to analyze many moves at once (not just the best)
+      // 100 is high enough to get all legal moves in most positions
+      this.stockfish.uci('setoption name MultiPV value 100')
+
+      // Set up message handlers
+      this.stockfish.onError = this.onError.bind(this)
+      this.stockfish.listen = this.onMessage.bind(this)
+
+      this.ready = true
+      this.nnueLoaded = true
+
+      console.log('Stockfish initialized successfully')
+    } catch (error) {
+      console.error('Failed to initialize Stockfish:', error)
+      this.ready = false
+      throw error
+    }
+  }
+
+  /**
+   * Evaluates a chess position.
+   *
+   * Sends the position to Stockfish and waits for analysis to complete.
+   * Returns the best move and evaluation, plus evaluations for all legal moves.
+   *
+   * @param fen - Position in FEN notation
+   * @param config - Analysis configuration (depth, etc.)
+   * @returns Evaluation results including best move and centipawn score
+   *
+   * @example
+   * const result = await stockfish.evaluate(
+   *   'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+   *   { depth: 18 }
+   * )
+   * console.log(result.bestMove)  // "e7e5"
+   * console.log(result.cp)        // Centipawns from side to move's perspective
+   */
+  async evaluate(
+    fen: string,
+    config?: Partial<StockfishConfig>,
+  ): Promise<StockfishEvaluation> {
+    // Check if engine is ready
+    if (!this.stockfish || !this.ready) {
+      throw new Error('Stockfish not initialized. Call init() first.')
+    }
+
+    // Stop any previous evaluation
+    this.stop()
+
+    // Reset state for new evaluation
+    this.store = {}
+    this.currentFen = fen
+
+    // Calculate legal moves using chessops
+    const setup = parseFen(fen)
+    if (setup.isErr) {
+      throw new Error(`Invalid FEN: ${fen}`)
+    }
+
+    const chess = Chess.fromSetup(setup.value)
+    if (chess.isErr) {
+      throw new Error(`Invalid position: ${chess.error}`)
+    }
+
+    // Get all legal moves in UCI format
+    const pos = chess.value
+    this.legalMoves = []
+
+    // Iterate over all legal moves using allDests()
+    // allDests() returns Map<Square, SquareSet> where:
+    // - Square is the source square (0-63)
+    // - SquareSet contains all legal destination squares
+    const ctx = pos.ctx()
+    for (const [from, dests] of pos.allDests(ctx)) {
+      // Get the piece on this square to check for promotions
+      const piece = pos.board.get(from)
+      const isPawn = piece?.role === 'pawn'
+
+      // Check if this is a promotion rank (7th rank for White, 2nd for Black)
+      const promotionRanks = pos.turn === 'white'
+        ? SquareSet.fromRank(6)  // 7th rank (index 6)
+        : SquareSet.fromRank(1)  // 2nd rank (index 1)
+      const isPromotionSource = isPawn && promotionRanks.has(from)
+
+      // Iterate over all destination squares
+      for (const to of dests) {
+        // Build UCI string
+        const fromStr = makeSquare(from)
+        const toStr = makeSquare(to)
+
+        // Check if this move would be a promotion
+        const backrank = pos.turn === 'white'
+          ? SquareSet.fromRank(7)  // 8th rank
+          : SquareSet.fromRank(0)  // 1st rank
+        const isPromotion = isPawn && backrank.has(to)
+
+        if (isPromotion) {
+          // Add all promotion variants (queen, rook, bishop, knight)
+          this.legalMoves.push(`${fromStr}${toStr}q`)
+          this.legalMoves.push(`${fromStr}${toStr}r`)
+          this.legalMoves.push(`${fromStr}${toStr}b`)
+          this.legalMoves.push(`${fromStr}${toStr}n`)
+        } else {
+          this.legalMoves.push(`${fromStr}${toStr}`)
+        }
+      }
+    }
+
+    this.legalMoveCount = this.legalMoves.length
+
+    // Handle checkmate or stalemate
+    if (this.legalMoveCount === 0) {
+      const inCheck = pos.isCheck()
+      return {
+        depth: 0,
+        bestMove: '',
+        cp: inCheck ? -10000 : 0,  // Checkmate = -10000, Stalemate = 0
+        winrate: inCheck ? 0 : 0.5,
+        isMate: inCheck,
+        mateIn: inCheck ? 0 : undefined,
+        moveEvaluations: {},
+        moveWinrates: {},
+      }
+    }
+
+    // Set evaluation depth (default: 18)
+    this.targetDepth = config?.depth ?? 18
+
+    // Start evaluation
+    this.isEvaluating = true
+    this.stockfish.uci('ucinewgame')
+    this.stockfish.uci(`position fen ${fen}`)
+    this.stockfish.uci(`go depth ${this.targetDepth}`)
+
+    // Return a promise that resolves when evaluation completes
+    return new Promise<StockfishEvaluation>((resolve, reject) => {
+      this.evaluationResolver = resolve
+      this.evaluationRejecter = reject
+
+      // Set a timeout to prevent hanging
+      const timeout = config?.timeLimit ?? 30000  // Default 30 seconds
+      setTimeout(() => {
+        if (this.isEvaluating) {
+          this.stop()
+          // Return whatever we have so far
+          const bestDepth = Math.max(...Object.keys(this.store).map(Number))
+          if (bestDepth > 0 && this.store[bestDepth]) {
+            this.resolveEvaluation(bestDepth)
+          } else {
+            reject(new Error('Evaluation timeout'))
+          }
+        }
+      }, timeout)
+    })
+  }
+
+  /**
+   * Stops any ongoing analysis.
+   *
+   * Sends the "stop" command to Stockfish and resets evaluation state.
+   */
+  stop(): void {
+    if (this.stockfish && this.isEvaluating) {
+      this.isEvaluating = false
+      this.stockfish.uci('stop')
+    }
+  }
+
+  /**
+   * Cleans up resources.
+   *
+   * Call when done using the engine to free memory.
+   */
+  destroy(): void {
+    this.stop()
+    // Note: lila-stockfish-web doesn't have an explicit destroy method
+    // The WASM memory will be garbage collected when all references are gone
+    this.stockfish = null
+    this.ready = false
+    this.nnueLoaded = false
+  }
+
+  /**
+   * Handles UCI messages from Stockfish.
+   *
+   * Stockfish outputs analysis in UCI format like:
+   * "info depth 15 multipv 1 score cp 35 pv e2e4 e7e5 g1f3"
+   *
+   * We parse this to extract:
+   * - depth: How deep the search went
+   * - multipv: Which line this is (1 = best, 2 = second best, etc.)
+   * - score cp: Centipawn evaluation (or "mate N" for mate in N)
+   * - pv: Principal variation (best line of play)
+   *
+   * @param msg - UCI message from engine
+   */
+  private onMessage(msg: string): void {
+    // Only process messages while evaluating
+    if (!this.isEvaluating) return
+
+    // Parse UCI info lines with regex
+    // Format: info depth N seldepth N multipv N score cp N|mate N pv MOVES
+    const matches = [
+      ...msg.matchAll(
+        /info depth (\d+) seldepth (\d+) multipv (\d+) score (?:cp (-?\d+)|mate (-?\d+)).+ pv ((?:\S+\s*)+)/g,
+      ),
+    ][0]
+
+    if (!matches || !matches.length) return
+
+    // Extract values from regex groups
+    const depth = parseInt(matches[1], 10)
+    const multipv = parseInt(matches[3], 10)
+    let cp = parseInt(matches[4], 10)
+    const mate = parseInt(matches[5], 10)
+    const pv = matches[6]
+    const move = pv.split(' ')[0]  // First move of the principal variation
+
+    // Skip if not a legal move (shouldn't happen, but be safe)
+    if (!this.legalMoves.includes(move)) return
+
+    // Handle mate scores
+    // Convert mate-in-N to a large centipawn value
+    let mateIn: number | undefined = undefined
+    if (!isNaN(mate) && isNaN(cp)) {
+      mateIn = mate
+      // Use 10000 as "infinity" for mate scores
+      cp = mate > 0 ? 10000 : -10000
+    }
+
+    // Adjust perspective: Stockfish always reports from White's view
+    // If it's Black to move, flip the sign so positive = good for Black
+    const isBlackTurn = this.currentFen.split(' ')[1] === 'b'
+    if (isBlackTurn) {
+      cp *= -1
+    }
+
+    // Store or update evaluation data for this depth
+    if (this.store[depth]) {
+      // Add this move to existing depth data
+      this.store[depth].cp_vec[move] = cp
+
+      if (mateIn !== undefined) {
+        if (!this.store[depth].mate_vec) {
+          this.store[depth].mate_vec = {}
+        }
+        this.store[depth].mate_vec[move] = mateIn
+      }
+
+      // Calculate winrate for this move
+      // Use cp from White's perspective for the formula
+      const winrate = cpToWinrate(cp * (isBlackTurn ? -1 : 1))
+      if (!this.store[depth].winrate_vec) {
+        this.store[depth].winrate_vec = {}
+      }
+      this.store[depth].winrate_vec[move] = winrate
+    } else {
+      // First move at this depth - create new entry
+      const winrate = cpToWinrate(cp * (isBlackTurn ? -1 : 1))
+
+      this.store[depth] = {
+        depth,
+        model_move: move,
+        model_optimal_cp: cp,
+        cp_vec: { [move]: cp },
+        winrate_vec: { [move]: winrate },
+        mate_vec: mateIn !== undefined ? { [move]: mateIn } : undefined,
+        sent: false,
+      }
+    }
+
+    // Check if we have evaluations for all legal moves at target depth
+    // MultiPV reports move N when it has evaluated N moves
+    // Only resolve when we've reached the requested depth (not earlier depths)
+    if (
+      depth >= this.targetDepth &&
+      multipv === this.legalMoveCount &&
+      !this.store[depth].sent
+    ) {
+      this.store[depth].sent = true
+      this.resolveEvaluation(depth)
+    }
+  }
+
+  /**
+   * Resolves the evaluation promise with results from a given depth.
+   *
+   * @param depth - The depth to use for results
+   */
+  private resolveEvaluation(depth: number): void {
+    if (!this.evaluationResolver || !this.store[depth]) return
+
+    const data = this.store[depth]
+
+    // Find the best move (highest winrate for side to move)
+    let bestMove = data.model_move
+    let bestWinrate = -Infinity
+
+    const winrateVec = data.winrate_vec || {}
+    for (const move in winrateVec) {
+      if (winrateVec[move] > bestWinrate) {
+        bestWinrate = winrateVec[move]
+        bestMove = move
+      }
+    }
+
+    // Check for checkmate
+    const isMate = data.mate_vec !== undefined && Object.keys(data.mate_vec).length > 0
+    let mateIn: number | undefined = undefined
+    if (isMate && data.mate_vec) {
+      // Get mate distance for best move
+      mateIn = data.mate_vec[bestMove]
+    }
+
+    // Get centipawn for best move
+    const cp = data.cp_vec[bestMove] ?? data.model_optimal_cp
+
+    // Build the evaluation result
+    const result: StockfishEvaluation = {
+      depth,
+      bestMove,
+      cp,
+      winrate: bestWinrate,
+      isMate,
+      mateIn,
+      moveEvaluations: { ...data.cp_vec },
+      moveWinrates: { ...winrateVec },
+    }
+
+    // Stop evaluation and resolve promise
+    this.isEvaluating = false
+    this.evaluationResolver(result)
+    this.evaluationResolver = null
+    this.evaluationRejecter = null
+  }
+
+  /**
+   * Handles error messages from Stockfish.
+   *
+   * @param msg - Error message
+   */
+  private onError(msg: string): void {
+    console.error('Stockfish error:', msg)
+
+    if (this.evaluationRejecter) {
+      this.evaluationRejecter(new Error(msg))
+      this.evaluationResolver = null
+      this.evaluationRejecter = null
+    }
+
+    this.isEvaluating = false
+  }
+}
+
+/**
+ * Internal type for storing evaluation data during analysis.
+ * Not exported - only used within this module.
+ */
+interface EvaluationData {
+  depth: number
+  model_move: string
+  model_optimal_cp: number
+  cp_vec: Record<string, number>
+  winrate_vec?: Record<string, number>
+  mate_vec?: Record<string, number>
+  sent: boolean
+}
+
+/**
+ * Factory function to create a Stockfish instance.
+ *
+ * @returns A new RealStockfish instance (not yet initialized)
+ *
+ * @example
+ * const stockfish = createStockfish()
+ * await stockfish.init()  // Must call init before use
+ */
+export function createStockfish(): StockfishAdapter {
+  return new RealStockfish()
+}

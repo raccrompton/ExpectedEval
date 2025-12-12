@@ -23,5 +23,19 @@ build/
 *.log
 npm-debug.log*
 
+# Test outputs
+coverage/
+playwright-report/
+test-results/
+ew-comparison-*.json
+ew-comparison-*.txt
+test-positions*.txt
+
+# Build cache
+tsconfig.tsbuildinfo
+
+# Playwright MCP state
+.playwright-mcp/
+
 # Reference code (not tracked - local only)
 maia-platform-frontend/
