@@ -1,0 +1,51 @@
+{
+  "name": "expectedeval",
+  "version": "0.1.0",
+  "description": "Expected Evaluation Analysis - Chess position analysis combining Stockfish and Maia2",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:all": "vitest run && playwright test",
+    "test:engines": "npx tsx scripts/test-engines.ts",
+    "test:engines:maia": "npx tsx scripts/test-engines.ts --maia",
+    "test:engines:stockfish": "npx tsx scripts/test-engines.ts --stockfish",
+    "test:engines:verbose": "npx tsx scripts/test-engines.ts --verbose",
+    "test:ew": "npx tsx scripts/test-ew.ts",
+    "test:ew:verbose": "npx tsx scripts/test-ew.ts --verbose"
+  },
+  "dependencies": {
+    "chessground": "^9.1.1",
+    "chessops": "^0.14.0",
+    "lila-stockfish-web": "^0.0.11",
+    "next": "^15.0.0",
+    "onnxruntime-web": "^1.17.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@testing-library/dom": "^10.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^15.0.0",
+    "jsdom": "^25.0.0",
+    "onnxruntime-node": "^1.23.2",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

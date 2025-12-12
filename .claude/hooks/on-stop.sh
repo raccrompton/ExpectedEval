@@ -25,17 +25,18 @@
 # You can override detection by setting PROJECT_TYPE environment variable.
 # =============================================================================
 
-# -----------------------------------------------------------------------------
-# INFINITE LOOP PREVENTION
-# -----------------------------------------------------------------------------
-# Read JSON input from stdin to check if stop hook is already active
-# If active, exit silently to prevent infinite recursion
 
-INPUT=$(cat)
-STOP_HOOK_ACTIVE=$(echo "$INPUT" | grep -o '"stop_hook_active":\s*true' || echo "")
+# -----------------------------------------------------------------------------
+# SKIP IF NO CODE CHANGES
+# -----------------------------------------------------------------------------
+# Only run full checks if there are uncommitted changes to code files
+# This prevents running expensive checks when Claude only did research/reading
 
-if [ -n "$STOP_HOOK_ACTIVE" ]; then
-    # Hook already active from previous stop - exit silently
+# Check for modified/staged files (excluding common non-code files)
+CODE_CHANGES=$(git status --porcelain 2>/dev/null | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|py|rs|go|cs|java|rb|php|swift|kt|c|cpp|h|hpp)$' || echo "")
+
+if [ -z "$CODE_CHANGES" ]; then
+    # No code changes detected - skip checks silently
     exit 0
 fi
 
@@ -193,10 +194,15 @@ configure_commands() {
                 CMD_FORMAT="npx prettier --check ."
             fi
 
-            if has_npm_script "test"; then
-                CMD_TESTS="npm test"
+            # Prefer non-watch mode test scripts (vitest defaults to watch mode)
+            if has_npm_script "test:run"; then
+                CMD_TESTS="npm run test:run"
+            elif has_npm_script "test:ci"; then
+                CMD_TESTS="npm run test:ci"
             elif has_command "vitest"; then
                 CMD_TESTS="npx vitest run"
+            elif has_npm_script "test"; then
+                CMD_TESTS="npm test"
             elif has_command "jest"; then
                 CMD_TESTS="npx jest"
             fi

@@ -23,9 +23,18 @@ This creates an "expected winrate" analysis that shows what evaluation a positio
 
 Traditional chess engines evaluate the "best possible" result assuming perfect play. But humans don't play perfectly. **Expected Winrate** answers: "What's my realistic winning chance if both players make human-like moves?"
 
+The analysis provides **four evaluation methods** for any position:
+
+| # | Method | What It Shows | Source |
+|---|--------|---------------|--------|
+| 1 | **SF Baseline** | Traditional engine evaluation | Stockfish evaluates position directly |
+| 2 | **Maia Baseline** | Human win probability | Maia's neural network value head |
+| 3 | **EW (SF leaves)** | Expected outcome with accurate evals | Tree search: Maia probs → SF values |
+| 4 | **EW (Maia leaves)** | Expected outcome with human perception | Tree search: Maia probs → Maia values |
+
 It combines:
 
-- **Maia**: Predicts move probabilities (e.g., "humans play e4 35% of the time, d4 28%...")
+- **Maia**: Predicts move probabilities (policy head) AND position evaluation (value head)
 - **Stockfish**: Evaluates each resulting position
 
 ### The Four Phases
@@ -53,32 +62,43 @@ It combines:
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ Phase 3: EVALUATE POSITIONS WITH STOCKFISH                      │
-│   • Evaluate all LEAF nodes (end of explored branches)          │
-│   • Evaluate all INTERNAL nodes with unexplored children        │
-│   • Batch evaluate for efficiency                               │
+│ Phase 3: EVALUATE POSITIONS WITH BOTH ENGINES                   │
+│   • Stockfish evaluates all nodes (objective evaluation)        │
+│   • Maia evaluates all nodes (human-perceived evaluation)       │
+│   • Both leaf nodes and internal nodes are evaluated            │
+│   • This enables computing TWO different EW values              │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ Phase 4: CALCULATE EXPECTED WINRATE                             │
-│   For each candidate move's tree:                               │
-│   • Sum leaf contributions: Σ(leaf_winrate × leaf_prob)         │
-│   • Sum uncovered mass: Σ(node_winrate × node_uncovered_prob)   │
-│   • Result = realistic winning chance for that move             │
+│ Phase 4: CALCULATE TWO EXPECTED WINRATES                        │
+│   For each candidate move's tree, compute BOTH:                 │
+│                                                                 │
+│   EW(SF) = Σ(SF_winrate × prob) + Σ(SF_winrate × uncovered)    │
+│   EW(Maia) = Σ(Maia_winrate × prob) + Σ(Maia_winrate × uncov)  │
+│                                                                 │
+│   • EW(SF): "Objectively accurate" expected outcome             │
+│   • EW(Maia): "Human-perceived" expected outcome                │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### The Formula
+### The Formulas
+
+Two Expected Winrate values are computed using the same formula but different evaluations:
 
 ```
-Expected Winrate = Σ(leaf_winrate × leaf_prob) + Σ(node_winrate × node_uncovered_mass)
+EW(SF) = Σ(SF_winrate × leaf_prob) + Σ(SF_winrate × uncovered_mass)
+EW(Maia) = Σ(Maia_winrate × leaf_prob) + Σ(Maia_winrate × uncovered_mass)
 
 Where:
-- leaf_winrate = Stockfish evaluation at leaf position (0.0 to 1.0)
+- SF_winrate = Stockfish evaluation at position (0.0 to 1.0) - "objective"
+- Maia_winrate = Maia value head evaluation (0.0 to 1.0) - "human perception"
 - leaf_prob = cumulative probability of reaching that leaf
-- node_winrate = Stockfish evaluation at internal node where pruning occurred
-- node_uncovered_mass = (1 - Σexplored_child_probs) × node's cumulative probability
+- uncovered_mass = (1 - Σexplored_child_probs) × node's cumulative probability
 ```
+
+**When to use which:**
+- **EW(SF)**: For objectively accurate expected outcomes
+- **EW(Maia)**: For how humans perceive the position
 
 ### Example Tree
 
@@ -88,32 +108,38 @@ ROOT POSITION: White to move after 1. e4 e5
 Candidate move: Nf3 (one of several candidates within winrateLossThreshold)
 Tree below shows what happens AFTER Nf3 is played (Black to move):
 
-├─ Nc6 (45%) → cumulative: 0.45, SF at this node: 52%
-│   ├─ Bb5 (40%) → cumulative: 0.18 → LEAF, SF: 54%
-│   ├─ Bc4 (35%) → cumulative: 0.1575 → LEAF, SF: 53%
-│   └─ [unexplored: 25%] → UNCOVERED: 0.45 × 0.25 = 0.1125 @ SF 52%
-│
-├─ Nf6 (30%) → cumulative: 0.30, SF at this node: 49%
-│   ├─ Nxe5 (60%) → cumulative: 0.18 → LEAF, SF: 58%
-│   └─ [unexplored: 40%] → UNCOVERED: 0.30 × 0.40 = 0.12 @ SF 49%
-│
-├─ d6 (15%) → cumulative: 0.15 → LEAF (no children), SF: 51%
-│
-└─ [unexplored: 10%] → UNCOVERED: 1.0 × 0.10 = 0.10 @ SF 51% (Nf3 position)
+Each node has BOTH SF and Maia evaluations:
 
-Calculation:
+├─ Nc6 (45%) → cumulative: 0.45, SF: 52%, Maia: 51%
+│   ├─ Bb5 (40%) → cumulative: 0.18 → LEAF, SF: 54%, Maia: 52%
+│   ├─ Bc4 (35%) → cumulative: 0.1575 → LEAF, SF: 53%, Maia: 51%
+│   └─ [unexplored: 25%] → UNCOVERED: 0.45 × 0.25 = 0.1125
+│
+├─ Nf6 (30%) → cumulative: 0.30, SF: 49%, Maia: 48%
+│   ├─ Nxe5 (60%) → cumulative: 0.18 → LEAF, SF: 58%, Maia: 55%
+│   └─ [unexplored: 40%] → UNCOVERED: 0.30 × 0.40 = 0.12
+│
+├─ d6 (15%) → cumulative: 0.15 → LEAF, SF: 51%, Maia: 50%
+│
+└─ [unexplored: 10%] → UNCOVERED: 1.0 × 0.10 = 0.10 (at root: SF 51%, Maia 50%)
+
+Calculation for EW(SF):
 LEAF CONTRIBUTIONS:
   (0.54 × 0.18) + (0.53 × 0.1575) + (0.58 × 0.18) + (0.51 × 0.15)
   = 0.0972 + 0.0835 + 0.1044 + 0.0765 = 0.3616
 
-UNCOVERED MASS CONTRIBUTIONS (each at its own node's SF eval):
+UNCOVERED MASS CONTRIBUTIONS:
   (0.52 × 0.1125) + (0.49 × 0.12) + (0.51 × 0.10)
   = 0.0585 + 0.0588 + 0.051 = 0.1683
 
-TOTAL: 0.3616 + 0.1683 = 52.99% ≈ 53%
+TOTAL EW(SF): 0.3616 + 0.1683 = 52.99% ≈ 53%
 
-RESULT: If White plays Nf3, their Expected Winrate is ~53%
-(Compare to other candidates: e4's EW, d4's EW, etc. to find best practical move)
+Calculation for EW(Maia): (same structure, different values)
+TOTAL EW(Maia): ~51% (uses Maia evaluations instead of SF)
+
+RESULT: If White plays Nf3:
+  - EW(SF) = 53% (objectively accurate expected outcome)
+  - EW(Maia) = 51% (how humans perceive this line)
 ```
 
 ---
@@ -357,16 +383,20 @@ Both engines run **entirely client-side** in the browser. No backend required.
 ### Maia2 Engine (ONNX Runtime Web)
 
 - Uses `onnxruntime-web` to run neural network in browser
-- Model (~50MB ONNX) downloaded once, cached in IndexedDB
+- Model (~89MB ONNX) downloaded once, cached in IndexedDB
 - Input: FEN + ELO ratings
-- Output: Move probabilities + win probability
+- Output: Two outputs from separate neural network heads:
+  - **Policy head**: Move probabilities (used for tree building)
+  - **Value head**: Position evaluation (used for EW(Maia) and Maia baseline)
 
 ```typescript
 interface MaiaResult {
-  policy: Record<string, number>; // Move → probability
-  value: number; // Win probability (0-1)
+  policy: Record<string, number>; // Move → probability (for tree building)
+  value: number; // Win probability (0-1) - used for EW(Maia)
 }
 ```
+
+**Key insight**: Maia's value head provides an alternative position evaluation to Stockfish. This enables computing EW(Maia) which represents "human-perceived" expected outcomes.
 
 ### Stockfish Engine (WebAssembly)
 
@@ -399,10 +429,13 @@ The MVP is complete when:
 
 - [ ] User can paste a PGN and see it on the board
 - [ ] User can click moves to navigate the game
-- [ ] Stockfish evaluation displays for current position
+- [ ] **All 4 evaluations display** for current position:
+  - [ ] SF Baseline (Stockfish direct evaluation)
+  - [ ] Maia Baseline (Maia value head)
+  - [ ] EW(SF) - Expected Winrate using SF at leaves
+  - [ ] EW(Maia) - Expected Winrate using Maia at leaves
 - [ ] Maia move probabilities display for current position
-- [ ] Basic expected winrate calculation works
-- [ ] Expected winrate tree is visualized
+- [ ] Expected winrate tree is visualized (showing both EW variants)
 - [ ] All unit tests pass (>80% coverage on core/)
 - [ ] All E2E tests pass
 - [ ] App is deployable and performant
