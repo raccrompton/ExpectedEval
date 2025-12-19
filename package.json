@@ -33,9 +33,12 @@
   "devDependencies": {
     "@playwright/test": "^1.48.0",
     "@testing-library/dom": "^10.0.0",
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
+    "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^2.0.0",
     "eslint": "^8.0.0",
     "eslint-config-next": "^15.0.0",
