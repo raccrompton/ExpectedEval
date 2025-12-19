@@ -11,7 +11,8 @@
  */
 
 // Import testing-library cleanup and matchers
-import '@testing-library/dom'
+// This extends Vitest's expect with DOM-specific matchers like toBeInTheDocument
+import '@testing-library/jest-dom/vitest'
 
 /**
  * Mock for ResizeObserver

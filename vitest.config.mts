@@ -7,9 +7,17 @@
  * Configuration docs: https://vitest.dev/config/
  */
 import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig({
+  /**
+   * Plugins - Vite plugins to use.
+   * The React plugin enables JSX transformation with the automatic runtime,
+   * so we don't need to import React in every file that uses JSX.
+   */
+  plugins: [react()],
+
   test: {
     /**
      * Test environment - 'jsdom' simulates a browser environment.
