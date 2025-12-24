@@ -217,6 +217,23 @@ export interface MainlineMove {
 }
 
 /**
+ * A node in the move tree that includes variation information.
+ * Used for inline variation display in the MoveList component.
+ */
+export interface MoveTreeNode {
+  /** The SAN notation of this move */
+  san: string
+  /** Path to this move in the game tree */
+  path: number[]
+  /** Ply number (half-move) */
+  ply: number
+  /** Whether this move is in the mainline */
+  isMainline: boolean
+  /** Variations (alternative moves) at this branching point */
+  variations: MoveTreeNode[][]
+}
+
+/**
  * Return type for useChessGame hook
  */
 export interface UseChessGameReturn {
@@ -243,6 +260,12 @@ export interface UseChessGameReturn {
 
   /** All mainline moves with path info for rendering */
   mainlineMoves: MainlineMove[]
+
+  /** Moves along current path for display (follows variations the user is viewing) */
+  displayedMoves: MainlineMove[]
+
+  /** Full move tree with variations for inline display */
+  movesWithVariations: MoveTreeNode[]
 
   /** Navigation and game management actions */
   actions: {
@@ -392,6 +415,158 @@ export function useChessGame(): UseChessGameReturn {
     return moves
   }, [game])
 
+  /**
+   * Get moves along the current path for display.
+   * This follows the user's current line (which may be a variation),
+   * then continues with mainline from that point.
+   */
+  const displayedMoves = useMemo((): MainlineMove[] => {
+    if (!game) return []
+
+    const moves: MainlineMove[] = []
+    let node = game.moves
+    const path: number[] = []
+    let pathIndex = 0
+
+    while (node.children.length > 0) {
+      // Use current path index if available, otherwise follow mainline (0)
+      const childIndex = pathIndex < currentPath.length ? currentPath[pathIndex] : 0
+
+      // Make sure the child index is valid
+      if (childIndex < 0 || childIndex >= node.children.length) break
+
+      const child = node.children[childIndex]
+      path.push(childIndex)
+
+      if (isChildNode(child) && child.data.san) {
+        moves.push({
+          san: child.data.san,
+          path: [...path],
+          ply: path.length,
+        })
+      }
+
+      node = child
+      pathIndex++
+    }
+
+    return moves
+  }, [game, currentPath])
+
+  /**
+   * Build a tree structure of moves including variations.
+   * This enables inline variation display in the MoveList component.
+   */
+  const movesWithVariations = useMemo((): MoveTreeNode[] => {
+    if (!game) return []
+
+    /**
+     * Recursively build a line of moves starting from a child node.
+     * The childPath is the full path to this child node.
+     */
+    function buildLineFromChild(
+      child: ChildNode<PgnNodeData>,
+      childPath: number[],
+      ply: number,
+      isMainline: boolean
+    ): MoveTreeNode[] {
+      const result: MoveTreeNode[] = []
+
+      if (!isChildNode(child) || !child.data.san) {
+        return result
+      }
+
+      // Collect variations that branch from this node (siblings with index > 0 relative to parent)
+      // Note: variations are handled at the parent level, not here
+      const variations: MoveTreeNode[][] = []
+
+      // Check for nested variations within THIS node's children
+      for (let i = 1; i < child.children.length; i++) {
+        const varChild = child.children[i]
+        if (isChildNode(varChild) && varChild.data.san) {
+          const nestedVarPath = [...childPath, i]
+          const varLine = buildLineFromChild(varChild, nestedVarPath, ply + 1, false)
+          if (varLine.length > 0) {
+            variations.push(varLine)
+          }
+        }
+      }
+
+      result.push({
+        san: child.data.san,
+        path: childPath,
+        ply,
+        isMainline,
+        variations,
+      })
+
+      // Continue with mainline (children[0]) of this node
+      if (child.children.length > 0) {
+        const nextChild = child.children[0]
+        if (isChildNode(nextChild) && nextChild.data.san) {
+          const continuation = buildLineFromChild(
+            nextChild,
+            [...childPath, 0],
+            ply + 1,
+            isMainline
+          )
+          result.push(...continuation)
+        }
+      }
+
+      return result
+    }
+
+    /**
+     * Build the main tree starting from root.
+     */
+    function buildTree(rootNode: Node<PgnNodeData>): MoveTreeNode[] {
+      const result: MoveTreeNode[] = []
+      let currentNode = rootNode
+      let pathPrefix: number[] = []
+      let ply = 0
+
+      while (currentNode.children.length > 0) {
+        const mainChild = currentNode.children[0]
+
+        if (isChildNode(mainChild) && mainChild.data.san) {
+          const movePath = [...pathPrefix, 0]
+          ply++
+
+          // Collect variations at this branch point (children[1+])
+          const variations: MoveTreeNode[][] = []
+          for (let i = 1; i < currentNode.children.length; i++) {
+            const varChild = currentNode.children[i]
+            if (isChildNode(varChild) && varChild.data.san) {
+              const varPath = [...pathPrefix, i]
+              const varLine = buildLineFromChild(varChild, varPath, ply, false)
+              if (varLine.length > 0) {
+                variations.push(varLine)
+              }
+            }
+          }
+
+          result.push({
+            san: mainChild.data.san,
+            path: movePath,
+            ply,
+            isMainline: true,
+            variations,
+          })
+
+          currentNode = mainChild
+          pathPrefix = movePath
+        } else {
+          break
+        }
+      }
+
+      return result
+    }
+
+    return buildTree(game.moves)
+  }, [game])
+
   // Bundle actions (stable reference)
   const actions = useMemo(
     () => ({
@@ -416,6 +591,8 @@ export function useChessGame(): UseChessGameReturn {
     isAtStart,
     isAtEnd,
     mainlineMoves,
+    displayedMoves,
+    movesWithVariations,
     actions,
   }
 }

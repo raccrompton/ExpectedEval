@@ -404,4 +404,109 @@ describe('useChessGame', () => {
       expect(result.current.mainlineMoves).toEqual([])
     })
   })
+
+  describe('Displayed Moves (following current path)', () => {
+    it('shows moves along current path after making a variation', () => {
+      const { result } = renderHook(() => useChessGame())
+
+      // Make e4
+      act(() => {
+        result.current.actions.makeMove('e2', 'e4')
+      })
+
+      // Make e5
+      act(() => {
+        result.current.actions.makeMove('e7', 'e5')
+      })
+
+      // Verify initial moves
+      expect(result.current.displayedMoves).toHaveLength(2)
+      expect(result.current.displayedMoves[0].san).toBe('e4')
+      expect(result.current.displayedMoves[1].san).toBe('e5')
+
+      // Go back to after e4
+      act(() => {
+        result.current.actions.goToPath([0])
+      })
+
+      // Make d5 instead of e5 (creates variation)
+      act(() => {
+        result.current.actions.makeMove('d7', 'd5')
+      })
+
+      // Displayed moves should now show d5, not e5
+      expect(result.current.displayedMoves).toHaveLength(2)
+      expect(result.current.displayedMoves[0].san).toBe('e4')
+      expect(result.current.displayedMoves[1].san).toBe('d5')
+    })
+
+    it('shows variation from root when navigating there', () => {
+      const { result } = renderHook(() => useChessGame())
+
+      // Make e4
+      act(() => {
+        result.current.actions.makeMove('e2', 'e4')
+      })
+
+      // Go back to start
+      act(() => {
+        result.current.actions.goToStart()
+      })
+
+      // Make d4 instead (variation from root)
+      act(() => {
+        result.current.actions.makeMove('d2', 'd4')
+      })
+
+      // Should show d4, not e4
+      expect(result.current.displayedMoves).toHaveLength(1)
+      expect(result.current.displayedMoves[0].san).toBe('d4')
+    })
+
+    it('follows current path then mainline for continuation', () => {
+      const { result } = renderHook(() => useChessGame())
+
+      // Load game with moves: 1. e4 e5 2. Nf3 Nc6
+      act(() => {
+        result.current.actions.loadPgn(SIMPLE_PGN)
+      })
+
+      // Navigate back to after e4 e5
+      act(() => {
+        result.current.actions.goToPath([0, 0])
+      })
+
+      // Make Bc4 instead of Nf3 (variation)
+      act(() => {
+        result.current.actions.makeMove('f1', 'c4')
+      })
+
+      // Should show: e4, e5, Bc4 (current path)
+      expect(result.current.displayedMoves).toHaveLength(3)
+      expect(result.current.displayedMoves[0].san).toBe('e4')
+      expect(result.current.displayedMoves[1].san).toBe('e5')
+      expect(result.current.displayedMoves[2].san).toBe('Bc4')
+    })
+
+    it('displayedMoves has correct path for each move', () => {
+      const { result } = renderHook(() => useChessGame())
+
+      // Make e4
+      act(() => {
+        result.current.actions.makeMove('e2', 'e4')
+      })
+
+      // Go back and make d4 (variation)
+      act(() => {
+        result.current.actions.goToStart()
+      })
+
+      act(() => {
+        result.current.actions.makeMove('d2', 'd4')
+      })
+
+      // Path should be [1] (second child of root), not [0]
+      expect(result.current.displayedMoves[0].path).toEqual([1])
+    })
+  })
 })

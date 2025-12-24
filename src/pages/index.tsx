@@ -7,7 +7,8 @@ export default function Home() {
   const {
     currentFen,
     currentPath,
-    mainlineMoves,
+    displayedMoves,
+    movesWithVariations,
     isAtStart,
     isAtEnd,
     actions,
@@ -54,7 +55,8 @@ export default function Home() {
           <section className="moves-section">
             <h2>Moves</h2>
             <MoveList
-              moves={mainlineMoves}
+              moves={displayedMoves}
+              movesWithVariations={movesWithVariations}
               currentPath={currentPath}
               onMoveClick={actions.goToPath}
             />
