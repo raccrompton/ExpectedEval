@@ -20,9 +20,13 @@
  */
 
 import { useReducer, useCallback, useMemo } from 'react'
-import type { Game, PgnNodeData } from 'chessops/pgn'
-import { isChildNode } from 'chessops/pgn'
-import { loadGame } from '@/core/chess/game'
+import type { Game, PgnNodeData, Node } from 'chessops/pgn'
+import { isChildNode, ChildNode } from 'chessops/pgn'
+import { Chess } from 'chessops/chess'
+import { parseFen } from 'chessops/fen'
+import { makeSan } from 'chessops/san'
+import { parseSquare } from 'chessops/util'
+import { loadGame, createEmptyGame } from '@/core/chess/game'
 import {
   createNavigationState,
   getCurrentFen,
@@ -35,6 +39,7 @@ import {
   goToPly as navGoToPly,
   isAtStart as navIsAtStart,
   isAtEnd as navIsAtEnd,
+  getFenAtPath,
   STARTING_FEN,
 } from '@/core/chess/navigation'
 
@@ -63,6 +68,7 @@ type GameAction =
   | { type: 'GO_TO_END' }
   | { type: 'GO_TO_PATH'; path: number[] }
   | { type: 'GO_TO_PLY'; ply: number }
+  | { type: 'MAKE_MOVE'; from: string; to: string; promotion?: string }
 
 const initialState: GameState = {
   game: null,
@@ -128,6 +134,68 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const navState = createNavigationState(state.game, state.currentPath)
       const newState = navGoToPly(navState, action.ply)
       return { ...state, currentPath: newState.currentPath }
+    }
+
+    case 'MAKE_MOVE': {
+      // Get or create game
+      const game = state.game ?? createEmptyGame()
+
+      // Get current FEN
+      const currentFen = getFenAtPath(game, state.currentPath)
+
+      // Parse position and validate move using chessops
+      const setup = parseFen(currentFen)
+      if (!setup.isOk) return state
+
+      const pos = Chess.fromSetup(setup.value)
+      if (!pos.isOk) return state
+
+      // Parse the move squares
+      const from = parseSquare(action.from)
+      const to = parseSquare(action.to)
+      if (from === undefined || to === undefined) return state
+
+      // Create move object
+      const move = {
+        from,
+        to,
+        promotion: action.promotion as 'queen' | 'rook' | 'bishop' | 'knight' | undefined,
+      }
+
+      // Check if legal
+      if (!pos.value.isLegal(move)) return state
+
+      // Get SAN notation
+      const san = makeSan(pos.value, move)
+
+      // Navigate to current node and add move
+      let node: Node<PgnNodeData> = game.moves
+      for (const index of state.currentPath) {
+        if (index >= 0 && index < node.children.length) {
+          node = node.children[index]
+        }
+      }
+
+      // Check if move already exists
+      const existingIndex = node.children.findIndex((c) => c.data.san === san)
+      if (existingIndex !== -1) {
+        // Navigate to existing move - always create new reference for React
+        return {
+          game: { ...game },
+          currentPath: [...state.currentPath, existingIndex],
+        }
+      }
+
+      // Add new move
+      const newNode = new ChildNode<PgnNodeData>({ san })
+      node.children.push(newNode)
+      const newIndex = node.children.length - 1
+
+      // Return new game reference so React detects the change
+      return {
+        game: { ...game },
+        currentPath: [...state.currentPath, newIndex],
+      }
     }
 
     default:
@@ -198,6 +266,9 @@ export interface UseChessGameReturn {
 
     /** Go to a specific ply number (follows mainline) */
     goToPly: (ply: number) => void
+
+    /** Make a move on the board (from square to square) */
+    makeMove: (from: string, to: string, promotion?: string) => void
   }
 }
 
@@ -257,6 +328,12 @@ export function useChessGame(): UseChessGameReturn {
 
   const goToPly = useCallback(
     (ply: number) => dispatch({ type: 'GO_TO_PLY', ply }),
+    []
+  )
+
+  const makeMove = useCallback(
+    (from: string, to: string, promotion?: string) =>
+      dispatch({ type: 'MAKE_MOVE', from, to, promotion }),
     []
   )
 
@@ -325,8 +402,9 @@ export function useChessGame(): UseChessGameReturn {
       goToEnd,
       goToPath,
       goToPly,
+      makeMove,
     }),
-    [loadPgn, goForward, goBack, goToStart, goToEnd, goToPath, goToPly]
+    [loadPgn, goForward, goBack, goToStart, goToEnd, goToPath, goToPly, makeMove]
   )
 
   return {

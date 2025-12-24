@@ -56,6 +56,13 @@
 - [ ] Wire navigation in useChessGame
 - [ ] Verify: Click/keyboard navigation works
 
+### Phase 7.5: Interactive Move Input ⬜ TODO
+- [ ] Create `src/__tests__/e2e/04b-move-input.spec.ts` (tests first)
+- [ ] Wire `onMove` handler in GameBoard → useChessGame
+- [ ] Add move to game tree, update PGN
+- [ ] Handle variations (move from non-final position creates branch)
+- [ ] Verify: Make move on board → appears in move list + PGN export
+
 ### Phase 8: Mock Engine Display ⬜ TODO
 - [ ] Create `src/__tests__/e2e/05-mock-engines.spec.ts` (tests first)
 - [ ] Implement `EngineContext.tsx` with MockStockfish/MockMaia

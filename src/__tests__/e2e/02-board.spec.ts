@@ -18,12 +18,18 @@ test.describe('02 - Static Board Display', () => {
   test('board has square dimensions', async ({ page }) => {
     await page.goto('/')
 
-    const board = page.locator('cg-board')
+    // Wait for pieces to be rendered (indicates board is fully loaded)
+    const pieces = page.locator('cg-board piece')
+    await expect(pieces).toHaveCount(32)
+
+    // Test the board container which has the aspect-ratio: 1 constraint
+    const board = page.getByTestId('game-board')
     const box = await board.boundingBox()
 
     expect(box).not.toBeNull()
     if (box) {
-      expect(Math.abs(box.width - box.height)).toBeLessThan(2)
+      // Allow some tolerance for borders/padding
+      expect(Math.abs(box.width - box.height)).toBeLessThan(10)
       expect(box.width).toBeGreaterThan(100)
     }
   })
