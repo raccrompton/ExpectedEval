@@ -45,11 +45,11 @@
 - [x] Implement `GameBoard.tsx` - Chessground wrapper
 - [x] Verify: Board shows starting position (7 E2E tests pass)
 
-### Phase 6: PGN Input + Game Loading ⬜ TODO
-- [ ] Create `src/__tests__/e2e/03-pgn.spec.ts` (tests first)
-- [ ] Create `src/hooks/useChessGame.test.tsx` (tests first)
-- [ ] Implement `useChessGame.ts`, `PgnInput.tsx`, `MoveList.tsx`
-- [ ] Verify: PGN loads and displays moves
+### Phase 6: PGN Input + Game Loading ✅ COMPLETE
+- [x] Create `src/__tests__/e2e/03-pgn.spec.ts` (12 tests)
+- [x] Create `src/hooks/useChessGame.test.tsx` (23 tests)
+- [x] Implement `useChessGame.ts`, `PgnInput.tsx`, `MoveList.tsx`
+- [x] Verify: PGN loads and displays moves (22 E2E tests pass, 230 unit tests pass)
 
 ### Phase 7: Move Navigation ⬜ TODO
 - [ ] Create `src/__tests__/e2e/04-navigation.spec.ts` (tests first)
