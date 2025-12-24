@@ -1,9 +1,44 @@
-import { GameBoard } from '@/components/Board'
+import { useEffect, useCallback } from 'react'
+import { GameBoard, NavigationControls } from '@/components/Board'
 import { PgnInput, MoveList } from '@/components/Analysis'
 import { useChessGame } from '@/hooks'
 
 export default function Home() {
-  const { currentFen, currentPath, mainlineMoves, actions } = useChessGame()
+  const {
+    currentFen,
+    currentPath,
+    mainlineMoves,
+    isAtStart,
+    isAtEnd,
+    actions,
+  } = useChessGame()
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowLeft':
+          actions.goBack()
+          break
+        case 'ArrowRight':
+          actions.goForward()
+          break
+        case 'Home':
+          actions.goToStart()
+          break
+        case 'End':
+          actions.goToEnd()
+          break
+      }
+    },
+    [actions]
+  )
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [handleKeyDown])
 
   return (
     <main className="main-container">
@@ -26,7 +61,17 @@ export default function Home() {
           </section>
         </aside>
         <div className="board-section">
-          <GameBoard fen={currentFen} />
+          <div className="board-wrapper">
+            <GameBoard fen={currentFen} onMove={actions.makeMove} />
+            <NavigationControls
+              onStart={actions.goToStart}
+              onBack={actions.goBack}
+              onForward={actions.goForward}
+              onEnd={actions.goToEnd}
+              isAtStart={isAtStart}
+              isAtEnd={isAtEnd}
+            />
+          </div>
         </div>
       </div>
       <style jsx>{`
@@ -76,6 +121,13 @@ export default function Home() {
           display: flex;
           justify-content: center;
           align-items: flex-start;
+        }
+        .board-wrapper {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-sm);
+          width: 100%;
+          max-width: 560px;
         }
         @media (max-width: 768px) {
           .content {
