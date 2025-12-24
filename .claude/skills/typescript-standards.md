@@ -236,6 +236,70 @@ try {
 | Constants | SCREAMING_SNAKE | `MAX_RETRY_COUNT`, `API_BASE_URL` |
 | Enums | PascalCase (members too) | `Status.Active`, `HttpMethod.Get` |
 
+### Boolean Variables & Functions
+
+Use `is`, `has`, `can`, `should`, `will` prefixes:
+
+```typescript
+// ✅ GOOD: Clear boolean intent
+const isActive = user.status === 'active';
+const hasPermission = user.roles.includes('admin');
+const canEdit = isOwner || hasPermission;
+const shouldRefresh = lastUpdate < threshold;
+
+function isValidEmail(email: string): boolean { }
+function hasAccess(user: User, resource: Resource): boolean { }
+
+// ❌ BAD: Unclear if boolean
+const active = user.status === 'active';
+const permission = user.roles.includes('admin');
+function validEmail(email: string): boolean { }
+```
+
+### Function Names
+
+Use verb prefixes that describe the action:
+
+```typescript
+// ✅ GOOD: Clear action verbs
+function fetchUser(id: string): Promise<User> { }      // GET from external source
+function getUser(id: string): User { }                  // Retrieve from local/cache
+function createOrder(data: OrderInput): Order { }       // Create new entity
+function updateProfile(id: string, data: Partial<Profile>): Profile { }
+function deleteComment(id: string): void { }
+function validateInput(data: unknown): boolean { }      // Check/verify
+function parseResponse(raw: string): Response { }       // Transform format
+function formatDate(date: Date): string { }             // Convert to display format
+function calculateTotal(items: Item[]): number { }      // Compute value
+
+// ❌ BAD: Vague or noun-like names
+function user(id: string): User { }
+function data(input: string): Response { }
+function total(items: Item[]): number { }
+```
+
+### Event Handlers
+
+Use `handle` prefix for handler definitions, `on` prefix for props:
+
+```typescript
+// ✅ GOOD: Handler definitions use "handle"
+function handleClick(event: React.MouseEvent): void { }
+function handleSubmit(data: FormData): void { }
+function handleUserSelect(user: User): void { }
+
+// ✅ GOOD: Props use "on" prefix
+interface ButtonProps {
+    onClick: (event: React.MouseEvent) => void;
+    onSubmit: (data: FormData) => void;
+    onUserSelect: (user: User) => void;
+}
+
+// ❌ BAD: Inconsistent or unclear
+function clickHandler(event: React.MouseEvent): void { }
+function submit(data: FormData): void { }
+```
+
 ---
 
 ## Imports
@@ -295,26 +359,4 @@ const [first, second, ...rest] = items;
 
 ## Comments
 
-```typescript
-// ✅ GOOD: Explain "why", not "what"
-// Using a Set for O(1) lookup performance with large datasets
-const processedIds = new Set<string>();
-
-// ✅ GOOD: JSDoc for public APIs
-/**
- * Calculates the total price including tax.
- * @param items - Cart items to calculate
- * @param taxRate - Tax rate as decimal (e.g., 0.08 for 8%)
- * @returns Total price including tax
- */
-function calculateTotal(items: CartItem[], taxRate: number): number {
-    // ...
-}
-
-// ❌ BAD: Obvious comments
-// Loop through users
-for (const user of users) { }
-
-// Increment counter
-counter++;
-```
+See `.claude/skills/comment-standards.md` for comment guidelines.
