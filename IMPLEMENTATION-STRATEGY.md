@@ -4,7 +4,7 @@
 
 ## 📋 CURRENT PROGRESS
 
-> This section is updated as implementation progresses.
+> Frontend is non-functional. Rebuilding UI layer TDD-style while preserving working core logic.
 
 ### Phase 1: Foundation + Test Setup ✅ COMPLETE
 - [x] Initialize clean project (package.json, tsconfig, etc.)
@@ -17,44 +17,81 @@
 - [x] Create `src/core/chess/navigation.ts` with unit tests (38 tests)
 - [x] Verify: `npm test` passes
 
-### Phase 2: Engine Integration ✅ COMPLETE
+### Phase 2: Engine Integration ✅ COMPLETE (Core Only)
 - [x] Create `src/core/engine/types.ts` - EngineAdapter interfaces (17 tests)
 - [x] Create mock engine implementations for testing (34 tests)
-- [x] Integrate Stockfish WASM (real implementation)
-  - Created `src/core/engine/stockfish.ts` - RealStockfish class with UCI protocol
-  - Created `src/core/engine/stockfish-module.d.ts` - Type declarations for WASM module
-  - Copied WASM files to `public/stockfish/` (sf17-79.js, sf17-79.wasm, NNUE files)
-- [x] Copy/integrate Maia ONNX files (real implementation)
-  - Created `src/core/engine/maia.ts` - RealMaia class with ONNX runtime
-  - Created `src/core/engine/tensor.ts` - FEN to tensor preprocessing
-  - Created `src/core/engine/storage.ts` - IndexedDB caching for model
-  - Copied `maia_rapid.onnx` to `public/maia2/`
+- [x] Stockfish WASM files copied to `public/stockfish/`
+- [x] Maia ONNX model copied to `public/maia2/`
+- [ ] ⚠️ Real engine implementations incomplete (stubs only)
 
 ### Phase 3: Core Analysis Logic ✅ COMPLETE
 - [x] Create `src/core/analysis/types.ts` - Analysis type definitions
-- [x] Create `src/core/analysis/treeBuilder.ts` with unit tests (30 tests)
-- [x] Create `src/core/analysis/expectedWinrate.ts` with unit tests (18 tests)
-- [x] Verify: All unit tests pass (196/196 tests passing)
+- [x] Create `src/core/analysis/treeBuilder.ts` with unit tests (39 tests)
+- [x] Create `src/core/analysis/expectedWinrate.ts` with unit tests (20 tests)
+- [x] Verify: All unit tests pass (207/207 tests passing)
 
-### Phase 4: UI Components
-- [ ] Create `src/components/Board/GameBoard.tsx` - Chessground wrapper
-- [ ] Create `src/components/Board/MoveList.tsx` with tests
-- [ ] Create `src/components/Analysis/PgnInput.tsx` with tests
-- [ ] Create `src/components/Analysis/EnginePanel.tsx`
-- [ ] Create `src/components/Analysis/EWTree.tsx` with tests
-- [ ] Create React hooks (`useChessGame`, `useExpectedWinrate`)
-- [ ] Verify: Component tests pass
+---
 
-### Phase 5: Integration + E2E
-- [ ] Wire up analysis page (`src/pages/analysis.tsx`)
-- [ ] Connect components to real engines
-- [ ] Write full E2E tests (PGN loading, navigation, eval display)
-- [ ] Verify: All Playwright tests pass
+## 🔄 TDD FRONTEND REBUILD
 
-### Phase 6: Polish
-- [ ] Styling and error handling
-- [ ] Performance optimization
-- [ ] Final test pass
+### Phase 4: Clean Slate + Minimal Page ✅ COMPLETE
+- [x] Delete broken frontend (pages, components, hooks, contexts)
+- [x] Create `src/__tests__/e2e/01-minimal.spec.ts` (tests first)
+- [x] Implement minimal `index.tsx` with header only
+- [x] Verify: Page loads without console errors (3 E2E tests pass)
+
+### Phase 5: Static Board Display ✅ COMPLETE
+- [x] Create `src/__tests__/e2e/02-board.spec.ts` (tests first)
+- [x] Implement `GameBoard.tsx` - Chessground wrapper
+- [x] Verify: Board shows starting position (7 E2E tests pass)
+
+### Phase 6: PGN Input + Game Loading ⬜ TODO
+- [ ] Create `src/__tests__/e2e/03-pgn.spec.ts` (tests first)
+- [ ] Create `src/hooks/useChessGame.test.tsx` (tests first)
+- [ ] Implement `useChessGame.ts`, `PgnInput.tsx`, `MoveList.tsx`
+- [ ] Verify: PGN loads and displays moves
+
+### Phase 7: Move Navigation ⬜ TODO
+- [ ] Create `src/__tests__/e2e/04-navigation.spec.ts` (tests first)
+- [ ] Wire navigation in useChessGame
+- [ ] Verify: Click/keyboard navigation works
+
+### Phase 8: Mock Engine Display ⬜ TODO
+- [ ] Create `src/__tests__/e2e/05-mock-engines.spec.ts` (tests first)
+- [ ] Implement `EngineContext.tsx` with MockStockfish/MockMaia
+- [ ] Implement `EnginePanel.tsx`
+- [ ] Verify: Evaluations display with mocked data
+
+### Phase 9: Expected Winrate (Mock) ⬜ TODO
+- [ ] Create `src/__tests__/e2e/06-ew-mock.spec.ts` (tests first)
+- [ ] Implement `useExpectedWinrate.ts`, `EWTree.tsx`
+- [ ] Verify: Full EW calculation works with mocks
+
+### Phase 10: Real Engine Integration ⬜ TODO
+- [ ] Create `src/__tests__/e2e/07-real-engines.spec.ts` (tests first)
+- [ ] Complete `stockfish.ts` WASM integration
+- [ ] Complete `maia.ts` ONNX integration
+- [ ] Verify: Real engines load and evaluate
+
+### Phase 11: Full E2E + Polish ⬜ TODO
+- [ ] Create `src/__tests__/e2e/08-full-flow.spec.ts` (tests first)
+- [ ] Error handling, loading states, responsive layout
+- [ ] Verify: Complete user workflow works
+
+---
+
+## Success Criteria
+
+Each phase complete when:
+1. All tests for that phase pass
+2. No console errors in browser
+3. Previous phases still work (regression)
+
+MVP complete when:
+- [ ] Phases 4-9: Full UI working with mock engines
+- [ ] Phases 10-11: Real engines integrated
+- [ ] All 207 core tests still pass
+- [ ] All new E2E tests pass
 
 ---
 

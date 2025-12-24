@@ -327,31 +327,4 @@ with db.transaction():
 
 ## Documentation
 
-```python
-def calculate_shipping(
-    weight: float,
-    destination: str,
-    express: bool = False,
-) -> float:
-    """
-    Calculate shipping cost based on weight and destination.
-
-    Args:
-        weight: Package weight in kilograms.
-        destination: Two-letter country code.
-        express: Whether to use express shipping.
-
-    Returns:
-        Shipping cost in USD.
-
-    Raises:
-        ValidationError: If weight is negative or destination is invalid.
-
-    Example:
-        >>> calculate_shipping(2.5, "US", express=True)
-        24.99
-    """
-    if weight < 0:
-        raise ValidationError("Weight cannot be negative", "weight")
-    ...
-```
+See `.claude/skills/comment-standards.md` for comment and documentation guidelines.

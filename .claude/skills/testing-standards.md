@@ -344,3 +344,84 @@ test('user can complete checkout', async ({ page }) => {
     await expect(page.locator('.order-confirmation')).toBeVisible();
 });
 ```
+
+---
+
+## Test IDs (`data-testid`)
+
+### When to Add Test IDs
+
+Add `data-testid` attributes to:
+- ✅ Interactive elements (buttons, links, inputs)
+- ✅ Elements displaying dynamic/meaningful content
+- ✅ Containers that tests need to target
+- ✅ Elements that are hard to select reliably otherwise
+
+Skip test IDs for:
+- ❌ Static decorative elements
+- ❌ Elements easily selected by role/label (prefer accessibility selectors)
+- ❌ Internal implementation details
+
+### Naming Patterns
+
+```typescript
+// Pattern: {action}-{target}
+data-testid="submit-form"
+data-testid="delete-user"
+data-testid="toggle-sidebar"
+data-testid="close-modal"
+
+// Pattern: {type}-{description}
+data-testid="input-email"
+data-testid="button-save"
+data-testid="link-profile"
+data-testid="modal-confirm"
+
+// Pattern: {type}-{description}-{id} (for dynamic lists)
+data-testid="user-card-123"
+data-testid="todo-item-abc"
+data-testid="row-order-456"
+```
+
+### Examples
+
+```tsx
+// ✅ GOOD: Clear, consistent naming
+<button data-testid="submit-order">Place Order</button>
+<input data-testid="input-search" placeholder="Search..." />
+<a data-testid="link-user-profile" href="/profile">Profile</a>
+
+// ✅ GOOD: Dynamic IDs for list items
+{users.map(user => (
+    <div key={user.id} data-testid={`user-card-${user.id}`}>
+        <span data-testid={`user-name-${user.id}`}>{user.name}</span>
+        <button data-testid={`delete-user-${user.id}`}>Delete</button>
+    </div>
+))}
+
+// ✅ GOOD: Containers for scoping
+<form data-testid="login-form">
+    <input data-testid="input-username" />
+    <input data-testid="input-password" type="password" />
+    <button data-testid="submit-login">Log In</button>
+</form>
+
+// ❌ BAD: Vague or inconsistent
+<button data-testid="btn1">Submit</button>
+<button data-testid="the-button">Click</button>
+<div data-testid="wrapper">...</div>
+```
+
+### Prefer Accessibility Selectors
+
+When possible, use accessibility selectors instead of test IDs:
+
+```typescript
+// ✅ PREFERRED: Use role and accessible name
+await page.getByRole('button', { name: 'Submit' }).click();
+await page.getByLabel('Email').fill('test@example.com');
+await page.getByRole('heading', { name: 'Welcome' });
+
+// ✅ GOOD: Fall back to test ID when needed
+await page.getByTestId('complex-widget').click();
+```

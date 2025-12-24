@@ -6,9 +6,8 @@
 # This script runs automatically when Claude finishes responding.
 # It performs quality checks to ensure code meets project standards.
 #
-# IMPORTANT: Uses stop_hook_active flag to prevent infinite loops.
-# On subsequent stops (when Claude responds to hook output), the script
-# exits silently to prevent recursion.
+# Note: This hook skips if no code files were modified, preventing
+# unnecessary re-runs when Claude only did research/reading.
 #
 # Supported Languages:
 #   - Node.js/TypeScript (package.json)
@@ -39,6 +38,9 @@ if [ -z "$CODE_CHANGES" ]; then
     # No code changes detected - skip checks silently
     exit 0
 fi
+
+# Redirect all output to stderr so Claude Code can see it
+exec 1>&2
 
 # -----------------------------------------------------------------------------
 # CONFIGURATION
@@ -194,15 +196,10 @@ configure_commands() {
                 CMD_FORMAT="npx prettier --check ."
             fi
 
-            # Prefer non-watch mode test scripts (vitest defaults to watch mode)
-            if has_npm_script "test:run"; then
-                CMD_TESTS="npm run test:run"
-            elif has_npm_script "test:ci"; then
-                CMD_TESTS="npm run test:ci"
+            if has_npm_script "test"; then
+                CMD_TESTS="npm test"
             elif has_command "vitest"; then
                 CMD_TESTS="npx vitest run"
-            elif has_npm_script "test"; then
-                CMD_TESTS="npm test"
             elif has_command "jest"; then
                 CMD_TESTS="npx jest"
             fi
@@ -328,21 +325,25 @@ fi
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-# Agent invocation reminder
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${YELLOW}📋 AGENT REVIEW REMINDER${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-echo "If you modified code, invoke the review agents:"
-echo ""
-echo "  • code-standards-reviewer - For code quality, documentation, naming"
-echo "  • architect - For new files, features, security changes"
-echo ""
-echo "Use Task tool with subagent_type='general-purpose' and reference"
-echo "the agent definitions in .claude/agents/"
-echo ""
+# -----------------------------------------------------------------------------
+# AGENT REVIEW REMINDER (Mandatory)
+# -----------------------------------------------------------------------------
 
-# Exit with appropriate code
+if [ -n "$CODE_CHANGES" ]; then
+    echo ""
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}📝 REQUIRED: Invoke both review agents${NC}"
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    echo "Both agents MUST be invoked after every code change:"
+    echo "  1. code-standards-reviewer - Code style, patterns, skill file compliance"
+    echo "  2. architect - Architecture, security, performance"
+    echo ""
+    echo "Invoke with: \"Review these files I modified: [list files]\""
+    echo ""
+fi
+
+# Exit with appropriate code (no code changes case)
 if [ $HAS_ERRORS -eq 0 ]; then
     exit 0
 else
