@@ -8,3 +8,6 @@
 
 export { useChessGame } from './useChessGame'
 export type { UseChessGameReturn, MainlineMove } from './useChessGame'
+
+export { useExpectedWinrate } from './useExpectedWinrate'
+export type { UseExpectedWinrateReturn, EWStatus } from './useExpectedWinrate'
