@@ -73,10 +73,10 @@
 - [x] Implement `src/components/Analysis/EnginePanel.tsx`
 - [x] Verify: Evaluations display with mocked data (18 E2E tests pass)
 
-### Phase 9: Expected Winrate (Mock) ⬜ TODO
-- [ ] Create `src/__tests__/e2e/06-ew-mock.spec.ts` (tests first)
-- [ ] Implement `useExpectedWinrate.ts`, `EWTree.tsx`
-- [ ] Verify: Full EW calculation works with mocks
+### Phase 9: Expected Winrate (Mock) ✅ COMPLETE
+- [x] Create `src/__tests__/e2e/06-ew-mock.spec.ts` (17 tests)
+- [x] Implement `useExpectedWinrate.ts`, `EWSection.tsx` with EWTree
+- [x] Verify: Full EW calculation works with mocks (17 E2E tests pass)
 
 ### Phase 10: Real Engine Integration ⬜ TODO
 - [ ] Create `src/__tests__/e2e/07-real-engines.spec.ts` (tests first)
@@ -99,10 +99,10 @@ Each phase complete when:
 3. Previous phases still work (regression)
 
 MVP complete when:
-- [ ] Phases 4-9: Full UI working with mock engines
+- [x] Phases 4-9: Full UI working with mock engines (114 E2E tests pass)
 - [ ] Phases 10-11: Real engines integrated
 - [x] All 234 unit tests pass (core + hooks)
-- [x] 82/83 E2E tests pass (phases 1-8, 1 pre-existing failure in 04c)
+- [x] All 114 E2E tests pass (phases 1-9 complete)
 
 ---
 

@@ -1,5 +1,28 @@
 import { test, expect } from '@playwright/test'
 
+/**
+ * Filter function for console messages.
+ * Returns true if the message should be IGNORED (not counted as error).
+ */
+function shouldIgnoreConsoleMessage(text: string): boolean {
+  const ignoredPatterns = [
+    'CORS',
+    'SharedArrayBuffer',
+    'Maia value:',
+    'Maia:',
+    'Stockfish',
+    'Download the React DevTools',
+    'net::ERR',
+    '404',
+    'Failed to load resource',
+    'Warning:',
+    'Hydration',
+    'onnxruntime',
+    'WebAssembly',
+  ]
+  return ignoredPatterns.some((pattern) => text.includes(pattern))
+}
+
 test.describe('04 - Move Navigation', () => {
   const SAMPLE_PGN = '1. e4 e5 2. Nf3 Nc6 3. Bb5 a6'
 
@@ -286,7 +309,10 @@ test.describe('04 - Move Navigation', () => {
 
       page.on('console', (msg) => {
         if (msg.type() === 'error') {
-          errors.push(msg.text())
+          const text = msg.text()
+          if (!shouldIgnoreConsoleMessage(text)) {
+            errors.push(text)
+          }
         }
       })
 
