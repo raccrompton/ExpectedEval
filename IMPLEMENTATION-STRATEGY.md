@@ -141,43 +141,51 @@ The analysis page displays **four evaluation methods** for any position, each pr
 ### UI Mockup
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ ExpectedEval Analysis                                           [Settings]  │
-├─────────────┬───────────────────────────┬───────────────────────────────────┤
-│             │                           │                                   │
-│   PGN       │                           │  ┌─ EVALUATION PANEL ───────────┐ │
-│   INPUT     │                           │  │                              │ │
-│             │                           │  │  Stockfish 17    +0.35 (54%) │ │
-│  [Paste     │       CHESSBOARD          │  │  ══════════════════════      │ │
-│   game      │                           │  │  Best: e4, d4, Nf3           │ │
-│   here]     │      (interactive)        │  │                              │ │
-│             │                           │  │  Maia 1500        52.1%      │ │
-│  [Load PGN] │                           │  │  ══════════════════════      │ │
-│             │                           │  │  Predicted: e4 (35%), d4 (28%)│ │
-│             │                           │  │                              │ │
-│─────────────│                           │  │  EW (Maia)        53.2%      │ │
-│             │                           │  │  EW (SF)          54.1%      │ │
-│   MOVE      │                           │  │                              │ │
-│   LIST      ├───────────────────────────┤  └──────────────────────────────┘ │
-│             │                           │                                   │
-│  1. e4  e5  │  [Prob Threshold: 1%  ▼]  │  ┌─ EXPECTED WINRATE TREE ──────┐ │
-│  2. Nf3 Nc6 │  [Maia Level: 1500   ▼]  │  │                              │ │
-│  3. Bb5 ... │  [SF Depth: 12       ▼]  │  │  Sort by: [SF▼] [Maia] [Prob]│ │
-│             │                           │  │                              │ │
-│  (click to  │  [Calculate EW]           │  │  ▼ e4   EW: 54.2%  prob: 35% │ │
-│   navigate) │                           │  │    ├─ e5   52%   (45%)       │ │
-│             │                           │  │    │  ├─ Nf3  51%  (40%)     │ │
-│             │  [Export PGN]             │  │    │  └─ Bc4  50%  (25%)     │ │
-│             │                           │  │    └─ c5   53%   (30%)       │ │
-│             │                           │  │                              │ │
-│             │                           │  │  ▶ d4   EW: 52.8%  prob: 28% │ │
-│             │                           │  │  ▶ Nf3  EW: 51.1%  prob: 20% │ │
-│             │                           │  │                              │ │
-│             │                           │  │  (hover: preview on board)   │ │
-│             │                           │  │  (click: navigate to pos)    │ │
-│             │                           │  └──────────────────────────────┘ │
-└─────────────┴───────────────────────────┴───────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│ ExpectedEval Analysis                          [Calculate EW] [Export] [Settings ▼]│
+├─────────────┬──────────────────────────────────────────────────────────────────────┤
+│             │                                │                                     │
+│   PGN       │                                │  ┌─ EVALUATION PANEL ─────────────┐ │
+│   INPUT     │                                │  │                                │ │
+│             │                                │  │  Stockfish 17      +0.35 (54%) │ │
+│  [Paste     │          CHESSBOARD            │  │  ════════════════════════      │ │
+│   game      │              (A)               │  │  Best: e4, d4, Nf3             │ │
+│   here]     │         (interactive)          │  │                                │ │
+│             │                                │  │  Maia 1500          52.1%      │ │
+│  [Load PGN] │                                │  │  ════════════════════════      │ │
+│             │                                │  │  Predicted: e4 (35%), d4 (28%) │(B)
+│             │                                │  │                                │ │
+│─────────────│      ┌──◄ ◄ ► ►►──┐            │  │  EW (Maia)          53.2%      │ │
+│             │      └────────────┘            │  │  EW (SF)            54.1%      │ │
+│   MOVE      │                                │  │                                │ │
+│   LIST      ├────────────────────────────────┴──┴────────────────────────────────┘ │
+│             │  ┌─ EXPECTED WINRATE TREE (C) ───────────────────────────────────┐   │
+│  1. e4  e5  │  │                                                               │   │
+│  2. Nf3 Nc6 │  │  Sort by: [SF▼] [Maia] [Prob]                                 │   │
+│  3. Bb5 ... │  │                                                               │   │
+│             │  │  ▼ e4   EW: 54.2%  prob: 35%  ────────────────────────────────│   │
+│  (click to  │  │    ├─ e5   52%  (45%)  ├─ Nf3  51%  (40%)  └─ Bc4  50%  (25%) │   │
+│   navigate) │  │    └─ c5   53%  (30%)  ├─ Nc3  52%  (35%)  └─ d3   51%  (20%) │   │
+│             │  │                                                               │   │
+│             │  │  ▶ d4   EW: 52.8%  prob: 28%   ▶ Nf3   EW: 51.1%  prob: 20%   │   │
+│             │  │                                                               │   │
+│             │  │  (hover: preview on board)  (click: navigate to position)     │   │
+│             │  └───────────────────────────────────────────────────────────────┘   │
+└─────────────┴──────────────────────────────────────────────────────────────────────┘
+
+[Settings] dropdown (appears on click):
+┌─────────────────────────┐
+│ Prob Threshold: [1%  ▼] │
+│ Maia Level:     [1500▼] │
+│ SF Depth:       [12  ▼] │
+│ Winrate Loss:   [5%  ▼] │
+└─────────────────────────┘
 ```
+
+**Layout Key:**
+- **Left column:** PGN Input + Move List (full height)
+- **Top right (A+B):** Chessboard + Evaluation Panel side-by-side
+- **Bottom right (C):** Expected Winrate Tree spans under A+B for horizontal flow
 
 ### Evaluation Panel Details
 
