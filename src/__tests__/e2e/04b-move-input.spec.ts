@@ -345,4 +345,91 @@ test.describe('04b - Interactive Move Input', () => {
       expect(errors).toEqual([])
     })
   })
+
+  test.describe('Castling', () => {
+    test('can castle kingside by clicking king to g1', async ({ page }) => {
+      await page.goto('/')
+
+      // Load a position where kingside castling is legal
+      // After 1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5, white can castle O-O
+      const pgnInput = page.getByTestId('pgn-input')
+      await pgnInput.fill('1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5')
+      await page.getByTestId('load-pgn-button').click()
+
+      const cgBoard = page.locator('cg-board')
+      await expect(cgBoard).toBeVisible()
+
+      const box = await cgBoard.boundingBox()
+      if (!box) throw new Error('Board not found')
+
+      // Click king on e1 (file 4, rank 0) then g1 (file 6, rank 0)
+      const e1 = getSquarePosition(box.width, 4, 0)
+      const g1 = getSquarePosition(box.width, 6, 0)
+
+      await cgBoard.click({ position: e1 })
+      await cgBoard.click({ position: g1 })
+
+      // Castling move should appear in move list as O-O
+      const moveList = page.getByTestId('move-list')
+      await expect(moveList).toContainText('O-O')
+    })
+
+    test('can castle queenside by clicking king to c1', async ({ page }) => {
+      await page.goto('/')
+
+      // Load a position where queenside castling is legal
+      // After 1. d4 d5 2. Bf4 Bf5 3. Nc3 Nc6 4. Qd2 Qd7, white can castle O-O-O
+      const pgnInput = page.getByTestId('pgn-input')
+      await pgnInput.fill('1. d4 d5 2. Bf4 Bf5 3. Nc3 Nc6 4. Qd2 Qd7')
+      await page.getByTestId('load-pgn-button').click()
+
+      const cgBoard = page.locator('cg-board')
+      await expect(cgBoard).toBeVisible()
+
+      const box = await cgBoard.boundingBox()
+      if (!box) throw new Error('Board not found')
+
+      // Click king on e1 (file 4, rank 0) then c1 (file 2, rank 0)
+      const e1 = getSquarePosition(box.width, 4, 0)
+      const c1 = getSquarePosition(box.width, 2, 0)
+
+      await cgBoard.click({ position: e1 })
+      await cgBoard.click({ position: c1 })
+
+      // Castling move should appear in move list as O-O-O
+      const moveList = page.getByTestId('move-list')
+      await expect(moveList).toContainText('O-O-O')
+    })
+
+    test('can castle kingside for black by clicking king to g8', async ({ page }) => {
+      await page.goto('/')
+
+      // Load a position where black can castle kingside
+      // After 1. e4 e5 2. Nf3 Nf6 3. Bc4 Bc5 4. Nc3, black can castle O-O
+      // (We use Nc3 instead of O-O to avoid the test passing from white's castle in the PGN)
+      const pgnInput = page.getByTestId('pgn-input')
+      await pgnInput.fill('1. e4 e5 2. Nf3 Nf6 3. Bc4 Bc5 4. Nc3')
+      await page.getByTestId('load-pgn-button').click()
+
+      const cgBoard = page.locator('cg-board')
+      await expect(cgBoard).toBeVisible()
+
+      // Verify O-O is not in the move list before we castle
+      const moveList = page.getByTestId('move-list')
+      await expect(moveList).not.toContainText('O-O')
+
+      const box = await cgBoard.boundingBox()
+      if (!box) throw new Error('Board not found')
+
+      // Click king on e8 (file 4, rank 7) then g8 (file 6, rank 7)
+      const e8 = getSquarePosition(box.width, 4, 7)
+      const g8 = getSquarePosition(box.width, 6, 7)
+
+      await cgBoard.click({ position: e8 })
+      await cgBoard.click({ position: g8 })
+
+      // Black's castling move should appear in move list as O-O
+      await expect(moveList).toContainText('O-O')
+    })
+  })
 })
