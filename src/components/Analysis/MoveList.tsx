@@ -110,7 +110,7 @@ function VariationLine({ moves, currentPath, onMoveClick, depth = 0 }: Variation
         const isFirstMove = idx === 0
         const prevMove = idx > 0 ? moves[idx - 1] : null
         const needsMoveNumber =
-          isFirstMove || (prevMove && getMoveNumber(move.ply) !== getMoveNumber(prevMove.ply))
+          isFirstMove || (prevMove !== null && getMoveNumber(move.ply) !== getMoveNumber(prevMove.ply))
 
         return (
           <span key={move.path.join('-')} className="variation-move-container">
@@ -118,7 +118,7 @@ function VariationLine({ moves, currentPath, onMoveClick, depth = 0 }: Variation
               move={move}
               currentPath={currentPath}
               onMoveClick={onMoveClick}
-              showMoveNumber={needsMoveNumber}
+              showMoveNumber={!!needsMoveNumber}
               isVariation={true}
             />
             {move.variations.map((varLine, varIdx) => (
@@ -173,7 +173,7 @@ export function MoveList({
           const needsMoveNumber =
             idx === 0 ||
             isWhiteMove(move.ply) ||
-            (prevMove && getMoveNumber(move.ply) !== getMoveNumber(prevMove.ply))
+            (prevMove !== null && getMoveNumber(move.ply) !== getMoveNumber(prevMove.ply))
 
           return (
             <span key={move.path.join('-')} className="mainline-move-container">
@@ -181,7 +181,7 @@ export function MoveList({
                 move={move}
                 currentPath={currentPath}
                 onMoveClick={onMoveClick}
-                showMoveNumber={needsMoveNumber}
+                showMoveNumber={!!needsMoveNumber}
               />
               {move.variations.map((varLine, varIdx) => (
                 <VariationLine
