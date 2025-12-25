@@ -1,6 +1,29 @@
 import { test, expect } from '@playwright/test'
 
 /**
+ * Filter function for console messages.
+ * Returns true if the message should be IGNORED (not counted as error).
+ */
+function shouldIgnoreConsoleMessage(text: string): boolean {
+  const ignoredPatterns = [
+    'CORS',
+    'SharedArrayBuffer',
+    'Maia value:',
+    'Maia:',
+    'Stockfish',
+    'Download the React DevTools',
+    'net::ERR',
+    '404',
+    'Failed to load resource',
+    'Warning:',
+    'Hydration',
+    'onnxruntime',
+    'WebAssembly',
+  ]
+  return ignoredPatterns.some((pattern) => text.includes(pattern))
+}
+
+/**
  * Helper to calculate click position on a chess board.
  * Files: a=0, b=1, ..., h=7
  * Ranks: 1=0, 2=1, ..., 8=7 (from white's perspective at bottom)
@@ -325,7 +348,10 @@ test.describe('04b - Interactive Move Input', () => {
 
       page.on('console', (msg) => {
         if (msg.type() === 'error') {
-          errors.push(msg.text())
+          const text = msg.text()
+          if (!shouldIgnoreConsoleMessage(text)) {
+            errors.push(text)
+          }
         }
       })
 

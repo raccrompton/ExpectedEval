@@ -9,14 +9,30 @@ import {
   type ReactNode,
 } from 'react'
 import {
-  MockStockfish,
-  MockMaia,
+  RealStockfish,
+  RealMaia,
   type StockfishAdapter,
   type MaiaAdapter,
   type StockfishEvaluation,
   type MaiaEvaluation,
   type EngineStatus,
 } from '@/core/engine'
+
+/**
+ * Get Stockfish depth from URL params for faster E2E tests.
+ * Uses sfDepth query param if present, otherwise default of 10.
+ */
+function getStockfishDepth(): number {
+  if (typeof window === 'undefined' || !window.location) {
+    return 10
+  }
+  const params = new URLSearchParams(window.location.search)
+  const sfDepth = params.get('sfDepth')
+  if (sfDepth) {
+    return parseInt(sfDepth, 10)
+  }
+  return 10
+}
 
 interface EngineInstanceContextValue {
   stockfish: StockfishAdapter | null
@@ -54,8 +70,8 @@ export function EngineProvider({ children }: EngineProviderProps) {
   const currentEvalFen = useRef<string | null>(null)
 
   useEffect(() => {
-    const sfEngine = new MockStockfish({ delay: 50 })
-    const maiaEngine = new MockMaia({ delay: 50 })
+    const sfEngine = new RealStockfish()
+    const maiaEngine = new RealMaia()
 
     setStockfishStatus('loading')
     setMaiaStatus('loading')
@@ -91,8 +107,9 @@ export function EngineProvider({ children }: EngineProviderProps) {
       setMaiaStatus('analyzing')
 
       try {
+        const depth = getStockfishDepth()
         const [sfResult, maiaResult] = await Promise.all([
-          stockfish.evaluate(fen),
+          stockfish.evaluate(fen, { depth }),
           maia.predict(fen),
         ])
 

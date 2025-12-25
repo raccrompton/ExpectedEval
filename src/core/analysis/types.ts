@@ -433,10 +433,37 @@ export interface EWConfig {
 }
 
 /**
+ * Helper to detect test mode and parse URL params.
+ * Test mode uses lower values for faster E2E tests.
+ */
+function getEWConfigFromEnv(): Partial<EWConfig> {
+  // Only check URL in browser environment
+  if (typeof window === 'undefined' || !window.location) {
+    return {}
+  }
+
+  const params = new URLSearchParams(window.location.search)
+  const sfDepth = params.get('sfDepth')
+  const testMode = params.get('testMode')
+
+  if (sfDepth || testMode === 'true') {
+    return {
+      probabilityThreshold: 0.3,           // 30% - very fast tree building, few nodes
+      stockfishDepth: sfDepth ? parseInt(sfDepth, 10) : 1,
+      maxCandidates: 2,                    // Only top 2 candidates
+    }
+  }
+
+  return {}
+}
+
+/**
  * Default configuration for Expected Winrate calculation.
  *
  * These values balance accuracy vs computation time.
  * Uses probability-based termination (no maxDepth).
+ *
+ * In test mode (?testMode=true or ?sfDepth=1), uses faster settings.
  */
 export const DEFAULT_EW_CONFIG: EWConfig = {
   probabilityThreshold: 0.01,    // 1% - explore branches with ≥1% cumulative probability
@@ -444,6 +471,7 @@ export const DEFAULT_EW_CONFIG: EWConfig = {
   maiaLevel: 1500,               // Intermediate human level
   stockfishDepth: 10,            // Reasonable depth for batch evaluation
   maxCandidates: 8,              // Analyze top 8 candidate moves
+  ...getEWConfigFromEnv(),       // Override with test mode settings if applicable
 }
 
 // ============================================================================
