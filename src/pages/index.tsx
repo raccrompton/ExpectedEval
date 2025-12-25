@@ -72,12 +72,12 @@ export default function Home() {
         <h1>ExpectedEval</h1>
       </header>
       <div className="content">
-        <aside className="sidebar">
-          <section className="pgn-section">
+        <aside className="left-sidebar" data-testid="left-sidebar">
+          <section className="pgn-section" data-testid="pgn-section">
             <h2>Load Game</h2>
             <PgnInput onLoadPgn={actions.loadPgn} />
           </section>
-          <section className="moves-section">
+          <section className="moves-section" data-testid="moves-section">
             <h2>Moves</h2>
             <MoveList
               moves={displayedMoves}
@@ -87,39 +87,39 @@ export default function Home() {
             />
           </section>
         </aside>
-        <div className="board-section">
-          <div className="board-wrapper">
-            <GameBoard fen={currentFen} onMove={actions.makeMove} />
-            <NavigationControls
-              onStart={actions.goToStart}
-              onBack={actions.goBack}
-              onForward={actions.goForward}
-              onEnd={actions.goToEnd}
-              isAtStart={isAtStart}
-              isAtEnd={isAtEnd}
-            />
+        <div className="right-area" data-testid="right-area">
+          <div className="top-row" data-testid="top-row">
+            <div className="board-section" data-testid="board-section">
+              <GameBoard fen={currentFen} onMove={actions.makeMove} />
+              <NavigationControls
+                onStart={actions.goToStart}
+                onBack={actions.goBack}
+                onForward={actions.goForward}
+                onEnd={actions.goToEnd}
+                isAtStart={isAtStart}
+                isAtEnd={isAtEnd}
+              />
+            </div>
+            <div className="eval-panel-wrapper" data-testid="eval-panel">
+              <h2>Analysis</h2>
+              <EnginePanel
+                stockfishEvaluation={stockfishEvaluation}
+                maiaEvaluation={maiaEvaluation}
+                stockfishStatus={stockfishStatus}
+                maiaStatus={maiaStatus}
+                isStockfishEvaluating={isStockfishEvaluating}
+                isMaiaEvaluating={isMaiaEvaluating}
+              />
+            </div>
           </div>
-        </div>
-        <aside className="engine-sidebar">
-          <section className="engine-section">
-            <h2>Analysis</h2>
-            <EnginePanel
-              stockfishEvaluation={stockfishEvaluation}
-              maiaEvaluation={maiaEvaluation}
-              stockfishStatus={stockfishStatus}
-              maiaStatus={maiaStatus}
-              isStockfishEvaluating={isStockfishEvaluating}
-              isMaiaEvaluating={isMaiaEvaluating}
-            />
-          </section>
-          <section className="ew-section-container">
+          <div className="ew-section-wrapper">
             <h2>Expected Winrate</h2>
             <EWSection
               fen={currentFen}
               isEngineReady={stockfishStatus === 'ready' && maiaStatus === 'ready'}
             />
-          </section>
-        </aside>
+          </div>
+        </div>
       </div>
       <style jsx>{`
         .main-container {
@@ -134,17 +134,17 @@ export default function Home() {
         }
         .content {
           display: grid;
-          grid-template-columns: 280px 1fr 320px;
+          grid-template-columns: 280px 1fr;
           gap: var(--space-lg);
           max-width: 1400px;
           margin: 0 auto;
         }
-        .sidebar {
+        .left-sidebar {
           display: flex;
           flex-direction: column;
           gap: var(--space-lg);
         }
-        .sidebar h2 {
+        .left-sidebar h2 {
           margin: 0 0 var(--space-sm) 0;
           font-size: 0.875rem;
           font-weight: 600;
@@ -162,26 +162,36 @@ export default function Home() {
         .moves-section {
           flex: 1;
           overflow-y: auto;
-          max-height: 400px;
+          max-height: calc(100vh - 400px);
+          min-height: 200px;
         }
-        .board-section {
-          display: flex;
-          justify-content: center;
-          align-items: flex-start;
-        }
-        .board-wrapper {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-sm);
-          width: 100%;
-          max-width: 560px;
-        }
-        .engine-sidebar {
+        .right-area {
           display: flex;
           flex-direction: column;
           gap: var(--space-lg);
         }
-        .engine-sidebar h2 {
+        .top-row {
+          display: flex;
+          gap: var(--space-lg);
+          align-items: stretch;
+        }
+        .board-section {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-sm);
+          flex: 0 0 auto;
+          width: min(65%, 600px);
+        }
+        .eval-panel-wrapper {
+          flex: 1;
+          min-width: 280px;
+          background: var(--color-surface);
+          border-radius: var(--radius-md);
+          padding: var(--space-md);
+          border: 1px solid var(--color-border);
+          overflow-y: auto;
+        }
+        .eval-panel-wrapper h2 {
           margin: 0 0 var(--space-sm) 0;
           font-size: 0.875rem;
           font-weight: 600;
@@ -189,14 +199,13 @@ export default function Home() {
           letter-spacing: 0.05em;
           color: var(--color-text-muted);
         }
-        .engine-section,
-        .ew-section-container {
+        .ew-section-wrapper {
           background: var(--color-surface);
           border-radius: var(--radius-md);
           padding: var(--space-md);
           border: 1px solid var(--color-border);
         }
-        .ew-section-container h2 {
+        .ew-section-wrapper h2 {
           margin: 0 0 var(--space-sm) 0;
           font-size: 0.875rem;
           font-weight: 600;
@@ -205,18 +214,18 @@ export default function Home() {
           color: var(--color-text-muted);
         }
         @media (max-width: 1024px) {
-          .content {
-            grid-template-columns: 280px 1fr;
+          .top-row {
+            flex-direction: column;
           }
-          .engine-sidebar {
-            grid-column: 1 / -1;
+          .eval-panel-wrapper {
+            width: 100%;
           }
         }
         @media (max-width: 768px) {
           .content {
             grid-template-columns: 1fr;
           }
-          .board-section {
+          .right-area {
             order: -1;
           }
         }

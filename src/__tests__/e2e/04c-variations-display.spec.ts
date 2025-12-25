@@ -353,6 +353,8 @@ test.describe('04c - Variation Display in Move List', () => {
       await cgBoard.click({ position: d5 })
 
       const moveList = page.getByTestId('move-list')
+      // Wait for variation to appear in move list before checking format
+      await expect(moveList).toContainText('d5', { timeout: 5000 })
       // Variation should show ellipsis for Black's move (2...d5 or 2. ... d5)
       const textContent = await moveList.textContent()
       expect(textContent).toMatch(/2\.\s*\.{2,3}\s*d5|2\.{3}\s*d5/)
