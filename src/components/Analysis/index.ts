@@ -7,3 +7,4 @@
 export { PgnInput } from './PgnInput'
 export { MoveList } from './MoveList'
 export { EnginePanel } from './EnginePanel'
+export { EWSection } from './EWSection'

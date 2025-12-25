@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react'
 import { GameBoard, NavigationControls } from '@/components/Board'
-import { PgnInput, MoveList, EnginePanel } from '@/components/Analysis'
+import { PgnInput, MoveList, EnginePanel, EWSection } from '@/components/Analysis'
 import { useChessGame } from '@/hooks'
 import { useEngines } from '@/contexts'
 
@@ -112,6 +112,13 @@ export default function Home() {
               isMaiaEvaluating={isMaiaEvaluating}
             />
           </section>
+          <section className="ew-section-container">
+            <h2>Expected Winrate</h2>
+            <EWSection
+              fen={currentFen}
+              isEngineReady={stockfishStatus === 'ready' && maiaStatus === 'ready'}
+            />
+          </section>
         </aside>
       </div>
       <style jsx>{`
@@ -182,11 +189,20 @@ export default function Home() {
           letter-spacing: 0.05em;
           color: var(--color-text-muted);
         }
-        .engine-section {
+        .engine-section,
+        .ew-section-container {
           background: var(--color-surface);
           border-radius: var(--radius-md);
           padding: var(--space-md);
           border: 1px solid var(--color-border);
+        }
+        .ew-section-container h2 {
+          margin: 0 0 var(--space-sm) 0;
+          font-size: 0.875rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: var(--color-text-muted);
         }
         @media (max-width: 1024px) {
           .content {
