@@ -171,7 +171,6 @@ export function GameBoard({
       <style jsx>{`
         .board-container {
           width: 100%;
-          max-width: 560px;
           aspect-ratio: 1;
           position: relative;
           overflow: hidden;
