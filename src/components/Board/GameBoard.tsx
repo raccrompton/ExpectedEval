@@ -41,6 +41,9 @@ const STARTING_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 /**
  * Compute legal move destinations from FEN using chessops.
  * Returns format expected by chessground: Map<square, destinations[]>
+ *
+ * Note: chessops returns castling destinations in chess960 format (king→rook),
+ * but we convert them to standard notation (king→final square) for the UI.
  */
 function computeDests(fen: string): Map<Key, Key[]> {
   const dests = new Map<Key, Key[]>()
@@ -55,7 +58,20 @@ function computeDests(fen: string): Map<Key, Key[]> {
     const fromKey = makeSquare(from) as Key
     const toKeys: Key[] = []
     for (const to of destSet) {
-      toKeys.push(makeSquare(to) as Key)
+      let toKey = makeSquare(to) as Key
+
+      // Convert chess960 castling squares to standard notation
+      // White king on e1: h1 → g1 (kingside), a1 → c1 (queenside)
+      // Black king on e8: h8 → g8 (kingside), a8 → c8 (queenside)
+      if (fromKey === 'e1') {
+        if (toKey === 'h1') toKey = 'g1'
+        else if (toKey === 'a1') toKey = 'c1'
+      } else if (fromKey === 'e8') {
+        if (toKey === 'h8') toKey = 'g8'
+        else if (toKey === 'a8') toKey = 'c8'
+      }
+
+      toKeys.push(toKey)
     }
     if (toKeys.length > 0) {
       dests.set(fromKey, toKeys)
@@ -122,6 +138,7 @@ export function GameBoard({
             color: turnColor,
             dests,
             showDests: true,
+            rookCastle: false, // We convert to standard notation (g1/c1) in computeDests
             events: {
               after: handleMove,
             },
@@ -151,6 +168,7 @@ export function GameBoard({
               color: turnColor,
               dests,
               showDests: true,
+              rookCastle: false, // We convert to standard notation (g1/c1) in computeDests
               events: {
                 after: handleMove,
               },
