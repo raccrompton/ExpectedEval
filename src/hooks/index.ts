@@ -11,3 +11,6 @@ export type { UseChessGameReturn, MainlineMove } from './useChessGame'
 
 export { useExpectedWinrate } from './useExpectedWinrate'
 export type { UseExpectedWinrateReturn, EWStatus } from './useExpectedWinrate'
+
+export { useSettings } from './useSettings'
+export type { UseSettingsReturn, SettingsState } from './useSettings'

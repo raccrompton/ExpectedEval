@@ -17,12 +17,12 @@
 - [x] Create `src/core/chess/navigation.ts` with unit tests (38 tests)
 - [x] Verify: `npm test` passes
 
-### Phase 2: Engine Integration ✅ COMPLETE (Core Only)
+### Phase 2: Engine Integration ✅ COMPLETE
 - [x] Create `src/core/engine/types.ts` - EngineAdapter interfaces (17 tests)
 - [x] Create mock engine implementations for testing (34 tests)
 - [x] Stockfish WASM files copied to `public/stockfish/`
 - [x] Maia ONNX model copied to `public/maia2/`
-- [ ] ⚠️ Real engine implementations incomplete (stubs only)
+- [x] Real engine implementations complete (see Phase 10)
 
 ### Phase 3: Core Analysis Logic ✅ COMPLETE
 - [x] Create `src/core/analysis/types.ts` - Analysis type definitions
@@ -78,11 +78,19 @@
 - [x] Implement `useExpectedWinrate.ts`, `EWSection.tsx` with EWTree
 - [x] Verify: Full EW calculation works with mocks (17 E2E tests pass)
 
-### Phase 10: Real Engine Integration ⬜ TODO
-- [ ] Create `src/__tests__/e2e/07-real-engines.spec.ts` (tests first)
-- [ ] Complete `stockfish.ts` WASM integration
-- [ ] Complete `maia.ts` ONNX integration
-- [ ] Verify: Real engines load and evaluate
+### Phase 10: Real Engine Integration + Settings ✅ COMPLETE
+- [x] Create `src/__tests__/e2e/07-real-engines.spec.ts` (19 tests)
+- [x] Complete `stockfish.ts` WASM integration (599 lines)
+- [x] Complete `maia.ts` ONNX integration (509 lines)
+- [x] Create `src/__tests__/e2e/08-settings.spec.ts` (24 tests)
+- [x] Implement Settings dropdown (top-right menu):
+  - [x] Prob Threshold selector (1%, 2%, 5% options)
+  - [x] Maia Level selector (1100-1900 ELO range)
+  - [x] SF Depth selector (10, 12, 14, 16, 18 options)
+  - [x] Winrate Loss threshold selector (3%, 5%, 10% options)
+- [x] Wire settings to EW calculation config
+- [x] Persist settings in localStorage
+- [x] Verify: Real engines load and evaluate with configurable settings (154 E2E tests pass)
 
 ### Phase 11: Full E2E + Polish ⬜ TODO
 - [ ] Create `src/__tests__/e2e/08-full-flow.spec.ts` (tests first)
@@ -100,9 +108,10 @@ Each phase complete when:
 
 MVP complete when:
 - [x] Phases 4-9: Full UI working with mock engines (114 E2E tests pass)
-- [ ] Phases 10-11: Real engines integrated
+- [x] Phase 10: Real engines integrated with settings (154 E2E tests pass)
+- [ ] Phase 11: Full E2E + Polish
 - [x] All 234 unit tests pass (core + hooks)
-- [x] All 114 E2E tests pass (phases 1-9 complete)
+- [x] All 154 E2E tests pass (phases 1-10 complete)
 
 ---
 

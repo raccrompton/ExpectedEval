@@ -1,8 +1,9 @@
 import { useEffect, useCallback, useRef } from 'react'
 import { GameBoard, NavigationControls } from '@/components/Board'
 import { PgnInput, MoveList, EnginePanel, EWSection } from '@/components/Analysis'
+import { SettingsDropdown } from '@/components/Settings'
 import { useChessGame } from '@/hooks'
-import { useEngines } from '@/contexts'
+import { useEngines, useSettingsContext } from '@/contexts'
 
 export default function Home() {
   const {
@@ -70,6 +71,7 @@ export default function Home() {
     <main className="main-container">
       <header className="header">
         <h1>ExpectedEval</h1>
+        <SettingsDropdown />
       </header>
       <div className="content">
         <aside className="left-sidebar" data-testid="left-sidebar">
@@ -127,6 +129,9 @@ export default function Home() {
           padding: var(--space-md);
         }
         .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           margin-bottom: var(--space-lg);
         }
         .header h1 {

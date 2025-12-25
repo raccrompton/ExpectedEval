@@ -5,8 +5,9 @@
  * Provides the calculate button, status display, and results visualization.
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useExpectedWinrate, type EWStatus } from '@/hooks'
+import { useSettingsContext } from '@/contexts'
 import type { EWResult, EWCandidateResult, TreeNode } from '@/core/analysis'
 
 const MAX_DISPLAYED_CANDIDATES = 3
@@ -55,6 +56,8 @@ function getStatusColor(status: EWStatus): string {
 }
 
 export function EWSection({ fen, isEngineReady }: EWSectionProps) {
+  const { settings, getEWConfig } = useSettingsContext()
+
   const {
     result,
     status,
@@ -62,10 +65,20 @@ export function EWSection({ fen, isEngineReady }: EWSectionProps) {
     error,
     config,
     calculate,
+    updateConfig,
     reset,
   } = useExpectedWinrate()
 
   const [showConfig, setShowConfig] = useState(false)
+
+  useEffect(() => {
+    updateConfig({
+      probabilityThreshold: settings.probabilityThreshold,
+      winrateLossThreshold: settings.winrateLossThreshold,
+      maiaLevel: settings.maiaLevel,
+      stockfishDepth: settings.stockfishDepth,
+    })
+  }, [settings, updateConfig])
 
   const handleCalculate = useCallback(() => {
     calculate(fen)
