@@ -188,8 +188,10 @@ export function GameBoard({
       />
       <style jsx>{`
         .board-container {
-          width: 100%;
           aspect-ratio: 1;
+          height: 100%;
+          width: auto;
+          max-width: 100%;
           position: relative;
           overflow: hidden;
         }

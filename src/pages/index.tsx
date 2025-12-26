@@ -3,7 +3,7 @@ import { GameBoard, NavigationControls } from '@/components/Board'
 import { PgnInput, MoveList, EnginePanel, EWSection } from '@/components/Analysis'
 import { SettingsDropdown } from '@/components/Settings'
 import { useChessGame } from '@/hooks'
-import { useEngines, useSettingsContext } from '@/contexts'
+import { useEngines } from '@/contexts'
 
 export default function Home() {
   const {
@@ -90,132 +90,140 @@ export default function Home() {
         <SettingsDropdown />
       </header>
       <div className="content">
-        <aside className="left-sidebar" data-testid="left-sidebar">
-          <section className="pgn-section" data-testid="pgn-section">
-            <h2>Load Game</h2>
-            <PgnInput onLoadPgn={actions.loadPgn} />
-          </section>
-          <section className="moves-section" data-testid="moves-section">
-            <h2>Moves</h2>
-            <MoveList
-              moves={displayedMoves}
-              movesWithVariations={movesWithVariations}
-              currentPath={currentPath}
-              onMoveClick={actions.goToPath}
-            />
-          </section>
-        </aside>
-        <div className="right-area" data-testid="right-area">
-          <div className="top-row" data-testid="top-row">
-            <div className="board-section" data-testid="board-section">
-              <GameBoard fen={displayedFen} onMove={actions.makeMove} />
-              <NavigationControls
-                onStart={actions.goToStart}
-                onBack={actions.goBack}
-                onForward={actions.goForward}
-                onEnd={actions.goToEnd}
-                isAtStart={isAtStart}
-                isAtEnd={isAtEnd}
+        <div className="main-row" data-testid="main-row">
+          <aside className="left-sidebar" data-testid="left-sidebar">
+            <section className="pgn-section" data-testid="pgn-section">
+              <h2>Load Game</h2>
+              <PgnInput onLoadPgn={actions.loadPgn} />
+            </section>
+            <section className="moves-section" data-testid="moves-section">
+              <h2>Moves</h2>
+              <MoveList
+                moves={displayedMoves}
+                movesWithVariations={movesWithVariations}
+                currentPath={currentPath}
+                onMoveClick={actions.goToPath}
               />
-            </div>
-            <div className="eval-panel-wrapper" data-testid="eval-panel">
-              <h2>Analysis</h2>
-              <EnginePanel
-                stockfishEvaluation={stockfishEvaluation}
-                maiaEvaluation={maiaEvaluation}
-                stockfishStatus={stockfishStatus}
-                maiaStatus={maiaStatus}
-                isStockfishEvaluating={isStockfishEvaluating}
-                isMaiaEvaluating={isMaiaEvaluating}
-              />
-            </div>
-          </div>
-          <div className="ew-section-wrapper">
-            <h2>Expected Winrate</h2>
-            <EWSection
-              fen={currentFen}
-              isEngineReady={stockfishStatus === 'ready' && maiaStatus === 'ready'}
-              onNavigate={handleEWNavigate}
+            </section>
+          </aside>
+          <div className="board-section" data-testid="board-section">
+            <GameBoard fen={displayedFen} onMove={actions.makeMove} />
+            <NavigationControls
+              onStart={actions.goToStart}
+              onBack={actions.goBack}
+              onForward={actions.goForward}
+              onEnd={actions.goToEnd}
+              isAtStart={isAtStart}
+              isAtEnd={isAtEnd}
             />
           </div>
+          <div className="eval-panel-wrapper" data-testid="eval-panel">
+            <h2>Analysis</h2>
+            <EnginePanel
+              stockfishEvaluation={stockfishEvaluation}
+              maiaEvaluation={maiaEvaluation}
+              stockfishStatus={stockfishStatus}
+              maiaStatus={maiaStatus}
+              isStockfishEvaluating={isStockfishEvaluating}
+              isMaiaEvaluating={isMaiaEvaluating}
+            />
+          </div>
+        </div>
+        <div className="ew-section-wrapper" data-testid="ew-section">
+          <h2>Expected Winrate</h2>
+          <EWSection
+            fen={currentFen}
+            isEngineReady={stockfishStatus === 'ready' && maiaStatus === 'ready'}
+            onNavigate={handleEWNavigate}
+          />
         </div>
       </div>
       <style jsx>{`
         .main-container {
-          min-height: 100vh;
+          height: 100vh;
           padding: var(--space-md);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
         }
         .header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: var(--space-lg);
+          margin-bottom: var(--space-md);
+          flex-shrink: 0;
         }
         .header h1 {
           margin: 0;
         }
         .content {
-          display: grid;
-          grid-template-columns: 280px 1fr;
-          gap: var(--space-lg);
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-md);
           max-width: 1400px;
           margin: 0 auto;
+          width: 100%;
+          flex: 1;
+          min-height: 0;
+        }
+        .main-row {
+          display: grid;
+          grid-template-columns: 220px 1fr 280px;
+          gap: var(--space-md);
+          flex: 1;
+          min-height: 0;
         }
         .left-sidebar {
           display: flex;
           flex-direction: column;
-          gap: var(--space-lg);
+          gap: var(--space-sm);
+          max-height: 100%;
+          overflow: hidden;
         }
         .left-sidebar h2 {
-          margin: 0 0 var(--space-sm) 0;
-          font-size: 0.875rem;
+          margin: 0 0 var(--space-xs) 0;
+          font-size: 0.75rem;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.05em;
           color: var(--color-text-muted);
         }
-        .pgn-section,
+        .pgn-section {
+          background: var(--color-surface);
+          border-radius: var(--radius-md);
+          padding: var(--space-sm);
+          border: 1px solid var(--color-border);
+          flex-shrink: 0;
+        }
         .moves-section {
           background: var(--color-surface);
           border-radius: var(--radius-md);
-          padding: var(--space-md);
+          padding: var(--space-sm);
           border: 1px solid var(--color-border);
-        }
-        .moves-section {
           flex: 1;
           overflow-y: auto;
-          max-height: calc(100vh - 400px);
-          min-height: 200px;
-        }
-        .right-area {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-lg);
-        }
-        .top-row {
-          display: flex;
-          gap: var(--space-lg);
-          align-items: stretch;
+          min-height: 120px;
         }
         .board-section {
           display: flex;
           flex-direction: column;
           gap: var(--space-sm);
-          flex: 0 0 auto;
-          width: min(65%, 600px);
+          align-items: center;
+          justify-content: center;
+          min-height: 0;
+          min-width: 0;
+          overflow: hidden;
         }
         .eval-panel-wrapper {
-          flex: 1;
-          min-width: 280px;
           background: var(--color-surface);
           border-radius: var(--radius-md);
-          padding: var(--space-md);
+          padding: var(--space-sm);
           border: 1px solid var(--color-border);
           overflow-y: auto;
         }
         .eval-panel-wrapper h2 {
-          margin: 0 0 var(--space-sm) 0;
-          font-size: 0.875rem;
+          margin: 0 0 var(--space-xs) 0;
+          font-size: 0.75rem;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.05em;
@@ -224,30 +232,39 @@ export default function Home() {
         .ew-section-wrapper {
           background: var(--color-surface);
           border-radius: var(--radius-md);
-          padding: var(--space-md);
+          padding: var(--space-sm);
           border: 1px solid var(--color-border);
+          flex-shrink: 0;
+          min-height: 180px;
+          max-height: 250px;
+          overflow-y: auto;
         }
         .ew-section-wrapper h2 {
-          margin: 0 0 var(--space-sm) 0;
-          font-size: 0.875rem;
+          margin: 0 0 var(--space-xs) 0;
+          font-size: 0.75rem;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.05em;
           color: var(--color-text-muted);
         }
         @media (max-width: 1024px) {
-          .top-row {
-            flex-direction: column;
+          .main-row {
+            grid-template-columns: 180px 1fr;
           }
           .eval-panel-wrapper {
-            width: 100%;
+            grid-column: 1 / -1;
           }
         }
         @media (max-width: 768px) {
-          .content {
+          .main-container {
+            height: auto;
+            min-height: 100vh;
+            overflow: auto;
+          }
+          .main-row {
             grid-template-columns: 1fr;
           }
-          .right-area {
+          .board-section {
             order: -1;
           }
         }

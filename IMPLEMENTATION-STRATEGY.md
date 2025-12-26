@@ -152,35 +152,31 @@ The analysis page displays **four evaluation methods** for any position, each pr
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────┐
 │ ExpectedEval Analysis                          [Calculate EW] [Export] [Settings ▼]│
-├─────────────┬──────────────────────────────────────────────────────────────────────┤
-│             │                                │                                     │
-│   PGN       │                                │  ┌─ EVALUATION PANEL ─────────────┐ │
-│   INPUT     │                                │  │                                │ │
-│             │                                │  │  Stockfish 17      +0.35 (54%) │ │
-│  [Paste     │          CHESSBOARD            │  │  ════════════════════════      │ │
-│   game      │              (A)               │  │  Best: e4, d4, Nf3             │ │
-│   here]     │         (interactive)          │  │                                │ │
-│             │                                │  │  Maia 1500          52.1%      │ │
-│  [Load PGN] │                                │  │  ════════════════════════      │ │
-│             │                                │  │  Predicted: e4 (35%), d4 (28%) │(B)
-│             │                                │  │                                │ │
-│─────────────│      ┌──◄ ◄ ► ►►──┐            │  │  EW (Maia)          53.2%      │ │
-│             │      └────────────┘            │  │  EW (SF)            54.1%      │ │
-│   MOVE      │                                │  │                                │ │
-│   LIST      ├────────────────────────────────┴──┴────────────────────────────────┘ │
-│             │  ┌─ EXPECTED WINRATE TREE (C) ───────────────────────────────────┐   │
-│  1. e4  e5  │  │                                                               │   │
-│  2. Nf3 Nc6 │  │  Sort by: [SF▼] [Maia] [Prob]                                 │   │
-│  3. Bb5 ... │  │                                                               │   │
-│             │  │  ▼ e4   EW: 54.2%  prob: 35%  ────────────────────────────────│   │
-│  (click to  │  │    ├─ e5   52%  (45%)  ├─ Nf3  51%  (40%)  └─ Bc4  50%  (25%) │   │
-│   navigate) │  │    └─ c5   53%  (30%)  ├─ Nc3  52%  (35%)  └─ d3   51%  (20%) │   │
-│             │  │                                                               │   │
-│             │  │  ▶ d4   EW: 52.8%  prob: 28%   ▶ Nf3   EW: 51.1%  prob: 20%   │   │
-│             │  │                                                               │   │
-│             │  │  (hover: preview on board)  (click: navigate to position)     │   │
-│             │  └───────────────────────────────────────────────────────────────┘   │
-└─────────────┴──────────────────────────────────────────────────────────────────────┘
+├─────────────┬──────────────────────────────────┬───────────────────────────────────┤
+│  PGN INPUT  │                                  │  ┌─ EVALUATION PANEL ──────────┐  │
+│             │                                  │  │  Stockfish 17   +0.35 (54%) │  │
+│  [Paste     │          CHESSBOARD              │  │  Best: e4, d4, Nf3          │  │
+│   game]     │              (A)                 │  │                             │  │
+│             │         (interactive)            │  │  Maia 1500       52.1%      │  │
+│  [Load PGN] │                                  │  │  Predicted: e4 (35%)...     │  │
+├─────────────┤       ┌──◄ ◄ ► ►►──┐             │  └─────────────────────────────┘  │
+│  MOVE LIST  │       └────────────┘             │                                   │
+│  (B)        │                                  │                                   │
+│  1. e4  e5  │                                  │                                   │
+│  2. Nf3 Nc6 │                                  │                                   │
+│  (click to  │                                  │                                   │
+│   navigate) │                                  │                                   │
+├─────────────┴──────────────────────────────────┴───────────────────────────────────┤
+│ ┌─ EXPECTED WINRATE TREE (C) ──────────────────────────────────────────────────┐   │
+│ │  Eval source: (•) Stockfish  ( ) Maia                                        │   │
+│ │                                                                              │   │
+│ │  ▼ e4  EW: 54% (35%)    ▶ d4  EW: 52% (28%)    ▶ Nf3  EW: 51% (20%)          │   │
+│ │    ├─ e5  48%                                                                │   │
+│ │    │  ├─ Nf3  51%       Hover any node for: play rate, cumulative %,         │   │
+│ │    │  └─ Bc4  50%       both evals                                           │   │
+│ │    └─ c5  52%                                                                │   │
+│ └──────────────────────────────────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────────────────────────────────┘
 
 [Settings] dropdown (appears on click):
 ┌─────────────────────────┐
@@ -192,13 +188,13 @@ The analysis page displays **four evaluation methods** for any position, each pr
 ```
 
 **Layout Key:**
-- **Left column:** PGN Input + Move List (full height)
-- **Top right (A+B):** Chessboard + Evaluation Panel side-by-side
-- **Bottom right (C):** Expected Winrate Tree spans under A+B for horizontal flow
+- **Top row:** PGN Input + Move List (left) | Chessboard (center) | Evaluation Panel (right)
+- **Bottom row (C):** Expected Winrate Tree spans full width
+- **All panels fit on desktop viewport without scrolling**
 
 ### Evaluation Panel Details
 
-The evaluation panel shows all four methods stacked:
+The evaluation panel shows SF and Maia baselines (EW results are shown in the tree below):
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -216,28 +212,31 @@ The evaluation panel shows all four methods stacked:
 │    e4  ████████████████░░░░  35%                   │
 │    d4  ███████████░░░░░░░░░  28%                   │
 │    Nf3 ████████░░░░░░░░░░░░  20%                   │
-│    c4  ████░░░░░░░░░░░░░░░░  10%                   │
-├─────────────────────────────────────────────────────┤
-│  EXPECTED WINRATE                                  │
-│                                                    │
-│  Using SF at leaves:    54.1%  (best: e4)          │
-│  Using Maia at leaves:  53.2%  (best: e4)          │
-│                                                    │
-│  Difference from baseline SF:  -0.1%               │
-│  (position plays out slightly worse than SF eval)  │
 └─────────────────────────────────────────────────────┘
 ```
 
-### EW Tree Sorting Options
+### EW Tree Display Logic
 
-The EW tree can be sorted by different criteria:
+The EW tree answers: **"Which move has the best realistic outcome given how humans play?"**
 
-| Sort | Description | Use Case |
-|------|-------------|----------|
-| **EW (SF)** | Highest expected winrate using SF leaf evals | "What's objectively best given human play?" |
-| **EW (Maia)** | Highest expected winrate using Maia leaf evals | "What feels best to a human?" |
-| **Probability** | Most likely human moves first | "What will my opponent probably play?" |
-| **SF Eval** | Traditional engine ranking | "What's theoretically best?" |
+| Level | Shows | Sorted by |
+|-------|-------|-----------|
+| **Candidate moves** | EW (probability-weighted average) | EW (highest first) |
+| **Tree nodes** | Eval (position quality) | Play rate (most likely first) |
+
+**Eval source toggle** (SF / Maia):
+- Switches which eval is displayed (SF or Maia)
+- Affects how candidate moves are sorted (by EW using that eval source)
+
+**Inline display**:
+- Candidate moves: `▼ e4  EW: 54%  (played 35%)`
+- Tree nodes: `├─ e5  48%` (just the eval)
+
+**Hover tooltip** reveals:
+- Play rate (Maia policy %)
+- Cumulative probability (chance of reaching this position)
+- Both SF and Maia evals
+- Board preview
 
 ---
 
