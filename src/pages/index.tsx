@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { GameBoard, NavigationControls } from '@/components/Board'
 import { PgnInput, MoveList, EnginePanel, EWSection } from '@/components/Analysis'
 import { SettingsDropdown } from '@/components/Settings'
@@ -16,6 +16,9 @@ export default function Home() {
     actions,
   } = useChessGame()
 
+  // Preview FEN for EW tree node clicks (overrides currentFen temporarily)
+  const [previewFen, setPreviewFen] = useState<string | null>(null)
+
   const {
     stockfishEvaluation,
     maiaEvaluation,
@@ -27,6 +30,19 @@ export default function Home() {
   } = useEngines()
 
   const lastEvaluatedFen = useRef<string | null>(null)
+
+  // Clear preview when user navigates via game controls
+  useEffect(() => {
+    setPreviewFen(null)
+  }, [currentPath])
+
+  // FEN to display on board (preview overrides current)
+  const displayedFen = previewFen ?? currentFen
+
+  // Handle EW tree node click - show position on board
+  const handleEWNavigate = useCallback((fen: string) => {
+    setPreviewFen(fen)
+  }, [])
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -92,7 +108,7 @@ export default function Home() {
         <div className="right-area" data-testid="right-area">
           <div className="top-row" data-testid="top-row">
             <div className="board-section" data-testid="board-section">
-              <GameBoard fen={currentFen} onMove={actions.makeMove} />
+              <GameBoard fen={displayedFen} onMove={actions.makeMove} />
               <NavigationControls
                 onStart={actions.goToStart}
                 onBack={actions.goBack}
@@ -119,6 +135,7 @@ export default function Home() {
             <EWSection
               fen={currentFen}
               isEngineReady={stockfishStatus === 'ready' && maiaStatus === 'ready'}
+              onNavigate={handleEWNavigate}
             />
           </div>
         </div>
