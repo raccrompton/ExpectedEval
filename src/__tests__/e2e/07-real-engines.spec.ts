@@ -4,336 +4,162 @@
  * These tests verify that the real Stockfish and Maia engines
  * load and evaluate positions correctly in the browser.
  *
- * Key differences from mock engine tests:
- * - Longer timeouts (engines need to download/initialize ~165MB of files)
- * - First run may take 30-60 seconds to download files
- * - Subsequent runs use cached files and are faster
- * - Actual engine evaluations (not fixed mock values)
+ * Focuses on:
+ * - Engine initialization and ready states
+ * - Realistic evaluation values and ranges
+ * - Performance within acceptable timeouts
+ *
+ * Optimized: Uses shared page to avoid repeated engine initialization.
  */
-import { test, expect, type Page } from '@playwright/test'
-
-// Configure longer timeout for all tests in this file
-test.setTimeout(180000) // 3 minutes per test
-
-// Use sfDepth=1 for fast engine evaluations in tests
-const TEST_URL = '/?sfDepth=1'
+import { test, expect, type Page, type BrowserContext } from '@playwright/test'
+import {
+  TEST_URL,
+  SAMPLE_PGN,
+  ENGINE_INIT_TIMEOUT,
+  EVAL_TIMEOUT,
+  MIN_REASONABLE_SF_WINRATE,
+  MAX_REASONABLE_SF_WINRATE,
+  MIN_REASONABLE_MAIA_VALUE,
+  MAX_REASONABLE_MAIA_VALUE,
+  waitForEnginesReady,
+  loadPgnAndWaitForEval,
+  trackConsoleErrors,
+  logCollectedErrors,
+} from './helpers'
 
 test.describe('07 - Real Engine Integration', () => {
-  const SAMPLE_PGN = '1. e4 e5 2. Nf3 Nc6 3. Bb5 a6'
+  // Run serially since tests share page state
+  test.describe.configure({ mode: 'serial' })
 
-  // Longer timeout for real engine initialization (downloads ~165MB on first run)
-  const ENGINE_INIT_TIMEOUT = 120000 // 2 minutes for first-time download
-  const EVAL_TIMEOUT = 30000 // 30 seconds for evaluation (faster with sfDepth=1)
+  let context: BrowserContext
+  let page: Page
+  let consoleErrors: string[]
+  let initStartTime: number
 
-  /**
-   * Helper to wait for both engines to be ready
-   */
-  async function waitForEnginesReady(page: Page) {
-    await expect(page.getByTestId('sf-status')).toContainText(/ready/i, {
-      timeout: ENGINE_INIT_TIMEOUT,
-    })
-    await expect(page.getByTestId('maia-status')).toContainText(/ready/i, {
-      timeout: ENGINE_INIT_TIMEOUT,
-    })
-  }
+  test.beforeAll(async ({ browser }) => {
+    initStartTime = Date.now()
+    context = await browser.newContext()
+    page = await context.newPage()
+    consoleErrors = trackConsoleErrors(page)
 
-  /**
-   * Helper to load a PGN and wait for evaluation
-   */
-  async function loadPgnAndWaitForEval(page: Page, pgn: string) {
-    await page.getByTestId('pgn-input').fill(pgn)
-    await page.getByTestId('load-pgn-button').click()
-
-    // Wait for evaluation to appear (sf-cp will be visible when eval is done)
-    await expect(page.getByTestId('sf-cp')).toBeVisible({ timeout: EVAL_TIMEOUT })
-  }
-
-  test.describe('Real Stockfish WASM', () => {
-    test('stockfish loads and shows ready status', async ({ page }) => {
-      await page.goto(TEST_URL)
-
-      // Wait for Stockfish to fully initialize
-      const sfStatus = page.getByTestId('sf-status')
-      await expect(sfStatus).toContainText(/ready/i, { timeout: ENGINE_INIT_TIMEOUT })
-    })
-
-    test('stockfish provides real evaluation', async ({ page }) => {
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-
-      // Load a simple position
-      await loadPgnAndWaitForEval(page, '1. e4')
-
-      // Should show a centipawn value
-      const sfCp = page.getByTestId('sf-cp')
-      const cpText = await sfCp.textContent()
-      expect(cpText).toBeTruthy()
-      // Should show a number like "+0.20" or "-0.15"
-      expect(cpText).toMatch(/[+-]?\d+\.\d+/)
-    })
-
-    test('stockfish provides best move recommendation', async ({ page }) => {
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
-
-      // Best move should be visible
-      const sfBestMove = page.getByTestId('sf-best-move')
-      await expect(sfBestMove).toBeVisible()
-
-      // Best move should be a valid chess move format
-      const moveText = await sfBestMove.textContent()
-      expect(moveText).toBeTruthy()
-      expect(moveText!.length).toBeGreaterThan(0)
-    })
-
-    test('stockfish winrate is reasonable', async ({ page }) => {
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
-
-      const sfWinrate = page.getByTestId('sf-winrate')
-      await expect(sfWinrate).toBeVisible()
-
-      // Winrate should be a percentage
-      const winrateText = await sfWinrate.textContent()
-      expect(winrateText).toMatch(/%/)
-
-      // Winrate should be between 30% and 70% for normal positions
-      const match = winrateText?.match(/(\d+(?:\.\d+)?)%/)
-      if (match) {
-        const winrate = parseFloat(match[1])
-        expect(winrate).toBeGreaterThan(30)
-        expect(winrate).toBeLessThan(70)
-      }
-    })
-
-    test('stockfish evaluation updates when navigating', async ({ page }) => {
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
-
-      // Evaluation should be visible
-      const sfCp = page.getByTestId('sf-cp')
-      await expect(sfCp).toBeVisible()
-
-      // Navigate to start
-      await page.getByTestId('nav-start').click()
-
-      // Wait for new evaluation (may show "Evaluating..." briefly)
-      await page.waitForTimeout(1000)
-      await expect(sfCp).toBeVisible({ timeout: EVAL_TIMEOUT })
-
-      // Evaluation should still be a valid number
-      const cpText = await sfCp.textContent()
-      expect(cpText).toMatch(/[+-]?\d+\.\d+|M\d+/)
-    })
+    await page.goto(TEST_URL)
+    await waitForEnginesReady(page)
   })
 
-  test.describe('Real Maia ONNX', () => {
-    test('maia loads and shows ready status', async ({ page }) => {
-      await page.goto(TEST_URL)
-
-      // Wait for Maia to fully initialize
-      const maiaStatus = page.getByTestId('maia-status')
-      await expect(maiaStatus).toContainText(/ready/i, { timeout: ENGINE_INIT_TIMEOUT })
-    })
-
-    test('maia provides move probabilities', async ({ page }) => {
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, '1. e4')
-
-      // Wait for predictions
-      const maiaMoves = page.getByTestId('maia-moves')
-      await expect(maiaMoves).toBeVisible({ timeout: EVAL_TIMEOUT })
-
-      // Should show moves with percentages
-      const movesText = await maiaMoves.textContent()
-      expect(movesText).toMatch(/%/)
-    })
-
-    test('maia provides value (win probability)', async ({ page }) => {
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, '1. e4')
-
-      const maiaValue = page.getByTestId('maia-value')
-      await expect(maiaValue).toBeVisible({ timeout: EVAL_TIMEOUT })
-
-      // Value should be a percentage
-      const valueText = await maiaValue.textContent()
-      expect(valueText).toMatch(/%/)
-
-      // Value should be between 20% and 80% for opening positions
-      // (Maia values can vary more than SF winrates)
-      const match = valueText?.match(/(\d+(?:\.\d+)?)%/)
-      if (match) {
-        const value = parseFloat(match[1])
-        expect(value).toBeGreaterThan(20)
-        expect(value).toBeLessThan(80)
-      }
-    })
-
-    test('maia predictions update when navigating', async ({ page }) => {
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
-
-      // Get predictions at current position
-      const maiaMoves = page.getByTestId('maia-moves')
-      await expect(maiaMoves).toBeVisible()
-
-      // Navigate to start
-      await page.getByTestId('nav-start').click()
-
-      // Wait for update
-      await page.waitForTimeout(1000)
-
-      // Predictions should still be visible
-      await expect(maiaMoves).toBeVisible({ timeout: EVAL_TIMEOUT })
-    })
+  test.afterAll(async () => {
+    logCollectedErrors(consoleErrors)
+    await context.close()
   })
 
-  test.describe('Both Engines Together', () => {
-    test('both engines initialize successfully', async ({ page }) => {
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-
-      // Both should be ready
+  test.describe('Engine Initialization', () => {
+    test('both engines initialize and show ready status', async () => {
       await expect(page.getByTestId('sf-status')).toContainText(/ready/i)
       await expect(page.getByTestId('maia-status')).toContainText(/ready/i)
     })
 
-    test('both engines evaluate same position', async ({ page }) => {
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
+    test('engines initialize within acceptable timeout', async () => {
+      const initTime = Date.now() - initStartTime
+      console.log(`Engine initialization time: ${initTime}ms`)
+      expect(initTime).toBeLessThan(ENGINE_INIT_TIMEOUT)
+    })
+  })
 
-      // Both should show results
-      await expect(page.getByTestId('sf-eval')).toBeVisible()
-      await expect(page.getByTestId('maia-moves')).toBeVisible()
+  test.describe('Stockfish Evaluation Quality', () => {
+    test('stockfish provides valid centipawn evaluation', async () => {
+      await loadPgnAndWaitForEval(page, '1. e4')
+
+      const sfCp = page.getByTestId('sf-cp')
+      const cpText = await sfCp.textContent()
+      expect(cpText).toBeTruthy()
+      expect(cpText).toMatch(/[+-]?\d+\.\d+/)
     })
 
-    test('evaluations update on navigation', async ({ page }) => {
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, '1. e4 e5 2. Nf3 Nc6 3. Bb5')
+    test('stockfish winrate is in reasonable range for normal positions', async () => {
+      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
 
-      // Both evals visible
-      await expect(page.getByTestId('sf-cp')).toBeVisible()
-      await expect(page.getByTestId('maia-value')).toBeVisible()
+      const sfWinrate = page.getByTestId('sf-winrate')
+      const winrateText = await sfWinrate.textContent()
+      expect(winrateText).toMatch(/%/)
 
-      // Navigate back
-      await page.getByTestId('nav-back').click()
-      await page.waitForTimeout(500)
+      const match = winrateText?.match(/(\d+(?:\.\d+)?)%/)
+      if (match) {
+        const winrate = parseFloat(match[1])
+        expect(winrate).toBeGreaterThan(MIN_REASONABLE_SF_WINRATE)
+        expect(winrate).toBeLessThan(MAX_REASONABLE_SF_WINRATE)
+      }
+    })
+
+    test('stockfish provides best move recommendation', async () => {
+      const sfBestMove = page.getByTestId('sf-best-move')
+      await expect(sfBestMove).toBeVisible()
+
+      const moveText = await sfBestMove.textContent()
+      expect(moveText).toBeTruthy()
+      expect(moveText!.length).toBeGreaterThan(0)
+    })
+  })
+
+  test.describe('Maia Evaluation Quality', () => {
+    test('maia provides move probabilities with percentages', async () => {
+      const maiaMoves = page.getByTestId('maia-moves')
+      await expect(maiaMoves).toBeVisible({ timeout: EVAL_TIMEOUT })
+
+      const movesText = await maiaMoves.textContent()
+      expect(movesText).toMatch(/%/)
+    })
+
+    test('maia value is in reasonable range for opening positions', async () => {
+      const maiaValue = page.getByTestId('maia-value')
+      await expect(maiaValue).toBeVisible({ timeout: EVAL_TIMEOUT })
+
+      const valueText = await maiaValue.textContent()
+      expect(valueText).toMatch(/%/)
+
+      const match = valueText?.match(/(\d+(?:\.\d+)?)%/)
+      if (match) {
+        const value = parseFloat(match[1])
+        expect(value).toBeGreaterThan(MIN_REASONABLE_MAIA_VALUE)
+        expect(value).toBeLessThan(MAX_REASONABLE_MAIA_VALUE)
+      }
+    })
+  })
+
+  test.describe('Engine Updates on Navigation', () => {
+    test('evaluations update when navigating through moves', async () => {
+      // Game was loaded in previous tests - go to start first
+      await page.getByTestId('nav-start').click()
+      await expect(page.getByTestId('maia-moves')).toBeVisible({ timeout: EVAL_TIMEOUT })
 
       // Navigate forward
       await page.getByTestId('nav-forward').click()
+      await expect(page.getByTestId('sf-eval')).toBeVisible({ timeout: EVAL_TIMEOUT })
 
-      // Wait for evaluations to update
-      await page.waitForTimeout(2000)
-
-      // Both should still show results (use longer timeout for evaluation)
+      // Navigate to end
+      await page.getByTestId('nav-end').click()
       await expect(page.getByTestId('sf-eval')).toBeVisible({ timeout: EVAL_TIMEOUT })
       await expect(page.getByTestId('maia-moves')).toBeVisible({ timeout: EVAL_TIMEOUT })
     })
   })
 
-  test.describe('Error Handling', () => {
-    /**
-     * Filter function for console messages.
-     * Returns true if the message should be IGNORED (not counted as error).
-     */
-    function shouldIgnoreConsoleMessage(text: string): boolean {
-      const ignoredPatterns = [
-        'CORS',
-        'SharedArrayBuffer',
-        'Maia value:', // Debug log from engine
-        'Maia:', // Maia initialization logs
-        'Stockfish', // Stockfish initialization logs
-        'Download the React DevTools',
-        'net::ERR',
-        '404',
-        'Failed to load resource', // Network issues
-        'Warning:', // React warnings
-        'Hydration', // Next.js hydration warnings
-        'onnxruntime', // ONNX runtime logs
-        'WebAssembly', // WASM-related logs
-      ]
-      return ignoredPatterns.some((pattern) => text.includes(pattern))
-    }
+  test.describe('Performance', () => {
+    test('evaluation completes within reasonable time', async () => {
+      // Navigate to start first, then measure time to go to end
+      await page.getByTestId('nav-start').click()
+      await expect(page.getByTestId('sf-cp')).toBeVisible({ timeout: EVAL_TIMEOUT })
 
-    test('no critical console errors during initialization', async ({ page }) => {
-      const criticalErrors: string[] = []
+      const startTime = Date.now()
+      await page.getByTestId('nav-end').click()
+      await expect(page.getByTestId('sf-cp')).toBeVisible({ timeout: EVAL_TIMEOUT })
+      const evalTime = Date.now() - startTime
 
-      page.on('console', (msg) => {
-        if (msg.type() === 'error') {
-          const text = msg.text()
-          if (!shouldIgnoreConsoleMessage(text)) {
-            criticalErrors.push(text)
-          }
-        }
-      })
-
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-
-      expect(criticalErrors).toEqual([])
-    })
-
-    test('no critical console errors during evaluation', async ({ page }) => {
-      const criticalErrors: string[] = []
-
-      page.on('console', (msg) => {
-        if (msg.type() === 'error') {
-          const text = msg.text()
-          if (!shouldIgnoreConsoleMessage(text)) {
-            criticalErrors.push(text)
-          }
-        }
-      })
-
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
-
-      expect(criticalErrors).toEqual([])
+      console.log(`Evaluation time: ${evalTime}ms`)
+      expect(evalTime).toBeLessThan(EVAL_TIMEOUT)
     })
   })
 
-  test.describe('Performance', () => {
-    test('engines initialize within timeout', async ({ page }) => {
-      const startTime = Date.now()
-
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-
-      const initTime = Date.now() - startTime
-      console.log(`Engine initialization time: ${initTime}ms`)
-
-      // Should initialize within the timeout (cached is faster)
-      expect(initTime).toBeLessThan(ENGINE_INIT_TIMEOUT)
-    })
-
-    test('evaluation completes within reasonable time', async ({ page }) => {
-      await page.goto(TEST_URL)
-      await waitForEnginesReady(page)
-
-      // Load PGN
-      await page.getByTestId('pgn-input').fill(SAMPLE_PGN)
-      await page.getByTestId('load-pgn-button').click()
-
-      const startTime = Date.now()
-
-      // Wait for evaluation
-      await expect(page.getByTestId('sf-cp')).toBeVisible({ timeout: EVAL_TIMEOUT })
-
-      const evalTime = Date.now() - startTime
-      console.log(`Evaluation time: ${evalTime}ms`)
-
-      // Evaluation should complete within timeout
-      expect(evalTime).toBeLessThan(EVAL_TIMEOUT)
+  test.describe('Error Handling', () => {
+    test('no critical console errors during engine operations', async () => {
+      expect(consoleErrors).toEqual([])
     })
   })
 })
