@@ -1,254 +1,124 @@
 /**
  * E2E Tests for Engine Display (Phase 8)
  *
- * These tests verify that the engine panel displays correctly
+ * Tests verify that the engine panel displays correctly
  * and that evaluations are shown after loading positions.
  *
- * Note: Originally designed for mock engines, these tests now work
- * with real engines by using appropriate timeouts.
+ * Optimized: Uses shared page to avoid repeated engine initialization.
  */
-import { test, expect, type Page } from '@playwright/test'
-
-// Configure longer timeout for engine initialization
-test.setTimeout(180000)
+import { test, expect, type Page, type BrowserContext } from '@playwright/test'
+import {
+  TEST_URL,
+  SAMPLE_PGN,
+  EVAL_TIMEOUT,
+  waitForEnginesReady,
+  loadPgnAndWaitForEval,
+  trackConsoleErrors,
+  logCollectedErrors,
+} from './helpers'
 
 test.describe('05 - Engine Display', () => {
-  const SAMPLE_PGN = '1. e4 e5 2. Nf3 Nc6 3. Bb5 a6'
-
-  // Real engines need longer initialization (downloads ~165MB on first run)
-  const ENGINE_INIT_TIMEOUT = 120000
-  const EVAL_TIMEOUT = 60000
-
-  /**
-   * Helper to wait for both engines to be ready
-   */
-  async function waitForEnginesReady(page: Page) {
-    await expect(page.getByTestId('sf-status')).toContainText(/ready/i, {
-      timeout: ENGINE_INIT_TIMEOUT,
-    })
-    await expect(page.getByTestId('maia-status')).toContainText(/ready/i, {
-      timeout: ENGINE_INIT_TIMEOUT,
-    })
-  }
-
-  /**
-   * Helper to load a PGN and wait for evaluation
-   */
-  async function loadPgnAndWaitForEval(page: Page, pgn: string) {
-    await page.getByTestId('pgn-input').fill(pgn)
-    await page.getByTestId('load-pgn-button').click()
-    await expect(page.getByTestId('sf-cp')).toBeVisible({ timeout: EVAL_TIMEOUT })
-  }
-
+  // Simple visibility tests - no engine initialization needed
   test.describe('Engine Panel Visibility', () => {
-    test('engine panel is visible on the page', async ({ page }) => {
-      await page.goto('/')
+    test('engine panel and sections are visible', async ({ page }) => {
+      await page.goto(TEST_URL)
 
-      const enginePanel = page.getByTestId('engine-panel')
-      await expect(enginePanel).toBeVisible()
+      await expect(page.getByTestId('engine-panel')).toBeVisible()
+      await expect(page.getByTestId('stockfish-section')).toBeVisible()
+      await expect(page.getByTestId('maia-section')).toBeVisible()
     })
 
-    test('stockfish section is visible', async ({ page }) => {
-      await page.goto('/')
+    test('engine status indicators are visible', async ({ page }) => {
+      await page.goto(TEST_URL)
 
-      const stockfishSection = page.getByTestId('stockfish-section')
-      await expect(stockfishSection).toBeVisible()
-    })
-
-    test('maia section is visible', async ({ page }) => {
-      await page.goto('/')
-
-      const maiaSection = page.getByTestId('maia-section')
-      await expect(maiaSection).toBeVisible()
+      await expect(page.getByTestId('sf-status')).toBeVisible()
+      await expect(page.getByTestId('maia-status')).toBeVisible()
     })
   })
 
-  test.describe('Stockfish Evaluation Display', () => {
-    test('shows stockfish evaluation after loading position', async ({ page }) => {
-      await page.goto('/')
+  // Engine-dependent tests - share a single page to avoid repeated init
+  test.describe('Engine Evaluation Tests', () => {
+    // Run serially since tests share page state
+    test.describe.configure({ mode: 'serial' })
+
+    let context: BrowserContext
+    let page: Page
+    let consoleErrors: string[]
+
+    test.beforeAll(async ({ browser }) => {
+      context = await browser.newContext()
+      page = await context.newPage()
+      consoleErrors = trackConsoleErrors(page)
+
+      await page.goto(TEST_URL)
       await waitForEnginesReady(page)
-
-      await page.getByTestId('pgn-input').fill(SAMPLE_PGN)
-      await page.getByTestId('load-pgn-button').click()
-
-      const sfEval = page.getByTestId('sf-eval')
-      await expect(sfEval).toBeVisible()
     })
 
-    test('stockfish evaluation shows centipawn value', async ({ page }) => {
-      await page.goto('/')
-      await waitForEnginesReady(page)
+    test.afterAll(async () => {
+      logCollectedErrors(consoleErrors)
+      await context.close()
+    })
+
+    test('engines show ready status after initialization', async () => {
+      await expect(page.getByTestId('sf-status')).toContainText(/ready/i)
+      await expect(page.getByTestId('maia-status')).toContainText(/ready/i)
+    })
+
+    test('stockfish shows evaluation after loading position', async () => {
       await loadPgnAndWaitForEval(page, SAMPLE_PGN)
 
+      // Eval section visible
+      await expect(page.getByTestId('sf-eval')).toBeVisible()
+
+      // Shows centipawn value
       const sfCp = page.getByTestId('sf-cp')
       await expect(sfCp).toBeVisible()
       await expect(sfCp).toContainText(/[+-]?\d+\.\d+|M\d+/)
-    })
 
-    test('stockfish evaluation shows winrate percentage', async ({ page }) => {
-      await page.goto('/')
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
-
+      // Shows winrate percentage
       const sfWinrate = page.getByTestId('sf-winrate')
       await expect(sfWinrate).toBeVisible()
       await expect(sfWinrate).toContainText(/%/)
+
+      // Shows best move
+      await expect(page.getByTestId('sf-best-move')).toBeVisible()
     })
 
-    test('stockfish shows best move', async ({ page }) => {
-      await page.goto('/')
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
-
-      const sfBestMove = page.getByTestId('sf-best-move')
-      await expect(sfBestMove).toBeVisible()
-    })
-  })
-
-  test.describe('Maia Prediction Display', () => {
-    test('shows maia predictions after loading position', async ({ page }) => {
-      await page.goto('/')
-      await waitForEnginesReady(page)
-
-      await page.getByTestId('pgn-input').fill(SAMPLE_PGN)
-      await page.getByTestId('load-pgn-button').click()
-
+    test('maia shows predictions after loading position', async () => {
+      // Position already loaded from previous test
       const maiaSection = page.getByTestId('maia-section')
       await expect(maiaSection).toBeVisible()
-    })
 
-    test('maia shows value (win probability)', async ({ page }) => {
-      await page.goto('/')
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
-
+      // Shows value (win probability)
       const maiaValue = page.getByTestId('maia-value')
       await expect(maiaValue).toBeVisible()
       await expect(maiaValue).toContainText(/%/)
-    })
 
-    test('maia shows predicted moves with probabilities', async ({ page }) => {
-      await page.goto('/')
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
-
-      const maiaMoves = page.getByTestId('maia-moves')
-      await expect(maiaMoves).toBeVisible()
-    })
-
-    test('maia move predictions show percentages', async ({ page }) => {
-      await page.goto('/')
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
-
+      // Shows predicted moves with percentages
       const maiaMoves = page.getByTestId('maia-moves')
       await expect(maiaMoves).toBeVisible()
       await expect(maiaMoves).toContainText(/%/)
     })
-  })
 
-  test.describe('Engine Updates on Navigation', () => {
-    test('evaluation updates when navigating to different position', async ({ page }) => {
-      await page.goto('/')
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
-
+    test('evaluations update when navigating', async () => {
       const sfEval = page.getByTestId('sf-eval')
-      await expect(sfEval).toBeVisible()
-
-      await page.getByTestId('move-0').click()
-      await page.waitForTimeout(1000)
-
-      await expect(sfEval).toBeVisible()
-    })
-
-    test('maia predictions update when navigating', async ({ page }) => {
-      await page.goto('/')
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
-
-      await page.getByTestId('nav-start').click()
-      await page.waitForTimeout(1000)
-
       const maiaMoves = page.getByTestId('maia-moves')
+
+      // Game was loaded in previous test - go to start first
+      await page.getByTestId('nav-start').click()
       await expect(maiaMoves).toBeVisible({ timeout: EVAL_TIMEOUT })
-    })
-  })
 
-  test.describe('Engine Status Display', () => {
-    test('shows stockfish status indicator', async ({ page }) => {
-      await page.goto('/')
-
-      const sfStatus = page.getByTestId('sf-status')
-      await expect(sfStatus).toBeVisible()
-    })
-
-    test('shows maia status indicator', async ({ page }) => {
-      await page.goto('/')
-
-      const maiaStatus = page.getByTestId('maia-status')
-      await expect(maiaStatus).toBeVisible()
-    })
-
-    test('stockfish shows ready status after initialization', async ({ page }) => {
-      await page.goto('/')
-
-      const sfStatus = page.getByTestId('sf-status')
-      await expect(sfStatus).toContainText(/ready/i, { timeout: ENGINE_INIT_TIMEOUT })
-    })
-
-    test('maia shows ready status after initialization', async ({ page }) => {
-      await page.goto('/')
-
-      const maiaStatus = page.getByTestId('maia-status')
-      await expect(maiaStatus).toContainText(/ready/i, { timeout: ENGINE_INIT_TIMEOUT })
-    })
-  })
-
-  test.describe('No Console Errors', () => {
-    /**
-     * Filter function for console messages.
-     * Returns true if the message should be IGNORED (not counted as error).
-     */
-    function shouldIgnoreConsoleMessage(text: string): boolean {
-      const ignoredPatterns = [
-        'CORS',
-        'SharedArrayBuffer',
-        'Maia value:', // Debug log from engine
-        'Maia:', // Maia initialization logs
-        'Stockfish', // Stockfish initialization logs
-        'Download the React DevTools',
-        'net::ERR',
-        '404',
-        'Failed to load resource',
-        'Warning:',
-        'Hydration',
-        'onnxruntime',
-        'WebAssembly',
-      ]
-      return ignoredPatterns.some((pattern) => text.includes(pattern))
-    }
-
-    test('no console errors with engine panel', async ({ page }) => {
-      const errors: string[] = []
-
-      page.on('console', (msg) => {
-        if (msg.type() === 'error') {
-          const text = msg.text()
-          if (!shouldIgnoreConsoleMessage(text)) {
-            errors.push(text)
-          }
-        }
-      })
-
-      await page.goto('/')
-      await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
-
-      await page.getByTestId('move-0').click()
+      // Navigate to end
       await page.getByTestId('nav-end').click()
+      await expect(sfEval).toBeVisible({ timeout: EVAL_TIMEOUT })
 
-      expect(errors).toEqual([])
+      // Click a specific move
+      await page.getByTestId('move-0').click()
+      await expect(sfEval).toBeVisible({ timeout: EVAL_TIMEOUT })
+    })
+
+    test('no console errors during engine operations', async () => {
+      expect(consoleErrors).toEqual([])
     })
   })
 })
