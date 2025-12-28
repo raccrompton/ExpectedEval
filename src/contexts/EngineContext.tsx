@@ -70,29 +70,69 @@ export function EngineProvider({ children }: EngineProviderProps) {
   const currentEvalFen = useRef<string | null>(null)
 
   useEffect(() => {
-    const sfEngine = new RealStockfish()
-    const maiaEngine = new RealMaia()
+    let mounted = true
+    let sfEngine: RealStockfish | null = null
+    let maiaEngine: RealMaia | null = null
 
-    setStockfishStatus('loading')
-    setMaiaStatus('loading')
+    // Cleanup helper that handles async destroy
+    const cleanupEngines = async () => {
+      if (maiaEngine) {
+        try {
+          await maiaEngine.destroy()
+        } catch (e) {
+          console.warn('Error destroying Maia:', e)
+        }
+      }
+      if (sfEngine) {
+        sfEngine.destroy()
+      }
+    }
 
-    Promise.all([sfEngine.init(), maiaEngine.init()])
-      .then(() => {
+    // Initialize engines sequentially to avoid memory pressure
+    // Both engines together need ~325MB+ of WASM memory
+    const initEngines = async () => {
+      try {
+        // Initialize Stockfish first (larger memory footprint: 160MB + 75MB NNUE)
+        sfEngine = new RealStockfish()
+        setStockfishStatus('loading')
+        await sfEngine.init()
+
+        if (!mounted) {
+          sfEngine.destroy()
+          return
+        }
+        setStockfishStatus('ready')
+
+        // Then initialize Maia (89MB ONNX model)
+        maiaEngine = new RealMaia()
+        setMaiaStatus('loading')
+        await maiaEngine.init()
+
+        if (!mounted) {
+          await cleanupEngines()
+          return
+        }
+
         setStockfish(sfEngine)
         setMaia(maiaEngine)
         setIsInitialized(true)
-        setStockfishStatus('ready')
         setMaiaStatus('ready')
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Failed to initialize engines:', error)
-        setStockfishStatus('error')
-        setMaiaStatus('error')
-      })
+        if (mounted) {
+          setStockfishStatus('error')
+          setMaiaStatus('error')
+        }
+        // Clean up any partially initialized engines
+        await cleanupEngines()
+      }
+    }
+
+    initEngines()
 
     return () => {
-      sfEngine.destroy()
-      maiaEngine.destroy()
+      mounted = false
+      cleanupEngines()
     }
   }, [])
 
