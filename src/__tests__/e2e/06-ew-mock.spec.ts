@@ -86,9 +86,8 @@ test.describe('06 - Expected Winrate', () => {
     })
 
     test('EW results display candidate moves with probabilities', async () => {
-      await expect(page.getByTestId('ew-candidates')).toBeVisible()
-
-      const firstCandidate = page.getByTestId('ew-candidate-0')
+      // Candidates are shown in the tree (no separate list)
+      const firstCandidate = page.getByTestId('ew-tree-candidate-0')
       await expect(firstCandidate).toBeVisible()
       await expect(firstCandidate).toContainText(/%/)
     })
