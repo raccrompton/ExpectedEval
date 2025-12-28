@@ -2,53 +2,12 @@
 
 > Static rules and coding standards. Claude reads this automatically. Do not modify.
 
----
+**Summary:**
 
-## Workflow Sequence
-
-Follow these steps in order for every coding task.
-
-### Step 1: Before Writing Code
-
-1. Read `.claude/skills/comment-standards.md`
-2. Read additional skills files for your task type:
-   - TypeScript/JS → `typescript-standards.md`
-   - React/TSX → `typescript-standards.md` + `react-standards.md`
-   - Python → `python-standards.md`
-   - Features/bug fixes → `testing-standards.md`
-
-### Step 2: Write Code (TDD Cycle)
-
-1. **Red**: Write a failing test that defines expected behavior
-2. **Red**: Run the test, confirm it fails
-3. **Green**: Write minimum code to make the test pass
-4. **Refactor**: Clean up while keeping tests green
-5. **Verify**: Run full test suite (120-second timeout) to catch regressions
-
-### Step 3: After Writing Code
-
-Skip this step only if no code files were modified. Track which files you modify throughout the task.
-
-1. Invoke `code-standards-reviewer` and `architect` agents with your modified files
-2. Address any failures before proceeding
-
-### Step 4: Before Committing
-
-1. Run linter and fix issues
-2. Run tests
-3. Review changes with `git diff`
-4. If code files changed, invoke `docs-updater` agent with summary of work done
-5. Commit using conventional format: `type(scope): description`
-
-### Step 5: After Finishing (Automatic)
-
-The `on-stop.sh` hook automatically verifies:
-
-- Type checking passes
-- Linting rules satisfied
-- Code is properly formatted
-
-If any check fails, fix the issues before considering the task complete.
+1. Read skills files before writing code
+2. Follow TDD: write failing test first, then implement
+3. Follow existing patterns, make minimal changes
+4. Run review agents after code changes; run docs-updater when committing
 
 ---
 
@@ -74,44 +33,17 @@ If any check fails, fix the issues before considering the task complete.
 
 ---
 
-## TDD Workflow Details
+## Required Reading Before Writing Code
 
-### Test Order by Feature Type
+Read the relevant skills files before writing ANY code:
 
-| Feature Type  | Write First      | Then                 |
-| ------------- | ---------------- | -------------------- |
-| UI/User flows | E2E (Playwright) | Component/unit tests |
-| API/Backend   | Integration test | Unit tests           |
-| Pure logic    | Unit test        | —                    |
-
-### For Each Feature
-
-1. Write E2E/integration test defining the user-visible behavior
-2. Write unit tests for complex logic
-3. Implement to make tests pass
-4. Verify no regressions (all previous tests still pass)
-
-### Prototypes
-
-Write tests concurrently. No untested code merges to main.
-
-See `.claude/skills/testing-standards.md` for test quality standards.
-
----
-
-## Git Workflow Details
-
-### Commit Message Format
-
-- Use conventional commits: `type(scope): description`
-- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
-- Keep subject line under 72 characters
-- Use imperative mood: "Add feature" not "Added feature"
-
-### Commit Attribution
-
-- No "Generated with Claude Code" or "Co-Authored-By: Claude" lines
-- Enforced via `gitCommitCoAuthor: false` in `.claude/settings.json`
+| Task Type          | Required Files                           |
+| ------------------ | ---------------------------------------- |
+| Any code           | `.claude/skills/comment-standards.md`    |
+| Features/bug fixes | `.claude/skills/testing-standards.md`    |
+| TypeScript/JS      | `.claude/skills/typescript-standards.md` |
+| React/JSX/TSX      | `.claude/skills/react-standards.md`      |
+| Python             | `.claude/skills/python-standards.md`     |
 
 ---
 
@@ -119,23 +51,110 @@ See `.claude/skills/testing-standards.md` for test quality standards.
 
 This project uses MCP servers configured in `.mcp.json`.
 
-| Server       | When to Use                                                              |
-| ------------ | ------------------------------------------------------------------------ |
-| **context7** | Automatically for code generation, setup/configuration, and library docs |
-| **github**   | For PR reviews, issue management, and repository operations              |
+| Server       | When to Use                                                                  |
+| ------------ | ---------------------------------------------------------------------------- |
+| **context7** | **Automatically** for code generation, setup/configuration, and library docs |
+| **github**   | For PR reviews, issue management, and repository operations                  |
 
-### context7 Usage
+**Usage:**
 
-Automatically use `resolve-library-id` then `get-library-docs` without being asked when:
+- **context7**: Automatically use `resolve-library-id` then `get-library-docs` without being asked when:
+  - Generating code that uses external libraries
+  - Providing setup or configuration steps for tools/frameworks
+  - Answering questions about library/API usage
+  - Writing code that integrates with third-party services
+- **github**: Prefer MCP tools over raw `gh` CLI commands for structured data access.
 
-- Generating code that uses external libraries
-- Providing setup or configuration steps for tools/frameworks
-- Answering questions about library/API usage
-- Writing code that integrates with third-party services
+---
 
-### github Usage
+## Mandatory Workflows
 
-Prefer MCP tools over raw `gh` CLI commands for structured data access.
+### After Every Code Change
+
+Track which files you modify. Before completing any coding task, invoke review agents:
+
+```
+Task(
+  subagent_type="code-standards-reviewer",
+  prompt="Review these files I modified: [list files here]"
+)
+
+Task(
+  subagent_type="architect",
+  prompt="Review these files I modified: [list files here]"
+)
+```
+
+Address any failures before considering the task complete.
+
+Skip agents only if no code files were modified (research, planning, Q&A only).
+
+### TDD Workflow
+
+Follow Red-Green-Refactor for all code changes:
+
+1. **Red** — Write a failing test that defines expected behavior, watch it fail
+2. **Green** — Write minimum code to make the test pass
+3. **Refactor** — Clean up while keeping tests green
+4. **Verify** — Run full test suite to catch regressions (use 120-second timeout)
+
+**Test order by feature type:**
+
+| Feature Type  | Test First       | Then                 |
+| ------------- | ---------------- | -------------------- |
+| UI/User flows | E2E (Playwright) | Component/unit tests |
+| API/Backend   | Integration test | Unit tests           |
+| Pure logic    | Unit test        | —                    |
+
+**For each feature:**
+
+1. Write E2E/integration test defining the user-visible behavior
+2. Write unit tests for complex logic
+3. Implement to make tests pass
+4. Verify no regressions (all previous tests still pass)
+
+**Prototypes:** Write tests concurrently. No untested code merges to main.
+
+See `.claude/skills/testing-standards.md` for test quality standards.
+
+### On-Stop Hook
+
+When you finish a task, `on-stop.sh` automatically verifies:
+
+- Type checking passes
+- Linting rules satisfied
+- Code is properly formatted
+
+Address any failures before considering the task complete.
+
+---
+
+## Git Workflow
+
+### Commit Messages
+
+- Use conventional commits: `type(scope): description`
+- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+- Keep subject line under 72 characters
+- Use imperative mood: "Add feature" not "Added feature"
+
+### Before Committing
+
+1. Run linter and fix issues
+2. Run tests
+3. Review changes with `git diff`
+4. Run docs-updater agent:
+   ```
+   Task(
+     subagent_type="docs-updater",
+     prompt="Work done: [brief summary]. Files changed: [list files here]"
+   )
+   ```
+
+### Commit Attribution
+
+- No "Generated with Claude Code" or "Co-Authored-By: Claude" lines
+- Enforced via `gitCommitCoAuthor: false` in `.claude/settings.json`
 
 ---
 
