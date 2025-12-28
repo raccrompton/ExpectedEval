@@ -18,6 +18,7 @@ import { useEngines } from '@/contexts'
 import {
   calculateMaiaOnlyEW,
   enrichWithStockfish,
+  clearPredictionCache,
   type EWResult,
   type EWConfig,
   type OnEWProgress,
@@ -249,6 +250,11 @@ export function useExpectedWinrate(
     setConfig((prev) => ({ ...prev, ...partial }))
   }, [])
 
+  // Clear prediction cache when maiaLevel changes (cached predictions are ELO-dependent)
+  useEffect(() => {
+    clearPredictionCache()
+  }, [config.maiaLevel])
+
   const reset = useCallback(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current)
@@ -258,6 +264,8 @@ export function useExpectedWinrate(
     setStatus('idle')
     setProgress(null)
     setError(null)
+    // Clear prediction cache to free memory
+    clearPredictionCache()
   }, [])
 
   return {

@@ -501,6 +501,13 @@ function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTr
     isCandidate: boolean
   } | null>(null)
 
+  // Clear expanded nodes and tooltip when new candidates arrive (position changed)
+  // This prevents memory leak from accumulating node IDs across position changes
+  useEffect(() => {
+    setExpandedNodes(new Set())
+    setTooltipData(null)
+  }, [candidates])
+
   const toggleNode = (nodeId: string) => {
     setExpandedNodes((prev) => {
       const next = new Set(prev)

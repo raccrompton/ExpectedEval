@@ -43,3 +43,11 @@ export {
   getMaxDepth,
   yieldToUI,
 } from './treeBuilder'
+
+// Prediction cache
+export {
+  getCachedPrediction,
+  cachePrediction,
+  clearCache as clearPredictionCache,
+  getCacheStats,
+} from './predictionCache'
