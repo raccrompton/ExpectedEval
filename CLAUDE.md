@@ -1,8 +1,39 @@
 # ExpectedEval - Project Knowledge
 
-> This file contains stable domain knowledge for the ExpectedEval MVP.
+> This file contains domain knowledge and progress tracking for the ExpectedEval MVP.
 > For coding standards, see `.claude/CLAUDE.md`.
-> For implementation details, see `IMPLEMENTATION-STRATEGY.md`.
+
+---
+
+## Current Progress
+
+### Completed
+
+- **Phase 1-3: Core Logic** - Chess utilities, engine adapters, EW algorithm (234 unit tests)
+- **Phase 4-7: UI Foundation** - Board, PGN input, move list, navigation, variations display
+- **Phase 8-9: Engine Display** - Mock engine panels, EW section with tree visualization
+- **Phase 10: Real Engines + Settings** - Stockfish WASM, Maia ONNX, configurable settings with localStorage
+
+### In Progress
+
+- **Phase 10.5: Maia-First EW Architecture**
+  - [x] `calculateMaiaOnlyEW()` - fast path using Maia only
+  - [x] `enrichWithStockfish()` - adds SF data on-demand
+  - [x] `selectCandidatesByMaiaProbability()` - candidate selection
+  - [x] Auto-trigger on FEN change with 300ms debounce
+  - [x] UI yield mechanism to prevent page freeze
+  - [ ] Verify all E2E tests pass after changes
+
+### TODO
+
+- **Phase 11: Full E2E + Polish** - Error handling, loading states, responsive layout
+
+### Test Status
+
+| Type | Count | Status |
+|------|-------|--------|
+| Unit tests | 234 | ✅ Passing |
+| E2E tests | 154 | ✅ Passing (as of Phase 10) |
 
 ---
 
@@ -49,23 +80,19 @@ The EW calculation uses a **Maia-first approach** for responsive UI:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ FAST PATH: calculateMaiaOnlyEW() - Auto-triggered               │
-│                                                                 │
 │   1. Select candidates by Maia probability (top N moves)        │
 │   2. Build probability trees using Maia policy head             │
 │   3. Evaluate nodes using Maia value head                       │
 │   4. Compute EW(Maia) immediately                               │
-│                                                                 │
 │   Result: SF fields are NULL, EW(Maia) is populated             │
 └─────────────────────────────────────────────────────────────────┘
                               ↓ User clicks "Add SF Analysis"
 ┌─────────────────────────────────────────────────────────────────┐
 │ SLOW PATH: enrichWithStockfish() - On-demand                    │
-│                                                                 │
 │   1. Collect all unique positions from existing trees           │
 │   2. Batch evaluate with Stockfish                              │
 │   3. Populate SF values into tree nodes                         │
 │   4. Compute EW(SF)                                             │
-│                                                                 │
 │   Result: Full result with both EW(SF) and EW(Maia)             │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -75,110 +102,59 @@ The EW calculation uses a **Maia-first approach** for responsive UI:
 - `enrichWithStockfish(result, stockfish)` → Adds SF data to existing result
 - `calculateExpectedWinrate(fen, config, sf, maia)` → Full calculation (legacy)
 
+### UI Responsiveness
+
+Tree building yields to the browser event loop every 3 Maia predictions via `yieldToUI()` (a `setTimeout(resolve, 0)` wrapper in [treeBuilder.ts](src/core/analysis/treeBuilder.ts)). This prevents page freezing during calculation while keeping the implementation simple (no web workers needed for Maia).
+
+Additional responsiveness measures:
+- **300ms debounce** on position changes before auto-triggering EW calculation
+- **Stale result detection** via `currentFenRef` - discards results if position changed during calculation
+- **Concurrent engine guard** - waits for panel evaluation to complete before starting EW calc
+
 ### The Four Phases (Full Calculation)
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│ Phase 1: FILTER CANDIDATE MOVES                                 │
-│   • Stockfish evaluates all legal moves                         │
-│   • Keep moves within winrate loss threshold (e.g., <5%)        │
-│   • Also get base position winrate for baseline display         │
-│   • Maia predicts move probabilities for baseline display       │
-└─────────────────────────────────────────────────────────────────┘
+Phase 1: FILTER CANDIDATE MOVES
+  • Stockfish evaluates all legal moves
+  • Keep moves within winrate loss threshold (e.g., <5%)
+  • Get base position winrate for baseline display
                               ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ Phase 2: BUILD PROBABILITY TREES                                │
-│   For EACH candidate move:                                      │
-│   • Apply the candidate move to get the resulting FEN           │
-│   • Build tree starting from that FEN (opponent's responses)    │
-│   • Maia predicts likely moves at each position                 │
-│   • Prune branches where cumProb < probabilityThreshold         │
-│   • NO maxDepth limit - termination is probability-based only   │
-│                                                                 │
-│   Example: candidate "e4" → tree starts after e4 is played      │
-│   showing Black's responses (e5: 45%, c5: 30%, etc.)            │
-└─────────────────────────────────────────────────────────────────┘
+Phase 2: BUILD PROBABILITY TREES
+  For EACH candidate move:
+  • Apply the candidate move to get the resulting FEN
+  • Build tree starting from that FEN (opponent's responses)
+  • Maia predicts likely moves at each position
+  • Prune branches where cumProb < probabilityThreshold
+  • NO maxDepth limit - termination is probability-based only
                               ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ Phase 3: EVALUATE POSITIONS WITH BOTH ENGINES                   │
-│   • Stockfish evaluates all nodes (objective evaluation)        │
-│   • Maia evaluates all nodes (human-perceived evaluation)       │
-│   • Both leaf nodes and internal nodes are evaluated            │
-│   • This enables computing TWO different EW values              │
-└─────────────────────────────────────────────────────────────────┘
+Phase 3: EVALUATE POSITIONS WITH BOTH ENGINES
+  • Stockfish evaluates all nodes (objective evaluation)
+  • Maia evaluates all nodes (human-perceived evaluation)
+  • Both leaf nodes and internal nodes are evaluated
                               ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ Phase 4: CALCULATE TWO EXPECTED WINRATES                        │
-│   For each candidate move's tree, compute BOTH:                 │
-│                                                                 │
-│   EW(SF) = Σ(SF_winrate × prob) + Σ(SF_winrate × uncovered)    │
-│   EW(Maia) = Σ(Maia_winrate × prob) + Σ(Maia_winrate × uncov)  │
-│                                                                 │
-│   • EW(SF): "Objectively accurate" expected outcome             │
-│   • EW(Maia): "Human-perceived" expected outcome                │
-└─────────────────────────────────────────────────────────────────┘
+Phase 4: CALCULATE TWO EXPECTED WINRATES
+  EW(SF) = Σ(SF_winrate × prob) + Σ(SF_winrate × uncovered)
+  EW(Maia) = Σ(Maia_winrate × prob) + Σ(Maia_winrate × uncov)
 ```
 
-### The Formulas
-
-Two Expected Winrate values are computed using the same formula but different evaluations:
+### The Formula
 
 ```
-EW(SF) = Σ(SF_winrate × leaf_prob) + Σ(SF_winrate × uncovered_mass)
-EW(Maia) = Σ(Maia_winrate × leaf_prob) + Σ(Maia_winrate × uncovered_mass)
+EW = Σ(winrate × leaf_prob) + Σ(winrate × uncovered_mass)
 
 Where:
-- SF_winrate = Stockfish evaluation at position (0.0 to 1.0) - "objective"
-- Maia_winrate = Maia value head evaluation (0.0 to 1.0) - "human perception"
+- winrate = SF or Maia evaluation at position (0.0 to 1.0)
 - leaf_prob = cumulative probability of reaching that leaf
 - uncovered_mass = (1 - Σexplored_child_probs) × node's cumulative probability
 ```
 
-**When to use which:**
-- **EW(SF)**: For objectively accurate expected outcomes
-- **EW(Maia)**: For how humans perceive the position
+### Tree Termination: Probability-Only
 
-### Example Tree
+**IMPORTANT:** Never limit tree depth artificially with `maxDepth` or `maxNodes` parameters. Tree exploration terminates **only** when cumulative probability falls below `probabilityThreshold`. This ensures:
 
-```
-ROOT POSITION: White to move after 1. e4 e5
-
-Candidate move: Nf3 (one of several candidates within winrateLossThreshold)
-Tree below shows what happens AFTER Nf3 is played (Black to move):
-
-Each node has BOTH SF and Maia evaluations:
-
-├─ Nc6 (45%) → cumulative: 0.45, SF: 52%, Maia: 51%
-│   ├─ Bb5 (40%) → cumulative: 0.18 → LEAF, SF: 54%, Maia: 52%
-│   ├─ Bc4 (35%) → cumulative: 0.1575 → LEAF, SF: 53%, Maia: 51%
-│   └─ [unexplored: 25%] → UNCOVERED: 0.45 × 0.25 = 0.1125
-│
-├─ Nf6 (30%) → cumulative: 0.30, SF: 49%, Maia: 48%
-│   ├─ Nxe5 (60%) → cumulative: 0.18 → LEAF, SF: 58%, Maia: 55%
-│   └─ [unexplored: 40%] → UNCOVERED: 0.30 × 0.40 = 0.12
-│
-├─ d6 (15%) → cumulative: 0.15 → LEAF, SF: 51%, Maia: 50%
-│
-└─ [unexplored: 10%] → UNCOVERED: 1.0 × 0.10 = 0.10 (at root: SF 51%, Maia 50%)
-
-Calculation for EW(SF):
-LEAF CONTRIBUTIONS:
-  (0.54 × 0.18) + (0.53 × 0.1575) + (0.58 × 0.18) + (0.51 × 0.15)
-  = 0.0972 + 0.0835 + 0.1044 + 0.0765 = 0.3616
-
-UNCOVERED MASS CONTRIBUTIONS:
-  (0.52 × 0.1125) + (0.49 × 0.12) + (0.51 × 0.10)
-  = 0.0585 + 0.0588 + 0.051 = 0.1683
-
-TOTAL EW(SF): 0.3616 + 0.1683 = 52.99% ≈ 53%
-
-Calculation for EW(Maia): (same structure, different values)
-TOTAL EW(Maia): ~51% (uses Maia evaluations instead of SF)
-
-RESULT: If White plays Nf3:
-  - EW(SF) = 53% (objectively accurate expected outcome)
-  - EW(Maia) = 51% (how humans perceive this line)
-```
+- High-probability lines are explored deeply regardless of depth
+- Low-probability lines are pruned early regardless of depth
+- The tree shape naturally reflects human play patterns
 
 ---
 
@@ -195,7 +171,9 @@ RESULT: If White plays Nf3:
 
 ---
 
-## Target Architecture
+## Architecture
+
+### File Structure
 
 ```
 src/
@@ -224,6 +202,18 @@ Core logic has NO React dependencies. This enables:
 - Unit testing without React
 - Easy debugging of algorithm
 - Reuse in non-React contexts
+
+### Key Dependencies
+
+```json
+{
+  "chessops": "^0.14.0",
+  "chessground": "^9.5.0",
+  "onnxruntime-web": "^1.17.0",
+  "next": "^15.0.0",
+  "react": "^19.0.0"
+}
+```
 
 ---
 
@@ -368,6 +358,48 @@ function goBack(state: NavigationState): NavigationState;
 
 ---
 
+## Key Interface Contracts
+
+### useChessGame Hook
+
+```typescript
+interface UseChessGameReturn {
+  game: Game<PgnNodeData> | null;
+  currentPath: number[];
+  currentFen: string;
+  currentNode: PgnNodeData | null;
+  actions: {
+    loadPgn: (pgn: string) => void;
+    goForward: () => void;
+    goBack: () => void;
+    goToPath: (path: number[]) => void;
+    goToStart: () => void;
+    goToEnd: () => void;
+  };
+}
+```
+
+### useExpectedWinrate Hook
+
+```typescript
+interface UseExpectedWinrateReturn {
+  result: EWResult | null;
+  status: 'idle' | 'calculating_maia' | 'complete_maia' | 'enriching_sf' | 'complete' | 'error';
+  hasSFResults: boolean;
+  canEnrichSF: boolean;
+  enrichWithSF: () => Promise<void>;
+}
+```
+
+### State Synchronization Rules
+
+1. **Single Source of Truth**: The `game` object in `useChessGame` is the authoritative game state
+2. **FEN is Always Derived**: Never store FEN separately - always compute from game + path
+3. **Path Drives Everything**: Changing `currentPath` triggers FEN recomputation and engine re-evaluation
+4. **Engines Are Stateless**: Engine adapters don't cache - each call is independent
+
+---
+
 ## Expected Winrate Tree Visualization
 
 The EW tree answers: **"Which move has the best realistic outcome given how humans play?"**
@@ -392,61 +424,12 @@ Hovering any node reveals full details:
 - Both SF and Maia evals
 - Board preview
 
-### Example
-
-```
-Eval source: (•) Stockfish  ( ) Maia
-
-▼ e4    EW: 54%   (played 35%)
-  ├─ e5   48%
-  │  ├─ Nf3  51%
-  │  └─ Bc4  50%
-  └─ c5   52%
-
-▶ d4    EW: 52%   (played 28%)
-▶ Nf3   EW: 51%   (played 20%)
-```
-
 ### Interactions
 
 1. **Eval source toggle** - Switch between SF and Maia evals (affects displayed numbers and EW sort order)
 2. **Expand/Collapse** - Click chevron to show/hide tree
 3. **Hover** - Preview position on board + see detailed stats
 4. **Click** - Navigate main board to that position
-
-### Data Flow
-
-1. User clicks "Calculate EW" at a position
-2. Algorithm runs (4 phases) → produces tree of candidates
-3. Results added as **variations** to the chessops game tree
-4. Annotations stored in comments (`[%prob][%eval][%ew]`)
-5. UI renders tree from chessops structure
-6. Export to PGN preserves all data
-
----
-
-## MVP Features
-
-### Must Have
-
-1. **PGN Input** - Paste a game, parse it, load onto board
-2. **Interactive Board** - View position, navigate moves
-3. **Move List** - Click to jump to any position
-4. **Stockfish Analysis** - Show centipawn / stockfish winrate eval for current position
-5. **Maia Move Probabilities** - Show human-likely moves with percentages
-6. **Basic Expected Winrate** - Calculate Expected Winrate for current position
-7. **Expandable EW Tree** - Interactive tree visualization with expand/collapse, showing probabilities and evaluations stored as annotations
-8. **Board Preview on Hover** - See position for any move in the tree or move list
-
-### Not In MVP
-
-- User authentication
-- Game saving/loading from server
-- Play against Maia
-- Puzzles/Training
-- Leaderboards
-- Opening explorer
-- Lichess integration
 
 ---
 
@@ -497,21 +480,45 @@ Cross-Origin-Embedder-Policy: require-corp
 
 ---
 
+## MVP Features
+
+### Must Have
+
+1. **PGN Input** - Paste a game, parse it, load onto board
+2. **Interactive Board** - View position, navigate moves
+3. **Move List** - Click to jump to any position
+4. **Stockfish Analysis** - Show centipawn / stockfish winrate eval for current position
+5. **Maia Move Probabilities** - Show human-likely moves with percentages
+6. **Basic Expected Winrate** - Calculate Expected Winrate for current position
+7. **Expandable EW Tree** - Interactive tree visualization with expand/collapse, showing probabilities and evaluations stored as annotations
+8. **Board Preview on Hover** - See position for any move in the tree or move list
+
+### Not In MVP
+
+- User authentication
+- Game saving/loading from server
+- Play against Maia
+- Puzzles/Training
+- Leaderboards
+- Opening explorer
+- Lichess integration
+
+---
+
 ## Success Criteria
 
 The MVP is complete when:
 
-- [ ] User can paste a PGN and see it on the board
-- [ ] User can click moves to navigate the game
-- [ ] **All 4 evaluations display** for current position:
-  - [ ] SF Baseline (Stockfish direct evaluation)
-  - [ ] Maia Baseline (Maia value head)
-  - [ ] EW(SF) - Expected Winrate using SF at leaves
-  - [ ] EW(Maia) - Expected Winrate using Maia at leaves
-- [ ] Maia move probabilities display for current position
-- [ ] Expected winrate tree is visualized (showing both EW variants)
-- [ ] All unit tests pass (>80% coverage on core/)
-- [ ] All E2E tests pass
+- [x] User can paste a PGN and see it on the board
+- [x] User can click moves to navigate the game
+- [x] SF Baseline displays for current position
+- [x] Maia Baseline (value head) displays for current position
+- [x] EW(Maia) displays for current position
+- [ ] EW(SF) displays for current position (on-demand enrichment)
+- [x] Maia move probabilities display for current position
+- [x] Expected winrate tree is visualized
+- [x] All unit tests pass (234 passing)
+- [ ] All E2E tests pass after Phase 10.5
 - [ ] App is deployable and performant
 
 ---
