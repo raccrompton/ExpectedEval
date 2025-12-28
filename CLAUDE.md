@@ -35,7 +35,7 @@
 | Type | Count | Status |
 |------|-------|--------|
 | Unit tests | 246 | ✅ Passing |
-| E2E tests | 136 | ✅ Passing |
+| E2E tests | 88 | ✅ Passing |
 
 ---
 
@@ -224,33 +224,32 @@ Core logic has NO React dependencies. This enables:
 ## Target UI Layout
 
 ```
-┌────────────────────────────────────────────────────────────────────────────────────┐
-│ ExpectedEval Analysis                          [Calculate EW] [Export] [Settings ▼]│
-├─────────────┬──────────────────────────────────┬───────────────────────────────────┤
-│  PGN INPUT  │                                  │  ┌─ EVALUATION PANEL ──────────┐  │
-│             │                                  │  │  Stockfish 17   +0.35 (54%) │  │
-│  [Paste     │          CHESSBOARD              │  │  Best: e4, d4, Nf3          │  │
-│   game]     │              (A)                 │  │                             │  │
-│             │         (interactive)            │  │  Maia 1500       52.1%      │  │
-│  [Load PGN] │                                  │  │  Predicted: e4 (35%)...     │  │
-├─────────────┤       ┌──◄ ◄ ► ►►──┐             │  └─────────────────────────────┘  │
-│  MOVE LIST  │       └────────────┘             │                                   │
-│  (B)        │                                  │                                   │
-│  1. e4  e5  │                                  │                                   │
-│  2. Nf3 Nc6 │                                  │                                   │
-│  (click to  │                                  │                                   │
-│   navigate) │                                  │                                   │
-├─────────────┴──────────────────────────────────┴───────────────────────────────────┤
-│ ┌─ EXPECTED WINRATE TREE (C) ──────────────────────────────────────────────────┐   │
-│ │  Eval source: (•) Stockfish  ( ) Maia                                        │   │
-│ │                                                                              │   │
-│ │  ▼ e4  EW: 54% (35%)    ▶ d4  EW: 52% (28%)    ▶ Nf3  EW: 51% (20%)          │   │
-│ │    ├─ e5  48%                                                                │   │
-│ │    │  ├─ Nf3  51%       Hover any node for: play rate, cumulative %,         │   │
-│ │    │  └─ Bc4  50%       both evals                                           │   │
-│ │    └─ c5  52%                                                                │   │
-│ └──────────────────────────────────────────────────────────────────────────────┘   │
-└────────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│ Header                                                               [Settings]     │
+├─────────────────────┬─────────────────────┬─────────────────────────────────────────┤
+│  PGN INPUT          │  MOVE LIST          │  EVALUATION PANEL (side-by-side)        │
+│  [Paste PGN...]     │  1. e4 e5 2. Nf3    │  ┌─────────────┬─────────────────────┐  │
+│  [Load PGN]         │  Nc6...             │  │ Stockfish   │ Maia 1500           │  │
+│                     │                     │  │ +0.55 57.8% │ 50.3%               │  │
+│                     │                     │  │ Best: d4    │ Bb5 28% Bc4 24%...  │  │
+│                     │                     │  └─────────────┴─────────────────────┘  │
+├─────────────────────┴─────────────────────┴─────────────────────────────────────────┤
+│                                                                                     │
+│  ┌───────────────────────┐      EXPECTED WINRATE                                    │
+│  │                       │      ────────────────────────────────────────────        │
+│  │                       │      Maia analysis complete        [Add SF Analysis]     │
+│  │                       │                                                          │
+│  │        BOARD          │      EW(SF): --              EW(Maia): 50.0%             │
+│  │                       │                                                          │
+│  │                       │      ▼ Bb5  EW: 51% (28.5%)                              │
+│  │                       │        ├─ e6  49%                                        │
+│  │                       │        ├─ a6  50%                                        │
+│  │                       │        └─ Nf6 48%                                        │
+│  │                       │      ▶ Bc4  EW: 50% (24.2%)                              │
+│  └───────────────────────┘      ▶ Nc3  EW: 49% (12.8%)                              │
+│      [|<] [<] [>] [>|]                                                              │
+│                                                                                     │
+└─────────────────────────────────────────────────────────────────────────────────────┘
 
 [Settings] dropdown (appears on click):
 ┌─────────────────────────┐
@@ -262,8 +261,9 @@ Core logic has NO React dependencies. This enables:
 ```
 
 **Layout Key:**
-- **Top row:** PGN Input + Move List (left) | Chessboard (center) | Evaluation Panel (right)
-- **Bottom row (C):** Expected Winrate Tree spans full width
+- **Top row (Header):** Fixed ~40px with settings
+- **Middle row:** PgnInput (compact, rows=3) | MoveList (truncates with "...") | EnginePanel (SF+Maia side-by-side, top 3 moves, no bars)
+- **Bottom row:** Board + NavButtons (left, square) | EWSection (right, no baselines - shown in EnginePanel)
 - **All panels fit on desktop viewport without scrolling**
 
 ---

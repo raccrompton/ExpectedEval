@@ -200,10 +200,25 @@ export function MoveList({
             flex-wrap: wrap;
             align-items: baseline;
             gap: 2px;
-            padding: var(--space-sm);
+            padding: var(--space-xs);
             font-family: var(--font-mono);
-            font-size: 0.875rem;
-            line-height: 1.8;
+            font-size: 0.75rem;
+            line-height: 1.6;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            position: relative;
+          }
+          .move-list::after {
+            content: '...';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(to right, transparent, var(--color-surface) 50%);
+            padding-left: 16px;
+            padding-right: 4px;
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
           }
           .mainline-move-container {
             display: inline;
@@ -310,17 +325,32 @@ export function MoveList({
         .move-list {
           display: flex;
           flex-wrap: wrap;
-          gap: var(--space-xs);
-          padding: var(--space-sm);
+          gap: 2px;
+          padding: var(--space-xs);
           font-family: var(--font-mono);
-          font-size: 0.875rem;
+          font-size: 0.75rem;
           line-height: 1.6;
+          flex: 1;
+          min-height: 0;
+          overflow: hidden;
+          position: relative;
+        }
+        .move-list::after {
+          content: '...';
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          background: linear-gradient(to right, transparent, var(--color-surface) 50%);
+          padding-left: 16px;
+          padding-right: 4px;
+          font-size: 0.75rem;
+          color: var(--color-text-muted);
         }
         .move-pair {
           display: flex;
           align-items: center;
           gap: 2px;
-          margin-right: var(--space-sm);
+          margin-right: var(--space-xs);
         }
         .move-number {
           color: var(--color-text-muted);

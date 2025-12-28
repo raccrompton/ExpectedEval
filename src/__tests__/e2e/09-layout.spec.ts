@@ -1,20 +1,25 @@
 import { test, expect } from '@playwright/test'
 
 /**
- * Layout tests to verify the target UI structure from IMPLEMENTATION-STRATEGY.md
+ * Layout tests to verify the reorganized UI structure
  *
- * Target Layout:
- * ┌─────────────┬─────────────────────┬──────────────────┐
- * │ Left        │      Board (A)      │  Eval Panel (B)  │
- * │ (full ht)   │   + nav controls    │  (SF+Maia)       │
- * │             ├─────────────────────┴──────────────────┤
- * │ PGN+Moves   │      EW Tree (C) - spans under A+B     │
- * └─────────────┴────────────────────────────────────────┘
+ * New Layout:
+ * ┌────────────────────────────────────────────────────────────────┐
+ * │ Header                                              [Settings] │
+ * ├─────────────┬─────────────┬────────────────────────────────────┤
+ * │ PgnInput    │ MoveList    │ EnginePanel (SF | Maia)            │
+ * │ (compact)   │ (truncated) │ (side-by-side)                     │
+ * ├─────────────┴─────────────┴────────────────────────────────────┤
+ * │                                                                │
+ * │   Board          │       Expected Winrate Section              │
+ * │   + Nav          │       (fills remaining space)               │
+ * │                                                                │
+ * └────────────────────────────────────────────────────────────────┘
  *
  * Key layout requirements:
- * 1. Left sidebar contains PGN input + Move list (full height)
- * 2. Board and Eval panel are side-by-side in main row
- * 3. EW section spans full width under main row
+ * 1. Middle row: PGN input | Move list | Engine panel (SF+Maia side-by-side)
+ * 2. Bottom row: Board + nav controls | EW section
+ * 3. All fits on screen without scrolling
  */
 
 test.describe('UI Layout Structure', () => {
@@ -22,90 +27,99 @@ test.describe('UI Layout Structure', () => {
     await page.goto('/')
   })
 
-  test('has left sidebar with PGN input and move list', async ({ page }) => {
-    const sidebar = page.locator('[data-testid="left-sidebar"]')
-    await expect(sidebar).toBeVisible()
+  test('has middle row with PGN, Moves, and Analysis sections', async ({ page }) => {
+    const middleRow = page.locator('[data-testid="main-row"]')
+    await expect(middleRow).toBeVisible()
 
-    const pgnSection = sidebar.locator('[data-testid="pgn-section"]')
+    // PGN section
+    const pgnSection = middleRow.locator('[data-testid="pgn-section"]')
     await expect(pgnSection).toBeVisible()
     await expect(pgnSection.locator('[data-testid="pgn-input"]')).toBeVisible()
     await expect(pgnSection.locator('[data-testid="load-pgn-button"]')).toBeVisible()
 
-    const movesSection = sidebar.locator('[data-testid="moves-section"]')
+    // Moves section
+    const movesSection = middleRow.locator('[data-testid="moves-section"]')
     await expect(movesSection).toBeVisible()
     await expect(movesSection.locator('[data-testid="move-list"]')).toBeVisible()
-  })
 
-  test('has board and eval panel side-by-side in main row', async ({ page }) => {
-    const mainRow = page.locator('[data-testid="main-row"]')
-    await expect(mainRow).toBeVisible()
-
-    const boardSection = mainRow.locator('[data-testid="board-section"]')
-    await expect(boardSection).toBeVisible()
-    await expect(boardSection.locator('.cg-wrap')).toBeVisible()
-
-    const evalPanel = mainRow.locator('[data-testid="eval-panel"]')
+    // Eval panel
+    const evalPanel = middleRow.locator('[data-testid="eval-panel"]')
     await expect(evalPanel).toBeVisible()
   })
 
-  test('board and eval panel are horizontally adjacent', async ({ page }) => {
-    const mainRow = page.locator('[data-testid="main-row"]')
-    const boardSection = mainRow.locator('[data-testid="board-section"]')
-    const evalPanel = mainRow.locator('[data-testid="eval-panel"]')
+  test('has bottom row with board and EW section', async ({ page }) => {
+    const bottomRow = page.locator('[data-testid="bottom-row"]')
+    await expect(bottomRow).toBeVisible()
 
-    const boardBox = await boardSection.boundingBox()
+    // Board section with navigation
+    const boardSection = bottomRow.locator('[data-testid="board-section"]')
+    await expect(boardSection).toBeVisible()
+    await expect(boardSection.locator('.cg-wrap')).toBeVisible()
+    await expect(boardSection.locator('[data-testid="navigation-controls"]')).toBeVisible()
+
+    // EW section wrapper
+    const ewSectionWrapper = bottomRow.locator('[data-testid="ew-section-wrapper"]')
+    await expect(ewSectionWrapper).toBeVisible()
+    await expect(ewSectionWrapper.locator('[data-testid="ew-section"]')).toBeVisible()
+  })
+
+  test('middle row sections are horizontally arranged', async ({ page }) => {
+    const middleRow = page.locator('[data-testid="main-row"]')
+    const pgnSection = middleRow.locator('[data-testid="pgn-section"]')
+    const movesSection = middleRow.locator('[data-testid="moves-section"]')
+    const evalPanel = middleRow.locator('[data-testid="eval-panel"]')
+
+    const pgnBox = await pgnSection.boundingBox()
+    const movesBox = await movesSection.boundingBox()
     const evalBox = await evalPanel.boundingBox()
 
-    expect(boardBox).not.toBeNull()
+    expect(pgnBox).not.toBeNull()
+    expect(movesBox).not.toBeNull()
     expect(evalBox).not.toBeNull()
 
-    if (boardBox && evalBox) {
-      // Eval panel should be to the right of board
-      expect(evalBox.x).toBeGreaterThan(boardBox.x)
-      // They should be roughly on the same vertical level (top aligned)
-      expect(Math.abs(evalBox.y - boardBox.y)).toBeLessThan(50)
+    if (pgnBox && movesBox && evalBox) {
+      // Moves should be to the right of PGN
+      expect(movesBox.x).toBeGreaterThan(pgnBox.x)
+      // Eval should be to the right of Moves
+      expect(evalBox.x).toBeGreaterThan(movesBox.x)
+      // All should be roughly on the same vertical level
+      expect(Math.abs(movesBox.y - pgnBox.y)).toBeLessThan(20)
+      expect(Math.abs(evalBox.y - pgnBox.y)).toBeLessThan(20)
     }
   })
 
-  test('has EW section wrapper below main row', async ({ page }) => {
-    const ewSectionWrapper = page.locator('[data-testid="ew-section-wrapper"]')
-    await expect(ewSectionWrapper).toBeVisible()
+  test('bottom row has board and EW section side by side', async ({ page }) => {
+    const bottomRow = page.locator('[data-testid="bottom-row"]')
+    const boardSection = bottomRow.locator('[data-testid="board-section"]')
+    const ewSection = bottomRow.locator('[data-testid="ew-section-wrapper"]')
 
-    // The EW section wrapper should contain the actual EW section
-    const ewSection = ewSectionWrapper.locator('[data-testid="ew-section"]')
-    await expect(ewSection).toBeVisible()
-  })
+    const boardBox = await boardSection.boundingBox()
+    const ewBox = await ewSection.boundingBox()
 
-  test('EW section wrapper is below main row', async ({ page }) => {
-    const mainRow = page.locator('[data-testid="main-row"]')
-    const ewSectionWrapper = page.locator('[data-testid="ew-section-wrapper"]')
-
-    const mainRowBox = await mainRow.boundingBox()
-    const ewBox = await ewSectionWrapper.boundingBox()
-
-    expect(mainRowBox).not.toBeNull()
+    expect(boardBox).not.toBeNull()
     expect(ewBox).not.toBeNull()
 
-    if (mainRowBox && ewBox) {
-      // EW section should be below the main row
-      expect(ewBox.y).toBeGreaterThan(mainRowBox.y + mainRowBox.height - 10)
+    if (boardBox && ewBox) {
+      // EW section should be to the right of board
+      expect(ewBox.x).toBeGreaterThan(boardBox.x)
+      // They should be roughly on the same vertical level
+      expect(Math.abs(ewBox.y - boardBox.y)).toBeLessThan(50)
     }
   })
 
-  test('left sidebar is separate from main row', async ({ page }) => {
-    const sidebar = page.locator('[data-testid="left-sidebar"]')
-    const mainRow = page.locator('[data-testid="main-row"]')
+  test('bottom row is below middle row', async ({ page }) => {
+    const middleRow = page.locator('[data-testid="main-row"]')
+    const bottomRow = page.locator('[data-testid="bottom-row"]')
 
-    const sidebarBox = await sidebar.boundingBox()
-    const mainRowBox = await mainRow.boundingBox()
+    const middleBox = await middleRow.boundingBox()
+    const bottomBox = await bottomRow.boundingBox()
 
-    expect(sidebarBox).not.toBeNull()
-    expect(mainRowBox).not.toBeNull()
+    expect(middleBox).not.toBeNull()
+    expect(bottomBox).not.toBeNull()
 
-    if (sidebarBox && mainRowBox) {
-      // Sidebar should be at the left of the layout
-      // Main row contains sidebar, board, and eval panel in a grid
-      expect(sidebarBox.x).toBeLessThan(mainRowBox.x + mainRowBox.width)
+    if (middleBox && bottomBox) {
+      // Bottom row should be below the middle row
+      expect(bottomBox.y).toBeGreaterThan(middleBox.y + middleBox.height - 10)
     }
   })
 
@@ -147,6 +161,25 @@ test.describe('Eval Panel Content', () => {
     const maiaSection = evalPanel.locator('[data-testid="maia-section"]')
     await expect(maiaSection).toBeVisible()
     await expect(maiaSection.locator('[data-testid="maia-status"]')).toBeVisible()
+  })
+
+  test('SF and Maia sections are side by side', async ({ page }) => {
+    const evalPanel = page.locator('[data-testid="eval-panel"]')
+    const sfSection = evalPanel.locator('[data-testid="stockfish-section"]')
+    const maiaSection = evalPanel.locator('[data-testid="maia-section"]')
+
+    const sfBox = await sfSection.boundingBox()
+    const maiaBox = await maiaSection.boundingBox()
+
+    expect(sfBox).not.toBeNull()
+    expect(maiaBox).not.toBeNull()
+
+    if (sfBox && maiaBox) {
+      // Maia should be to the right of SF (side by side)
+      expect(maiaBox.x).toBeGreaterThan(sfBox.x)
+      // They should be on the same vertical level
+      expect(Math.abs(maiaBox.y - sfBox.y)).toBeLessThan(20)
+    }
   })
 })
 

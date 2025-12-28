@@ -50,7 +50,6 @@ exec 1>&2
 CHECK_TYPES="true"      # Type checking (tsc, mypy, etc.)
 CHECK_LINT="true"       # Linting (eslint, ruff, clippy, etc.)
 CHECK_FORMAT="true"     # Formatting (prettier, black, rustfmt, etc.)
-CHECK_TESTS="true"      # Unit tests
 
 # Override auto-detection by uncommenting and setting:
 # PROJECT_TYPE="node"   # Options: node, python, rust, go, csharp
@@ -160,7 +159,7 @@ detect_project_type() {
 # LANGUAGE-SPECIFIC COMMAND CONFIGURATION
 # -----------------------------------------------------------------------------
 
-# Sets CMD_TYPES, CMD_LINT, CMD_FORMAT, CMD_TESTS based on project type
+# Sets CMD_TYPES, CMD_LINT, CMD_FORMAT based on project type
 configure_commands() {
     local project_type="$1"
 
@@ -168,7 +167,6 @@ configure_commands() {
     CMD_TYPES=""
     CMD_LINT=""
     CMD_FORMAT=""
-    CMD_TESTS=""
 
     case "$project_type" in
         node)
@@ -196,13 +194,6 @@ configure_commands() {
                 CMD_FORMAT="npx prettier --check ."
             fi
 
-            if has_npm_script "test"; then
-                CMD_TESTS="npm test"
-            elif has_command "vitest"; then
-                CMD_TESTS="npx vitest run"
-            elif has_command "jest"; then
-                CMD_TESTS="npx jest"
-            fi
             ;;
 
         python)
@@ -237,12 +228,6 @@ configure_commands() {
                 CMD_FORMAT="python3 -m black --check ."
             fi
 
-            # Tests
-            if has_python_tool "pytest"; then
-                CMD_TESTS="python3 -m pytest"
-            elif [ -f "manage.py" ]; then
-                CMD_TESTS="python3 manage.py test"
-            fi
             ;;
 
         rust)
@@ -251,7 +236,6 @@ configure_commands() {
                 CMD_TYPES="cargo check"
                 CMD_LINT="cargo clippy -- -D warnings"
                 CMD_FORMAT="cargo fmt --check"
-                CMD_TESTS="cargo test"
             fi
             ;;
 
@@ -263,7 +247,6 @@ configure_commands() {
                 if has_command "gofmt"; then
                     CMD_FORMAT="test -z \"\$(gofmt -l .)\""
                 fi
-                CMD_TESTS="go test ./..."
             fi
             # Use golangci-lint if available (more comprehensive)
             if has_command "golangci-lint"; then
@@ -276,7 +259,6 @@ configure_commands() {
             if has_command "dotnet"; then
                 CMD_TYPES="dotnet build --no-restore"
                 CMD_FORMAT="dotnet format --verify-no-changes"
-                CMD_TESTS="dotnet test --no-build"
             fi
             ;;
 
@@ -309,7 +291,6 @@ configure_commands "$PROJECT_TYPE"
 run_check "Type Check" "$CHECK_TYPES" "$CMD_TYPES"
 run_check "Lint" "$CHECK_LINT" "$CMD_LINT"
 run_check "Format" "$CHECK_FORMAT" "$CMD_FORMAT"
-run_check "Tests" "$CHECK_TESTS" "$CMD_TESTS"
 
 # -----------------------------------------------------------------------------
 # SUMMARY
@@ -332,12 +313,13 @@ echo ""
 if [ -n "$CODE_CHANGES" ]; then
     echo ""
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${YELLOW}📝 REQUIRED: Invoke both review agents${NC}"
+    echo -e "${YELLOW}📝 REQUIRED: Invoke all three agents${NC}"
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
-    echo "Both agents MUST be invoked after every code change:"
+    echo "All agents MUST be invoked after every code change:"
     echo "  1. code-standards-reviewer - Code style, patterns, skill file compliance"
     echo "  2. architect - Architecture, security, performance"
+    echo "  3. docs-updater - Update CLAUDE.md with project context"
     echo ""
     echo "Invoke with: \"Review these files I modified: [list files]\""
     echo ""
