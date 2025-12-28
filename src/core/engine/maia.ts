@@ -343,6 +343,17 @@ export class RealMaia implements MaiaAdapter {
       legalMoves,
     )
 
+    // Dispose input tensors to free memory
+    feeds.boards.dispose()
+    feeds.elo_self.dispose()
+    feeds.elo_oppo.dispose()
+
+    // Dispose output tensors to free memory (critical for preventing leaks!)
+    // Per ONNX Runtime docs: "Call tensor.dispose() explicitly to destroy
+    // the underlying buffer when it is no longer needed."
+    logits_maia.dispose()
+    logits_value.dispose()
+
     return {
       policy,
       value,
@@ -390,8 +401,8 @@ export class RealMaia implements MaiaAdapter {
     // Check if it's Black's turn
     const isBlackTurn = fen.split(' ')[1] === 'b'
 
-    // Debug: log raw value and perspective
-    console.log(`Maia value: raw=${rawValue.toFixed(4)}, winProb=${winProb.toFixed(4)}, isBlackTurn=${isBlackTurn}`)
+    // Note: Model outputs value from perspective of side-to-move after mirroring
+    // For Black positions, board is mirrored so Black appears as White
 
     // The model outputs value from the perspective of the side-to-move AFTER mirroring.
     // For Black positions, the board is mirrored so Black pieces become White.

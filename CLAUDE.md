@@ -22,7 +22,9 @@
   - [x] `selectCandidatesByMaiaProbability()` - candidate selection
   - [x] Auto-trigger on FEN change with 300ms debounce
   - [x] UI yield mechanism to prevent page freeze
-  - [ ] Verify all E2E tests pass after changes
+  - [x] LRU prediction cache to prevent memory leaks
+  - [x] ONNX tensor disposal in Maia engine
+  - [x] Verify all E2E tests pass after changes
 
 ### TODO
 
@@ -32,8 +34,8 @@
 
 | Type | Count | Status |
 |------|-------|--------|
-| Unit tests | 234 | ✅ Passing |
-| E2E tests | 154 | ✅ Passing (as of Phase 10) |
+| Unit tests | 246 | ✅ Passing |
+| E2E tests | 136 | ✅ Passing |
 
 ---
 
@@ -110,6 +112,8 @@ Additional responsiveness measures:
 - **300ms debounce** on position changes before auto-triggering EW calculation
 - **Stale result detection** via `currentFenRef` - discards results if position changed during calculation
 - **Concurrent engine guard** - waits for panel evaluation to complete before starting EW calc
+- **LRU prediction cache** (1000 entries) - avoids redundant Maia calls for repeated positions
+- **ONNX tensor disposal** - explicit cleanup of GPU/CPU tensors after each Maia prediction
 
 ### The Four Phases (Full Calculation)
 
@@ -517,8 +521,8 @@ The MVP is complete when:
 - [ ] EW(SF) displays for current position (on-demand enrichment)
 - [x] Maia move probabilities display for current position
 - [x] Expected winrate tree is visualized
-- [x] All unit tests pass (234 passing)
-- [ ] All E2E tests pass after Phase 10.5
+- [x] All unit tests pass (246 passing)
+- [x] All E2E tests pass after Phase 10.5
 - [ ] App is deployable and performant
 
 ---

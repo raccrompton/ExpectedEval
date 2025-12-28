@@ -60,6 +60,7 @@ import {
   populateSFEvaluations,
   yieldToUI,
 } from './treeBuilder'
+import { getCachedPrediction, cachePrediction } from './predictionCache'
 
 // ============================================================================
 // MAIN CALCULATION FUNCTION
@@ -508,8 +509,12 @@ async function selectCandidatesByMaiaProbability(
   maiaWinrate: number
   probability: number
 }>> {
-  // Get Maia move probabilities
-  const maiaPredictions = await maia.predict(fen, { eloLevel: config.maiaLevel })
+  // Get Maia move probabilities (with caching)
+  let maiaPredictions = getCachedPrediction(fen)
+  if (maiaPredictions === undefined) {
+    maiaPredictions = await maia.predict(fen, { eloLevel: config.maiaLevel })
+    cachePrediction(fen, maiaPredictions)
+  }
 
   // Get legal moves from the position
   const legalMoves = getLegalMoves(fen)
@@ -530,7 +535,13 @@ async function selectCandidatesByMaiaProbability(
     const afterMoveFen = applyMove(fen, move.uci)
     if (!afterMoveFen) continue
 
-    const maiaEval = await maia.predict(afterMoveFen, { eloLevel: config.maiaLevel })
+    // Get Maia evaluation for position after move (with caching)
+    // This cache hit is KEY - the same position is used as tree root later
+    let maiaEval = getCachedPrediction(afterMoveFen)
+    if (maiaEval === undefined) {
+      maiaEval = await maia.predict(afterMoveFen, { eloLevel: config.maiaLevel })
+      cachePrediction(afterMoveFen, maiaEval)
+    }
 
     candidates.push({
       move: move.uci,

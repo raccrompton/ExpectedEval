@@ -24,9 +24,10 @@ import { makeFen, parseFen } from 'chessops/fen'
 import { makeSan, parseSan } from 'chessops/san'
 import { parseUci } from 'chessops/util'
 import { isNormal } from 'chessops/types'
-import type { MaiaAdapter, StockfishAdapter } from '../engine/types'
+import type { MaiaAdapter, StockfishAdapter, MaiaEvaluation } from '../engine/types'
 import type { TreeNode, EWConfig } from './types'
 import { DEFAULT_EW_CONFIG } from './types'
+import { getCachedPrediction, cachePrediction } from './predictionCache'
 
 // ============================================================================
 // UI RESPONSIVENESS HELPERS
@@ -49,6 +50,42 @@ let predictionCount = 0
 
 /** How often to yield (every N predictions) */
 const YIELD_INTERVAL = 3
+
+// ============================================================================
+// CACHED MAIA PREDICTION
+// ============================================================================
+
+/**
+ * Get Maia prediction with caching.
+ *
+ * Checks the prediction cache first, and only calls Maia if there's a cache miss.
+ * This eliminates redundant Maia inferences for positions that are evaluated
+ * multiple times (e.g., during candidate selection and again in tree building).
+ *
+ * @param fen - Position FEN
+ * @param maia - Maia adapter
+ * @param eloLevel - ELO level for prediction
+ * @returns Maia evaluation (from cache or fresh)
+ */
+async function getCachedMaiaPrediction(
+  fen: string,
+  maia: MaiaAdapter,
+  eloLevel: number
+): Promise<MaiaEvaluation> {
+  // Check cache first
+  const cached = getCachedPrediction(fen)
+  if (cached !== undefined) {
+    return cached
+  }
+
+  // Cache miss - call Maia
+  const result = await maia.predict(fen, { eloLevel })
+
+  // Store in cache for future use
+  cachePrediction(fen, result)
+
+  return result
+}
 
 // ============================================================================
 // PHASE 2: BUILD PROBABILITY TREE (MAIA ONLY)
@@ -99,11 +136,13 @@ export async function buildTree(
   // Reset prediction counter at start of each tree build
   predictionCount = 0
 
-  // Get Maia evaluation for root position
+  // Get Maia evaluation for root position (with caching)
   // This gives us move probabilities AND value head evaluation
-  const rootMaiaEval = await maia.predict(rootFen, {
-    eloLevel: fullConfig.maiaLevel,
-  })
+  const rootMaiaEval = await getCachedMaiaPrediction(
+    rootFen,
+    maia,
+    fullConfig.maiaLevel
+  )
   predictionCount++
 
   // Normalize Maia value to root player's perspective
@@ -163,10 +202,12 @@ async function expandNodeWithMaia(
     return
   }
 
-  // Get Maia predictions for this position
-  const predictions = await maia.predict(node.fen, {
-    eloLevel: config.maiaLevel,
-  })
+  // Get Maia predictions for this position (with caching)
+  const predictions = await getCachedMaiaPrediction(
+    node.fen,
+    maia,
+    config.maiaLevel
+  )
 
   // Yield to UI periodically to prevent page freezing
   predictionCount++
@@ -204,10 +245,12 @@ async function expandNodeWithMaia(
     // Get SAN notation for display
     const san = uciToSan(node.fen, uciMove)
 
-    // Get Maia evaluation for new position
-    const childMaiaEval = await maia.predict(newFen, {
-      eloLevel: config.maiaLevel,
-    })
+    // Get Maia evaluation for new position (with caching)
+    const childMaiaEval = await getCachedMaiaPrediction(
+      newFen,
+      maia,
+      config.maiaLevel
+    )
 
     // Yield to UI periodically to prevent page freezing
     predictionCount++
