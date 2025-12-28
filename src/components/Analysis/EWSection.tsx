@@ -302,7 +302,6 @@ function formatNullableWinrate(winrate: number | null): string {
 
 /**
  * Displays EW calculation results including summary stats, candidate moves, and tree.
- * Shows both SF and Maia baselines along with the computed expected winrates.
  * SF values show "—" until enrichWithStockfish() is called.
  */
 function EWResults({ result, evalSource, onEvalSourceChange, onNavigate, hasSFResults }: EWResultsProps) {
@@ -323,26 +322,6 @@ function EWResults({ result, evalSource, onEvalSourceChange, onNavigate, hasSFRe
             {bestCandidate ? formatWinrate(bestCandidate.expectedWinrateMaia) : 'N/A'}
           </span>
         </div>
-        <div className="summary-row baseline">
-          <span className="summary-label">SF Baseline:</span>
-          <span className="summary-value">{formatNullableWinrate(result.baseSFWinrate)}</span>
-        </div>
-        <div className="summary-row baseline">
-          <span className="summary-label">Maia Baseline:</span>
-          <span className="summary-value">{formatWinrate(result.baseMaiaWinrate)}</span>
-        </div>
-      </div>
-
-      <div className="ew-candidates" data-testid="ew-candidates">
-        <h4>Candidate Moves</h4>
-        {result.candidates.map((candidate, index) => (
-          <EWCandidateRow
-            key={candidate.move}
-            candidate={candidate}
-            index={index}
-            evalSource={evalSource}
-          />
-        ))}
       </div>
 
       <EWTree
@@ -379,11 +358,6 @@ function EWResults({ result, evalSource, onEvalSourceChange, onNavigate, hasSFRe
           font-size: 0.875rem;
         }
 
-        .summary-row.baseline {
-          font-size: 0.75rem;
-          color: var(--color-text-muted, #888);
-        }
-
         .summary-label {
           color: var(--color-text-muted, #888);
         }
@@ -393,78 +367,10 @@ function EWResults({ result, evalSource, onEvalSourceChange, onNavigate, hasSFRe
           font-family: var(--font-mono, monospace);
         }
 
-        .ew-candidates h4 {
-          margin: 0 0 var(--space-xs, 4px) 0;
-          font-size: 0.75rem;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: var(--color-text-muted, #888);
-        }
-
         .ew-meta {
           font-size: 0.6875rem;
           color: var(--color-text-muted, #888);
           text-align: right;
-        }
-      `}</style>
-    </div>
-  )
-}
-
-interface EWCandidateRowProps {
-  candidate: EWCandidateResult
-  index: number
-  evalSource: EvalSource
-}
-
-/**
- * Renders a single candidate move row with EW value and probability.
- * Used in the summary section above the tree visualization.
- */
-function EWCandidateRow({ candidate, index, evalSource }: EWCandidateRowProps) {
-  const ew = evalSource === 'stockfish'
-    ? candidate.expectedWinrateSF
-    : candidate.expectedWinrateMaia
-
-  return (
-    <div className="candidate-row" data-testid={`ew-candidate-${index}`}>
-      <span className="candidate-move">{candidate.san}</span>
-      <span className="candidate-ew">
-        EW: {formatNullableWinrate(ew)}
-      </span>
-      <span className="candidate-prob">
-        {formatProbability(candidate.probability)}
-      </span>
-
-      <style jsx>{`
-        .candidate-row {
-          display: grid;
-          grid-template-columns: 50px 1fr 45px;
-          align-items: center;
-          gap: var(--space-sm, 8px);
-          padding: var(--space-xs, 4px) 0;
-          font-size: 0.8125rem;
-          border-bottom: 1px solid var(--color-border, #333);
-        }
-
-        .candidate-row:last-child {
-          border-bottom: none;
-        }
-
-        .candidate-move {
-          font-weight: 600;
-          font-family: var(--font-mono, monospace);
-        }
-
-        .candidate-ew {
-          color: var(--color-text-muted, #888);
-        }
-
-        .candidate-prob {
-          text-align: right;
-          font-family: var(--font-mono, monospace);
-          color: var(--color-primary, #3b82f6);
         }
       `}</style>
     </div>
