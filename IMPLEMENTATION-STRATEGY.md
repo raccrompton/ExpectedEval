@@ -4,7 +4,7 @@
 
 ## 📋 CURRENT PROGRESS
 
-> Frontend is non-functional. Rebuilding UI layer TDD-style while preserving working core logic.
+> Frontend functional with Maia-first EW architecture. Final polish phase remaining.
 
 ### Phase 1: Foundation + Test Setup ✅ COMPLETE
 - [x] Initialize clean project (package.json, tsconfig, etc.)
@@ -92,6 +92,17 @@
 - [x] Persist settings in localStorage
 - [x] Verify: Real engines load and evaluate with configurable settings (154 E2E tests pass)
 
+### Phase 10.5: Maia-First EW Architecture 🔄 IN PROGRESS
+- [x] Implement `calculateMaiaOnlyEW()` - fast path using Maia only
+- [x] Implement `enrichWithStockfish()` - adds SF data on-demand
+- [x] Implement `selectCandidatesByMaiaProbability()` - candidate selection by Maia prob
+- [x] Update `useExpectedWinrate` hook with auto-trigger on FEN change
+- [x] Add new status states: `calculating_maia`, `complete_maia`, `enriching_sf`
+- [x] Add 300ms debounce for auto-calculation
+- [x] Add `enrichWithSF()`, `hasSFResults`, `canEnrichSF` to hook API
+- [x] Add UI yield mechanism to prevent page freeze during Maia calculation
+- [ ] Commit and verify all E2E tests pass
+
 ### Phase 11: Full E2E + Polish ⬜ TODO
 - [ ] Create `src/__tests__/e2e/08-full-flow.spec.ts` (tests first)
 - [ ] Error handling, loading states, responsive layout
@@ -109,6 +120,7 @@ Each phase complete when:
 MVP complete when:
 - [x] Phases 4-9: Full UI working with mock engines (114 E2E tests pass)
 - [x] Phase 10: Real engines integrated with settings (154 E2E tests pass)
+- [x] Phase 10.5: Maia-first EW architecture (in progress, uncommitted)
 - [ ] Phase 11: Full E2E + Polish
 - [x] All 234 unit tests pass (core + hooks)
 - [x] All 154 E2E tests pass (phases 1-10 complete)

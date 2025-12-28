@@ -2,7 +2,12 @@
  * EWSection Component
  *
  * Container for Expected Winrate analysis functionality.
- * Displays the EW tree with:
+ * Auto-calculates EW using Maia when position changes.
+ * Provides optional Stockfish enrichment on demand.
+ *
+ * Features:
+ * - Auto-calculation with Maia (fast)
+ * - Optional SF enrichment button
  * - Eval source toggle (Stockfish/Maia)
  * - Expandable candidate moves with EW and play probability
  * - Tree nodes with tree connectors showing eval
@@ -21,7 +26,7 @@ type EvalSource = 'stockfish' | 'maia'
 interface EWSectionProps {
   /** Current position FEN to calculate EW for */
   fen: string
-  /** Whether both engines are ready for calculation */
+  /** Whether Maia engine is ready (SF is optional) */
   isEngineReady: boolean
   /** Callback when user clicks a tree node to preview that position */
   onNavigate?: (fen: string) => void
@@ -53,11 +58,15 @@ function formatProbability(prob: number): string {
 function getStatusText(status: EWStatus): string {
   switch (status) {
     case 'idle':
-      return 'Ready to calculate'
-    case 'calculating':
-      return 'Calculating...'
+      return 'Waiting for engines...'
+    case 'calculating_maia':
+      return 'Analyzing with Maia...'
+    case 'complete_maia':
+      return 'Maia analysis complete'
+    case 'enriching_sf':
+      return 'Adding Stockfish analysis...'
     case 'complete':
-      return 'Complete'
+      return 'Complete (with Stockfish)'
     case 'error':
       return 'Error'
     default:
@@ -74,9 +83,12 @@ function getStatusColor(status: EWStatus): string {
   switch (status) {
     case 'complete':
       return 'var(--color-success, #22c55e)'
+    case 'complete_maia':
+      return 'var(--color-success-muted, #86efac)'
     case 'error':
       return 'var(--color-error, #ef4444)'
-    case 'calculating':
+    case 'calculating_maia':
+    case 'enriching_sf':
       return 'var(--color-warning, #f59e0b)'
     default:
       return 'var(--color-text-muted, #6b7280)'
@@ -86,18 +98,22 @@ function getStatusColor(status: EWStatus): string {
 export function EWSection({ fen, isEngineReady, onNavigate }: EWSectionProps) {
   const { settings } = useSettingsContext()
 
+  // Hook now auto-triggers on fen change
   const {
     result,
     status,
     progress,
     error,
     config,
-    calculate,
+    enrichWithSF,
     updateConfig,
-  } = useExpectedWinrate()
+    canEnrichSF,
+    hasSFResults,
+  } = useExpectedWinrate(fen)
 
   const [showConfig, setShowConfig] = useState(false)
-  const [evalSource, setEvalSource] = useState<EvalSource>('stockfish')
+  // Default to Maia since it's available first
+  const [evalSource, setEvalSource] = useState<EvalSource>('maia')
 
   useEffect(() => {
     updateConfig({
@@ -108,12 +124,8 @@ export function EWSection({ fen, isEngineReady, onNavigate }: EWSectionProps) {
     })
   }, [settings, updateConfig])
 
-  const handleCalculate = useCallback(() => {
-    calculate(fen)
-  }, [calculate, fen])
-
-  const isCalculating = status === 'calculating'
-  const hasResult = status === 'complete' && result !== null
+  const isCalculating = status === 'calculating_maia' || status === 'enriching_sf'
+  const hasResult = (status === 'complete_maia' || status === 'complete') && result !== null
 
   return (
     <div className="ew-section" data-testid="ew-section">
@@ -157,14 +169,17 @@ export function EWSection({ fen, isEngineReady, onNavigate }: EWSectionProps) {
         </div>
       )}
 
-      <button
-        className="calculate-button"
-        data-testid="calculate-ew-button"
-        onClick={handleCalculate}
-        disabled={!isEngineReady || isCalculating}
-      >
-        {isCalculating ? 'Calculating...' : 'Calculate Expected Winrate'}
-      </button>
+      {/* SF enrichment button - shown when Maia analysis is complete but SF not yet run */}
+      {canEnrichSF && (
+        <button
+          className="sf-button"
+          data-testid="add-sf-analysis-button"
+          onClick={enrichWithSF}
+          disabled={status === 'enriching_sf'}
+        >
+          {status === 'enriching_sf' ? 'Adding Stockfish...' : 'Add Stockfish Analysis'}
+        </button>
+      )}
 
       {error && (
         <div className="ew-error">
@@ -178,6 +193,7 @@ export function EWSection({ fen, isEngineReady, onNavigate }: EWSectionProps) {
           evalSource={evalSource}
           onEvalSourceChange={setEvalSource}
           onNavigate={onNavigate}
+          hasSFResults={hasSFResults}
         />
       )}
 
@@ -236,8 +252,8 @@ export function EWSection({ fen, isEngineReady, onNavigate }: EWSectionProps) {
           color: var(--color-text-muted, #888);
         }
 
-        .calculate-button {
-          background: var(--color-primary, #3b82f6);
+        .sf-button {
+          background: var(--color-secondary, #6366f1);
           color: white;
           border: none;
           padding: var(--space-sm, 8px) var(--space-md, 16px);
@@ -248,11 +264,11 @@ export function EWSection({ fen, isEngineReady, onNavigate }: EWSectionProps) {
           transition: background 0.2s ease;
         }
 
-        .calculate-button:hover:not(:disabled) {
-          background: var(--color-primary-hover, #2563eb);
+        .sf-button:hover:not(:disabled) {
+          background: var(--color-secondary-hover, #4f46e5);
         }
 
-        .calculate-button:disabled {
+        .sf-button:disabled {
           opacity: 0.5;
           cursor: not-allowed;
         }
@@ -274,13 +290,22 @@ interface EWResultsProps {
   evalSource: EvalSource
   onEvalSourceChange: (source: EvalSource) => void
   onNavigate?: (fen: string) => void
+  hasSFResults: boolean
+}
+
+/**
+ * Formats a nullable winrate, showing "—" if null.
+ */
+function formatNullableWinrate(winrate: number | null): string {
+  return winrate !== null ? formatWinrate(winrate) : '—'
 }
 
 /**
  * Displays EW calculation results including summary stats, candidate moves, and tree.
  * Shows both SF and Maia baselines along with the computed expected winrates.
+ * SF values show "—" until enrichWithStockfish() is called.
  */
-function EWResults({ result, evalSource, onEvalSourceChange, onNavigate }: EWResultsProps) {
+function EWResults({ result, evalSource, onEvalSourceChange, onNavigate, hasSFResults }: EWResultsProps) {
   const bestCandidate = result.candidates[0]
 
   return (
@@ -289,7 +314,7 @@ function EWResults({ result, evalSource, onEvalSourceChange, onNavigate }: EWRes
         <div className="summary-row">
           <span className="summary-label">EW (Stockfish):</span>
           <span className="summary-value" data-testid="ew-sf-value">
-            {bestCandidate ? formatWinrate(bestCandidate.expectedWinrateSF) : 'N/A'}
+            {bestCandidate ? formatNullableWinrate(bestCandidate.expectedWinrateSF) : 'N/A'}
           </span>
         </div>
         <div className="summary-row">
@@ -300,7 +325,7 @@ function EWResults({ result, evalSource, onEvalSourceChange, onNavigate }: EWRes
         </div>
         <div className="summary-row baseline">
           <span className="summary-label">SF Baseline:</span>
-          <span className="summary-value">{formatWinrate(result.baseSFWinrate)}</span>
+          <span className="summary-value">{formatNullableWinrate(result.baseSFWinrate)}</span>
         </div>
         <div className="summary-row baseline">
           <span className="summary-label">Maia Baseline:</span>
@@ -406,7 +431,7 @@ function EWCandidateRow({ candidate, index, evalSource }: EWCandidateRowProps) {
     <div className="candidate-row" data-testid={`ew-candidate-${index}`}>
       <span className="candidate-move">{candidate.san}</span>
       <span className="candidate-ew">
-        EW: {formatWinrate(ew)}
+        EW: {formatNullableWinrate(ew)}
       </span>
       <span className="candidate-prob">
         {formatProbability(candidate.probability)}
@@ -517,9 +542,14 @@ function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTr
   }
 
   // Sort candidates by EW (highest first based on evalSource)
+  // When SF not available, fall back to Maia
   const sortedCandidates = [...candidates].sort((a, b) => {
-    const ewA = evalSource === 'stockfish' ? a.expectedWinrateSF : a.expectedWinrateMaia
-    const ewB = evalSource === 'stockfish' ? b.expectedWinrateSF : b.expectedWinrateMaia
+    const ewA = evalSource === 'stockfish'
+      ? (a.expectedWinrateSF ?? a.expectedWinrateMaia)
+      : a.expectedWinrateMaia
+    const ewB = evalSource === 'stockfish'
+      ? (b.expectedWinrateSF ?? b.expectedWinrateMaia)
+      : b.expectedWinrateMaia
     return ewB - ewA
   })
 
@@ -671,8 +701,9 @@ function CandidateBranch({
   const isExpanded = expandedNodes.has(nodeId)
   const hasChildren = candidate.tree.children.length > 0
 
+  // Use SF if available in stockfish mode, otherwise fall back to Maia
   const ew = evalSource === 'stockfish'
-    ? candidate.expectedWinrateSF
+    ? (candidate.expectedWinrateSF ?? candidate.expectedWinrateMaia)
     : candidate.expectedWinrateMaia
 
   return (
@@ -970,7 +1001,7 @@ function TreeTooltip({ node, isCandidate }: TreeTooltipProps) {
         </div>
         <div className="tooltip-row">
           <span>SF eval:</span>
-          <span>{formatWinrate(candidate.stockfishWinrate)}</span>
+          <span>{formatNullableWinrate(candidate.stockfishWinrate)}</span>
         </div>
         <div className="tooltip-row">
           <span>Maia eval:</span>
@@ -979,7 +1010,7 @@ function TreeTooltip({ node, isCandidate }: TreeTooltipProps) {
         <div className="tooltip-divider" />
         <div className="tooltip-row highlight">
           <span>EW (SF):</span>
-          <span>{formatWinrate(candidate.expectedWinrateSF)}</span>
+          <span>{formatNullableWinrate(candidate.expectedWinrateSF)}</span>
         </div>
         <div className="tooltip-row highlight">
           <span>EW (Maia):</span>

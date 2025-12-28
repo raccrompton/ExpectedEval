@@ -59,7 +59,8 @@ function header(msg: string): void {
   console.log(`\n${colors.bright}${colors.magenta}═══ ${msg} ═══${colors.reset}\n`)
 }
 
-function percent(n: number): string {
+function percent(n: number | null): string {
+  if (n === null) return '—'
   return `${(n * 100).toFixed(1)}%`
 }
 
@@ -210,8 +211,8 @@ async function main(): Promise<void> {
     fen: string
     bestMove: string
     bestMoveSan: string
-    expectedWinrate: number
-    stockfishWinrate: number
+    expectedWinrate: number | null
+    stockfishWinrate: number | null
     candidateCount: number
     calculationTimeMs: number
   }> = []
@@ -280,8 +281,8 @@ async function main(): Promise<void> {
     console.log(`    nodeJsResult: {`)
     console.log(`      bestMove: '${r.bestMove}',`)
     console.log(`      bestMoveSan: '${r.bestMoveSan}',`)
-    console.log(`      expectedWinrate: ${r.expectedWinrate.toFixed(3)},`)
-    console.log(`      stockfishWinrate: ${r.stockfishWinrate.toFixed(3)},`)
+    console.log(`      expectedWinrate: ${r.expectedWinrate?.toFixed(3) ?? 'null'},`)
+    console.log(`      stockfishWinrate: ${r.stockfishWinrate?.toFixed(3) ?? 'null'},`)
     console.log(`      candidateCount: ${r.candidateCount},`)
     console.log(`    },`)
     console.log(`  },`)

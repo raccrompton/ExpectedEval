@@ -223,13 +223,17 @@ export interface EWCandidateResult {
   /**
    * Raw Stockfish winrate for the resulting position (after this move).
    * This is the direct SF evaluation, NOT accounting for human play patterns.
+   *
+   * NULL until SF enrichment is performed (Maia-only mode).
    */
-  stockfishWinrate: number
+  stockfishWinrate: number | null
 
   /**
    * Raw Stockfish centipawn evaluation (after this move).
+   *
+   * NULL until SF enrichment is performed (Maia-only mode).
    */
-  stockfishCp: number
+  stockfishCp: number | null
 
   /**
    * Raw Maia winrate for the resulting position (after this move).
@@ -242,8 +246,10 @@ export interface EWCandidateResult {
    * Weighted average: Σ(SF_winrate × probability) across explored tree.
    *
    * Use this for "objectively accurate" expected outcomes.
+   *
+   * NULL until SF enrichment is performed (Maia-only mode).
    */
-  expectedWinrateSF: number
+  expectedWinrateSF: number | null
 
   /**
    * Expected Winrate using Maia evaluations at leaf nodes.
@@ -293,13 +299,17 @@ export interface EWResult {
   /**
    * Stockfish evaluation of the base position (before any candidate move).
    * This is the traditional "engine evaluation" of the position.
+   *
+   * NULL until SF enrichment is performed (Maia-only mode).
    */
-  baseSFWinrate: number
+  baseSFWinrate: number | null
 
   /**
    * Stockfish centipawn evaluation of the base position.
+   *
+   * NULL until SF enrichment is performed (Maia-only mode).
    */
-  baseSFCp: number
+  baseSFCp: number | null
 
   /**
    * Maia evaluation of the base position (before any candidate move).
@@ -320,6 +330,8 @@ export interface EWResult {
    * May include moves that don't appear in `candidates` (filtered by winrateLossThreshold).
    *
    * Typically 3-5 moves for display.
+   *
+   * Empty array until SF enrichment is performed (Maia-only mode).
    */
   sfTopMoves: SFRankedMove[]
 
@@ -488,12 +500,14 @@ export interface EWProgressCallback {
   /**
    * Current phase of calculation.
    *
-   * - 'filtering': Phase 1 - Finding candidate moves
+   * - 'selecting': Phase 1B - Selecting candidate moves by Maia probability (Maia-only mode)
+   * - 'filtering': Phase 1 - Finding candidate moves with SF filtering
    * - 'building_trees': Phase 2 - Building probability trees with Maia
    * - 'evaluating': Phase 3 - Batch evaluating positions with Stockfish
    * - 'computing': Phase 4 - Calculating Expected Winrate values
+   * - 'enriching_sf': SF enrichment phase - Adding SF evaluations to existing result
    */
-  phase: 'filtering' | 'building_trees' | 'evaluating' | 'computing'
+  phase: 'selecting' | 'filtering' | 'building_trees' | 'evaluating' | 'computing' | 'enriching_sf'
 
   /**
    * Progress within current phase (0-100).

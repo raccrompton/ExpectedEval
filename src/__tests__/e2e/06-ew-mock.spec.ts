@@ -1,8 +1,12 @@
 /**
  * E2E Tests for Expected Winrate (Phase 9)
  *
- * Tests verify that the Expected Winrate calculation
+ * Tests verify that the Expected Winrate auto-calculation
  * and display works correctly with the engines.
+ *
+ * Flow:
+ * - EW auto-calculates with Maia when position changes (300ms debounce)
+ * - User can optionally click "Add Stockfish Analysis" for SF enrichment
  *
  * Optimized: Uses shared page to avoid repeated engine/EW initialization.
  */
@@ -20,11 +24,10 @@ import {
 test.describe('06 - Expected Winrate', () => {
   // Simple visibility tests - no engine initialization needed
   test.describe('EW Section Visibility', () => {
-    test('EW section and calculate button are visible', async ({ page }) => {
+    test('EW section is visible', async ({ page }) => {
       await page.goto(TEST_URL)
 
       await expect(page.getByTestId('ew-section')).toBeVisible()
-      await expect(page.getByTestId('calculate-ew-button')).toBeVisible()
     })
 
     test('config panel toggles visibility', async ({ page }) => {
@@ -42,7 +45,7 @@ test.describe('06 - Expected Winrate', () => {
   })
 
   // Engine-dependent tests with shared page
-  test.describe('EW Calculation and Display', () => {
+  test.describe('EW Auto-Calculation and Display', () => {
     // Run serially since tests share page state
     test.describe.configure({ mode: 'serial' })
 
@@ -65,25 +68,21 @@ test.describe('06 - Expected Winrate', () => {
       await context.close()
     })
 
-    test('clicking calculate triggers calculation and shows results', async () => {
-      await page.getByTestId('calculate-ew-button').click()
-
-      // Shows loading state
-      await expect(page.getByTestId('ew-status')).toBeVisible()
-
-      // Eventually shows results
+    test('EW auto-calculates after position loads', async () => {
+      // EW should auto-calculate with Maia after loading PGN
+      // Wait for results to appear (auto-triggered, no button needed)
       await expect(page.getByTestId('ew-results')).toBeVisible({ timeout: EW_CALC_TIMEOUT })
     })
 
-    test('EW results display SF and Maia values', async () => {
-      // Results already visible from previous test
-      const ewSF = page.getByTestId('ew-sf-value')
-      await expect(ewSF).toBeVisible()
-      await expect(ewSF).toContainText(/%/)
-
+    test('EW results display Maia value (SF may be pending)', async () => {
+      // Maia EW should always be visible after auto-calculation
       const ewMaia = page.getByTestId('ew-maia-value')
       await expect(ewMaia).toBeVisible()
       await expect(ewMaia).toContainText(/%/)
+
+      // SF EW may show "—" until enriched
+      const ewSF = page.getByTestId('ew-sf-value')
+      await expect(ewSF).toBeVisible()
     })
 
     test('EW results display candidate moves with probabilities', async () => {
@@ -103,20 +102,20 @@ test.describe('06 - Expected Winrate', () => {
       await expect(page.getByTestId('eval-source-sf')).toBeVisible()
       await expect(page.getByTestId('eval-source-maia')).toBeVisible()
 
-      // SF is default
-      const sfRadio = page.getByTestId('eval-source-sf').locator('input[type="radio"]')
-      await expect(sfRadio).toBeChecked()
+      // Maia is default (since it's available first)
+      const maiaRadio = page.getByTestId('eval-source-maia').locator('input[type="radio"]')
+      await expect(maiaRadio).toBeChecked()
     })
 
     test('eval source toggle can be switched', async () => {
-      const maiaOption = page.getByTestId('eval-source-maia')
-      await maiaOption.click()
+      const sfOption = page.getByTestId('eval-source-sf')
+      await sfOption.click()
 
-      const maiaRadio = maiaOption.locator('input[type="radio"]')
-      await expect(maiaRadio).toBeChecked()
+      const sfRadio = sfOption.locator('input[type="radio"]')
+      await expect(sfRadio).toBeChecked()
 
-      // Switch back to SF for subsequent tests
-      await page.getByTestId('eval-source-sf').click()
+      // Switch back to Maia for subsequent tests
+      await page.getByTestId('eval-source-maia').click()
     })
 
     test('candidate moves show EW and played percentage', async () => {
@@ -168,13 +167,42 @@ test.describe('06 - Expected Winrate', () => {
       await childNode.click()
     })
 
-    test('EW recalculates for new position after navigation', async () => {
-      // Navigate to a different position
-      await page.getByTestId('move-0').click()
+    test('Add SF Analysis button appears when Maia calculation complete', async () => {
+      // Navigate to a new position to trigger fresh Maia calculation
+      await page.getByTestId('nav-start').click()
 
-      // Calculate button should still be available
-      const calculateButton = page.getByTestId('calculate-ew-button')
-      await expect(calculateButton).toBeVisible()
+      // Wait for Maia calculation to complete
+      await expect(page.getByTestId('ew-results')).toBeVisible({ timeout: EW_CALC_TIMEOUT })
+
+      // SF button should appear (status is complete_maia)
+      const sfButton = page.getByTestId('add-sf-analysis-button')
+      await expect(sfButton).toBeVisible({ timeout: 5000 })
+    })
+
+    test('clicking Add SF Analysis enriches results', async () => {
+      const sfButton = page.getByTestId('add-sf-analysis-button')
+      await sfButton.click()
+
+      // Button should disappear or show loading
+      // After enrichment, status should be 'complete'
+      await expect(page.getByTestId('ew-status')).toContainText(/Complete|Stockfish/, { timeout: EW_CALC_TIMEOUT })
+
+      // SF values should now be populated (not "—")
+      const ewSF = page.getByTestId('ew-sf-value')
+      await expect(ewSF).toContainText(/%/)
+    })
+
+    test('EW auto-recalculates after navigation', async () => {
+      // Navigate to a different position
+      await page.getByTestId('nav-end').click()
+
+      // Wait for new Maia calculation to complete
+      await expect(page.getByTestId('ew-results')).toBeVisible({ timeout: EW_CALC_TIMEOUT })
+
+      // Should show fresh Maia results
+      const ewMaia = page.getByTestId('ew-maia-value')
+      await expect(ewMaia).toBeVisible()
+      await expect(ewMaia).toContainText(/%/)
     })
 
     test('no console errors during EW operations', async () => {

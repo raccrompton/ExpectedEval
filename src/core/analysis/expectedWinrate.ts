@@ -58,6 +58,7 @@ import {
   collectPositionsForEvaluation,
   batchEvaluateWithStockfish,
   populateSFEvaluations,
+  yieldToUI,
 } from './treeBuilder'
 
 // ============================================================================
@@ -249,7 +250,7 @@ export async function calculateExpectedWinrate(
   }
 
   // Sort by EW-SF (best first) - using objective SF for primary ranking
-  results.sort((a, b) => b.expectedWinrateSF - a.expectedWinrateSF)
+  results.sort((a, b) => (b.expectedWinrateSF ?? 0) - (a.expectedWinrateSF ?? 0))
 
   onProgress?.({
     phase: 'computing',
@@ -290,15 +291,17 @@ export async function calculateExpectedWinrate(
   } else {
     // Fall back to candidates (sorted by SF winrate)
     const sortedCandidates = [...results].sort(
-      (a, b) => b.stockfishWinrate - a.stockfishWinrate
+      (a, b) => (b.stockfishWinrate ?? 0) - (a.stockfishWinrate ?? 0)
     )
     for (const c of sortedCandidates.slice(0, 5)) {
-      sfTopMoves.push({
-        move: c.move,
-        san: c.san,
-        winrate: c.stockfishWinrate,
-        cp: c.stockfishCp,
-      })
+      if (c.stockfishWinrate !== null && c.stockfishCp !== null) {
+        sfTopMoves.push({
+          move: c.move,
+          san: c.san,
+          winrate: c.stockfishWinrate,
+          cp: c.stockfishCp,
+        })
+      }
     }
   }
 
@@ -325,6 +328,401 @@ export async function calculateExpectedWinrate(
     candidates: results,
     calculationTimeMs: Date.now() - startTime,
     config: fullConfig,
+  }
+}
+
+// ============================================================================
+// MAIA-ONLY CALCULATION (Fast Path)
+// ============================================================================
+
+/**
+ * Calculate Expected Winrate using Maia only (no Stockfish).
+ *
+ * This is the fast path for auto-triggered calculations. It:
+ * 1. Selects candidates by Maia probability (top N moves)
+ * 2. Builds probability trees using Maia
+ * 3. Computes EW(Maia) only
+ *
+ * SF fields (stockfishWinrate, stockfishCp, expectedWinrateSF, baseSFWinrate, etc.)
+ * are all null until enrichWithStockfish() is called.
+ *
+ * @param fen - Position to analyze
+ * @param config - Algorithm configuration
+ * @param maia - Maia adapter for move predictions
+ * @param onProgress - Optional progress callback
+ * @returns EW result with Maia values only (SF fields are null)
+ */
+export async function calculateMaiaOnlyEW(
+  fen: string,
+  config: Partial<EWConfig>,
+  maia: MaiaAdapter,
+  onProgress?: OnEWProgress
+): Promise<EWResult> {
+  const startTime = Date.now()
+
+  // Merge config with defaults
+  const fullConfig: EWConfig = { ...DEFAULT_EW_CONFIG, ...config }
+
+  // Determine whose turn it is (for perspective normalization)
+  const rootTurn = getTurnFromFen(fen)
+
+  // =========================================================================
+  // PHASE 1B: SELECT CANDIDATES BY MAIA PROBABILITY
+  // =========================================================================
+
+  onProgress?.({
+    phase: 'selecting',
+    progress: 0,
+    message: 'Selecting candidate moves...',
+  })
+
+  const candidates = await selectCandidatesByMaiaProbability(fen, fullConfig, maia)
+
+  onProgress?.({
+    phase: 'selecting',
+    progress: 100,
+    message: `Found ${candidates.length} candidate moves`,
+    candidateCount: candidates.length,
+  })
+
+  // =========================================================================
+  // PHASE 2: BUILD PROBABILITY TREES (MAIA ONLY)
+  // =========================================================================
+
+  const treesWithCandidates: Array<{
+    candidate: typeof candidates[0]
+    tree: TreeNode
+  }> = []
+
+  for (let i = 0; i < candidates.length; i++) {
+    const candidate = candidates[i]
+
+    onProgress?.({
+      phase: 'building_trees',
+      progress: Math.round((i / candidates.length) * 100),
+      message: `Building tree for ${candidate.san}...`,
+      candidateCount: candidates.length,
+      currentCandidate: candidate.san,
+    })
+
+    // Apply the candidate move to get resulting position
+    const afterMoveFen = applyMove(fen, candidate.move)
+    if (!afterMoveFen) continue
+
+    // Build probability tree using Maia only (Phase 2)
+    const tree = await buildTree(afterMoveFen, fullConfig, maia, rootTurn)
+
+    treesWithCandidates.push({ candidate, tree })
+  }
+
+  // =========================================================================
+  // PHASE 4B: CALCULATE EXPECTED WINRATE (MAIA ONLY)
+  // =========================================================================
+
+  onProgress?.({
+    phase: 'computing',
+    progress: 0,
+    message: 'Computing Expected Winrate values...',
+    candidateCount: treesWithCandidates.length,
+  })
+
+  const results: EWCandidateResult[] = []
+
+  for (const { candidate, tree } of treesWithCandidates) {
+    // Calculate EW using Maia values only (SF will be null)
+    const { ewMaia } = computeExpectedWinrateFromTree(tree)
+
+    // Count unique positions for this tree
+    const treePositions = collectPositionsForEvaluation(tree, rootTurn)
+
+    results.push({
+      move: candidate.move,
+      san: candidate.san,
+      probability: candidate.probability,
+      stockfishWinrate: null,       // Not computed in Maia-only mode
+      stockfishCp: null,            // Not computed in Maia-only mode
+      maiaWinrate: candidate.maiaWinrate,
+      expectedWinrateSF: null,      // Not computed in Maia-only mode
+      expectedWinrateMaia: ewMaia,
+      tree,
+      maxDepthReached: getMaxDepth(tree),
+      uniquePositionsEvaluated: treePositions.size,
+    })
+  }
+
+  // Sort by EW-Maia (best first) since we don't have SF values
+  results.sort((a, b) => b.expectedWinrateMaia - a.expectedWinrateMaia)
+
+  onProgress?.({
+    phase: 'computing',
+    progress: 100,
+    message: 'Analysis complete',
+    candidateCount: results.length,
+  })
+
+  // Get Maia baseline evaluation
+  const baseMaiaEval = await maia.predict(fen, { eloLevel: fullConfig.maiaLevel })
+
+  // Build maiaTopMoves from Maia policy
+  const maiaTopMoves: MaiaPredictedMove[] = Object.entries(baseMaiaEval.policy)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([move, probability]) => {
+      const san = uciToSan(fen, move)
+      return { move, san: san || move, probability }
+    })
+
+  return {
+    fen,
+    baseSFWinrate: null,      // Not computed in Maia-only mode
+    baseSFCp: null,           // Not computed in Maia-only mode
+    baseMaiaWinrate: baseMaiaEval.value,
+    sfTopMoves: [],           // Empty until SF enrichment
+    maiaTopMoves,
+    candidates: results,
+    calculationTimeMs: Date.now() - startTime,
+    config: fullConfig,
+  }
+}
+
+/**
+ * Select candidate moves by Maia probability (no Stockfish filtering).
+ *
+ * This is the fast path for Maia-only mode:
+ * - Gets Maia predictions for all moves
+ * - Selects top N by probability
+ * - Gets Maia value head evaluation for each move
+ *
+ * @param fen - Position to analyze
+ * @param config - Algorithm configuration
+ * @param maia - Maia adapter
+ * @returns Array of candidate moves with Maia evaluations only
+ */
+async function selectCandidatesByMaiaProbability(
+  fen: string,
+  config: EWConfig,
+  maia: MaiaAdapter
+): Promise<Array<{
+  move: string
+  san: string
+  maiaWinrate: number
+  probability: number
+}>> {
+  // Get Maia move probabilities
+  const maiaPredictions = await maia.predict(fen, { eloLevel: config.maiaLevel })
+
+  // Get legal moves from the position
+  const legalMoves = getLegalMoves(fen)
+
+  // Build candidates with probabilities
+  const candidates: Array<{
+    move: string
+    san: string
+    maiaWinrate: number
+    probability: number
+  }> = []
+
+  for (let i = 0; i < legalMoves.length; i++) {
+    const move = legalMoves[i]
+    const probability = maiaPredictions.policy[move.uci] || 0
+
+    // Apply the move to get Maia value evaluation
+    const afterMoveFen = applyMove(fen, move.uci)
+    if (!afterMoveFen) continue
+
+    const maiaEval = await maia.predict(afterMoveFen, { eloLevel: config.maiaLevel })
+
+    candidates.push({
+      move: move.uci,
+      san: move.san,
+      maiaWinrate: 1 - maiaEval.value,  // Invert for side that made the move
+      probability,
+    })
+
+    // Yield to UI periodically to prevent page freezing
+    if (i % 5 === 4) {
+      await yieldToUI()
+    }
+  }
+
+  // Sort by probability (most likely first) and limit to maxCandidates
+  candidates.sort((a, b) => b.probability - a.probability)
+
+  return candidates.slice(0, config.maxCandidates)
+}
+
+// ============================================================================
+// STOCKFISH ENRICHMENT
+// ============================================================================
+
+/**
+ * Enrich a Maia-only EW result with Stockfish evaluations.
+ *
+ * Takes an existing result from calculateMaiaOnlyEW() and adds:
+ * - SF evaluations at all tree nodes
+ * - SF baseline evaluation of the position
+ * - SF top moves ranking
+ * - expectedWinrateSF for each candidate
+ *
+ * This is the slow path, triggered by user clicking "Add SF Analysis".
+ *
+ * @param result - Existing Maia-only EW result
+ * @param stockfish - Stockfish adapter
+ * @param config - Algorithm configuration (optional, uses result.config if not provided)
+ * @param onProgress - Optional progress callback
+ * @returns Complete EW result with SF values populated
+ */
+export async function enrichWithStockfish(
+  result: EWResult,
+  stockfish: StockfishAdapter,
+  config?: Partial<EWConfig>,
+  onProgress?: OnEWProgress
+): Promise<EWResult> {
+  const startTime = Date.now()
+  const fullConfig = { ...result.config, ...config }
+  const rootTurn = getTurnFromFen(result.fen)
+
+  // =========================================================================
+  // PHASE 3: BATCH EVALUATE WITH STOCKFISH
+  // =========================================================================
+
+  onProgress?.({
+    phase: 'enriching_sf',
+    progress: 0,
+    message: 'Collecting positions for evaluation...',
+    candidateCount: result.candidates.length,
+  })
+
+  // Collect all unique positions from all candidate trees
+  const allPositions = new Map<string, 'w' | 'b'>()
+
+  for (const candidate of result.candidates) {
+    const treePositions = collectPositionsForEvaluation(candidate.tree, rootTurn)
+    for (const [fen, turn] of treePositions) {
+      if (!allPositions.has(fen)) {
+        allPositions.set(fen, turn)
+      }
+    }
+  }
+
+  // Add candidate move positions for direct SF evaluation
+  for (const candidate of result.candidates) {
+    const afterMoveFen = applyMove(result.fen, candidate.move)
+    if (afterMoveFen && !allPositions.has(afterMoveFen)) {
+      // The turn after making the move
+      const afterTurn = rootTurn === 'w' ? 'b' : 'w'
+      allPositions.set(afterMoveFen, afterTurn)
+    }
+  }
+
+  onProgress?.({
+    phase: 'enriching_sf',
+    progress: 10,
+    message: `Evaluating ${allPositions.size} unique positions...`,
+    candidateCount: result.candidates.length,
+    positionsToEvaluate: allPositions.size,
+  })
+
+  // Batch evaluate all unique positions
+  const sfResults = await batchEvaluateWithStockfish(stockfish, allPositions, fullConfig)
+
+  onProgress?.({
+    phase: 'enriching_sf',
+    progress: 70,
+    message: 'Populating SF evaluations...',
+    candidateCount: result.candidates.length,
+    positionsToEvaluate: allPositions.size,
+  })
+
+  // Populate SF values into all trees and compute SF-based metrics
+  const enrichedCandidates: EWCandidateResult[] = []
+
+  for (const candidate of result.candidates) {
+    // Populate SF evaluations into tree
+    populateSFEvaluations(candidate.tree, sfResults, rootTurn)
+
+    // Compute EW(SF) now that we have SF values
+    const { ewSF } = computeExpectedWinrateFromTree(candidate.tree)
+
+    // Get direct SF evaluation for this candidate move
+    const afterMoveFen = applyMove(result.fen, candidate.move)
+    const sfEval = afterMoveFen ? sfResults.get(afterMoveFen) : null
+
+    // SF values need perspective normalization (opponent's view → our view)
+    const stockfishWinrate = sfEval ? 1 - sfEval.winrate : null
+    const stockfishCp = sfEval ? -sfEval.cp : null
+
+    enrichedCandidates.push({
+      ...candidate,
+      stockfishWinrate,
+      stockfishCp,
+      expectedWinrateSF: ewSF,
+    })
+  }
+
+  // Re-sort by EW-SF now that we have it
+  enrichedCandidates.sort((a, b) => (b.expectedWinrateSF ?? 0) - (a.expectedWinrateSF ?? 0))
+
+  onProgress?.({
+    phase: 'enriching_sf',
+    progress: 90,
+    message: 'Getting baseline evaluations...',
+    candidateCount: enrichedCandidates.length,
+  })
+
+  // Get SF baseline evaluation for the position
+  const baseSFEval = await stockfish.evaluate(result.fen, { depth: fullConfig.stockfishDepth })
+
+  // Build sfTopMoves from SF evaluation
+  const sfTopMoves: SFRankedMove[] = []
+
+  if (baseSFEval.moveWinrates && baseSFEval.moveEvaluations) {
+    const sortedMoves = Object.entries(baseSFEval.moveWinrates)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+
+    for (const [move, winrate] of sortedMoves) {
+      const san = uciToSan(result.fen, move)
+      if (san) {
+        sfTopMoves.push({
+          move,
+          san,
+          winrate,
+          cp: baseSFEval.moveEvaluations[move] ?? 0,
+        })
+      }
+    }
+  } else {
+    // Fall back to candidates sorted by SF winrate
+    const sortedCandidates = [...enrichedCandidates]
+      .filter(c => c.stockfishWinrate !== null)
+      .sort((a, b) => (b.stockfishWinrate ?? 0) - (a.stockfishWinrate ?? 0))
+    for (const c of sortedCandidates.slice(0, 5)) {
+      if (c.stockfishWinrate !== null && c.stockfishCp !== null) {
+        sfTopMoves.push({
+          move: c.move,
+          san: c.san,
+          winrate: c.stockfishWinrate,
+          cp: c.stockfishCp,
+        })
+      }
+    }
+  }
+
+  onProgress?.({
+    phase: 'enriching_sf',
+    progress: 100,
+    message: 'SF enrichment complete',
+    candidateCount: enrichedCandidates.length,
+  })
+
+  return {
+    ...result,
+    baseSFWinrate: baseSFEval.winrate,
+    baseSFCp: baseSFEval.cp,
+    sfTopMoves,
+    candidates: enrichedCandidates,
+    calculationTimeMs: result.calculationTimeMs + (Date.now() - startTime),
   }
 }
 
@@ -410,12 +808,9 @@ async function filterCandidateMoves(
   // Find the best move's evaluation (using SF for filtering)
   const bestEval = Math.max(...evaluatedMoves.map(m => m.sfWinrate))
 
-  // Filter candidates:
-  // 1. Within winrate loss threshold of best (using SF for filtering)
-  // 2. Above probability threshold OR is the best move
+  // Filter candidates: all moves within winrate loss threshold of best
   const candidates = evaluatedMoves.filter(m =>
-    (bestEval - m.sfWinrate <= config.winrateLossThreshold) ||
-    (m.probability >= config.probabilityThreshold && bestEval - m.sfWinrate <= config.winrateLossThreshold * 2)
+    bestEval - m.sfWinrate <= config.winrateLossThreshold
   )
 
   // Sort by SF evaluation (best first) and limit to maxCandidates
@@ -599,16 +994,24 @@ export function summarizeEWResult(result: EWResult): string {
   lines.push(`Expected Winrate Analysis`)
   lines.push(``)
   lines.push(`=== Baseline Evaluations ===`)
-  lines.push(`  Stockfish: ${result.baseSFCp >= 0 ? '+' : ''}${result.baseSFCp} cp (${(result.baseSFWinrate * 100).toFixed(1)}%)`)
+  if (result.baseSFCp !== null && result.baseSFWinrate !== null) {
+    lines.push(`  Stockfish: ${result.baseSFCp >= 0 ? '+' : ''}${result.baseSFCp} cp (${(result.baseSFWinrate * 100).toFixed(1)}%)`)
+  } else {
+    lines.push(`  Stockfish: (not computed)`)
+  }
   lines.push(`  Maia:      ${(result.baseMaiaWinrate * 100).toFixed(1)}%`)
   lines.push(``)
 
   // SF Top Moves
   lines.push(`=== Stockfish Top Moves ===`)
-  const sfMoveStrs = result.sfTopMoves.map(m =>
-    `${m.san} (${m.cp >= 0 ? '+' : ''}${m.cp})`
-  )
-  lines.push(`  Best: ${sfMoveStrs.join(', ')}`)
+  if (result.sfTopMoves.length > 0) {
+    const sfMoveStrs = result.sfTopMoves.map(m =>
+      `${m.san} (${m.cp >= 0 ? '+' : ''}${m.cp})`
+    )
+    lines.push(`  Best: ${sfMoveStrs.join(', ')}`)
+  } else {
+    lines.push(`  (not computed)`)
+  }
   lines.push(``)
 
   // Maia Predicted Moves
@@ -620,15 +1023,22 @@ export function summarizeEWResult(result: EWResult): string {
   lines.push(``)
 
   lines.push(`=== Expected Winrate Results ===`)
-  lines.push(`Top moves (sorted by EW-SF):`)
+  const hasSF = result.candidates.some(c => c.expectedWinrateSF !== null)
+  lines.push(`Top moves (sorted by ${hasSF ? 'EW-SF' : 'EW-Maia'}):`)
 
   for (let i = 0; i < Math.min(5, result.candidates.length); i++) {
     const c = result.candidates[i]
+    const ewSFStr = c.expectedWinrateSF !== null
+      ? `EW(SF)=${(c.expectedWinrateSF * 100).toFixed(1)}%`
+      : 'EW(SF)=—'
+    const sfStr = c.stockfishWinrate !== null
+      ? `SF=${(c.stockfishWinrate * 100).toFixed(1)}%`
+      : 'SF=—'
     lines.push(
       `  ${i + 1}. ${c.san}:` +
-      ` EW(SF)=${(c.expectedWinrateSF * 100).toFixed(1)}%` +
+      ` ${ewSFStr}` +
       ` EW(Maia)=${(c.expectedWinrateMaia * 100).toFixed(1)}%` +
-      ` (SF=${(c.stockfishWinrate * 100).toFixed(1)}%,` +
+      ` (${sfStr},` +
       ` Maia=${(c.maiaWinrate * 100).toFixed(1)}%,` +
       ` prob=${(c.probability * 100).toFixed(0)}%)`
     )
@@ -653,21 +1063,30 @@ export function summarizeEWResult(result: EWResult): string {
  * @returns Comparison data for all evaluation methods
  */
 export function compareWithStockfish(result: EWResult): {
-  sfBestMove: string
-  ewSFBestMove: string
+  sfBestMove: string | null
+  ewSFBestMove: string | null
   ewMaiaBestMove: string
   probBestMove: string
   sfAgreeEWSF: boolean
   sfAgreeEWMaia: boolean
   ewSFAgreeEWMaia: boolean
 } {
-  // EW-SF best move (already sorted by EW-SF)
-  const ewSFBest = result.candidates[0]
+  // Check if we have SF data
+  const hasSF = result.candidates.some(c => c.stockfishWinrate !== null)
+
+  // EW-SF best move (already sorted by EW-SF or EW-Maia)
+  const ewSFBest = hasSF
+    ? [...result.candidates].sort(
+        (a, b) => (b.expectedWinrateSF ?? 0) - (a.expectedWinrateSF ?? 0)
+      )[0]
+    : null
 
   // SF best move (sort by Stockfish evaluation)
-  const sfBest = [...result.candidates].sort(
-    (a, b) => b.stockfishWinrate - a.stockfishWinrate
-  )[0]
+  const sfBest = hasSF
+    ? [...result.candidates].sort(
+        (a, b) => (b.stockfishWinrate ?? 0) - (a.stockfishWinrate ?? 0)
+      )[0]
+    : null
 
   // EW-Maia best move (sort by EW using Maia at leaves)
   const ewMaiaBest = [...result.candidates].sort(
@@ -680,12 +1099,12 @@ export function compareWithStockfish(result: EWResult): {
   )[0]
 
   return {
-    sfBestMove: sfBest.san,
-    ewSFBestMove: ewSFBest.san,
+    sfBestMove: sfBest?.san ?? null,
+    ewSFBestMove: ewSFBest?.san ?? null,
     ewMaiaBestMove: ewMaiaBest.san,
     probBestMove: probBest.san,
-    sfAgreeEWSF: sfBest.move === ewSFBest.move,
-    sfAgreeEWMaia: sfBest.move === ewMaiaBest.move,
-    ewSFAgreeEWMaia: ewSFBest.move === ewMaiaBest.move,
+    sfAgreeEWSF: sfBest !== null && ewSFBest !== null && sfBest.move === ewSFBest.move,
+    sfAgreeEWMaia: sfBest !== null && sfBest.move === ewMaiaBest.move,
+    ewSFAgreeEWMaia: ewSFBest !== null && ewSFBest.move === ewMaiaBest.move,
   }
 }
