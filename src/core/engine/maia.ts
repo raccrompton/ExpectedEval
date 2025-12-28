@@ -467,10 +467,18 @@ export class RealMaia implements MaiaAdapter {
    * Cleans up resources.
    *
    * Call when done using the engine to free memory.
+   * This properly releases the ONNX inference session's WASM memory.
    */
-  destroy(): void {
-    // ONNX runtime doesn't have explicit cleanup
-    // Setting to null allows garbage collection
+  async destroy(): Promise<void> {
+    if (this.model) {
+      try {
+        // InferenceSession.release() frees the underlying WASM memory
+        // Without this, the ~89MB model buffer lingers until GC
+        await this.model.release()
+      } catch (e) {
+        console.warn('Failed to release ONNX session:', e)
+      }
+    }
     this.model = null
     this.ready = false
   }

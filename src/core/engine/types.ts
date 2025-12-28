@@ -188,8 +188,9 @@ export interface StockfishAdapter {
 
   /**
    * Clean up resources. Call when done with the engine.
+   * May be async for implementations that need to release WASM memory.
    */
-  destroy(): void
+  destroy(): void | Promise<void>
 }
 
 /**
@@ -221,8 +222,9 @@ export interface MaiaAdapter {
 
   /**
    * Clean up resources. Call when done with the engine.
+   * May be async for real implementations that need to release WASM memory.
    */
-  destroy(): void
+  destroy(): void | Promise<void>
 }
 
 // ============================================================================
