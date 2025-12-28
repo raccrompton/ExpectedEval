@@ -432,10 +432,33 @@ function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTr
     isCandidate: boolean
   ) => {
     const rect = event.currentTarget.getBoundingClientRect()
+    const tooltipWidth = 280 // max-width of tooltip
+    const tooltipHeight = 180 // approximate max height
+    const padding = 8
+
+    // Prefer positioning to the left of the element, falling back to right if no room
+    let x: number
+    if (rect.left - tooltipWidth - padding > 0) {
+      // Position to the left
+      x = rect.left - tooltipWidth - padding
+    } else if (rect.right + tooltipWidth + padding < window.innerWidth) {
+      // Position to the right
+      x = rect.right + padding
+    } else {
+      // Fallback: position at left edge with padding
+      x = padding
+    }
+
+    // Ensure tooltip stays within vertical viewport
+    let y = rect.top
+    if (y + tooltipHeight > window.innerHeight) {
+      y = Math.max(padding, window.innerHeight - tooltipHeight - padding)
+    }
+
     setTooltipData({
       node,
-      x: rect.right + 8,
-      y: rect.top,
+      x,
+      y,
       isCandidate,
     })
   }, [])
