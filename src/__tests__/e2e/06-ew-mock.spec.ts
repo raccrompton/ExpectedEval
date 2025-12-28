@@ -117,25 +117,26 @@ test.describe('06 - Expected Winrate', () => {
       await page.getByTestId('eval-source-maia').click()
     })
 
-    test('candidate moves show EW and played percentage', async () => {
+    test('candidate moves show EW and percentage', async () => {
       const candidate = page.getByTestId('ew-tree-candidate-0')
       await expect(candidate).toBeVisible()
       await expect(candidate).toContainText('EW:')
-      await expect(candidate).toContainText('played')
+      // Percentage shown in parentheses, e.g. "(35%)"
+      await expect(candidate).toContainText('%')
     })
 
-    test('tree nodes can be expanded to show children', async () => {
+    test('tree nodes can be expanded to show branches', async () => {
       const expandButton = page.getByTestId('ew-tree-expand-0')
       await expect(expandButton).toBeVisible({ timeout: 10000 })
 
       await expandButton.click()
 
-      const treeChildren = page.getByTestId('ew-tree-children-0')
-      await expect(treeChildren).toBeVisible()
+      const treeBranches = page.getByTestId('ew-tree-branches-0')
+      await expect(treeBranches).toBeVisible()
 
-      // Children show eval percentage
-      const childText = await treeChildren.textContent()
-      expect(childText).toMatch(/\d+(\.\d+)?%/)
+      // Branches show eval percentage
+      const branchText = await treeBranches.textContent()
+      expect(branchText).toMatch(/\d+(\.\d+)?%/)
     })
 
     test('tree shows move names', async () => {
@@ -151,19 +152,22 @@ test.describe('06 - Expected Winrate', () => {
       await expect(page.getByTestId('ew-tree-tooltip')).toBeVisible()
     })
 
-    test('clicking tree node is interactive', async () => {
-      // Expand to see children (may already be expanded)
+    test('clicking candidate or branch navigates', async () => {
+      // Expand to see branches (may already be expanded)
       const expandButton = page.getByTestId('ew-tree-expand-0')
-      const treeChildren = page.getByTestId('ew-tree-children-0')
+      const treeBranches = page.getByTestId('ew-tree-branches-0')
 
-      if (!(await treeChildren.isVisible())) {
+      if (!(await treeBranches.isVisible())) {
         await expandButton.click()
       }
 
-      // Child node is clickable
-      const childNode = page.getByTestId('ew-tree-node-0-0')
-      await expect(childNode).toBeVisible()
-      await childNode.click()
+      // Branch lines are clickable - clicking navigates to that position
+      const branchContainer = page.getByTestId('ew-tree-branches-0')
+      await expect(branchContainer).toBeVisible()
+
+      // Candidate row is also clickable
+      const candidateRow = page.getByTestId('ew-tree-candidate-0')
+      await candidateRow.click()
     })
 
     test('Add SF Analysis button appears when Maia calculation complete', async () => {

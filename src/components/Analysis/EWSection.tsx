@@ -108,7 +108,6 @@ export function EWSection({ fen, isEngineReady, onNavigate }: EWSectionProps) {
     enrichWithSF,
     updateConfig,
     canEnrichSF,
-    hasSFResults,
   } = useExpectedWinrate(fen)
 
   const [showConfig, setShowConfig] = useState(false)
@@ -193,7 +192,6 @@ export function EWSection({ fen, isEngineReady, onNavigate }: EWSectionProps) {
           evalSource={evalSource}
           onEvalSourceChange={setEvalSource}
           onNavigate={onNavigate}
-          hasSFResults={hasSFResults}
         />
       )}
 
@@ -290,7 +288,6 @@ interface EWResultsProps {
   evalSource: EvalSource
   onEvalSourceChange: (source: EvalSource) => void
   onNavigate?: (fen: string) => void
-  hasSFResults: boolean
 }
 
 /**
@@ -304,7 +301,7 @@ function formatNullableWinrate(winrate: number | null): string {
  * Displays EW calculation results including summary stats, candidate moves, and tree.
  * SF values show "—" until enrichWithStockfish() is called.
  */
-function EWResults({ result, evalSource, onEvalSourceChange, onNavigate, hasSFResults }: EWResultsProps) {
+function EWResults({ result, evalSource, onEvalSourceChange, onNavigate }: EWResultsProps) {
   const bestCandidate = result.candidates[0]
 
   return (
@@ -386,106 +383,147 @@ interface EWTreeProps {
 
 /** Maximum number of top-level candidate moves to display */
 const MAX_DISPLAYED_CANDIDATES = 5
-/** Maximum number of child nodes to display at each tree level */
-const MAX_DISPLAYED_CHILDREN = 5
+/** Maximum number of branch alternatives to show at each branch point */
+const MAX_BRANCHES = 5
+
+/** A line in the tree display */
+interface TreeLine {
+  moves: string[] // Moves shown on this line
+  leafEval: number | null // Eval if this is a leaf
+  leafFen: string // FEN of final position
+  indent: number // Indentation level (in character widths of moves before branch)
+}
+
+/**
+ * Gets the mainline (most likely continuation) and collects branch lines.
+ * Returns { mainlineMoves, mainlineEval, mainlineFen, branches }
+ */
+function extractMainlineAndBranches(
+  node: TreeNode,
+  evalSource: EvalSource,
+): { mainlineMoves: string[]; mainlineEval: number | null; mainlineFen: string; branches: TreeLine[] } {
+  const branches: TreeLine[] = []
+
+  function traverse(
+    current: TreeNode,
+    pathMoves: string[],
+    branchIndent: number,
+  ): { moves: string[]; eval_: number | null; fen: string } {
+    const sortedChildren = [...current.children].sort((a, b) => b.probability - a.probability)
+
+    if (sortedChildren.length === 0) {
+      // Leaf
+      const eval_ = evalSource === 'stockfish' ? current.sfWinrate : current.maiaWinrate
+      return { moves: pathMoves, eval_: eval_, fen: current.fen }
+    }
+
+    // Process branches (non-main children) first
+    for (let i = 1; i < Math.min(sortedChildren.length, MAX_BRANCHES); i++) {
+      const branchChild = sortedChildren[i]
+      const branchResult = traverse(
+        branchChild,
+        [branchChild.san || branchChild.move || '?'],
+        pathMoves.length,
+      )
+      branches.push({
+        moves: branchResult.moves,
+        leafEval: branchResult.eval_,
+        leafFen: branchResult.fen,
+        indent: branchIndent,
+      })
+    }
+
+    // Follow main line
+    const mainChild = sortedChildren[0]
+    const newPath = [...pathMoves, mainChild.san || mainChild.move || '?']
+    return traverse(mainChild, newPath, pathMoves.length + 1)
+  }
+
+  const main = traverse(node, [], 0)
+  return {
+    mainlineMoves: main.moves,
+    mainlineEval: main.eval_,
+    mainlineFen: main.fen,
+    branches,
+  }
+}
 
 /**
  * Interactive tree visualization of Expected Winrate candidates.
- * Features:
- * - Eval source toggle (Stockfish/Maia)
- * - Expandable candidate moves sorted by EW
- * - Tree connectors (├─, └─) for visual hierarchy
- * - Hover tooltips with detailed stats
- * - Click-to-navigate to preview positions
+ * Display: candidate + mainline on same row, branches indented below.
+ *
+ * e3 Nf6 Nf3 Ng8 Ng1    EW: 48.9%    31.2%
+ *        Qf3                         39.6%
+ *    Nc6                             50.9%
  */
 function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTreeProps) {
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
+  const [expandedCandidates, setExpandedCandidates] = useState<Set<number>>(new Set())
   const [tooltipData, setTooltipData] = useState<{
-    node: TreeNode | EWCandidateResult
+    candidate: EWCandidateResult
     x: number
     y: number
-    isCandidate: boolean
   } | null>(null)
 
-  // Clear expanded nodes and tooltip when new candidates arrive (position changed)
-  // This prevents memory leak from accumulating node IDs across position changes
   useEffect(() => {
-    setExpandedNodes(new Set())
+    setExpandedCandidates(new Set())
     setTooltipData(null)
   }, [candidates])
 
-  const toggleNode = (nodeId: string) => {
-    setExpandedNodes((prev) => {
+  const toggleCandidate = useCallback((index: number) => {
+    setExpandedCandidates((prev) => {
       const next = new Set(prev)
-      if (next.has(nodeId)) {
-        next.delete(nodeId)
+      if (next.has(index)) {
+        next.delete(index)
       } else {
-        next.add(nodeId)
+        next.add(index)
       }
       return next
     })
-  }
-
-  const handleMouseEnter = useCallback((
-    event: React.MouseEvent,
-    node: TreeNode | EWCandidateResult,
-    isCandidate: boolean
-  ) => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    const tooltipWidth = 280 // max-width of tooltip
-    const tooltipHeight = 180 // approximate max height
-    const padding = 8
-
-    // Prefer positioning to the left of the element, falling back to right if no room
-    let x: number
-    if (rect.left - tooltipWidth - padding > 0) {
-      // Position to the left
-      x = rect.left - tooltipWidth - padding
-    } else if (rect.right + tooltipWidth + padding < window.innerWidth) {
-      // Position to the right
-      x = rect.right + padding
-    } else {
-      // Fallback: position at left edge with padding
-      x = padding
-    }
-
-    // Ensure tooltip stays within vertical viewport
-    let y = rect.top
-    if (y + tooltipHeight > window.innerHeight) {
-      y = Math.max(padding, window.innerHeight - tooltipHeight - padding)
-    }
-
-    setTooltipData({
-      node,
-      x,
-      y,
-      isCandidate,
-    })
   }, [])
+
+  const handleCandidateHover = useCallback(
+    (event: React.MouseEvent, candidate: EWCandidateResult) => {
+      const rect = event.currentTarget.getBoundingClientRect()
+      const tooltipWidth = 280
+      const tooltipHeight = 180
+      const padding = 8
+
+      let x = rect.left - tooltipWidth - padding
+      if (x < 0) x = rect.right + padding
+      if (x + tooltipWidth > window.innerWidth) x = padding
+
+      let y = rect.top
+      if (y + tooltipHeight > window.innerHeight) {
+        y = Math.max(padding, window.innerHeight - tooltipHeight - padding)
+      }
+
+      setTooltipData({ candidate, x, y })
+    },
+    [],
+  )
 
   const handleMouseLeave = useCallback(() => {
     setTooltipData(null)
   }, [])
 
-  const handleNodeClick = useCallback((fen: string) => {
-    if (onNavigate) {
-      onNavigate(fen)
-    }
-  }, [onNavigate])
+  const handleNavigate = useCallback(
+    (fen: string) => {
+      onNavigate?.(fen)
+    },
+    [onNavigate],
+  )
 
-  if (candidates.length === 0) {
-    return null
-  }
+  if (candidates.length === 0) return null
 
-  // Sort candidates by EW (highest first based on evalSource)
-  // When SF not available, fall back to Maia
   const sortedCandidates = [...candidates].sort((a, b) => {
-    const ewA = evalSource === 'stockfish'
-      ? (a.expectedWinrateSF ?? a.expectedWinrateMaia)
-      : a.expectedWinrateMaia
-    const ewB = evalSource === 'stockfish'
-      ? (b.expectedWinrateSF ?? b.expectedWinrateMaia)
-      : b.expectedWinrateMaia
+    const ewA =
+      evalSource === 'stockfish'
+        ? (a.expectedWinrateSF ?? a.expectedWinrateMaia)
+        : a.expectedWinrateMaia
+    const ewB =
+      evalSource === 'stockfish'
+        ? (b.expectedWinrateSF ?? b.expectedWinrateMaia)
+        : b.expectedWinrateMaia
     return ewB - ewA
   })
 
@@ -516,19 +554,78 @@ function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTr
       </div>
 
       <div className="tree-container">
-        {sortedCandidates.slice(0, MAX_DISPLAYED_CANDIDATES).map((candidate, index) => (
-          <CandidateBranch
-            key={candidate.move}
-            candidate={candidate}
-            index={index}
-            evalSource={evalSource}
-            expandedNodes={expandedNodes}
-            onToggle={toggleNode}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            onNodeClick={handleNodeClick}
-          />
-        ))}
+        {sortedCandidates.slice(0, MAX_DISPLAYED_CANDIDATES).map((candidate, index) => {
+          const isExpanded = expandedCandidates.has(index)
+          const ew =
+            evalSource === 'stockfish'
+              ? (candidate.expectedWinrateSF ?? candidate.expectedWinrateMaia)
+              : candidate.expectedWinrateMaia
+
+          // Extract mainline and branches
+          const { mainlineMoves, mainlineEval, mainlineFen, branches } = extractMainlineAndBranches(
+            candidate.tree,
+            evalSource,
+          )
+
+          // Full mainline includes candidate move
+          const fullMainline = [candidate.san, ...mainlineMoves].join(' ')
+
+          return (
+            <div key={candidate.move} className="candidate-block">
+              <div
+                className="candidate-row"
+                data-testid={`ew-tree-candidate-${index}`}
+                onMouseEnter={(e) => handleCandidateHover(e, candidate)}
+                onMouseLeave={handleMouseLeave}
+                onClick={() => handleNavigate(mainlineFen || candidate.tree.fen)}
+              >
+                {branches.length > 0 ? (
+                  <button
+                    className="expand-btn"
+                    data-testid={`ew-tree-expand-${index}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleCandidate(index)
+                    }}
+                    aria-expanded={isExpanded}
+                  >
+                    {isExpanded ? '▼' : '▶'}
+                  </button>
+                ) : (
+                  <span className="expand-spacer" />
+                )}
+                <span className="mainline">{fullMainline}</span>
+                <span className="candidate-ew">EW: {formatWinrate(ew)}</span>
+                <span className="leaf-eval">
+                  {mainlineEval !== null ? formatWinrate(mainlineEval) : '—'}
+                </span>
+              </div>
+
+              {isExpanded && branches.length > 0 && (
+                <div className="branches-container" data-testid={`ew-tree-branches-${index}`}>
+                  {branches.map((branch, branchIdx) => {
+                    // Calculate indent: candidate move width + space + moves before branch
+                    // Use ch units for accurate character-width-based indentation
+                    const indentChars = candidate.san.length + 1 + branch.indent * 4
+                    return (
+                      <div
+                        key={branchIdx}
+                        className="branch-line"
+                        style={{ paddingLeft: `calc(20px + ${indentChars}ch)` }}
+                        onClick={() => handleNavigate(branch.leafFen)}
+                      >
+                        <span className="branch-moves">{branch.moves.join(' ')}</span>
+                        <span className="branch-eval">
+                          {branch.leafEval !== null ? formatWinrate(branch.leafEval) : '—'}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {tooltipData && (
@@ -541,16 +638,11 @@ function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTr
             top: `${tooltipData.y}px`,
           }}
         >
-          <TreeTooltip
-            node={tooltipData.node}
-            isCandidate={tooltipData.isCandidate}
-          />
+          <CandidateTooltip candidate={tooltipData.candidate} />
         </div>
       )}
 
-      <div className="tree-hint">
-        Hover for details · Click to navigate
-      </div>
+      <div className="tree-hint">Hover for details · Click to navigate</div>
 
       <style jsx>{`
         .ew-tree {
@@ -585,6 +677,86 @@ function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTr
           font-family: var(--font-mono, monospace);
         }
 
+        .candidate-block {
+          margin-bottom: 2px;
+        }
+
+        .candidate-row {
+          display: flex;
+          align-items: center;
+          gap: var(--space-sm, 8px);
+          padding: 3px 0;
+          cursor: pointer;
+          border-radius: var(--radius-sm, 4px);
+        }
+
+        .candidate-row:hover {
+          background: var(--color-surface-hover, #2a2a2a);
+        }
+
+        .expand-btn {
+          background: transparent;
+          border: none;
+          color: var(--color-text-muted, #888);
+          cursor: pointer;
+          font-size: 0.625rem;
+          width: 16px;
+          padding: 0;
+          flex-shrink: 0;
+        }
+
+        .expand-btn:hover {
+          color: var(--color-text, #fff);
+        }
+
+        .expand-spacer {
+          width: 16px;
+          flex-shrink: 0;
+        }
+
+        .mainline {
+          color: var(--color-text, #ccc);
+          flex: 1;
+        }
+
+        .candidate-ew {
+          color: var(--color-primary, #60a5fa);
+          font-weight: 500;
+        }
+
+        .leaf-eval {
+          color: var(--color-text-muted, #888);
+          min-width: 48px;
+          text-align: right;
+        }
+
+        .branches-container {
+          margin-left: 16px;
+        }
+
+        .branch-line {
+          display: flex;
+          align-items: center;
+          padding: 2px 4px;
+          cursor: pointer;
+          border-radius: var(--radius-sm, 4px);
+        }
+
+        .branch-line:hover {
+          background: var(--color-surface-hover, #2a2a2a);
+        }
+
+        .branch-moves {
+          color: var(--color-text, #aaa);
+          flex: 1;
+        }
+
+        .branch-eval {
+          color: var(--color-text-muted, #888);
+          min-width: 48px;
+          text-align: right;
+        }
+
         .ew-tooltip {
           background: var(--color-surface, #1a1a1a);
           border: 1px solid var(--color-border, #333);
@@ -607,404 +779,38 @@ function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTr
   )
 }
 
-interface CandidateBranchProps {
+interface CandidateTooltipProps {
   candidate: EWCandidateResult
-  index: number
-  evalSource: EvalSource
-  expandedNodes: Set<string>
-  onToggle: (nodeId: string) => void
-  onMouseEnter: (event: React.MouseEvent, node: TreeNode | EWCandidateResult, isCandidate: boolean) => void
-  onMouseLeave: () => void
-  onNodeClick: (fen: string) => void
 }
 
 /**
- * Renders a top-level candidate move branch in the EW tree.
- * Shows move name, EW percentage, and play probability.
- * Expandable to show child responses from the opponent.
+ * Tooltip displayed on hover over candidate moves.
+ * Shows: play rate, SF/Maia evals, EW values.
  */
-function CandidateBranch({
-  candidate,
-  index,
-  evalSource,
-  expandedNodes,
-  onToggle,
-  onMouseEnter,
-  onMouseLeave,
-  onNodeClick,
-}: CandidateBranchProps) {
-  const nodeId = `${index}`
-  const isExpanded = expandedNodes.has(nodeId)
-  const hasChildren = candidate.tree.children.length > 0
-
-  // Use SF if available in stockfish mode, otherwise fall back to Maia
-  const ew = evalSource === 'stockfish'
-    ? (candidate.expectedWinrateSF ?? candidate.expectedWinrateMaia)
-    : candidate.expectedWinrateMaia
-
-  return (
-    <div className="candidate-branch">
-      <div
-        className="candidate-node"
-        data-testid={`ew-tree-candidate-${index}`}
-        onMouseEnter={(e) => onMouseEnter(e, candidate, true)}
-        onMouseLeave={onMouseLeave}
-        onClick={() => onNodeClick(candidate.tree.fen)}
-      >
-        {hasChildren ? (
-          <button
-            className="expand-button"
-            data-testid={`ew-tree-expand-${index}`}
-            onClick={(e) => {
-              e.stopPropagation()
-              onToggle(nodeId)
-            }}
-            aria-label={isExpanded ? `Collapse ${candidate.san}` : `Expand ${candidate.san}`}
-            aria-expanded={isExpanded}
-          >
-            {isExpanded ? '▼' : '▶'}
-          </button>
-        ) : (
-          <span className="expand-spacer" />
-        )}
-        <span className="candidate-move">{candidate.san}</span>
-        <span className="candidate-ew">EW: {formatWinrate(ew)}</span>
-        <span className="candidate-played">(played {formatProbability(candidate.probability)})</span>
-      </div>
-
-      {hasChildren && isExpanded && (
-        <div className="tree-children" data-testid={`ew-tree-children-${index}`}>
-          {candidate.tree.children
-            .slice()
-            .sort((a, b) => b.probability - a.probability)
-            .slice(0, MAX_DISPLAYED_CHILDREN)
-            .map((child, childIndex) => (
-              <TreeBranch
-                key={child.move || childIndex}
-                node={child}
-                depth={1}
-                nodeId={`${nodeId}-${childIndex}`}
-                isLast={childIndex === Math.min(candidate.tree.children.length, MAX_DISPLAYED_CHILDREN) - 1}
-                evalSource={evalSource}
-                expandedNodes={expandedNodes}
-                onToggle={onToggle}
-                onMouseEnter={onMouseEnter}
-                onMouseLeave={onMouseLeave}
-                onNodeClick={onNodeClick}
-              />
-            ))}
-        </div>
-      )}
-
-      <style jsx>{`
-        .candidate-branch {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .candidate-node {
-          display: flex;
-          align-items: center;
-          gap: var(--space-xs, 4px);
-          padding: 4px 0;
-          cursor: pointer;
-          border-radius: var(--radius-sm, 4px);
-        }
-
-        .candidate-node:hover {
-          background: var(--color-surface-hover, #2a2a2a);
-        }
-
-        .expand-button {
-          background: transparent;
-          border: none;
-          color: var(--color-text-muted, #888);
-          cursor: pointer;
-          font-size: 0.625rem;
-          width: 16px;
-          padding: 0;
-          flex-shrink: 0;
-        }
-
-        .expand-button:hover {
-          color: var(--color-text, #fff);
-        }
-
-        .expand-spacer {
-          width: 16px;
-          flex-shrink: 0;
-        }
-
-        .candidate-move {
-          font-weight: 600;
-          min-width: 40px;
-        }
-
-        .candidate-ew {
-          color: var(--color-text, #fff);
-        }
-
-        .candidate-played {
-          color: var(--color-text-muted, #888);
-          margin-left: var(--space-xs, 4px);
-        }
-
-        .tree-children {
-          display: flex;
-          flex-direction: column;
-        }
-      `}</style>
-    </div>
-  )
-}
-
-interface TreeBranchProps {
-  node: TreeNode
-  depth: number
-  nodeId: string
-  isLast: boolean
-  evalSource: EvalSource
-  expandedNodes: Set<string>
-  onToggle: (nodeId: string) => void
-  onMouseEnter: (event: React.MouseEvent, node: TreeNode, isCandidate: boolean) => void
-  onMouseLeave: () => void
-  onNodeClick: (fen: string) => void
-}
-
-/**
- * Renders a nested tree node with tree connectors (├─ or └─).
- * Shows move name and evaluation percentage.
- * Recursively renders children when expanded.
- */
-function TreeBranch({
-  node,
-  depth,
-  nodeId,
-  isLast,
-  evalSource,
-  expandedNodes,
-  onToggle,
-  onMouseEnter,
-  onMouseLeave,
-  onNodeClick,
-}: TreeBranchProps) {
-  const hasChildren = node.children.length > 0
-  const isExpanded = expandedNodes.has(nodeId)
-  const indent = depth * 20
-
-  const eval_ = evalSource === 'stockfish' ? node.sfWinrate : node.maiaWinrate
-  const connector = isLast ? '└─' : '├─'
-
-  return (
-    <div className="tree-branch">
-      <div
-        className="tree-node"
-        style={{ paddingLeft: `${indent}px` }}
-        data-testid={`ew-tree-node-${nodeId.replace(/-/g, '-')}`}
-        onMouseEnter={(e) => onMouseEnter(e, node, false)}
-        onMouseLeave={onMouseLeave}
-        onClick={() => onNodeClick(node.fen)}
-      >
-        <span className="connector">{connector}</span>
-        {hasChildren ? (
-          <button
-            className="expand-button"
-            onClick={(e) => {
-              e.stopPropagation()
-              onToggle(nodeId)
-            }}
-            aria-label={isExpanded ? `Collapse ${node.san}` : `Expand ${node.san}`}
-            aria-expanded={isExpanded}
-          >
-            {isExpanded ? '▼' : '▶'}
-          </button>
-        ) : (
-          <span className="expand-spacer" />
-        )}
-        <span className="node-move">{node.san || node.move || '?'}</span>
-        <span className="node-eval">
-          {eval_ !== null ? formatWinrate(eval_) : '—'}
-        </span>
-      </div>
-
-      {hasChildren && isExpanded && (
-        <div className="tree-children">
-          {node.children
-            .slice()
-            .sort((a, b) => b.probability - a.probability)
-            .slice(0, MAX_DISPLAYED_CHILDREN)
-            .map((child, childIndex) => (
-              <TreeBranch
-                key={child.move || childIndex}
-                node={child}
-                depth={depth + 1}
-                nodeId={`${nodeId}-${childIndex}`}
-                isLast={childIndex === Math.min(node.children.length, MAX_DISPLAYED_CHILDREN) - 1}
-                evalSource={evalSource}
-                expandedNodes={expandedNodes}
-                onToggle={onToggle}
-                onMouseEnter={onMouseEnter}
-                onMouseLeave={onMouseLeave}
-                onNodeClick={onNodeClick}
-              />
-            ))}
-        </div>
-      )}
-
-      <style jsx>{`
-        .tree-branch {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .tree-node {
-          display: flex;
-          align-items: center;
-          gap: var(--space-xs, 4px);
-          padding: 2px 0;
-          cursor: pointer;
-          border-radius: var(--radius-sm, 4px);
-        }
-
-        .tree-node:hover {
-          background: var(--color-surface-hover, #2a2a2a);
-        }
-
-        .connector {
-          color: var(--color-text-muted, #555);
-          font-family: var(--font-mono, monospace);
-          white-space: pre;
-        }
-
-        .expand-button {
-          background: transparent;
-          border: none;
-          color: var(--color-text-muted, #888);
-          cursor: pointer;
-          font-size: 0.625rem;
-          width: 16px;
-          padding: 0;
-          flex-shrink: 0;
-        }
-
-        .expand-button:hover {
-          color: var(--color-text, #fff);
-        }
-
-        .expand-spacer {
-          width: 16px;
-          flex-shrink: 0;
-        }
-
-        .node-move {
-          font-weight: 500;
-          min-width: 40px;
-        }
-
-        .node-eval {
-          color: var(--color-text-muted, #888);
-        }
-
-        .tree-children {
-          display: flex;
-          flex-direction: column;
-        }
-      `}</style>
-    </div>
-  )
-}
-
-interface TreeTooltipProps {
-  node: TreeNode | EWCandidateResult
-  isCandidate: boolean
-}
-
-/**
- * Tooltip displayed on hover over tree nodes.
- * Shows detailed stats:
- * - For candidates: play rate, SF/Maia evals, EW values
- * - For tree nodes: play rate, cumulative probability, SF/Maia evals
- */
-function TreeTooltip({ node, isCandidate }: TreeTooltipProps) {
-  if (isCandidate) {
-    const candidate = node as EWCandidateResult
-    return (
-      <div className="tooltip-content">
-        <div className="tooltip-header">{candidate.san}</div>
-        <div className="tooltip-row">
-          <span>Play rate:</span>
-          <span>{formatProbability(candidate.probability)}</span>
-        </div>
-        <div className="tooltip-row">
-          <span>SF eval:</span>
-          <span>{formatNullableWinrate(candidate.stockfishWinrate)}</span>
-        </div>
-        <div className="tooltip-row">
-          <span>Maia eval:</span>
-          <span>{formatWinrate(candidate.maiaWinrate)}</span>
-        </div>
-        <div className="tooltip-divider" />
-        <div className="tooltip-row highlight">
-          <span>EW (SF):</span>
-          <span>{formatNullableWinrate(candidate.expectedWinrateSF)}</span>
-        </div>
-        <div className="tooltip-row highlight">
-          <span>EW (Maia):</span>
-          <span>{formatWinrate(candidate.expectedWinrateMaia)}</span>
-        </div>
-
-        <style jsx>{`
-          .tooltip-content {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-          }
-          .tooltip-header {
-            font-weight: 600;
-            font-size: 0.875rem;
-            margin-bottom: 4px;
-          }
-          .tooltip-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
-          }
-          .tooltip-row span:first-child {
-            color: var(--color-text-muted, #888);
-          }
-          .tooltip-row.highlight span {
-            font-weight: 500;
-          }
-          .tooltip-divider {
-            height: 1px;
-            background: var(--color-border, #333);
-            margin: 4px 0;
-          }
-        `}</style>
-      </div>
-    )
-  }
-
-  const treeNode = node as TreeNode
+function CandidateTooltip({ candidate }: CandidateTooltipProps) {
   return (
     <div className="tooltip-content">
-      <div className="tooltip-header">{treeNode.san || treeNode.move}</div>
+      <div className="tooltip-header">{candidate.san}</div>
       <div className="tooltip-row">
         <span>Play rate:</span>
-        <span>{formatProbability(treeNode.probability)}</span>
+        <span>{formatProbability(candidate.probability)}</span>
       </div>
-      <div className="tooltip-row">
-        <span>Cumulative prob:</span>
-        <span>{formatProbability(treeNode.cumulativeProbability)}</span>
-      </div>
-      <div className="tooltip-divider" />
       <div className="tooltip-row">
         <span>SF eval:</span>
-        <span>{treeNode.sfWinrate !== null ? formatWinrate(treeNode.sfWinrate) : '—'}</span>
+        <span>{formatNullableWinrate(candidate.stockfishWinrate)}</span>
       </div>
       <div className="tooltip-row">
         <span>Maia eval:</span>
-        <span>{formatWinrate(treeNode.maiaWinrate)}</span>
+        <span>{formatWinrate(candidate.maiaWinrate)}</span>
+      </div>
+      <div className="tooltip-divider" />
+      <div className="tooltip-row highlight">
+        <span>EW (SF):</span>
+        <span>{formatNullableWinrate(candidate.expectedWinrateSF)}</span>
+      </div>
+      <div className="tooltip-row highlight">
+        <span>EW (Maia):</span>
+        <span>{formatWinrate(candidate.expectedWinrateMaia)}</span>
       </div>
 
       <style jsx>{`
@@ -1025,6 +831,9 @@ function TreeTooltip({ node, isCandidate }: TreeTooltipProps) {
         }
         .tooltip-row span:first-child {
           color: var(--color-text-muted, #888);
+        }
+        .tooltip-row.highlight span {
+          font-weight: 500;
         }
         .tooltip-divider {
           height: 1px;
