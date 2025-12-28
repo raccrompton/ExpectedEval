@@ -1,4 +1,5 @@
 import type { StockfishEvaluation, MaiaEvaluation, EngineStatus } from '@/core/engine'
+import { uciToSan } from '@/core/analysis'
 
 interface EnginePanelProps {
   stockfishEvaluation: StockfishEvaluation | null
@@ -7,6 +8,7 @@ interface EnginePanelProps {
   maiaStatus: EngineStatus
   isStockfishEvaluating: boolean
   isMaiaEvaluating: boolean
+  currentFen: string
 }
 
 function formatCp(cp: number): string {
@@ -64,15 +66,18 @@ export function EnginePanel({
   maiaStatus,
   isStockfishEvaluating,
   isMaiaEvaluating,
+  currentFen,
 }: EnginePanelProps) {
+  // Show only top 3 moves for compact display
   const topMoves = maiaEvaluation
     ? Object.entries(maiaEvaluation.policy)
         .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
+        .slice(0, 3)
     : []
 
   return (
     <div className="engine-panel" data-testid="engine-panel">
+      {/* Stockfish section - left column */}
       <section className="engine-section" data-testid="stockfish-section">
         <div className="engine-header">
           <h3>Stockfish</h3>
@@ -90,32 +95,22 @@ export function EnginePanel({
             <div className="loading">Evaluating...</div>
           ) : stockfishEvaluation ? (
             <>
-              <div className="eval-row">
-                <span className="eval-label">Evaluation:</span>
-                <span className="eval-value" data-testid="sf-cp">
+              <div className="eval-main">
+                <span className="eval-cp" data-testid="sf-cp">
                   {stockfishEvaluation.isMate
                     ? `M${stockfishEvaluation.mateIn}`
                     : formatCp(stockfishEvaluation.cp)}
                 </span>
-              </div>
-              <div className="eval-row">
-                <span className="eval-label">Win rate:</span>
-                <span className="eval-value" data-testid="sf-winrate">
+                <span className="eval-winrate" data-testid="sf-winrate">
                   {formatWinrate(stockfishEvaluation.winrate)}
                 </span>
               </div>
-              <div className="eval-row">
+              <div className="eval-best">
                 <span className="eval-label">Best:</span>
-                <span className="eval-value best-move" data-testid="sf-best-move">
+                <span className="best-move" data-testid="sf-best-move">
                   {formatMove(stockfishEvaluation.bestMove)}
                 </span>
               </div>
-              {stockfishEvaluation.depth > 0 && (
-                <div className="eval-row depth">
-                  <span className="eval-label">Depth:</span>
-                  <span className="eval-value">{stockfishEvaluation.depth}</span>
-                </div>
-              )}
             </>
           ) : (
             <div className="no-eval">No evaluation yet</div>
@@ -123,6 +118,7 @@ export function EnginePanel({
         </div>
       </section>
 
+      {/* Maia section - right column */}
       <section className="engine-section" data-testid="maia-section">
         <div className="engine-header">
           <h3>Maia {maiaEvaluation?.eloLevel || ''}</h3>
@@ -140,28 +136,17 @@ export function EnginePanel({
             <div className="loading">Predicting...</div>
           ) : maiaEvaluation ? (
             <>
-              <div className="eval-row">
-                <span className="eval-label">Value:</span>
-                <span className="eval-value" data-testid="maia-value">
+              <div className="eval-main">
+                <span className="eval-winrate" data-testid="maia-value">
                   {formatWinrate(maiaEvaluation.value)}
                 </span>
               </div>
               <div className="maia-moves" data-testid="maia-moves">
-                <span className="eval-label">Predicted moves:</span>
-                <div className="move-list">
-                  {topMoves.map(([move, prob]) => (
-                    <div key={move} className="move-item">
-                      <span className="move-name">{formatMove(move)}</span>
-                      <div className="move-bar-container">
-                        <div
-                          className="move-bar"
-                          style={{ width: `${prob * 100}%` }}
-                        />
-                      </div>
-                      <span className="move-prob">{formatWinrate(prob)}</span>
-                    </div>
-                  ))}
-                </div>
+                {topMoves.map(([move, prob]) => (
+                  <div key={move} className="move-item">
+                    {uciToSan(currentFen, move) || formatMove(move)} {formatWinrate(prob)}
+                  </div>
+                ))}
               </div>
             </>
           ) : (
@@ -172,35 +157,41 @@ export function EnginePanel({
 
       <style jsx>{`
         .engine-panel {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-md, 16px);
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: var(--space-sm, 8px);
+          height: 100%;
+          min-height: 0;
         }
 
         .engine-section {
-          background: var(--color-surface, #1f1f1f);
-          border-radius: var(--radius-md, 8px);
-          padding: var(--space-md, 16px);
+          background: var(--color-surface-alt, #1a1a1a);
+          border-radius: var(--radius-sm, 4px);
+          padding: var(--space-sm, 8px);
           border: 1px solid var(--color-border, #333);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
         }
 
         .engine-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: var(--space-sm, 8px);
-          padding-bottom: var(--space-sm, 8px);
+          margin-bottom: var(--space-xs, 4px);
+          padding-bottom: var(--space-xs, 4px);
           border-bottom: 1px solid var(--color-border, #333);
+          flex-shrink: 0;
         }
 
         .engine-header h3 {
           margin: 0;
-          font-size: 0.875rem;
+          font-size: 0.75rem;
           font-weight: 600;
         }
 
         .engine-status {
-          font-size: 0.75rem;
+          font-size: 0.625rem;
           font-weight: 500;
         }
 
@@ -208,84 +199,62 @@ export function EnginePanel({
           display: flex;
           flex-direction: column;
           gap: var(--space-xs, 4px);
+          flex: 1;
+          min-height: 0;
+          overflow: hidden;
         }
 
-        .eval-row {
+        .eval-main {
           display: flex;
-          justify-content: space-between;
+          align-items: baseline;
+          gap: var(--space-sm, 8px);
+        }
+
+        .eval-cp {
+          font-size: 1rem;
+          font-weight: 600;
+          font-family: var(--font-mono, monospace);
+        }
+
+        .eval-winrate {
+          font-size: 0.8125rem;
+          font-weight: 500;
+          font-family: var(--font-mono, monospace);
+          color: var(--color-text-muted, #888);
+        }
+
+        .eval-best {
+          display: flex;
           align-items: center;
-          font-size: 0.875rem;
+          gap: var(--space-xs, 4px);
+          font-size: 0.75rem;
         }
 
         .eval-label {
           color: var(--color-text-muted, #888);
         }
 
-        .eval-value {
-          font-weight: 500;
+        .best-move {
           font-family: var(--font-mono, monospace);
-        }
-
-        .eval-value.best-move {
+          font-weight: 500;
           color: var(--color-primary, #3b82f6);
-        }
-
-        .depth {
-          font-size: 0.75rem;
-          color: var(--color-text-muted, #888);
         }
 
         .loading,
         .no-eval {
           color: var(--color-text-muted, #888);
-          font-size: 0.875rem;
+          font-size: 0.75rem;
           font-style: italic;
         }
 
         .maia-moves {
-          margin-top: var(--space-sm, 8px);
-        }
-
-        .maia-moves .eval-label {
-          display: block;
-          margin-bottom: var(--space-xs, 4px);
-        }
-
-        .move-list {
           display: flex;
           flex-direction: column;
-          gap: var(--space-xs, 4px);
+          gap: 2px;
+          font-size: 0.75rem;
         }
 
         .move-item {
-          display: grid;
-          grid-template-columns: 60px 1fr 45px;
-          align-items: center;
-          gap: var(--space-sm, 8px);
-          font-size: 0.8125rem;
-        }
-
-        .move-name {
-          font-family: var(--font-mono, monospace);
-          font-weight: 500;
-        }
-
-        .move-bar-container {
-          height: 8px;
-          background: var(--color-border, #333);
-          border-radius: 4px;
-          overflow: hidden;
-        }
-
-        .move-bar {
-          height: 100%;
-          background: var(--color-primary, #3b82f6);
-          border-radius: 4px;
-          transition: width 0.2s ease;
-        }
-
-        .move-prob {
-          text-align: right;
           font-family: var(--font-mono, monospace);
           color: var(--color-text-muted, #888);
         }

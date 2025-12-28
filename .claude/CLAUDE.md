@@ -7,7 +7,7 @@
 1. Read skills files before writing code
 2. Follow TDD: write failing test first, then implement
 3. Follow existing patterns, make minimal changes
-4. Run review agents after every code change
+4. Run review agents after code changes; run docs-updater when committing
 
 ---
 
@@ -71,7 +71,7 @@ This project uses MCP servers configured in `.mcp.json`.
 
 ### After Every Code Change
 
-Track which files you modify. Before completing any coding task, invoke both review agents:
+Track which files you modify. Before completing any coding task, invoke review agents:
 
 ```
 Task(
@@ -85,7 +85,9 @@ Task(
 )
 ```
 
-Skip reviews only if no code files were modified (research, planning, Q&A only).
+Address any failures before considering the task complete.
+
+Skip agents only if no code files were modified (research, planning, Q&A only).
 
 ### TDD Workflow
 
@@ -94,7 +96,7 @@ Follow Red-Green-Refactor for all code changes:
 1. **Red** — Write a failing test that defines expected behavior, watch it fail
 2. **Green** — Write minimum code to make the test pass
 3. **Refactor** — Clean up while keeping tests green
-4. **Verify** — Run full test suite to catch regressions
+4. **Verify** — Run full test suite to catch regressions (use 120-second timeout)
 
 **Test order by feature type:**
 
@@ -120,7 +122,6 @@ See `.claude/skills/testing-standards.md` for test quality standards.
 When you finish a task, `on-stop.sh` automatically verifies:
 
 - Type checking passes
-- All tests pass
 - Linting rules satisfied
 - Code is properly formatted
 
@@ -142,6 +143,13 @@ Address any failures before considering the task complete.
 1. Run linter and fix issues
 2. Run tests
 3. Review changes with `git diff`
+4. Run docs-updater agent:
+   ```
+   Task(
+     subagent_type="docs-updater",
+     prompt="Work done: [brief summary]. Files changed: [list files here]"
+   )
+   ```
 
 ### Commit Attribution
 
@@ -157,9 +165,4 @@ Address any failures before considering the task complete.
 | `.claude/CLAUDE.md` | Static rules and standards — do not modify     |
 | `CLAUDE.md` (root)  | Living document for project context and memory |
 
-**Update the root `CLAUDE.md` when:**
-
-- User expresses preferences (coding style, tools, workflows)
-- Architecture changes (new features, dependencies, file structure)
-- Important decisions are made (include rationale)
-- Tasks are completed (update Plan & Progress)
+The `docs-updater` agent automatically updates root `CLAUDE.md` after code changes. It evaluates whether to update sections based on work done.

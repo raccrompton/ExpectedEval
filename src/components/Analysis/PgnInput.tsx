@@ -47,7 +47,7 @@ export function PgnInput({ onLoadPgn }: PgnInputProps) {
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         placeholder="Paste PGN here..."
-        rows={8}
+        rows={3}
         aria-label="PGN input"
       />
       <button
@@ -62,20 +62,23 @@ export function PgnInput({ onLoadPgn }: PgnInputProps) {
         .pgn-input-container {
           display: flex;
           flex-direction: column;
-          gap: var(--space-sm);
+          gap: var(--space-xs);
+          flex: 1;
+          min-height: 0;
         }
         .pgn-textarea {
           width: 100%;
-          min-height: 120px;
-          padding: var(--space-sm);
+          flex: 1;
+          min-height: 0;
+          padding: var(--space-xs);
           font-family: monospace;
-          font-size: 0.875rem;
-          line-height: 1.4;
+          font-size: 0.75rem;
+          line-height: 1.3;
           border: 1px solid var(--color-border);
           border-radius: var(--radius-sm);
           background: var(--color-bg);
           color: var(--color-text);
-          resize: vertical;
+          resize: none;
         }
         .pgn-textarea:focus {
           outline: none;
@@ -86,8 +89,8 @@ export function PgnInput({ onLoadPgn }: PgnInputProps) {
           color: var(--color-text-muted);
         }
         .load-button {
-          padding: var(--space-sm) var(--space-md);
-          font-size: 0.875rem;
+          padding: var(--space-xs) var(--space-sm);
+          font-size: 0.75rem;
           font-weight: 500;
           color: white;
           background: var(--color-primary);
@@ -95,6 +98,7 @@ export function PgnInput({ onLoadPgn }: PgnInputProps) {
           border-radius: var(--radius-sm);
           cursor: pointer;
           transition: background-color 0.15s ease;
+          flex-shrink: 0;
         }
         .load-button:hover {
           background: var(--color-primary-dark);
