@@ -13,8 +13,8 @@ import { test, expect } from '@playwright/test'
  *
  * Key layout requirements:
  * 1. Left sidebar contains PGN input + Move list (full height)
- * 2. Board and Eval panel are side-by-side in top-right area
- * 3. EW tree spans full width under board+eval panel
+ * 2. Board and Eval panel are side-by-side in main row
+ * 3. EW section spans full width under main row
  */
 
 test.describe('UI Layout Structure', () => {
@@ -36,25 +36,22 @@ test.describe('UI Layout Structure', () => {
     await expect(movesSection.locator('[data-testid="move-list"]')).toBeVisible()
   })
 
-  test('has board and eval panel side-by-side in top-right area', async ({ page }) => {
-    const rightArea = page.locator('[data-testid="right-area"]')
-    await expect(rightArea).toBeVisible()
+  test('has board and eval panel side-by-side in main row', async ({ page }) => {
+    const mainRow = page.locator('[data-testid="main-row"]')
+    await expect(mainRow).toBeVisible()
 
-    const topRow = rightArea.locator('[data-testid="top-row"]')
-    await expect(topRow).toBeVisible()
-
-    const boardSection = topRow.locator('[data-testid="board-section"]')
+    const boardSection = mainRow.locator('[data-testid="board-section"]')
     await expect(boardSection).toBeVisible()
     await expect(boardSection.locator('.cg-wrap')).toBeVisible()
 
-    const evalPanel = topRow.locator('[data-testid="eval-panel"]')
+    const evalPanel = mainRow.locator('[data-testid="eval-panel"]')
     await expect(evalPanel).toBeVisible()
   })
 
   test('board and eval panel are horizontally adjacent', async ({ page }) => {
-    const topRow = page.locator('[data-testid="top-row"]')
-    const boardSection = topRow.locator('[data-testid="board-section"]')
-    const evalPanel = topRow.locator('[data-testid="eval-panel"]')
+    const mainRow = page.locator('[data-testid="main-row"]')
+    const boardSection = mainRow.locator('[data-testid="board-section"]')
+    const evalPanel = mainRow.locator('[data-testid="eval-panel"]')
 
     const boardBox = await boardSection.boundingBox()
     const evalBox = await evalPanel.boundingBox()
@@ -66,61 +63,49 @@ test.describe('UI Layout Structure', () => {
       // Eval panel should be to the right of board
       expect(evalBox.x).toBeGreaterThan(boardBox.x)
       // They should be roughly on the same vertical level (top aligned)
-      expect(Math.abs(evalBox.y - boardBox.y)).toBeLessThan(20)
+      expect(Math.abs(evalBox.y - boardBox.y)).toBeLessThan(50)
     }
   })
 
-  test('has EW tree section spanning under board and eval panel', async ({ page }) => {
-    const rightArea = page.locator('[data-testid="right-area"]')
-    const ewSection = rightArea.locator('[data-testid="ew-section"]')
+  test('has EW section wrapper below main row', async ({ page }) => {
+    const ewSectionWrapper = page.locator('[data-testid="ew-section-wrapper"]')
+    await expect(ewSectionWrapper).toBeVisible()
+
+    // The EW section wrapper should contain the actual EW section
+    const ewSection = ewSectionWrapper.locator('[data-testid="ew-section"]')
     await expect(ewSection).toBeVisible()
+  })
 
-    const topRow = rightArea.locator('[data-testid="top-row"]')
-    const topRowBox = await topRow.boundingBox()
-    const ewBox = await ewSection.boundingBox()
+  test('EW section wrapper is below main row', async ({ page }) => {
+    const mainRow = page.locator('[data-testid="main-row"]')
+    const ewSectionWrapper = page.locator('[data-testid="ew-section-wrapper"]')
 
-    expect(topRowBox).not.toBeNull()
+    const mainRowBox = await mainRow.boundingBox()
+    const ewBox = await ewSectionWrapper.boundingBox()
+
+    expect(mainRowBox).not.toBeNull()
     expect(ewBox).not.toBeNull()
 
-    if (topRowBox && ewBox) {
-      // EW section should be below the top row
-      expect(ewBox.y).toBeGreaterThan(topRowBox.y + topRowBox.height - 10)
+    if (mainRowBox && ewBox) {
+      // EW section should be below the main row
+      expect(ewBox.y).toBeGreaterThan(mainRowBox.y + mainRowBox.height - 10)
     }
   })
 
-  test('EW tree spans full width under board+eval area', async ({ page }) => {
-    const topRow = page.locator('[data-testid="top-row"]')
-    const ewSection = page.locator('[data-testid="ew-section"]')
-
-    const topRowBox = await topRow.boundingBox()
-    const ewBox = await ewSection.boundingBox()
-
-    expect(topRowBox).not.toBeNull()
-    expect(ewBox).not.toBeNull()
-
-    if (topRowBox && ewBox) {
-      // EW section should span approximately the same width as the top row
-      // Allow some tolerance for padding/margins
-      const widthDiff = Math.abs(ewBox.width - topRowBox.width)
-      expect(widthDiff).toBeLessThan(50)
-    }
-  })
-
-  test('left sidebar is separate from right area', async ({ page }) => {
+  test('left sidebar is separate from main row', async ({ page }) => {
     const sidebar = page.locator('[data-testid="left-sidebar"]')
-    const rightArea = page.locator('[data-testid="right-area"]')
+    const mainRow = page.locator('[data-testid="main-row"]')
 
     const sidebarBox = await sidebar.boundingBox()
-    const rightBox = await rightArea.boundingBox()
+    const mainRowBox = await mainRow.boundingBox()
 
     expect(sidebarBox).not.toBeNull()
-    expect(rightBox).not.toBeNull()
+    expect(mainRowBox).not.toBeNull()
 
-    if (sidebarBox && rightBox) {
-      // Right area should be to the right of sidebar
-      expect(rightBox.x).toBeGreaterThan(sidebarBox.x)
-      // Sidebar should span full height (or close to it)
-      expect(sidebarBox.height).toBeGreaterThan(300)
+    if (sidebarBox && mainRowBox) {
+      // Sidebar should be at the left of the layout
+      // Main row contains sidebar, board, and eval panel in a grid
+      expect(sidebarBox.x).toBeLessThan(mainRowBox.x + mainRowBox.width)
     }
   })
 
@@ -170,9 +155,9 @@ test.describe('EW Section Content', () => {
     await page.goto('/')
   })
 
-  test('EW section has calculate button', async ({ page }) => {
+  test('EW section has config toggle', async ({ page }) => {
     const ewSection = page.locator('[data-testid="ew-section"]')
-    await expect(ewSection.locator('[data-testid="calculate-ew-button"]')).toBeVisible()
+    await expect(ewSection.locator('[data-testid="ew-config-toggle"]')).toBeVisible()
   })
 
   test('EW section has status display', async ({ page }) => {

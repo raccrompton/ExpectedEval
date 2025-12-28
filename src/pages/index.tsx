@@ -129,7 +129,7 @@ export default function Home() {
             />
           </div>
         </div>
-        <div className="ew-section-wrapper" data-testid="ew-section">
+        <div className="ew-section-wrapper" data-testid="ew-section-wrapper">
           <h2>Expected Winrate</h2>
           <EWSection
             fen={currentFen}

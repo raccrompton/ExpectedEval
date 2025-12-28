@@ -37,7 +37,45 @@ It combines:
 - **Maia**: Predicts move probabilities (policy head) AND position evaluation (value head)
 - **Stockfish**: Evaluates each resulting position
 
-### The Four Phases
+### Two-Phase Calculation (Maia-First Architecture)
+
+The EW calculation uses a **Maia-first approach** for responsive UI:
+
+| Phase | Trigger | Engine | Speed | Result |
+|-------|---------|--------|-------|--------|
+| **Fast Path** | Auto on position change | Maia only | ~100-500ms | EW(Maia) ready |
+| **Slow Path** | User clicks "Add SF" | Stockfish | ~1-3s | EW(SF) added |
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ FAST PATH: calculateMaiaOnlyEW() - Auto-triggered               │
+│                                                                 │
+│   1. Select candidates by Maia probability (top N moves)        │
+│   2. Build probability trees using Maia policy head             │
+│   3. Evaluate nodes using Maia value head                       │
+│   4. Compute EW(Maia) immediately                               │
+│                                                                 │
+│   Result: SF fields are NULL, EW(Maia) is populated             │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓ User clicks "Add SF Analysis"
+┌─────────────────────────────────────────────────────────────────┐
+│ SLOW PATH: enrichWithStockfish() - On-demand                    │
+│                                                                 │
+│   1. Collect all unique positions from existing trees           │
+│   2. Batch evaluate with Stockfish                              │
+│   3. Populate SF values into tree nodes                         │
+│   4. Compute EW(SF)                                             │
+│                                                                 │
+│   Result: Full result with both EW(SF) and EW(Maia)             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Key Functions:**
+- `calculateMaiaOnlyEW(fen, config, maia)` → Fast, Maia-only result
+- `enrichWithStockfish(result, stockfish)` → Adds SF data to existing result
+- `calculateExpectedWinrate(fen, config, sf, maia)` → Full calculation (legacy)
+
+### The Four Phases (Full Calculation)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

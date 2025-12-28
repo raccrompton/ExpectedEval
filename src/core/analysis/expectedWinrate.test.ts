@@ -427,8 +427,8 @@ describe('calculateExpectedWinrate', () => {
 
     // Verify sorted by EW-SF (best first)
     for (let i = 1; i < result.candidates.length; i++) {
-      expect(result.candidates[i - 1].expectedWinrateSF)
-        .toBeGreaterThanOrEqual(result.candidates[i].expectedWinrateSF)
+      expect(result.candidates[i - 1].expectedWinrateSF ?? 0)
+        .toBeGreaterThanOrEqual(result.candidates[i].expectedWinrateSF ?? 0)
     }
   })
 

@@ -21,9 +21,11 @@ export type {
 // Constants
 export { DEFAULT_EW_CONFIG } from './types'
 
-// Main calculation function
+// Main calculation functions
 export {
   calculateExpectedWinrate,
+  calculateMaiaOnlyEW,
+  enrichWithStockfish,
   computeExpectedWinrateFromTree,
   summarizeEWResult,
   compareWithStockfish,
@@ -39,4 +41,5 @@ export {
   getNodesAtDepth,
   countNodes,
   getMaxDepth,
+  yieldToUI,
 } from './treeBuilder'

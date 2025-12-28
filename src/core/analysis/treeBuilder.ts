@@ -29,6 +29,28 @@ import type { TreeNode, EWConfig } from './types'
 import { DEFAULT_EW_CONFIG } from './types'
 
 // ============================================================================
+// UI RESPONSIVENESS HELPERS
+// ============================================================================
+
+/**
+ * Yield control back to the browser's event loop.
+ *
+ * This prevents the UI from freezing during long-running calculations
+ * by allowing the browser to process user interactions and render updates.
+ *
+ * Call this periodically during intensive calculations (e.g., every 3-5
+ * Maia predictions) to keep the page responsive.
+ */
+export const yieldToUI = (): Promise<void> =>
+  new Promise(resolve => setTimeout(resolve, 0))
+
+/** Counter for tracking predictions between yields */
+let predictionCount = 0
+
+/** How often to yield (every N predictions) */
+const YIELD_INTERVAL = 3
+
+// ============================================================================
 // PHASE 2: BUILD PROBABILITY TREE (MAIA ONLY)
 // ============================================================================
 
@@ -74,11 +96,15 @@ export async function buildTree(
   const fenTurn = getTurnFromFen(rootFen)
   const actualRootTurn = rootTurn ?? (fenTurn === 'w' ? 'b' : 'w')
 
+  // Reset prediction counter at start of each tree build
+  predictionCount = 0
+
   // Get Maia evaluation for root position
   // This gives us move probabilities AND value head evaluation
   const rootMaiaEval = await maia.predict(rootFen, {
     eloLevel: fullConfig.maiaLevel,
   })
+  predictionCount++
 
   // Normalize Maia value to root player's perspective
   // Maia returns value from White's perspective
@@ -142,6 +168,12 @@ async function expandNodeWithMaia(
     eloLevel: config.maiaLevel,
   })
 
+  // Yield to UI periodically to prevent page freezing
+  predictionCount++
+  if (predictionCount % YIELD_INTERVAL === 0) {
+    await yieldToUI()
+  }
+
   // Find moves where child's cumulative probability would be above threshold
   // This is the key filter: only explore branches that matter
   const significantMoves = Object.entries(predictions.policy)
@@ -176,6 +208,12 @@ async function expandNodeWithMaia(
     const childMaiaEval = await maia.predict(newFen, {
       eloLevel: config.maiaLevel,
     })
+
+    // Yield to UI periodically to prevent page freezing
+    predictionCount++
+    if (predictionCount % YIELD_INTERVAL === 0) {
+      await yieldToUI()
+    }
 
     // Normalize Maia value to root player's perspective
     const normalizedChildValue = rootTurn === 'w'
