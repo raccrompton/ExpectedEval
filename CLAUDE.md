@@ -25,6 +25,7 @@
   - [x] LRU prediction cache to prevent memory leaks
   - [x] ONNX tensor disposal in Maia engine
   - [x] Verify all E2E tests pass after changes
+  - [x] Two-column EW tree redesign (CandidateColumn + TreeColumn)
 
 ### TODO
 
@@ -408,6 +409,25 @@ interface UseExpectedWinrateReturn {
 
 The EW tree answers: **"Which move has the best realistic outcome given how humans play?"**
 
+### Two-Column Layout (EWCandidateTreeView)
+
+The tree uses a two-column design for better usability:
+
+| Column | Component | Contents |
+|--------|-----------|----------|
+| **Left** | CandidateColumn | Clickable list of candidate moves with EW values |
+| **Right** | TreeColumn | Tree for selected candidate with mainline + branches |
+
+```
+┌─────────────────┬─────────────────────────────────────┐
+│ CANDIDATES      │ TREE (for selected candidate)       │
+│                 │                                     │
+│ ● e4  51%       │ e5 → Nf3 → Nc6 → Bb5               │
+│   d4  50%       │   └─ d6  48%                        │
+│   Nf3 49%       │   └─ a6  47%                        │
+└─────────────────┴─────────────────────────────────────┘
+```
+
 ### Display Structure
 
 | Level | Shows | Sorted by |
@@ -415,25 +435,38 @@ The EW tree answers: **"Which move has the best realistic outcome given how huma
 | **Candidate moves** | EW (probability-weighted average) | EW (highest first) |
 | **Tree nodes** | Eval (position quality) | Play rate (most likely first) |
 
-### Inline Display
+### Tree Display
 
-- **Candidate moves**: `▼ e4  EW: 54%  (played 35%)`
-- **Tree nodes**: `├─ e5  48%` (just the eval)
+- **Mainline**: Horizontal chain of most likely moves (highest probability at each depth)
+- **Branches**: Expandable alternative moves with +/- toggle buttons
+- **Inline format**: `e5 48%` (move + eval)
 
-### Hover Tooltip
+### Hover Tooltip (NodeTooltip)
 
-Hovering any node reveals full details:
+Hovering any tree node reveals full details:
 - Play rate (Maia policy %)
 - Cumulative probability (chance of reaching this position)
-- Both SF and Maia evals
-- Board preview
+- Both SF and Maia evals (when available)
 
 ### Interactions
 
-1. **Eval source toggle** - Switch between SF and Maia evals (affects displayed numbers and EW sort order)
-2. **Expand/Collapse** - Click chevron to show/hide tree
-3. **Hover** - Preview position on board + see detailed stats
-4. **Click** - Navigate main board to that position
+1. **Select candidate** - Click candidate in left column to show its tree
+2. **Expand/Collapse branches** - Click +/- toggle to show/hide alternative moves
+3. **Hover** - See detailed stats in tooltip
+4. **Click tree node** - Navigate main board to that position
+
+### Test IDs
+
+| Element | Test ID Pattern |
+|---------|-----------------|
+| Container | `ew-candidate-tree-view` |
+| Candidate column | `ew-candidate-column` |
+| Candidate item | `ew-candidate-{index}` |
+| Tree column | `ew-tree-column` |
+| Mainline node | `ew-mainline-{depth}` |
+| Branch toggle | `ew-branch-toggle-{key}` |
+| Branch content | `ew-branch-{key}` |
+| Node tooltip | `ew-node-tooltip` |
 
 ---
 

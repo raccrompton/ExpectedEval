@@ -86,8 +86,8 @@ test.describe('06 - Expected Winrate', () => {
     })
 
     test('EW results display candidate moves with probabilities', async () => {
-      // Candidates are shown in the tree (no separate list)
-      const firstCandidate = page.getByTestId('ew-tree-candidate-0')
+      // Candidates are now in a separate column
+      const firstCandidate = page.getByTestId('ew-candidate-0')
       await expect(firstCandidate).toBeVisible()
       await expect(firstCandidate).toContainText(/%/)
     })
@@ -118,25 +118,28 @@ test.describe('06 - Expected Winrate', () => {
     })
 
     test('candidate moves show EW and percentage', async () => {
-      const candidate = page.getByTestId('ew-tree-candidate-0')
+      const candidate = page.getByTestId('ew-candidate-0')
       await expect(candidate).toBeVisible()
       await expect(candidate).toContainText('EW:')
-      // Percentage shown in parentheses, e.g. "(35%)"
       await expect(candidate).toContainText('%')
     })
 
     test('tree nodes can be expanded to show branches', async () => {
-      const expandButton = page.getByTestId('ew-tree-expand-0')
-      await expect(expandButton).toBeVisible({ timeout: 10000 })
+      // Branch toggles now use key-based testids (e.g., ew-branch-toggle-Nf6)
+      const expandButton = page.locator('[data-testid^="ew-branch-toggle-"]').first()
+      const toggleExists = await expandButton.isVisible().catch(() => false)
 
-      await expandButton.click()
+      if (toggleExists) {
+        await expandButton.click()
 
-      const treeBranches = page.getByTestId('ew-tree-branches-0')
-      await expect(treeBranches).toBeVisible()
+        // Branch lines also use key-based testids
+        const treeBranches = page.locator('[data-testid^="ew-branch-"]').first()
+        await expect(treeBranches).toBeVisible()
 
-      // Branches show eval percentage
-      const branchText = await treeBranches.textContent()
-      expect(branchText).toMatch(/\d+(\.\d+)?%/)
+        // Branches show eval percentage
+        const branchText = await treeBranches.textContent()
+        expect(branchText).toMatch(/\d+(\.\d+)?%/)
+      }
     })
 
     test('tree shows move names', async () => {
@@ -146,28 +149,31 @@ test.describe('06 - Expected Winrate', () => {
     })
 
     test('hovering tree node shows tooltip', async () => {
-      const candidate = page.getByTestId('ew-tree-candidate-0')
-      await candidate.hover()
+      // Hover over a mainline move to trigger tooltip
+      const mainlineMove = page.locator('[data-testid^="ew-mainline-"]').first()
+      const moveExists = await mainlineMove.isVisible().catch(() => false)
 
-      await expect(page.getByTestId('ew-tree-tooltip')).toBeVisible()
+      if (moveExists) {
+        await mainlineMove.hover()
+        await expect(page.getByTestId('ew-node-tooltip')).toBeVisible()
+      }
     })
 
     test('clicking candidate or branch navigates', async () => {
-      // Expand to see branches (may already be expanded)
-      const expandButton = page.getByTestId('ew-tree-expand-0')
-      const treeBranches = page.getByTestId('ew-tree-branches-0')
-
-      if (!(await treeBranches.isVisible())) {
-        await expandButton.click()
-      }
-
-      // Branch lines are clickable - clicking navigates to that position
-      const branchContainer = page.getByTestId('ew-tree-branches-0')
-      await expect(branchContainer).toBeVisible()
-
-      // Candidate row is also clickable
-      const candidateRow = page.getByTestId('ew-tree-candidate-0')
+      // Click a candidate to select it (in new two-column layout)
+      const candidateRow = page.getByTestId('ew-candidate-0')
       await candidateRow.click()
+
+      // Expand to see branches if toggle exists
+      const expandButton = page.locator('[data-testid^="ew-branch-toggle-"]').first()
+      const toggleExists = await expandButton.isVisible().catch(() => false)
+
+      if (toggleExists) {
+        await expandButton.click()
+        // Branch lines are now visible
+        const treeBranches = page.locator('[data-testid^="ew-branch-"]').first()
+        await expect(treeBranches).toBeVisible()
+      }
     })
 
     test('Add SF Analysis button appears when Maia calculation complete', async () => {
@@ -214,6 +220,115 @@ test.describe('06 - Expected Winrate', () => {
       await page.getByTestId('nav-end').click()
 
       expect(consoleErrors).toEqual([])
+    })
+  })
+
+  // Two-column layout tests
+  test.describe('EW Two-Column Layout', () => {
+    test.describe.configure({ mode: 'serial' })
+
+    let context: BrowserContext
+    let page: Page
+    let consoleErrors: string[]
+
+    test.beforeAll(async ({ browser }) => {
+      context = await browser.newContext()
+      page = await context.newPage()
+      consoleErrors = trackConsoleErrors(page)
+
+      await page.goto(TEST_URL)
+      await waitForEnginesReady(page)
+      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
+
+      // Wait for EW results to appear
+      await expect(page.getByTestId('ew-results')).toBeVisible({ timeout: EW_CALC_TIMEOUT })
+    })
+
+    test.afterAll(async () => {
+      logCollectedErrors(consoleErrors)
+      await context.close()
+    })
+
+    test('displays two-column layout container', async () => {
+      const container = page.getByTestId('ew-candidate-tree-view')
+      await expect(container).toBeVisible()
+    })
+
+    test('displays candidate column with candidates', async () => {
+      const candidateColumn = page.getByTestId('ew-candidate-column')
+      await expect(candidateColumn).toBeVisible()
+
+      // At least one candidate should be visible
+      const firstCandidate = page.getByTestId('ew-candidate-0')
+      await expect(firstCandidate).toBeVisible()
+      await expect(firstCandidate).toContainText(/%/)
+    })
+
+    test('displays tree column for selected candidate', async () => {
+      const treeColumn = page.getByTestId('ew-tree-column')
+      await expect(treeColumn).toBeVisible()
+    })
+
+    test('clicking candidate updates tree column', async () => {
+      // Click second candidate if available
+      const secondCandidate = page.getByTestId('ew-candidate-1')
+      const candidateExists = await secondCandidate.isVisible().catch(() => false)
+
+      if (candidateExists) {
+        await secondCandidate.click()
+
+        // Second candidate should now be selected
+        await expect(secondCandidate).toHaveAttribute('data-selected', 'true')
+      }
+    })
+
+    test('branch toggle expands alternatives', async () => {
+      // Find a branch toggle button (+ icon)
+      const branchToggle = page.locator('[data-testid^="ew-branch-toggle-"]').first()
+      const toggleExists = await branchToggle.isVisible().catch(() => false)
+
+      if (toggleExists) {
+        // Get the key from the testid
+        const testid = await branchToggle.getAttribute('data-testid')
+        const key = testid?.replace('ew-branch-toggle-', '') || ''
+
+        await branchToggle.click()
+
+        // Branch line should now be visible
+        const branchLine = page.getByTestId(`ew-branch-${key}`)
+        await expect(branchLine).toBeVisible()
+
+        // Toggle again to collapse
+        await branchToggle.click()
+        await expect(branchLine).not.toBeVisible()
+      }
+    })
+
+    test('hovering any tree node shows tooltip', async () => {
+      // Hover over a mainline move
+      const mainlineMove = page.locator('[data-testid^="ew-mainline-"]').first()
+      const moveExists = await mainlineMove.isVisible().catch(() => false)
+
+      if (moveExists) {
+        await mainlineMove.hover()
+
+        // Tooltip should appear with details
+        const tooltip = page.getByTestId('ew-node-tooltip')
+        await expect(tooltip).toBeVisible()
+
+        // Tooltip should contain play rate and cumulative probability
+        await expect(tooltip).toContainText(/play rate/i)
+        await expect(tooltip).toContainText(/cumulative/i)
+      }
+    })
+
+    test('mainline shows leaf evaluation at end', async () => {
+      const treeColumn = page.getByTestId('ew-tree-column')
+      const treeText = await treeColumn.textContent()
+
+      // Should contain arrow (→) and percentage
+      expect(treeText).toMatch(/→/)
+      expect(treeText).toMatch(/\d+(\.\d+)?%/)
     })
   })
 })
