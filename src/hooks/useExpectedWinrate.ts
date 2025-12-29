@@ -58,7 +58,7 @@ export interface UseExpectedWinrateReturn {
   /** Trigger SF enrichment (available when status is 'complete_maia') */
   enrichWithSF: () => Promise<void>
   /** Update algorithm configuration */
-  updateConfig: (partial: Partial<EWConfig>) => void
+  updateConfig: (_partial: Partial<EWConfig>) => void
   /** Reset to idle state */
   reset: () => void
   /** Whether SF results are available */

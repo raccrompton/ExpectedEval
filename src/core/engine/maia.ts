@@ -79,7 +79,7 @@ export class RealMaia implements MaiaAdapter {
   private initializing = false
 
   // Progress callback for download tracking
-  private onProgress?: (progress: number) => void
+  private onProgress?: (_progress: number) => void
 
   /**
    * Creates a new Maia instance.
@@ -87,7 +87,7 @@ export class RealMaia implements MaiaAdapter {
    * @param modelUrl - URL to the ONNX model file (default: /maia2/maia_rapid.onnx)
    * @param onProgress - Optional callback for download progress (0-100)
    */
-  constructor(modelUrl: string = DEFAULT_MODEL_URL, onProgress?: (progress: number) => void) {
+  constructor(modelUrl: string = DEFAULT_MODEL_URL, onProgress?: (_progress: number) => void) {
     this.modelUrl = modelUrl
     this.onProgress = onProgress
     this.storage = new MaiaModelStorage()
@@ -386,7 +386,7 @@ export class RealMaia implements MaiaAdapter {
     logits_maia: Tensor,
     logits_value: Tensor,
     legalMovesMask: Float32Array,
-    legalMoves: string[],
+    _legalMoves: string[],
   ): { policy: Record<string, number>; value: number } {
     const logits = logits_maia.data as Float32Array
     const value = logits_value.data as Float32Array
@@ -513,7 +513,7 @@ export class RealMaia implements MaiaAdapter {
  */
 export function createMaia(
   modelUrl?: string,
-  onProgress?: (progress: number) => void,
+  onProgress?: (_progress: number) => void,
 ): MaiaAdapter {
   return new RealMaia(modelUrl, onProgress)
 }

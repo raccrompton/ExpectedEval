@@ -47,7 +47,7 @@ interface EngineEvaluationContextValue {
   maiaEvaluation: MaiaEvaluation | null
   isStockfishEvaluating: boolean
   isMaiaEvaluating: boolean
-  evaluatePosition: (fen: string) => Promise<void>
+  evaluatePosition: (_fen: string) => Promise<void>
 }
 
 const EngineInstanceContext = createContext<EngineInstanceContextValue | null>(null)

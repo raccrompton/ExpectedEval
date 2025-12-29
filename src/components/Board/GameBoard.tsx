@@ -30,7 +30,7 @@ interface GameBoardProps {
   /** Board orientation - 'white' (default) or 'black' */
   orientation?: 'white' | 'black'
   /** Callback when a move is made (from, to, optional promotion) */
-  onMove?: (from: string, to: string, promotion?: string) => void
+  onMove?: (_from: string, _to: string, _promotion?: string) => void
   /** If true, board is view-only (no moves allowed) */
   viewOnly?: boolean
 }
@@ -151,6 +151,7 @@ export function GameBoard({
     return () => {
       api.destroy()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {

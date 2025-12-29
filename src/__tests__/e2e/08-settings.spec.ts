@@ -9,7 +9,7 @@
  *
  * Settings persist to localStorage and are wired to EW calculation.
  */
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 
 test.setTimeout(30000)
 

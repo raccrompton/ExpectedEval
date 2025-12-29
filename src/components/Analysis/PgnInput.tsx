@@ -16,7 +16,7 @@ import { useState } from 'react'
 
 interface PgnInputProps {
   /** Callback when PGN is loaded */
-  onLoadPgn: (pgn: string) => void
+  onLoadPgn: (_pgn: string) => void
 }
 
 export function PgnInput({ onLoadPgn }: PgnInputProps) {

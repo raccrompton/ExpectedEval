@@ -18,9 +18,9 @@ declare module 'lila-stockfish-web/sf171-79.js' {
     /** Shared WebAssembly memory for multi-threading */
     wasmMemory: WebAssembly.Memory
     /** Error handler for module initialization */
-    onError?: (msg: string) => void
+    onError?: (_msg: string) => void
     /** Function to locate WASM and NNUE files */
-    locateFile?: (name: string) => string
+    locateFile?: (_name: string) => string
   }
 
   /**
@@ -29,7 +29,7 @@ declare module 'lila-stockfish-web/sf171-79.js' {
    * @param options - Configuration for the module
    * @returns Promise resolving to initialized Stockfish instance
    */
-  function makeModule(options: StockfishModuleOptions): Promise<StockfishWeb>
+  function makeModule(_options: StockfishModuleOptions): Promise<StockfishWeb>
 
   export default makeModule
 }

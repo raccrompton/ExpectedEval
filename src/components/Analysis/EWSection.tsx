@@ -29,7 +29,7 @@ interface EWSectionProps {
   /** Whether Maia engine is ready (SF is optional) */
   isEngineReady: boolean
   /** Callback when user clicks a tree node to preview that position */
-  onNavigate?: (fen: string) => void
+  onNavigate?: (_fen: string) => void
 }
 
 /**
@@ -95,7 +95,7 @@ function getStatusColor(status: EWStatus): string {
   }
 }
 
-export function EWSection({ fen, isEngineReady, onNavigate }: EWSectionProps) {
+export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EWSectionProps) {
   const { settings } = useSettingsContext()
 
   // Hook now auto-triggers on fen change
@@ -199,7 +199,7 @@ export function EWSection({ fen, isEngineReady, onNavigate }: EWSectionProps) {
         .ew-section {
           display: flex;
           flex-direction: column;
-          gap: var(--space-sm, 8px);
+          gap: var(--space-md, 16px);
         }
 
         .ew-header {
@@ -215,68 +215,87 @@ export function EWSection({ fen, isEngineReady, onNavigate }: EWSectionProps) {
 
         .config-toggle {
           background: transparent;
-          border: 1px solid var(--color-border, #333);
-          color: var(--color-text-muted, #888);
-          padding: 2px 8px;
-          border-radius: var(--radius-sm, 4px);
+          border: var(--border-medium, 2px) solid var(--color-border, #333);
+          color: var(--color-text-muted, #666);
+          padding: 4px 10px;
           cursor: pointer;
           font-size: 0.875rem;
+          font-family: var(--font-mono);
+          transition: all 0.1s ease;
         }
 
         .config-toggle:hover {
-          background: var(--color-surface-hover, #2a2a2a);
+          background: var(--color-primary, #FFE000);
+          border-color: var(--color-primary, #FFE000);
+          color: var(--color-background, #0a0a0a);
         }
 
         .ew-status {
-          font-size: 0.75rem;
-          font-weight: 500;
+          font-size: var(--font-xs, 11px);
+          font-weight: 600;
+          font-family: var(--font-mono);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
 
         .ew-config-panel {
-          background: var(--color-surface-alt, #1a1a1a);
-          border: 1px solid var(--color-border, #333);
-          border-radius: var(--radius-sm, 4px);
-          padding: var(--space-sm, 8px);
-          font-size: 0.75rem;
+          background: var(--color-background, #0a0a0a);
+          border: var(--border-medium, 2px) solid var(--color-border, #333);
+          padding: var(--space-md, 16px);
+          font-size: var(--font-xs, 11px);
+          font-family: var(--font-mono);
         }
 
         .config-row {
           display: flex;
           justify-content: space-between;
-          padding: 2px 0;
+          padding: 4px 0;
+          border-bottom: 1px solid var(--color-border, #333);
+        }
+
+        .config-row:last-child {
+          border-bottom: none;
         }
 
         .config-row label {
-          color: var(--color-text-muted, #888);
+          color: var(--color-text-muted, #666);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
 
         .sf-button {
-          background: var(--color-secondary, #6366f1);
-          color: white;
-          border: none;
-          padding: var(--space-sm, 8px) var(--space-md, 16px);
-          border-radius: var(--radius-sm, 4px);
+          background: var(--color-primary, #FFE000);
+          color: var(--color-background, #0a0a0a);
+          border: var(--border-medium, 2px) solid var(--color-primary, #FFE000);
+          padding: var(--space-sm, 8px) var(--space-lg, 24px);
           cursor: pointer;
-          font-weight: 500;
-          font-size: 0.875rem;
-          transition: background 0.2s ease;
+          font-weight: 700;
+          font-size: var(--font-xs, 11px);
+          font-family: var(--font-mono);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          transition: all 0.1s ease;
         }
 
         .sf-button:hover:not(:disabled) {
-          background: var(--color-secondary-hover, #4f46e5);
+          background: var(--color-background, #0a0a0a);
+          color: var(--color-primary, #FFE000);
+          transform: translate(-2px, -2px);
+          box-shadow: 2px 2px 0 0 var(--color-primary, #FFE000);
         }
 
         .sf-button:disabled {
-          opacity: 0.5;
+          opacity: 0.4;
           cursor: not-allowed;
         }
 
         .ew-error {
-          color: var(--color-error, #ef4444);
-          font-size: 0.75rem;
+          color: var(--color-error, #FF3333);
+          font-size: var(--font-xs, 11px);
+          font-family: var(--font-mono);
           padding: var(--space-sm, 8px);
-          background: var(--color-error-bg, rgba(239, 68, 68, 0.1));
-          border-radius: var(--radius-sm, 4px);
+          background: var(--color-error-bg, rgba(255, 51, 51, 0.1));
+          border-left: var(--border-thick, 3px) solid var(--color-error, #FF3333);
         }
       `}</style>
     </div>
@@ -286,8 +305,8 @@ export function EWSection({ fen, isEngineReady, onNavigate }: EWSectionProps) {
 interface EWResultsProps {
   result: EWResult
   evalSource: EvalSource
-  onEvalSourceChange: (source: EvalSource) => void
-  onNavigate?: (fen: string) => void
+  onEvalSourceChange: (_source: EvalSource) => void
+  onNavigate?: (_fen: string) => void
 }
 
 /**
@@ -337,37 +356,46 @@ function EWResults({ result, evalSource, onEvalSourceChange, onNavigate }: EWRes
           display: flex;
           flex-direction: column;
           gap: var(--space-md, 16px);
-          margin-top: var(--space-sm, 8px);
         }
 
         .ew-summary {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-xs, 4px);
-          padding: var(--space-sm, 8px);
-          background: var(--color-surface-alt, #1a1a1a);
-          border-radius: var(--radius-sm, 4px);
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: var(--space-md, 16px);
         }
 
         .summary-row {
           display: flex;
-          justify-content: space-between;
-          font-size: 0.875rem;
+          flex-direction: column;
+          gap: 2px;
+          padding: var(--space-sm, 8px);
+          background: var(--color-background, #0a0a0a);
+          border: var(--border-thin, 1px) solid var(--color-border, #333);
         }
 
         .summary-label {
-          color: var(--color-text-muted, #888);
+          color: var(--color-text-muted, #666);
+          font-family: var(--font-mono);
+          font-size: var(--font-xs, 11px);
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
         }
 
         .summary-value {
-          font-weight: 600;
-          font-family: var(--font-mono, monospace);
+          font-weight: 700;
+          font-family: var(--font-mono);
+          font-size: var(--font-xl, 28px);
+          color: var(--color-primary, #FFE000);
+          letter-spacing: -0.02em;
         }
 
         .ew-meta {
-          font-size: 0.6875rem;
-          color: var(--color-text-muted, #888);
+          font-size: var(--font-xs, 11px);
+          font-family: var(--font-mono);
+          color: var(--color-text-dim, #333);
           text-align: right;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
       `}</style>
     </div>
@@ -377,8 +405,8 @@ function EWResults({ result, evalSource, onEvalSourceChange, onNavigate }: EWRes
 interface EWTreeProps {
   candidates: EWCandidateResult[]
   evalSource: EvalSource
-  onEvalSourceChange: (source: EvalSource) => void
-  onNavigate?: (fen: string) => void
+  onEvalSourceChange: (_source: EvalSource) => void
+  onNavigate?: (_fen: string) => void
 }
 
 /** Maximum number of top-level candidate moves to display */
@@ -391,61 +419,77 @@ interface TreeLine {
   moves: string[] // Moves shown on this line
   leafEval: number | null // Eval if this is a leaf
   leafFen: string // FEN of final position
-  indent: number // Indentation level (in character widths of moves before branch)
+  indentChars: number // Pre-computed character width for indentation
+}
+
+/**
+ * Collects all moves following the mainline (highest probability) from a node.
+ * Returns the moves, leaf eval, and leaf FEN.
+ */
+function collectBranchMoves(
+  node: TreeNode,
+  evalSource: EvalSource,
+): { moves: string[]; leafEval: number | null; fen: string } {
+  const moves: string[] = []
+  let current = node
+
+  while (current.children.length > 0) {
+    const sortedChildren = [...current.children].sort((a, b) => b.probability - a.probability)
+    const mainChild = sortedChildren[0]
+    moves.push(mainChild.san || mainChild.move || '?')
+    current = mainChild
+  }
+
+  const leafEval = evalSource === 'stockfish' ? current.sfWinrate : current.maiaWinrate
+  return { moves, leafEval, fen: current.fen }
 }
 
 /**
  * Gets the mainline (most likely continuation) and collects branch lines.
- * Returns { mainlineMoves, mainlineEval, mainlineFen, branches }
+ * Pre-computes indentation for each branch based on mainline move widths.
  */
 function extractMainlineAndBranches(
   node: TreeNode,
   evalSource: EvalSource,
+  candidateSan: string,
 ): { mainlineMoves: string[]; mainlineEval: number | null; mainlineFen: string; branches: TreeLine[] } {
   const branches: TreeLine[] = []
+  const mainlineMoves: string[] = []
+  let mainlineFen = node.fen
+  let mainlineEval: number | null = evalSource === 'stockfish' ? node.sfWinrate : node.maiaWinrate
 
-  function traverse(
-    current: TreeNode,
-    pathMoves: string[],
-    branchIndent: number,
-  ): { moves: string[]; eval_: number | null; fen: string } {
+  let current = node
+  // Track cumulative character width: candidate move + space
+  let cumulativeChars = candidateSan.length + 1
+
+  while (current.children.length > 0) {
     const sortedChildren = [...current.children].sort((a, b) => b.probability - a.probability)
 
-    if (sortedChildren.length === 0) {
-      // Leaf
-      const eval_ = evalSource === 'stockfish' ? current.sfWinrate : current.maiaWinrate
-      return { moves: pathMoves, eval_: eval_, fen: current.fen }
-    }
-
-    // Process branches (non-main children) first
+    // Collect alternative branches at this depth with pre-computed indentation
     for (let i = 1; i < Math.min(sortedChildren.length, MAX_BRANCHES); i++) {
       const branchChild = sortedChildren[i]
-      const branchResult = traverse(
-        branchChild,
-        [branchChild.san || branchChild.move || '?'],
-        pathMoves.length,
-      )
+      const branchResult = collectBranchMoves(branchChild, evalSource)
       branches.push({
-        moves: branchResult.moves,
-        leafEval: branchResult.eval_,
+        moves: [branchChild.san || branchChild.move || '?', ...branchResult.moves],
+        leafEval: branchResult.leafEval,
         leafFen: branchResult.fen,
-        indent: branchIndent,
+        indentChars: cumulativeChars,
       })
     }
 
-    // Follow main line
+    // Follow main line and accumulate character width
     const mainChild = sortedChildren[0]
-    const newPath = [...pathMoves, mainChild.san || mainChild.move || '?']
-    return traverse(mainChild, newPath, pathMoves.length + 1)
+    const moveSan = mainChild.san || mainChild.move || '?'
+    mainlineMoves.push(moveSan)
+    cumulativeChars += moveSan.length + 1 // move + space
+    current = mainChild
   }
 
-  const main = traverse(node, [], 0)
-  return {
-    mainlineMoves: main.moves,
-    mainlineEval: main.eval_,
-    mainlineFen: main.fen,
-    branches,
-  }
+  // Final eval and FEN from the leaf
+  mainlineEval = evalSource === 'stockfish' ? current.sfWinrate : current.maiaWinrate
+  mainlineFen = current.fen
+
+  return { mainlineMoves, mainlineEval, mainlineFen, branches }
 }
 
 /**
@@ -561,10 +605,11 @@ function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTr
               ? (candidate.expectedWinrateSF ?? candidate.expectedWinrateMaia)
               : candidate.expectedWinrateMaia
 
-          // Extract mainline and branches
+          // Extract mainline and branches with pre-computed indentation
           const { mainlineMoves, mainlineEval, mainlineFen, branches } = extractMainlineAndBranches(
             candidate.tree,
             evalSource,
+            candidate.san,
           )
 
           // Full mainline includes candidate move
@@ -603,24 +648,19 @@ function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTr
 
               {isExpanded && branches.length > 0 && (
                 <div className="branches-container" data-testid={`ew-tree-branches-${index}`}>
-                  {branches.map((branch, branchIdx) => {
-                    // Calculate indent: candidate move width + space + moves before branch
-                    // Use ch units for accurate character-width-based indentation
-                    const indentChars = candidate.san.length + 1 + branch.indent * 4
-                    return (
-                      <div
-                        key={branchIdx}
-                        className="branch-line"
-                        style={{ paddingLeft: `calc(20px + ${indentChars}ch)` }}
-                        onClick={() => handleNavigate(branch.leafFen)}
-                      >
-                        <span className="branch-moves">{branch.moves.join(' ')}</span>
-                        <span className="branch-eval">
-                          {branch.leafEval !== null ? formatWinrate(branch.leafEval) : '—'}
-                        </span>
-                      </div>
-                    )
-                  })}
+                  {branches.map((branch, branchIdx) => (
+                    <div
+                      key={branchIdx}
+                      className="branch-line"
+                      style={{ paddingLeft: `calc(20px + ${branch.indentChars}ch)` }}
+                      onClick={() => handleNavigate(branch.leafFen)}
+                    >
+                      <span className="branch-moves">{branch.moves.join(' ')}</span>
+                      <span className="branch-eval">
+                        {branch.leafEval !== null ? formatWinrate(branch.leafEval) : '—'}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -646,19 +686,24 @@ function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTr
 
       <style jsx>{`
         .ew-tree {
-          margin-top: var(--space-sm, 8px);
+          margin-top: var(--space-md, 16px);
         }
 
         .eval-source-toggle {
           display: flex;
           align-items: center;
           gap: var(--space-md, 16px);
-          margin-bottom: var(--space-sm, 8px);
-          font-size: 0.8125rem;
+          margin-bottom: var(--space-md, 16px);
+          padding-bottom: var(--space-sm, 8px);
+          border-bottom: var(--border-thin, 1px) solid var(--color-border, #333);
+          font-size: var(--font-xs, 11px);
+          font-family: var(--font-mono);
         }
 
         .toggle-label {
-          color: var(--color-text-muted, #888);
+          color: var(--color-text-muted, #666);
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
         }
 
         .radio-option {
@@ -666,113 +711,138 @@ function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTr
           align-items: center;
           gap: var(--space-xs, 4px);
           cursor: pointer;
+          padding: 4px 8px;
+          border: var(--border-thin, 1px) solid transparent;
+          transition: all 0.1s ease;
+        }
+
+        .radio-option:hover {
+          border-color: var(--color-border, #333);
         }
 
         .radio-option input {
           margin: 0;
+          accent-color: var(--color-primary, #FFE000);
         }
 
         .tree-container {
-          font-size: 0.8125rem;
-          font-family: var(--font-mono, monospace);
+          font-size: var(--font-sm, 13px);
+          font-family: var(--font-mono);
         }
 
         .candidate-block {
-          margin-bottom: 2px;
+          margin-bottom: 4px;
+          border-left: var(--border-medium, 2px) solid var(--color-border, #333);
+          transition: border-color 0.1s ease;
+        }
+
+        .candidate-block:hover {
+          border-color: var(--color-primary, #FFE000);
         }
 
         .candidate-row {
           display: flex;
           align-items: center;
           gap: var(--space-sm, 8px);
-          padding: 3px 0;
+          padding: 6px 8px;
           cursor: pointer;
-          border-radius: var(--radius-sm, 4px);
+          transition: background 0.1s ease;
         }
 
         .candidate-row:hover {
-          background: var(--color-surface-hover, #2a2a2a);
+          background: var(--color-surface-hover, #1a1a1a);
         }
 
         .expand-btn {
           background: transparent;
-          border: none;
-          color: var(--color-text-muted, #888);
+          border: var(--border-thin, 1px) solid var(--color-border, #333);
+          color: var(--color-text-muted, #666);
           cursor: pointer;
-          font-size: 0.625rem;
-          width: 16px;
+          font-size: 0.6rem;
+          width: 20px;
+          height: 20px;
           padding: 0;
           flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.1s ease;
         }
 
         .expand-btn:hover {
-          color: var(--color-text, #fff);
+          background: var(--color-primary, #FFE000);
+          border-color: var(--color-primary, #FFE000);
+          color: var(--color-background, #0a0a0a);
         }
 
         .expand-spacer {
-          width: 16px;
+          width: 20px;
           flex-shrink: 0;
         }
 
         .mainline {
-          color: var(--color-text, #ccc);
+          color: var(--color-text, #fff);
           flex: 1;
-        }
-
-        .candidate-ew {
-          color: var(--color-primary, #60a5fa);
           font-weight: 500;
         }
 
+        .candidate-ew {
+          color: var(--color-primary, #FFE000);
+          font-weight: 700;
+        }
+
         .leaf-eval {
-          color: var(--color-text-muted, #888);
-          min-width: 48px;
+          color: var(--color-text-muted, #666);
+          min-width: 52px;
           text-align: right;
         }
 
         .branches-container {
-          margin-left: 16px;
+          margin-left: 20px;
+          border-left: var(--border-thin, 1px) solid var(--color-border, #333);
         }
 
         .branch-line {
           display: flex;
           align-items: center;
-          padding: 2px 4px;
+          padding: 4px 8px;
           cursor: pointer;
-          border-radius: var(--radius-sm, 4px);
+          transition: background 0.1s ease;
         }
 
         .branch-line:hover {
-          background: var(--color-surface-hover, #2a2a2a);
+          background: var(--color-surface-hover, #1a1a1a);
         }
 
         .branch-moves {
-          color: var(--color-text, #aaa);
+          color: var(--color-text-muted, #666);
           flex: 1;
         }
 
         .branch-eval {
-          color: var(--color-text-muted, #888);
-          min-width: 48px;
+          color: var(--color-text-dim, #444);
+          min-width: 52px;
           text-align: right;
         }
 
         .ew-tooltip {
-          background: var(--color-surface, #1a1a1a);
-          border: 1px solid var(--color-border, #333);
-          border-radius: var(--radius-sm, 4px);
-          padding: var(--space-sm, 8px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          background: var(--color-background, #0a0a0a);
+          border: var(--border-medium, 2px) solid var(--color-primary, #FFE000);
+          padding: var(--space-md, 16px);
+          box-shadow: 4px 4px 0 0 var(--color-primary, #FFE000);
           z-index: 1000;
           max-width: 280px;
-          font-size: 0.75rem;
+          font-size: var(--font-xs, 11px);
+          font-family: var(--font-mono);
         }
 
         .tree-hint {
-          margin-top: var(--space-sm, 8px);
-          font-size: 0.6875rem;
-          color: var(--color-text-muted, #666);
-          font-style: italic;
+          margin-top: var(--space-md, 16px);
+          font-size: var(--font-xs, 11px);
+          font-family: var(--font-mono);
+          color: var(--color-text-dim, #333);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
       `}</style>
     </div>
@@ -817,28 +887,38 @@ function CandidateTooltip({ candidate }: CandidateTooltipProps) {
         .tooltip-content {
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 4px;
         }
         .tooltip-header {
-          font-weight: 600;
-          font-size: 0.875rem;
-          margin-bottom: 4px;
+          font-weight: 700;
+          font-size: var(--font-lg, 18px);
+          margin-bottom: 8px;
+          color: var(--color-primary, #FFE000);
+          font-family: var(--font-mono);
         }
         .tooltip-row {
           display: flex;
           justify-content: space-between;
-          gap: 16px;
+          gap: 24px;
+          font-family: var(--font-mono);
         }
         .tooltip-row span:first-child {
-          color: var(--color-text-muted, #888);
+          color: var(--color-text-muted, #666);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
-        .tooltip-row.highlight span {
-          font-weight: 500;
+        .tooltip-row span:last-child {
+          font-weight: 600;
+          color: var(--color-text, #fff);
+        }
+        .tooltip-row.highlight span:last-child {
+          color: var(--color-primary, #FFE000);
+          font-weight: 700;
         }
         .tooltip-divider {
-          height: 1px;
+          height: var(--border-medium, 2px);
           background: var(--color-border, #333);
-          margin: 4px 0;
+          margin: 8px 0;
         }
       `}</style>
     </div>

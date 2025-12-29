@@ -36,9 +36,9 @@ import type { StockfishAdapter, StockfishConfig, StockfishEvaluation } from './t
 import { cpToWinrate } from './types'
 import { Chess } from 'chessops/chess'
 import { parseFen } from 'chessops/fen'
-import { makeSquare, opposite } from 'chessops/util'
+import { makeSquare } from 'chessops/util'
 import { SquareSet } from 'chessops/squareSet'
-import type { Role, Square } from 'chessops/types'
+// Types used for documentation/clarity but not directly in this file
 
 /**
  * Creates shared WebAssembly memory for Stockfish.
@@ -180,8 +180,8 @@ export class RealStockfish implements StockfishAdapter {
   private targetDepth = 18  // Target search depth
 
   // Promise resolution for evaluation results
-  private evaluationResolver: ((value: StockfishEvaluation) => void) | null = null
-  private evaluationRejecter: ((reason?: unknown) => void) | null = null
+  private evaluationResolver: ((_value: StockfishEvaluation) => void) | null = null
+  private evaluationRejecter: ((_reason?: unknown) => void) | null = null
 
   // Store evaluations as they come in (keyed by depth)
   private store: Record<number, EvaluationData> = {}
@@ -298,7 +298,8 @@ export class RealStockfish implements StockfishAdapter {
       const promotionRanks = pos.turn === 'white'
         ? SquareSet.fromRank(6)  // 7th rank (index 6)
         : SquareSet.fromRank(1)  // 2nd rank (index 1)
-      const isPromotionSource = isPawn && promotionRanks.has(from)
+      // eslint-disable-next-line no-unused-vars
+      const _isPromotionSource = isPawn && promotionRanks.has(from)
 
       // Iterate over all destination squares
       for (const to of dests) {
