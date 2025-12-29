@@ -51,30 +51,6 @@ function formatProbability(prob: number): string {
 }
 
 /**
- * Returns human-readable text for the calculation status.
- * @param status - Current EW calculation status
- * @returns Display text for the status
- */
-function getStatusText(status: EWStatus): string {
-  switch (status) {
-    case 'idle':
-      return 'Waiting for engines...'
-    case 'calculating_maia':
-      return 'Analyzing with Maia...'
-    case 'complete_maia':
-      return 'Maia analysis complete'
-    case 'enriching_sf':
-      return 'Adding Stockfish analysis...'
-    case 'complete':
-      return 'Complete (with Stockfish)'
-    case 'error':
-      return 'Error'
-    default:
-      return 'Unknown'
-  }
-}
-
-/**
  * Returns CSS color value for the calculation status.
  * @param status - Current EW calculation status
  * @returns CSS color variable or hex value
@@ -123,8 +99,12 @@ export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EW
     })
   }, [settings, updateConfig])
 
-  const isCalculating = status === 'calculating_maia' || status === 'enriching_sf'
-  const hasResult = (status === 'complete_maia' || status === 'complete') && result !== null
+  const isCalculatingMaia = status === 'calculating_maia'
+  const isEnrichingSF = status === 'enriching_sf'
+  // Show results when Maia is done, even while enriching with SF
+  const hasResult =
+    (status === 'complete_maia' || status === 'complete' || status === 'enriching_sf') &&
+    result !== null
 
   return (
     <div className="ew-section" data-testid="ew-section">
@@ -143,13 +123,14 @@ export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EW
         </div>
       </div>
 
-      <div className="ew-status" data-testid="ew-status">
-        <span style={{ color: getStatusColor(status) }}>
-          {isCalculating && progress
-            ? `${progress.phase}: ${progress.message}`
-            : getStatusText(status)}
-        </span>
-      </div>
+      {/* Show progress only when calculating Maia */}
+      {isCalculatingMaia && progress && (
+        <div className="ew-status" data-testid="ew-status">
+          <span style={{ color: getStatusColor(status) }}>
+            {progress.phase}: {progress.message}
+          </span>
+        </div>
+      )}
 
       {showConfig && (
         <div className="ew-config-panel" data-testid="ew-config-panel">
@@ -168,18 +149,6 @@ export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EW
         </div>
       )}
 
-      {/* SF enrichment button - shown when Maia analysis is complete but SF not yet run */}
-      {canEnrichSF && (
-        <button
-          className="sf-button"
-          data-testid="add-sf-analysis-button"
-          onClick={enrichWithSF}
-          disabled={status === 'enriching_sf'}
-        >
-          {status === 'enriching_sf' ? 'Adding Stockfish...' : 'Add Stockfish Analysis'}
-        </button>
-      )}
-
       {error && (
         <div className="ew-error">
           Error: {error.message}
@@ -192,6 +161,9 @@ export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EW
           evalSource={evalSource}
           onEvalSourceChange={setEvalSource}
           onNavigate={onNavigate}
+          canEnrichSF={canEnrichSF}
+          isEnrichingSF={isEnrichingSF}
+          onEnrichSF={enrichWithSF}
         />
       )}
 
@@ -307,6 +279,9 @@ interface EWResultsProps {
   evalSource: EvalSource
   onEvalSourceChange: (_source: EvalSource) => void
   onNavigate?: (_fen: string) => void
+  canEnrichSF: boolean
+  isEnrichingSF: boolean
+  onEnrichSF: () => void
 }
 
 /**
@@ -320,30 +295,80 @@ function formatNullableWinrate(winrate: number | null): string {
  * Displays EW calculation results including summary stats, candidate moves, and tree.
  * SF values show "—" until enrichWithStockfish() is called.
  */
-function EWResults({ result, evalSource, onEvalSourceChange, onNavigate }: EWResultsProps) {
+function EWResults({
+  result,
+  evalSource,
+  onEvalSourceChange,
+  onNavigate,
+  canEnrichSF,
+  isEnrichingSF,
+  onEnrichSF,
+}: EWResultsProps) {
   const bestCandidate = result.candidates[0]
+  const hasSFResults = bestCandidate?.expectedWinrateSF !== null
 
   return (
     <div className="ew-results" data-testid="ew-results">
-      <div className="ew-summary">
-        <div className="summary-row">
-          <span className="summary-label">EW (Stockfish):</span>
-          <span className="summary-value" data-testid="ew-sf-value">
-            {bestCandidate ? formatNullableWinrate(bestCandidate.expectedWinrateSF) : 'N/A'}
-          </span>
-        </div>
-        <div className="summary-row">
+      {/* Horizontal row: EW Maia | EW SF (or button) | Eval source selector */}
+      <div className="ew-summary-row">
+        {/* EW Maia - always visible */}
+        <div className="summary-box">
           <span className="summary-label">EW (Maia):</span>
           <span className="summary-value" data-testid="ew-maia-value">
             {bestCandidate ? formatWinrate(bestCandidate.expectedWinrateMaia) : 'N/A'}
           </span>
+        </div>
+
+        {/* EW SF - shows button overlay when SF not yet run */}
+        <div className="summary-box sf-box">
+          {hasSFResults ? (
+            <>
+              <span className="summary-label">EW (Stockfish):</span>
+              <span className="summary-value" data-testid="ew-sf-value">
+                {bestCandidate ? formatNullableWinrate(bestCandidate.expectedWinrateSF) : 'N/A'}
+              </span>
+            </>
+          ) : (
+            <button
+              className="sf-button"
+              data-testid="add-sf-analysis-button"
+              onClick={onEnrichSF}
+              disabled={!canEnrichSF || isEnrichingSF}
+            >
+              {isEnrichingSF ? 'Adding SF...' : 'Add SF Analysis'}
+            </button>
+          )}
+        </div>
+
+        {/* Eval source selector */}
+        <div className="eval-source-toggle" data-testid="eval-source-toggle">
+          <span className="toggle-label">Eval:</span>
+          <label className="radio-option" data-testid="eval-source-sf">
+            <input
+              type="radio"
+              name="evalSource"
+              value="stockfish"
+              checked={evalSource === 'stockfish'}
+              onChange={() => onEvalSourceChange('stockfish')}
+            />
+            <span>SF</span>
+          </label>
+          <label className="radio-option" data-testid="eval-source-maia">
+            <input
+              type="radio"
+              name="evalSource"
+              value="maia"
+              checked={evalSource === 'maia'}
+              onChange={() => onEvalSourceChange('maia')}
+            />
+            <span>Maia</span>
+          </label>
         </div>
       </div>
 
       <EWTree
         candidates={result.candidates}
         evalSource={evalSource}
-        onEvalSourceChange={onEvalSourceChange}
         onNavigate={onNavigate}
       />
 
@@ -358,19 +383,25 @@ function EWResults({ result, evalSource, onEvalSourceChange, onNavigate }: EWRes
           gap: var(--space-md, 16px);
         }
 
-        .ew-summary {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
+        .ew-summary-row {
+          display: flex;
+          align-items: stretch;
           gap: var(--space-md, 16px);
         }
 
-        .summary-row {
+        .summary-box {
           display: flex;
           flex-direction: column;
           gap: 2px;
-          padding: var(--space-sm, 8px);
+          padding: var(--space-sm, 8px) var(--space-md, 16px);
           background: var(--color-background, #0a0a0a);
           border: var(--border-thin, 1px) solid var(--color-border, #333);
+          min-width: 140px;
+        }
+
+        .sf-box {
+          position: relative;
+          justify-content: center;
         }
 
         .summary-label {
@@ -389,6 +420,67 @@ function EWResults({ result, evalSource, onEvalSourceChange, onNavigate }: EWRes
           letter-spacing: -0.02em;
         }
 
+        .sf-button {
+          background: var(--color-primary, #FFE000);
+          color: var(--color-background, #0a0a0a);
+          border: none;
+          padding: var(--space-sm, 8px) var(--space-md, 16px);
+          cursor: pointer;
+          font-weight: 700;
+          font-size: var(--font-xs, 11px);
+          font-family: var(--font-mono);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          transition: all 0.1s ease;
+          white-space: nowrap;
+        }
+
+        .sf-button:hover:not(:disabled) {
+          background: var(--color-background, #0a0a0a);
+          color: var(--color-primary, #FFE000);
+          outline: 2px solid var(--color-primary, #FFE000);
+        }
+
+        .sf-button:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
+        .eval-source-toggle {
+          display: flex;
+          align-items: center;
+          gap: var(--space-sm, 8px);
+          padding: var(--space-sm, 8px);
+          font-size: var(--font-xs, 11px);
+          font-family: var(--font-mono);
+          margin-left: auto;
+        }
+
+        .toggle-label {
+          color: var(--color-text-muted, #666);
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+        }
+
+        .radio-option {
+          display: flex;
+          align-items: center;
+          gap: var(--space-xs, 4px);
+          cursor: pointer;
+          padding: 4px 8px;
+          border: var(--border-thin, 1px) solid transparent;
+          transition: all 0.1s ease;
+        }
+
+        .radio-option:hover {
+          border-color: var(--color-border, #333);
+        }
+
+        .radio-option input {
+          margin: 0;
+          accent-color: var(--color-primary, #FFE000);
+        }
+
         .ew-meta {
           font-size: var(--font-xs, 11px);
           font-family: var(--font-mono);
@@ -405,7 +497,6 @@ function EWResults({ result, evalSource, onEvalSourceChange, onNavigate }: EWRes
 interface EWTreeProps {
   candidates: EWCandidateResult[]
   evalSource: EvalSource
-  onEvalSourceChange: (_source: EvalSource) => void
   onNavigate?: (_fen: string) => void
 }
 
@@ -500,7 +591,7 @@ function extractMainlineAndBranches(
  *        Qf3                         39.6%
  *    Nc6                             50.9%
  */
-function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTreeProps) {
+function EWTree({ candidates, evalSource, onNavigate }: EWTreeProps) {
   const [expandedCandidates, setExpandedCandidates] = useState<Set<number>>(new Set())
   const [tooltipData, setTooltipData] = useState<{
     candidate: EWCandidateResult
@@ -573,30 +664,6 @@ function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTr
 
   return (
     <div className="ew-tree" data-testid="ew-tree">
-      <div className="eval-source-toggle" data-testid="eval-source-toggle">
-        <span className="toggle-label">Eval source:</span>
-        <label className="radio-option" data-testid="eval-source-sf">
-          <input
-            type="radio"
-            name="evalSource"
-            value="stockfish"
-            checked={evalSource === 'stockfish'}
-            onChange={() => onEvalSourceChange('stockfish')}
-          />
-          <span>Stockfish</span>
-        </label>
-        <label className="radio-option" data-testid="eval-source-maia">
-          <input
-            type="radio"
-            name="evalSource"
-            value="maia"
-            checked={evalSource === 'maia'}
-            onChange={() => onEvalSourceChange('maia')}
-          />
-          <span>Maia</span>
-        </label>
-      </div>
-
       <div className="tree-container">
         {sortedCandidates.slice(0, MAX_DISPLAYED_CANDIDATES).map((candidate, index) => {
           const isExpanded = expandedCandidates.has(index)
@@ -687,42 +754,6 @@ function EWTree({ candidates, evalSource, onEvalSourceChange, onNavigate }: EWTr
       <style jsx>{`
         .ew-tree {
           margin-top: var(--space-md, 16px);
-        }
-
-        .eval-source-toggle {
-          display: flex;
-          align-items: center;
-          gap: var(--space-md, 16px);
-          margin-bottom: var(--space-md, 16px);
-          padding-bottom: var(--space-sm, 8px);
-          border-bottom: var(--border-thin, 1px) solid var(--color-border, #333);
-          font-size: var(--font-xs, 11px);
-          font-family: var(--font-mono);
-        }
-
-        .toggle-label {
-          color: var(--color-text-muted, #666);
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-        }
-
-        .radio-option {
-          display: flex;
-          align-items: center;
-          gap: var(--space-xs, 4px);
-          cursor: pointer;
-          padding: 4px 8px;
-          border: var(--border-thin, 1px) solid transparent;
-          transition: all 0.1s ease;
-        }
-
-        .radio-option:hover {
-          border-color: var(--color-border, #333);
-        }
-
-        .radio-option input {
-          margin: 0;
-          accent-color: var(--color-primary, #FFE000);
         }
 
         .tree-container {
