@@ -270,7 +270,7 @@ export interface UseChessGameReturn {
   /** Navigation and game management actions */
   actions: {
     /** Load a PGN string and navigate to the end */
-    loadPgn: (pgn: string) => void
+    loadPgn: (_pgn: string) => void
 
     /** Go forward one move (mainline) */
     goForward: () => void
@@ -285,13 +285,13 @@ export interface UseChessGameReturn {
     goToEnd: () => void
 
     /** Go to a specific path */
-    goToPath: (path: number[]) => void
+    goToPath: (_path: number[]) => void
 
     /** Go to a specific ply number (follows mainline) */
-    goToPly: (ply: number) => void
+    goToPly: (_ply: number) => void
 
     /** Make a move on the board (from square to square) */
-    makeMove: (from: string, to: string, promotion?: string) => void
+    makeMove: (_from: string, _to: string, _promotion?: string) => void
   }
 }
 

@@ -20,8 +20,8 @@ export interface SettingsState {
 
 export interface UseSettingsReturn {
   settings: SettingsState
-  updateSetting: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void
-  updateSettings: (partial: Partial<SettingsState>) => void
+  updateSetting: <K extends keyof SettingsState>(_key: K, _value: SettingsState[K]) => void
+  updateSettings: (_partial: Partial<SettingsState>) => void
   resetSettings: () => void
   getEWConfig: () => EWConfig
 }

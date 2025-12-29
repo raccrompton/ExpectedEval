@@ -178,7 +178,7 @@ export interface StockfishAdapter {
    * @param config - Analysis configuration
    * @returns Evaluation results
    */
-  evaluate(fen: string, config?: Partial<StockfishConfig>): Promise<StockfishEvaluation>
+  evaluate(_fen: string, _config?: Partial<StockfishConfig>): Promise<StockfishEvaluation>
 
   /**
    * Stop any ongoing analysis.
@@ -217,7 +217,7 @@ export interface MaiaAdapter {
    * @param config - Prediction configuration
    * @returns Move probabilities and value
    */
-  predict(fen: string, config?: Partial<MaiaConfig>): Promise<MaiaEvaluation>
+  predict(_fen: string, _config?: Partial<MaiaConfig>): Promise<MaiaEvaluation>
 
   /**
    * Clean up resources. Call when done with the engine.

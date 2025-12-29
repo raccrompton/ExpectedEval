@@ -25,7 +25,7 @@ interface MoveListProps {
   currentPath: number[]
 
   /** Callback when a move is clicked */
-  onMoveClick: (path: number[]) => void
+  onMoveClick: (_path: number[]) => void
 }
 
 /**
@@ -54,7 +54,7 @@ function isWhiteMove(ply: number): boolean {
 interface MoveButtonProps {
   move: MoveTreeNode
   currentPath: number[]
-  onMoveClick: (path: number[]) => void
+  onMoveClick: (_path: number[]) => void
   showMoveNumber?: boolean
   isVariation?: boolean
 }
@@ -96,7 +96,7 @@ function MoveButton({
 interface VariationLineProps {
   moves: MoveTreeNode[]
   currentPath: number[]
-  onMoveClick: (path: number[]) => void
+  onMoveClick: (_path: number[]) => void
   depth?: number
 }
 

@@ -298,7 +298,7 @@ export class NodeMaia implements MaiaAdapter {
     logits_maia: Tensor,
     logits_value: Tensor,
     legalMovesMask: Float32Array,
-    legalMoves: string[],
+    _legalMoves: string[],
   ): { policy: Record<string, number>; value: number } {
     const logits = logits_maia.data as Float32Array
     const value = logits_value.data as Float32Array

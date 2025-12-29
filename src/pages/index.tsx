@@ -85,19 +85,27 @@ export default function Home() {
 
   return (
     <main className="main-container">
+      {/* Decorative grid overlay */}
+      <div className="grid-overlay" aria-hidden="true" />
+
       <header className="header">
-        <h1>ExpectedEval</h1>
+        <div className="header-title">
+          <span className="title-prefix">{'//'}</span>
+          <h1>EXPECTED<span className="title-accent">EVAL</span></h1>
+          <span className="title-version">v0.1</span>
+        </div>
         <SettingsDropdown />
       </header>
+
       <div className="content">
         {/* Middle row: PgnInput | MoveList | EnginePanel (fixed height) */}
-        <div className="middle-row" data-testid="main-row">
+        <div className="middle-row stagger-children" data-testid="main-row">
           <section className="pgn-section" data-testid="pgn-section">
             <h2>Load Game</h2>
             <PgnInput onLoadPgn={actions.loadPgn} />
           </section>
           <section className="moves-section" data-testid="moves-section">
-            <h2>Moves</h2>
+            <h2>Game Moves</h2>
             <MoveList
               moves={displayedMoves}
               movesWithVariations={movesWithVariations}
@@ -106,7 +114,7 @@ export default function Home() {
             />
           </section>
           <div className="eval-panel-wrapper" data-testid="eval-panel">
-            <h2>Analysis</h2>
+            <h2>Engine Analysis</h2>
             <EnginePanel
               stockfishEvaluation={stockfishEvaluation}
               maiaEvaluation={maiaEvaluation}
@@ -118,6 +126,7 @@ export default function Home() {
             />
           </div>
         </div>
+
         {/* Bottom row: Board + Nav (left) | EW Section (right, fills remaining) */}
         <div className="bottom-row" data-testid="bottom-row">
           <div className="board-section" data-testid="board-section">
@@ -146,21 +155,74 @@ export default function Home() {
       <style jsx>{`
         .main-container {
           height: 100vh;
-          padding: var(--space-md);
+          padding: var(--space-lg);
           display: flex;
           flex-direction: column;
           overflow: hidden;
+          position: relative;
         }
+
+        /* Decorative grid overlay */
+        .grid-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          pointer-events: none;
+          z-index: 0;
+          opacity: 0.4;
+          background-image:
+            linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+          background-size: 64px 64px;
+        }
+
+        /* Header - Brutalist typography */
         .header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: var(--space-md);
+          margin-bottom: var(--space-lg);
           flex-shrink: 0;
+          position: relative;
+          z-index: 1;
+          padding-bottom: var(--space-md);
+          border-bottom: var(--border-thick) solid var(--color-border);
         }
+
+        .header-title {
+          display: flex;
+          align-items: baseline;
+          gap: var(--space-sm);
+        }
+
+        .title-prefix {
+          font-family: var(--font-mono);
+          font-size: var(--font-lg);
+          color: var(--color-text-muted);
+          font-weight: 400;
+        }
+
         .header h1 {
           margin: 0;
+          font-size: var(--font-2xl);
+          letter-spacing: -0.02em;
+          line-height: 1;
         }
+
+        .title-accent {
+          color: var(--color-primary);
+        }
+
+        .title-version {
+          font-family: var(--font-mono);
+          font-size: var(--font-xs);
+          color: var(--color-text-dim);
+          font-weight: 500;
+          margin-left: var(--space-xs);
+        }
+
         .content {
           display: flex;
           flex-direction: column;
@@ -170,70 +232,52 @@ export default function Home() {
           width: 100%;
           flex: 1;
           min-height: 0;
+          position: relative;
+          z-index: 1;
         }
-        /* Middle row: PgnInput | MoveList | EnginePanel - fixed height */
+
+        /* Middle row - Brutalist panels */
         .middle-row {
           display: grid;
-          grid-template-columns: 200px 1fr 400px;
+          grid-template-columns: 220px 1fr 420px;
           gap: var(--space-md);
-          height: 140px;
+          height: 160px;
           flex-shrink: 0;
         }
-        .pgn-section {
-          background: var(--color-surface);
-          border-radius: var(--radius-md);
-          padding: var(--space-sm);
-          border: 1px solid var(--color-border);
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-        }
-        .pgn-section h2 {
-          margin: 0 0 var(--space-xs) 0;
-          font-size: 0.75rem;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: var(--color-text-muted);
-          flex-shrink: 0;
-        }
-        .moves-section {
-          background: var(--color-surface);
-          border-radius: var(--radius-md);
-          padding: var(--space-sm);
-          border: 1px solid var(--color-border);
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-        }
-        .moves-section h2 {
-          margin: 0 0 var(--space-xs) 0;
-          font-size: 0.75rem;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: var(--color-text-muted);
-          flex-shrink: 0;
-        }
+
+        .pgn-section,
+        .moves-section,
         .eval-panel-wrapper {
           background: var(--color-surface);
-          border-radius: var(--radius-md);
-          padding: var(--space-sm);
-          border: 1px solid var(--color-border);
+          padding: var(--space-md);
+          border: var(--border-medium) solid var(--color-border);
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          position: relative;
         }
+
+        /* Yellow accent corners */
+        .pgn-section::before,
+        .moves-section::before,
+        .eval-panel-wrapper::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 32px;
+          height: var(--border-thick);
+          background: var(--color-primary);
+        }
+
+        .pgn-section h2,
+        .moves-section h2,
         .eval-panel-wrapper h2 {
-          margin: 0 0 var(--space-xs) 0;
-          font-size: 0.75rem;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: var(--color-text-muted);
+          margin: 0 0 var(--space-sm) 0;
           flex-shrink: 0;
         }
-        /* Bottom row: Board + Nav | EW Section - fills remaining height */
+
+        /* Bottom row: Board + Nav | EW Section */
         .bottom-row {
           display: grid;
           grid-template-columns: auto 1fr;
@@ -241,6 +285,7 @@ export default function Home() {
           flex: 1;
           min-height: 0;
         }
+
         .board-section {
           display: flex;
           flex-direction: column;
@@ -250,41 +295,53 @@ export default function Home() {
           min-width: 0;
           height: 100%;
         }
+
         .board-container {
           width: auto;
-          height: calc(100% - 50px);
+          height: calc(100% - 56px);
           aspect-ratio: 1;
+          box-shadow: 8px 8px 0 0 #111111;
         }
+
         .ew-section-wrapper {
           background: var(--color-surface);
-          border-radius: var(--radius-md);
-          padding: var(--space-sm);
-          border: 1px solid var(--color-border);
+          padding: var(--space-md);
+          border: var(--border-medium) solid var(--color-border);
           overflow-y: auto;
           min-height: 0;
+          position: relative;
         }
+
+        .ew-section-wrapper::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 48px;
+          height: var(--border-thick);
+          background: var(--color-primary);
+        }
+
         .ew-section-wrapper h2 {
-          margin: 0 0 var(--space-xs) 0;
-          font-size: 0.75rem;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: var(--color-text-muted);
+          margin: 0 0 var(--space-sm) 0;
         }
+
         @media (max-width: 1024px) {
           .middle-row {
-            grid-template-columns: 150px 1fr 280px;
-            height: 120px;
+            grid-template-columns: 160px 1fr 300px;
+            height: 140px;
           }
-          .bottom-row {
-            grid-template-columns: auto 1fr;
+          .header h1 {
+            font-size: var(--font-xl);
           }
         }
+
         @media (max-width: 768px) {
           .main-container {
             height: auto;
             min-height: 100vh;
             overflow: auto;
+            padding: var(--space-md);
           }
           .middle-row {
             grid-template-columns: 1fr;
@@ -295,6 +352,9 @@ export default function Home() {
           }
           .board-section {
             order: -1;
+          }
+          .header h1 {
+            font-size: var(--font-lg);
           }
         }
       `}</style>

@@ -538,4 +538,4 @@ export interface EWProgressCallback {
 /**
  * Type for the progress callback function.
  */
-export type OnEWProgress = (progress: EWProgressCallback) => void
+export type OnEWProgress = (_progress: EWProgressCallback) => void

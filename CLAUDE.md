@@ -527,6 +527,40 @@ The MVP is complete when:
 
 ---
 
+## Design Tokens (Brutalist Theme)
+
+The UI follows a **Brutalist/Geometric** design language:
+
+### Colors
+| Token | Value | Usage |
+|-------|-------|-------|
+| Background | `#0a0a0a` | Near-black base |
+| Primary | `#FFE000` | Electric yellow accents, borders |
+| Secondary | `#00D4FF` | Cyan for best moves, highlights |
+| Text | `#ffffff` | Primary text |
+| Muted | `#666666` | Secondary text |
+
+### Typography
+| Font | Usage |
+|------|-------|
+| **Archivo Black** | Display headers, titles |
+| **IBM Plex Mono** | Data, UI elements, monospace content |
+
+### Styling Conventions
+- **No border-radius** - All corners are sharp (0px)
+- **Thick borders** - 2-3px solid borders
+- **Harsh shadows** - Box-shadows without blur (`4px 4px 0 rgba(255,224,0,0.3)`)
+- **Yellow accent bars** - 3px left border on panel sections
+- **Grid overlay** - 64px grid pattern (chess board reference)
+
+### Key Files
+- `src/styles/globals.css` - Design tokens and base styles
+- `src/pages/index.tsx` - Main layout with brutalist panels
+- `src/components/Analysis/EWSection.tsx` - EW display styling
+- `src/components/Analysis/EnginePanel.tsx` - Engine panel styling
+
+---
+
 ## Key Files Reference
 
 When implementing, these files from `maia-platform-frontend/` are useful references:

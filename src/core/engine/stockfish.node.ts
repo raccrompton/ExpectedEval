@@ -87,9 +87,9 @@ export class NodeStockfish implements StockfishAdapter {
   private store: Record<number, EvaluationData> = {}
 
   // Promise resolution for evaluation results
-  private evaluationResolver: ((value: StockfishEvaluation) => void) | null =
+  private evaluationResolver: ((_value: StockfishEvaluation) => void) | null =
     null
-  private evaluationRejecter: ((reason?: unknown) => void) | null = null
+  private evaluationRejecter: ((_reason?: unknown) => void) | null = null
 
   /**
    * Creates a new Node.js Stockfish instance.
@@ -165,7 +165,8 @@ export class NodeStockfish implements StockfishAdapter {
 
         // Track initialization state
         let uciOk = false
-        let readyOk = false
+        // eslint-disable-next-line no-unused-vars
+        let _readyOk = false
 
         // Process each line of output
         this.rl.on('line', (line) => {
@@ -177,7 +178,7 @@ export class NodeStockfish implements StockfishAdapter {
               this.sendCommand('setoption name MultiPV value 100')
               this.sendCommand('isready')
             } else if (line === 'readyok' && uciOk) {
-              readyOk = true
+              _readyOk = true
               this.ready = true
               console.log('[NodeStockfish] Engine ready')
               resolve()

@@ -221,45 +221,89 @@ coords.black coord {
 }
 
 /* =============================================================================
-   CSS CUSTOM PROPERTIES (Variables)
+   BRUTALIST/GEOMETRIC DESIGN SYSTEM
+
+   Aesthetic: Architectural chess - stark contrasts, bold geometry,
+   industrial precision. The 8x8 grid as a design principle.
    ============================================================================= */
 
-:root {
-  /* Colors */
-  --color-background: #1a1a2e;       /* Dark background for the app */
-  --color-surface: #16213e;          /* Card/panel background */
-  --color-surface-hover: #1f3460;    /* Hover state for surfaces */
-  --color-primary: #4a90a4;          /* Primary accent color */
-  --color-primary-hover: #5aa8bf;    /* Hover state for primary */
-  --color-text: #e8e8e8;             /* Main text color */
-  --color-text-muted: #a0a0a0;       /* Secondary text color */
-  --color-border: #2a2a4a;           /* Border color */
-  --color-success: #4caf50;          /* Success/positive color */
-  --color-warning: #ff9800;          /* Warning color */
-  --color-error: #f44336;            /* Error/negative color */
+/* Google Fonts Import - Brutalist Typography */
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 
-  /* Spacing */
+:root {
+  /* ===== BRUTALIST COLOR PALETTE - LIGHT MODE ===== */
+  /* Primary: Clean white with dark accents */
+  --color-background: #F5F5F0;       /* Warm off-white */
+  --color-surface: #FFFFFF;          /* Pure white cards */
+  --color-surface-alt: #EBEBEB;      /* Slightly darker surface */
+  --color-surface-hover: #E0E0E0;    /* Hover state */
+
+  /* Accent: Bold orange-red - construction, warning signs */
+  --color-primary: #E63312;          /* Bold red-orange */
+  --color-primary-hover: #FF4422;    /* Brighter on hover */
+  --color-primary-dim: rgba(230, 51, 18, 0.1); /* For backgrounds */
+
+  /* Secondary: Deep blue for data */
+  --color-secondary: #0066CC;        /* Blue for secondary elements */
+  --color-secondary-hover: #0080FF;
+
+  /* Text hierarchy */
+  --color-text: #111111;             /* Near-black text */
+  --color-text-muted: #555555;       /* Medium gray for secondary */
+  --color-text-dim: #888888;         /* Light muted */
+
+  /* Borders - thick and visible */
+  --color-border: #CCCCCC;           /* Visible light border */
+  --color-border-strong: #111111;    /* Black accent borders */
+
+  /* Status colors - industrial */
+  --color-success: #00AA33;          /* Forest green */
+  --color-success-muted: #22CC55;
+  --color-warning: #FF9900;          /* Orange warning */
+  --color-error: #CC0000;            /* Deep red */
+  --color-error-bg: rgba(204, 0, 0, 0.08);
+
+  /* ===== SPACING SYSTEM - 8px grid ===== */
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
   --space-lg: 24px;
   --space-xl: 32px;
+  --space-2xl: 48px;
 
-  /* Border radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* ===== BRUTALIST: SHARP CORNERS ===== */
+  --radius-none: 0;
+  --radius-sm: 2px;                  /* Minimal, almost sharp */
+  --radius-md: 0;                    /* No radius - brutalist */
+  --radius-lg: 0;
 
-  /* Font sizes */
-  --font-xs: 12px;
-  --font-sm: 14px;
-  --font-md: 16px;
+  /* ===== TYPOGRAPHY SCALE ===== */
+  --font-xs: 11px;
+  --font-sm: 13px;
+  --font-md: 15px;
   --font-lg: 18px;
-  --font-xl: 24px;
+  --font-xl: 28px;
+  --font-2xl: 42px;
+  --font-display: 64px;
 
-  /* Font families */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  /* ===== FONT FAMILIES ===== */
+  /* Display: Bold, condensed, architectural */
+  --font-display: 'Archivo Black', 'Impact', sans-serif;
+  /* Mono: Data, numbers, code */
+  --font-mono: 'IBM Plex Mono', 'Space Mono', monospace;
+  /* Sans: UI elements */
+  --font-sans: 'IBM Plex Mono', monospace;
+
+  /* ===== BORDER WEIGHTS ===== */
+  --border-thin: 1px;
+  --border-medium: 2px;
+  --border-thick: 3px;
+  --border-heavy: 4px;
+
+  /* ===== SHADOWS - HARSH, NO BLUR ===== */
+  --shadow-brutal: 4px 4px 0 0 #111111;
+  --shadow-brutal-accent: 4px 4px 0 0 var(--color-primary);
+  --shadow-brutal-inset: inset 2px 2px 0 0 rgba(0,0,0,0.05);
 }
 
 /* =============================================================================
@@ -275,127 +319,237 @@ coords.black coord {
 }
 
 /* =============================================================================
-   HTML AND BODY
+   HTML AND BODY - BRUTALIST FOUNDATION
    ============================================================================= */
 
 html {
-  font-size: 16px;                  /* Base font size for rem calculations */
-  -webkit-font-smoothing: antialiased; /* Smoother fonts on WebKit browsers */
-  -moz-osx-font-smoothing: grayscale;  /* Smoother fonts on Firefox */
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Subtle scan-line effect via background */
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    ),
+    var(--color-background);
 }
 
 body {
-  font-family: var(--font-sans);    /* Use system sans-serif font */
-  font-size: var(--font-md);        /* Default body text size */
-  line-height: 1.5;                 /* Readable line height */
-  color: var(--color-text);         /* Main text color */
-  background-color: var(--color-background); /* Dark background */
-  min-height: 100vh;                /* Full viewport height */
+  font-family: var(--font-mono);     /* Monospace as default - technical feel */
+  font-size: var(--font-md);
+  line-height: 1.6;
+  color: var(--color-text);
+  background-color: var(--color-background);
+  min-height: 100vh;
+  /* Subtle grid pattern - 8x8 chess reference */
+  background-image:
+    linear-gradient(rgba(255,224,0,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,224,0,0.02) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: -1px -1px;
 }
 
 /* =============================================================================
-   TYPOGRAPHY
+   TYPOGRAPHY - BRUTALIST
    ============================================================================= */
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;           /* Semi-bold headings */
-  line-height: 1.2;           /* Tighter line height for headings */
+  font-family: var(--font-display);
+  font-weight: 400;           /* Archivo Black is already bold */
+  line-height: 1.0;           /* Tight, architectural */
   color: var(--color-text);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;    /* Tight kerning */
 }
 
-h1 { font-size: var(--font-xl); }
-h2 { font-size: var(--font-lg); }
-h3 { font-size: var(--font-md); }
+h1 {
+  font-size: var(--font-2xl);
+  letter-spacing: -0.03em;
+  /* Accent underline effect */
+  display: inline-block;
+  position: relative;
+}
+
+h2 {
+  font-size: var(--font-xs);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.15em;     /* Wide tracking for labels */
+  color: var(--color-primary);
+  border-left: var(--border-thick) solid var(--color-primary);
+  padding-left: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+h3 {
+  font-size: var(--font-sm);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
 
 a {
-  color: var(--color-primary);    /* Link color */
-  text-decoration: none;          /* No underline by default */
+  color: var(--color-primary);
+  text-decoration: none;
+  border-bottom: var(--border-thin) solid transparent;
+  transition: border-color 0.15s ease;
 }
 
 a:hover {
   color: var(--color-primary-hover);
-  text-decoration: underline;     /* Underline on hover */
+  border-bottom-color: var(--color-primary);
 }
 
 code {
-  font-family: var(--font-mono);  /* Monospace for code */
-  font-size: 0.9em;               /* Slightly smaller than surrounding text */
+  font-family: var(--font-mono);
+  font-size: 0.9em;
   background-color: var(--color-surface);
   padding: 0.2em 0.4em;
-  border-radius: var(--radius-sm);
+  border: var(--border-thin) solid var(--color-border);
+}
+
+/* Data display - large numbers */
+.data-value {
+  font-family: var(--font-mono);
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.data-label {
+  font-family: var(--font-mono);
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 /* =============================================================================
-   BUTTONS
+   BUTTONS - BRUTALIST
    ============================================================================= */
 
 button {
-  font-family: inherit;           /* Use parent font */
-  font-size: var(--font-sm);
-  font-weight: 500;
+  font-family: var(--font-mono);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
+  border: var(--border-medium) solid var(--color-border);
   background-color: var(--color-surface);
   color: var(--color-text);
   cursor: pointer;
-  transition: all 0.15s ease;     /* Smooth hover transitions */
+  transition: all 0.1s ease;
+  position: relative;
 }
 
 button:hover:not(:disabled) {
-  background-color: var(--color-surface-hover);
-  border-color: var(--color-primary);
+  background-color: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-background);
+  transform: translate(-2px, -2px);
+  box-shadow: 2px 2px 0 0 var(--color-primary);
+}
+
+button:active:not(:disabled) {
+  transform: translate(0, 0);
+  box-shadow: none;
 }
 
 button:disabled {
-  opacity: 0.5;                   /* Dim disabled buttons */
-  cursor: not-allowed;            /* Show not-allowed cursor */
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
-/* Primary button variant */
+/* Primary button - electric yellow */
 button.primary {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
-  color: white;
+  color: var(--color-background);
+  font-weight: 700;
 }
 
 button.primary:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+  background-color: var(--color-background);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: 3px 3px 0 0 var(--color-primary);
+}
+
+/* Ghost button - minimal */
+button.ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+button.ghost:hover:not(:disabled) {
+  background: transparent;
+  color: var(--color-primary);
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
 }
 
 /* =============================================================================
-   FORM ELEMENTS
+   FORM ELEMENTS - BRUTALIST
    ============================================================================= */
 
 input,
 textarea,
 select {
-  font-family: inherit;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background-color: var(--color-surface);
+  border: var(--border-medium) solid var(--color-border);
+  background-color: var(--color-background);
   color: var(--color-text);
   width: 100%;
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-  outline: none;                  /* Remove default outline */
-  border-color: var(--color-primary); /* Highlight border on focus */
-  box-shadow: 0 0 0 2px rgba(74, 144, 164, 0.2); /* Subtle glow */
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-dim);
+  font-style: italic;
 }
 
 textarea {
-  resize: vertical;               /* Allow vertical resize only */
-  min-height: 100px;
+  resize: vertical;
+  min-height: 80px;
+}
+
+select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFE000' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+/* Radio and checkbox styling */
+input[type="radio"],
+input[type="checkbox"] {
+  width: auto;
+  accent-color: var(--color-primary);
 }
 
 /* =============================================================================
-   UTILITY CLASSES
+   UTILITY CLASSES - BRUTALIST
    ============================================================================= */
 
 /* Flexbox utilities */
@@ -410,6 +564,11 @@ textarea {
 .text-muted { color: var(--color-text-muted); }
 .text-sm { font-size: var(--font-sm); }
 .text-mono { font-family: var(--font-mono); }
+.text-accent { color: var(--color-primary); }
+.text-uppercase {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
 
 /* Spacing utilities */
 .mt-md { margin-top: var(--space-md); }
@@ -417,41 +576,256 @@ textarea {
 .p-md { padding: var(--space-md); }
 
 /* =============================================================================
-   LAYOUT COMPONENTS
+   LAYOUT COMPONENTS - BRUTALIST CARDS
    ============================================================================= */
 
-/* Card/panel component */
+/* Card/panel component - sharp edges, thick borders */
 .card {
   background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border: var(--border-medium) solid var(--color-border);
   padding: var(--space-md);
+  position: relative;
+}
+
+/* Card with accent corner */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: var(--border-thick);
+  background: var(--color-primary);
+}
+
+/* Card variant - no accent */
+.card--plain::before {
+  display: none;
+}
+
+/* Card variant - full accent border */
+.card--accent {
+  border-color: var(--color-primary);
+}
+
+.card--accent::before {
+  width: 100%;
 }
 
 /* Status indicators */
-.status-ready { color: var(--color-success); }
-.status-loading { color: var(--color-warning); }
-.status-error { color: var(--color-error); }
+.status-ready {
+  color: var(--color-success);
+  font-weight: 600;
+}
+.status-loading {
+  color: var(--color-warning);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.status-error {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
 
 /* =============================================================================
-   SCROLLBAR STYLING
+   BRUTALIST DECORATIVE ELEMENTS
+   ============================================================================= */
+
+/* Diagonal stripe pattern for backgrounds */
+.pattern-stripes {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 224, 0, 0.03) 10px,
+    rgba(255, 224, 0, 0.03) 20px
+  );
+}
+
+/* Grid pattern overlay */
+.pattern-grid {
+  background-image:
+    linear-gradient(rgba(255,224,0,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,224,0,0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Accent bar - can be applied to any element */
+.accent-bar {
+  position: relative;
+}
+
+.accent-bar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--border-thick);
+  background: var(--color-primary);
+}
+
+/* Corner accent */
+.corner-accent {
+  position: relative;
+}
+
+.corner-accent::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  border-top: var(--border-thick) solid var(--color-primary);
+  border-right: var(--border-thick) solid var(--color-primary);
+}
+
+/* =============================================================================
+   SCROLLBAR STYLING - BRUTALIST
    ============================================================================= */
 
 /* Webkit scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
   background: var(--color-background);
+  border-left: var(--border-thin) solid var(--color-border);
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
-  border-radius: 4px;
+  border: var(--border-thin) solid var(--color-background);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
+  background: var(--color-primary);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) var(--color-background);
+}
+
+/* =============================================================================
+   ANIMATIONS - BRUTALIST (MINIMAL, PURPOSEFUL)
+   ============================================================================= */
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* Entrance animation utility */
+.animate-in {
+  animation: slideIn 0.2s ease-out forwards;
+}
+
+/* Staggered children animation */
+.stagger-children > * {
+  opacity: 0;
+  animation: slideIn 0.2s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+
+/* =============================================================================
+   CHESS BOARD OVERRIDES - BRUTALIST THEME
+   ============================================================================= */
+
+/* Override chessground colors for brutalist aesthetic - LIGHT MODE */
+cg-board {
+  /* Classic tan/brown board for light theme */
+  background: conic-gradient(
+    #B58863 90deg,
+    #F0D9B5 90deg 180deg,
+    #B58863 180deg 270deg,
+    #F0D9B5 270deg
+  );
+  background-size: 25% 25%;
+  border: var(--border-thick) solid var(--color-border-strong);
+}
+
+cg-board square.white {
+  background-color: #F0D9B5;
+}
+
+cg-board square.black {
+  background-color: #B58863;
+}
+
+/* Red-orange accent for selections and moves */
+cg-board square.selected {
+  background-color: rgba(230, 51, 18, 0.4);
+}
+
+cg-board square.last-move {
+  background-color: rgba(230, 51, 18, 0.25);
+}
+
+cg-board square.move-dest {
+  background: radial-gradient(
+    rgba(230, 51, 18, 0.5) 19%,
+    rgba(0, 0, 0, 0) 20%
+  );
+}
+
+cg-board square.oc.move-dest {
+  background: radial-gradient(
+    transparent 0%,
+    transparent 80%,
+    rgba(230, 51, 18, 0.4) 80%
+  );
+}
+
+cg-board square.check {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 51, 51, 1) 0%,
+    rgba(255, 51, 51, 0.8) 25%,
+    rgba(255, 51, 51, 0) 89%
+  );
+}
+
+/* Coordinate styling */
+coords coord {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 10px;
+}
+
+coords.white coord {
+  color: #B58863;
+}
+
+coords.black coord {
+  color: #F0D9B5;
 }
