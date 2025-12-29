@@ -26,6 +26,8 @@
   - [x] ONNX tensor disposal in Maia engine
   - [x] Verify all E2E tests pass after changes
   - [x] Two-column EW tree redesign (CandidateColumn + TreeColumn)
+  - [x] Vertical recursive tree with VerticalTreeNode component
+  - [x] Accordion behavior (one branch per depth level)
 
 ### TODO
 
@@ -416,15 +418,16 @@ The tree uses a two-column design for better usability:
 | Column | Component | Contents |
 |--------|-----------|----------|
 | **Left** | CandidateColumn | Clickable list of candidate moves with EW values |
-| **Right** | TreeColumn | Tree for selected candidate with mainline + branches |
+| **Right** | TreeColumn | Vertical recursive tree for selected candidate |
 
 ```
 ┌─────────────────┬─────────────────────────────────────┐
 │ CANDIDATES      │ TREE (for selected candidate)       │
 │                 │                                     │
-│ ● e4  51%       │ e5 → Nf3 → Nc6 → Bb5               │
-│   d4  50%       │   └─ d6  48%                        │
-│   Nf3 49%       │   └─ a6  47%                        │
+│ ● e4  51%       │ d4                                  │
+│   d4  50%       │ └─ exd4 ▼                           │
+│   Nf3 49%       │    └─ Nxd4 ▼                        │
+│                 │       └─ Nf6 → 51%                  │
 └─────────────────┴─────────────────────────────────────┘
 ```
 
@@ -435,11 +438,14 @@ The tree uses a two-column design for better usability:
 | **Candidate moves** | EW (probability-weighted average) | EW (highest first) |
 | **Tree nodes** | Eval (position quality) | Play rate (most likely first) |
 
-### Tree Display
+### Tree Display (VerticalTreeNode)
 
-- **Mainline**: Horizontal chain of most likely moves (highest probability at each depth)
-- **Branches**: Expandable alternative moves with +/- toggle buttons
-- **Inline format**: `e5 48%` (move + eval)
+- **Vertical layout**: Each move on its own line with proper indentation
+- **Visual connectors**: `└─` prefix for tree structure
+- **Toggle indicators**: `▼` (expanded) / `▶` (collapsed) for nodes with alternatives
+- **Accordion behavior**: Opening one branch at a depth level closes others at same level
+- **Inline eval**: Only shown on leaf nodes (e.g., `Nf6 → 51%`)
+- **Navigation button**: `⊞` icon to navigate main board to that position
 
 ### Hover Tooltip (NodeTooltip)
 
@@ -451,9 +457,9 @@ Hovering any tree node reveals full details:
 ### Interactions
 
 1. **Select candidate** - Click candidate in left column to show its tree
-2. **Expand/Collapse branches** - Click +/- toggle to show/hide alternative moves
+2. **Expand/Collapse branches** - Click toggle (▼/▶) to show/hide alternative moves (accordion: one branch per depth)
 3. **Hover** - See detailed stats in tooltip
-4. **Click tree node** - Navigate main board to that position
+4. **Navigate** - Click ⊞ button to navigate main board to that position
 
 ### Test IDs
 
@@ -463,9 +469,8 @@ Hovering any tree node reveals full details:
 | Candidate column | `ew-candidate-column` |
 | Candidate item | `ew-candidate-{index}` |
 | Tree column | `ew-tree-column` |
-| Mainline node | `ew-mainline-{depth}` |
+| Tree node | `ew-tree-node-{depth}-{move}` |
 | Branch toggle | `ew-branch-toggle-{key}` |
-| Branch content | `ew-branch-{key}` |
 | Node tooltip | `ew-node-tooltip` |
 
 ---

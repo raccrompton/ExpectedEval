@@ -15,7 +15,7 @@
  * - Click-to-navigate functionality
  */
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useExpectedWinrate, type EWStatus } from '@/hooks'
 import { useSettingsContext } from '@/contexts'
 import type { EWResult, EWCandidateResult, TreeNode } from '@/core/analysis'
@@ -502,87 +502,11 @@ interface EWTreeProps {
 
 /** Maximum number of top-level candidate moves to display */
 const MAX_DISPLAYED_CANDIDATES = 5
-/** Maximum number of branch alternatives to show at each branch point */
-const MAX_BRANCHES = 5
-
-/** Branch point data for tree display */
-interface BranchPoint {
-  depth: number
-  key: string
-  alternatives: TreeNode[]
-  indentChars: number
-}
-
 /** Tooltip data for tree nodes */
 interface NodeTooltipData {
   node: TreeNode
   x: number
   y: number
-}
-
-/**
- * Generate stable node key for expand/collapse tracking.
- * Uses path of moves from root: "e4-Nf6-Nc3"
- */
-function generateNodeKey(node: TreeNode, ancestorPath: string[] = []): string {
-  return [...ancestorPath, node.san || node.move || '?'].filter(Boolean).join('-')
-}
-
-/**
- * Build tree structure for display.
- * Returns mainline nodes and branch points.
- */
-function buildTreeStructure(
-  root: TreeNode,
-): { mainline: TreeNode[]; branchPoints: BranchPoint[] } {
-  const mainline: TreeNode[] = []
-  const branchPoints: BranchPoint[] = []
-  let current = root
-  let depth = 0
-
-  while (current.children.length > 0) {
-    const sorted = [...current.children].sort((a, b) => b.probability - a.probability)
-    const mainChild = sorted[0]
-    const alternatives = sorted.slice(1, MAX_BRANCHES)
-
-    mainline.push(mainChild)
-
-    if (alternatives.length > 0) {
-      branchPoints.push({
-        depth,
-        key: generateNodeKey(mainChild, mainline.slice(0, -1).map((n) => n.san || n.move || '?')),
-        alternatives,
-        indentChars: mainline.slice(0, depth).reduce((sum, n) => sum + (n.san?.length || n.move?.length || 1) + 1, 0),
-      })
-    }
-
-    current = mainChild
-    depth++
-  }
-
-  return { mainline, branchPoints }
-}
-
-/**
- * Collects all moves following the mainline (highest probability) from a node.
- * Returns the moves, leaf eval, and leaf FEN.
- */
-function collectBranchMoves(
-  node: TreeNode,
-  evalSource: EvalSource,
-): { moves: string[]; leafEval: number | null; fen: string; leafNode: TreeNode } {
-  const moves: string[] = []
-  let current = node
-
-  while (current.children.length > 0) {
-    const sortedChildren = [...current.children].sort((a, b) => b.probability - a.probability)
-    const mainChild = sortedChildren[0]
-    moves.push(mainChild.san || mainChild.move || '?')
-    current = mainChild
-  }
-
-  const leafEval = evalSource === 'stockfish' ? current.sfWinrate : current.maiaWinrate
-  return { moves, leafEval, fen: current.fen, leafNode: current }
 }
 
 /**
@@ -592,22 +516,63 @@ function collectBranchMoves(
  */
 function EWTree({ candidates, evalSource, onNavigate }: EWTreeProps) {
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
+  const [selectedAtDepth, setSelectedAtDepth] = useState<Map<number, string>>(new Map())
   const [tooltipData, setTooltipData] = useState<NodeTooltipData | null>(null)
 
+  // Sort candidates once and memoize
+  const sortedCandidates = useMemo(() => {
+    return [...candidates].sort((a, b) => {
+      const ewA = evalSource === 'stockfish'
+        ? (a.expectedWinrateSF ?? a.expectedWinrateMaia)
+        : a.expectedWinrateMaia
+      const ewB = evalSource === 'stockfish'
+        ? (b.expectedWinrateSF ?? b.expectedWinrateMaia)
+        : b.expectedWinrateMaia
+      return ewB - ewA
+    }).slice(0, MAX_DISPLAYED_CANDIDATES)
+  }, [candidates, evalSource])
+
+  const selectedCandidate = sortedCandidates[selectedIndex] || sortedCandidates[0] || null
+
+  // Reset selection when candidates change
   useEffect(() => {
     setSelectedIndex(0)
-    setExpandedNodes(new Set())
     setTooltipData(null)
   }, [candidates])
 
-  const toggleNode = useCallback((key: string) => {
-    setExpandedNodes((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) {
-        next.delete(key)
+  // Initialize mainline when selected candidate changes
+  useEffect(() => {
+    if (!selectedCandidate) {
+      setSelectedAtDepth(new Map())
+      return
+    }
+    // Build mainline path
+    const mainlinePath = new Map<number, string>()
+    let current = selectedCandidate.tree
+    let depth = 0
+    while (current.children.length > 0) {
+      const sorted = [...current.children].sort((a, b) => b.probability - a.probability)
+      const mainChild = sorted[0]
+      mainlinePath.set(depth, mainChild.san || mainChild.move || '?')
+      current = mainChild
+      depth++
+    }
+    setSelectedAtDepth(mainlinePath)
+  }, [selectedCandidate])
+
+  // Accordion toggle - select a node at a given depth, clear deeper selections
+  const handleSelectAtDepth = useCallback((depth: number, san: string) => {
+    setSelectedAtDepth((prev) => {
+      const next = new Map(prev)
+      if (next.get(depth) === san) {
+        // Clicking same node - collapse it and all deeper levels
+        const keysToDelete = [...next.keys()].filter((k) => k >= depth)
+        keysToDelete.forEach((k) => next.delete(k))
       } else {
-        next.add(key)
+        // Clicking different node - select it, clear deeper selections
+        next.set(depth, san)
+        const keysToDelete = [...next.keys()].filter((k) => k > depth)
+        keysToDelete.forEach((k) => next.delete(k))
       }
       return next
     })
@@ -647,27 +612,12 @@ function EWTree({ candidates, evalSource, onNavigate }: EWTreeProps) {
 
   if (candidates.length === 0) return null
 
-  const sortedCandidates = [...candidates].sort((a, b) => {
-    const ewA =
-      evalSource === 'stockfish'
-        ? (a.expectedWinrateSF ?? a.expectedWinrateMaia)
-        : a.expectedWinrateMaia
-    const ewB =
-      evalSource === 'stockfish'
-        ? (b.expectedWinrateSF ?? b.expectedWinrateMaia)
-        : b.expectedWinrateMaia
-    return ewB - ewA
-  })
-
-  const displayedCandidates = sortedCandidates.slice(0, MAX_DISPLAYED_CANDIDATES)
-  const selectedCandidate = displayedCandidates[selectedIndex] || displayedCandidates[0]
-
   return (
     <div className="ew-candidate-tree-view" data-testid="ew-candidate-tree-view">
       {/* Also keep ew-tree for backwards compatibility */}
       <div data-testid="ew-tree" style={{ display: 'contents' }}>
         <CandidateColumn
-          candidates={displayedCandidates}
+          candidates={sortedCandidates}
           selectedIndex={selectedIndex}
           evalSource={evalSource}
           onSelect={setSelectedIndex}
@@ -675,8 +625,8 @@ function EWTree({ candidates, evalSource, onNavigate }: EWTreeProps) {
         <TreeColumn
           candidate={selectedCandidate}
           evalSource={evalSource}
-          expandedNodes={expandedNodes}
-          onToggle={toggleNode}
+          selectedAtDepth={selectedAtDepth}
+          onSelectAtDepth={handleSelectAtDepth}
           onNodeHover={handleNodeHover}
           onNavigate={handleNavigate}
         />
@@ -812,64 +762,224 @@ function CandidateColumn({ candidates, selectedIndex, evalSource, onSelect }: Ca
 interface TreeColumnProps {
   candidate: EWCandidateResult
   evalSource: EvalSource
-  expandedNodes: Set<string>
-  onToggle: (_key: string) => void
+  selectedAtDepth: Map<number, string>
+  onSelectAtDepth: (_depth: number, _san: string) => void
+  onNodeHover: (_event: React.MouseEvent | null, _node: TreeNode | null) => void
+  onNavigate: (_fen: string) => void
+}
+
+interface VerticalTreeNodeProps {
+  node: TreeNode
+  siblings: TreeNode[]
+  depth: number
+  evalSource: EvalSource
+  selectedAtDepth: Map<number, string>
+  onSelectAtDepth: (_depth: number, _san: string) => void
   onNodeHover: (_event: React.MouseEvent | null, _node: TreeNode | null) => void
   onNavigate: (_fen: string) => void
 }
 
 /**
+ * Recursive vertical tree node component.
+ * Displays a single node with its children, supporting accordion expand/collapse.
+ */
+function VerticalTreeNode({
+  node,
+  siblings,
+  depth,
+  evalSource,
+  selectedAtDepth,
+  onSelectAtDepth,
+  onNodeHover,
+  onNavigate,
+}: VerticalTreeNodeProps) {
+  const nodeSan = node.san || node.move || '?'
+  const isSelected = selectedAtDepth.get(depth) === nodeSan
+  const hasAlternatives = siblings.length > 0
+  const hasChildren = node.children.length > 0
+  const isLeaf = !hasChildren || !isSelected
+  const nodeEval = evalSource === 'stockfish' ? node.sfWinrate : node.maiaWinrate
+
+  const sortedChildren = [...node.children].sort((a, b) => b.probability - a.probability)
+
+  return (
+    <div className="tree-node-container">
+      <div
+        className={`tree-node-row ${isSelected ? 'selected' : ''} ${hasAlternatives ? 'has-alternatives' : ''}`}
+        style={{ paddingLeft: `${depth * 20}px` }}
+        onClick={() => hasAlternatives && onSelectAtDepth(depth, nodeSan)}
+        onMouseEnter={(e) => onNodeHover(e, node)}
+        onMouseLeave={() => onNodeHover(null, null)}
+        data-testid={`ew-tree-node-${depth}-${nodeSan}`}
+      >
+        <span className="connector">└─</span>
+        <span className="move-san">{nodeSan}</span>
+        {hasAlternatives && (
+          <span className="toggle-indicator">{isSelected ? '▼' : '▶'}</span>
+        )}
+        {isLeaf && nodeEval !== null && (
+          <span className="leaf-eval">→ {formatWinrate(nodeEval)}</span>
+        )}
+        <button
+          className="nav-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            onNavigate(node.fen)
+          }}
+          title="Navigate to position"
+        >
+          ⊞
+        </button>
+      </div>
+
+      {isSelected && hasChildren && (
+        <div className="children">
+          {sortedChildren.map((child, idx) => (
+            <VerticalTreeNode
+              key={child.move || idx}
+              node={child}
+              siblings={sortedChildren.filter((_, i) => i !== idx)}
+              depth={depth + 1}
+              evalSource={evalSource}
+              selectedAtDepth={selectedAtDepth}
+              onSelectAtDepth={onSelectAtDepth}
+              onNodeHover={onNodeHover}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </div>
+      )}
+
+      <style jsx>{`
+        .tree-node-container {
+          font-size: var(--font-sm, 13px);
+        }
+
+        .tree-node-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 3px 4px;
+          cursor: default;
+          transition: background 0.1s ease;
+          border-radius: 2px;
+        }
+
+        .tree-node-row.has-alternatives {
+          cursor: pointer;
+        }
+
+        .tree-node-row:hover {
+          background: var(--color-surface-hover, #1a1a1a);
+        }
+
+        .tree-node-row.selected {
+          background: rgba(255, 224, 0, 0.08);
+        }
+
+        .connector {
+          color: var(--color-border, #333);
+          font-family: monospace;
+          flex-shrink: 0;
+        }
+
+        .move-san {
+          font-weight: 500;
+          color: var(--color-text, #fff);
+        }
+
+        .toggle-indicator {
+          color: var(--color-primary, #FFE000);
+          font-size: 10px;
+          margin-left: 2px;
+        }
+
+        .leaf-eval {
+          color: var(--color-primary, #FFE000);
+          font-weight: 700;
+          margin-left: 4px;
+        }
+
+        .nav-btn {
+          opacity: 0;
+          background: transparent;
+          border: none;
+          color: var(--color-text-muted, #666);
+          cursor: pointer;
+          padding: 2px 4px;
+          font-size: 12px;
+          margin-left: auto;
+          transition: opacity 0.1s ease;
+        }
+
+        .tree-node-row:hover .nav-btn {
+          opacity: 1;
+        }
+
+        .nav-btn:hover {
+          color: var(--color-primary, #FFE000);
+        }
+
+        .children {
+          /* Children are indented via paddingLeft on each row */
+        }
+      `}</style>
+    </div>
+  )
+}
+
+/**
  * Right column displaying the tree for the selected candidate.
- * Shows mainline with branch toggles and expandable alternatives.
+ * Uses vertical layout with accordion expand/collapse behavior.
  */
 function TreeColumn({
   candidate,
   evalSource,
-  expandedNodes,
-  onToggle,
+  selectedAtDepth,
+  onSelectAtDepth,
   onNodeHover,
   onNavigate,
 }: TreeColumnProps) {
-  const { mainline, branchPoints } = buildTreeStructure(candidate.tree)
-
-  // Get leaf eval from the end of mainline
-  const leafNode = mainline.length > 0 ? mainline[mainline.length - 1] : candidate.tree
-  let current = leafNode
-  while (current.children.length > 0) {
-    const sorted = [...current.children].sort((a, b) => b.probability - a.probability)
-    current = sorted[0]
-  }
-  const leafEval = evalSource === 'stockfish' ? current.sfWinrate : current.maiaWinrate
+  const rootChildren = [...candidate.tree.children].sort((a, b) => b.probability - a.probability)
 
   return (
     <div className="tree-column" data-testid="ew-tree-column">
       <div className="column-header">TREE</div>
-      <MainlineRow
-        candidateSan={candidate.san}
-        mainline={mainline}
-        branchPoints={branchPoints}
-        expandedNodes={expandedNodes}
-        onToggle={onToggle}
-        onNodeHover={onNodeHover}
-        onNavigate={onNavigate}
-        leafEval={leafEval}
-        leafFen={current.fen}
-      />
 
-      {/* Expanded branches render below */}
-      {branchPoints
-        .filter((bp) => expandedNodes.has(bp.key))
-        .map((bp) => (
-          <BranchLines
-            key={bp.key}
-            branchPoint={bp}
-            evalSource={evalSource}
-            onNodeHover={onNodeHover}
-            onNavigate={onNavigate}
-          />
-        ))}
+      {/* Candidate move header */}
+      <div className="candidate-header">
+        <span className="candidate-san">{candidate.san}</span>
+        <span className="candidate-ew">
+          EW: {formatWinrate(
+            evalSource === 'stockfish'
+              ? (candidate.expectedWinrateSF ?? candidate.expectedWinrateMaia)
+              : candidate.expectedWinrateMaia
+          )}
+        </span>
+      </div>
 
-      <div className="tree-hint">Click candidate to select · Hover moves for details</div>
+      {/* Recursive tree starting from first response */}
+      <div className="tree-content">
+        {rootChildren.length === 0 ? (
+          <div className="no-children">No responses analyzed</div>
+        ) : (
+          rootChildren.map((child, idx) => (
+            <VerticalTreeNode
+              key={child.move || idx}
+              node={child}
+              siblings={rootChildren.filter((_, i) => i !== idx)}
+              depth={0}
+              evalSource={evalSource}
+              selectedAtDepth={selectedAtDepth}
+              onSelectAtDepth={onSelectAtDepth}
+              onNodeHover={onNodeHover}
+              onNavigate={onNavigate}
+            />
+          ))
+        )}
+      </div>
+
+      <div className="tree-hint">Click moves to expand/collapse · Hover for details</div>
 
       <style jsx>{`
         .tree-column {
@@ -889,249 +999,42 @@ function TreeColumn({
           margin-bottom: var(--space-sm, 8px);
         }
 
+        .candidate-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 4px 0;
+          margin-bottom: var(--space-xs, 4px);
+        }
+
+        .candidate-san {
+          font-weight: 700;
+          font-size: var(--font-md, 15px);
+          color: var(--color-primary, #FFE000);
+        }
+
+        .candidate-ew {
+          font-size: var(--font-sm, 13px);
+          color: var(--color-text-muted, #666);
+        }
+
+        .tree-content {
+          max-height: 400px;
+          overflow-y: auto;
+        }
+
+        .no-children {
+          color: var(--color-text-dim, #444);
+          font-style: italic;
+          padding: var(--space-sm, 8px) 0;
+        }
+
         .tree-hint {
           margin-top: var(--space-md, 16px);
           font-size: var(--font-xs, 11px);
           color: var(--color-text-dim, #333);
           text-transform: uppercase;
           letter-spacing: 0.05em;
-        }
-      `}</style>
-    </div>
-  )
-}
-
-interface MainlineRowProps {
-  candidateSan: string
-  mainline: TreeNode[]
-  branchPoints: BranchPoint[]
-  expandedNodes: Set<string>
-  onToggle: (_key: string) => void
-  onNodeHover: (_event: React.MouseEvent | null, _node: TreeNode | null) => void
-  onNavigate: (_fen: string) => void
-  leafEval: number | null
-  leafFen: string
-}
-
-/**
- * Mainline display with branch indicators (+/−) at branch points.
- */
-function MainlineRow({
-  candidateSan,
-  mainline,
-  branchPoints,
-  expandedNodes,
-  onToggle,
-  onNodeHover,
-  onNavigate,
-  leafEval,
-  leafFen,
-}: MainlineRowProps) {
-  return (
-    <div className="mainline-row">
-      {/* Candidate move first */}
-      <span className="mainline-move">
-        <span
-          className="move-san candidate"
-          data-testid="ew-mainline-candidate"
-          onClick={() => onNavigate(mainline[0]?.fen || leafFen)}
-        >
-          {candidateSan}
-        </span>
-      </span>
-
-      {/* Mainline moves with branch toggles */}
-      {mainline.map((node, idx) => {
-        const branchPoint = branchPoints.find((bp) => bp.depth === idx)
-        const isExpanded = branchPoint ? expandedNodes.has(branchPoint.key) : false
-
-        return (
-          <span key={idx} className="mainline-move">
-            <span
-              className="move-san"
-              data-testid={`ew-mainline-${idx}`}
-              onMouseEnter={(e) => onNodeHover(e, node)}
-              onMouseLeave={() => onNodeHover(null, null)}
-              onClick={() => onNavigate(node.fen)}
-            >
-              {node.san || node.move || '?'}
-            </span>
-            {branchPoint && (
-              <button
-                className="branch-toggle"
-                data-testid={`ew-branch-toggle-${branchPoint.key}`}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onToggle(branchPoint.key)
-                }}
-                aria-expanded={isExpanded}
-                title={isExpanded ? 'Collapse alternatives' : 'Show alternatives'}
-              >
-                {isExpanded ? '−' : '+'}
-              </button>
-            )}
-          </span>
-        )
-      })}
-
-      {/* Leaf arrow and eval */}
-      <span className="leaf-arrow">→</span>
-      <span className="leaf-eval" onClick={() => onNavigate(leafFen)}>
-        {leafEval !== null ? formatWinrate(leafEval) : '—'}
-      </span>
-
-      <style jsx>{`
-        .mainline-row {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 2px;
-          font-size: var(--font-sm, 13px);
-        }
-
-        .mainline-move {
-          display: inline-flex;
-          align-items: center;
-        }
-
-        .move-san {
-          padding: 2px 4px;
-          cursor: pointer;
-          transition: background 0.1s ease;
-        }
-
-        .move-san:hover {
-          background: var(--color-surface-hover, #1a1a1a);
-        }
-
-        .move-san.candidate {
-          font-weight: 700;
-          color: var(--color-primary, #FFE000);
-        }
-
-        .branch-toggle {
-          background: transparent;
-          border: var(--border-thin, 1px) solid var(--color-border, #333);
-          color: var(--color-text-muted, #666);
-          width: 16px;
-          height: 16px;
-          font-size: 12px;
-          cursor: pointer;
-          margin: 0 2px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.1s ease;
-        }
-
-        .branch-toggle:hover {
-          background: var(--color-primary, #FFE000);
-          color: var(--color-background, #0a0a0a);
-        }
-
-        .leaf-arrow {
-          color: var(--color-text-muted, #666);
-          margin: 0 4px;
-        }
-
-        .leaf-eval {
-          color: var(--color-primary, #FFE000);
-          font-weight: 700;
-          cursor: pointer;
-        }
-      `}</style>
-    </div>
-  )
-}
-
-interface BranchLinesProps {
-  branchPoint: BranchPoint
-  evalSource: EvalSource
-  onNodeHover: (_event: React.MouseEvent | null, _node: TreeNode | null) => void
-  onNavigate: (_fen: string) => void
-}
-
-/**
- * Expanded branch lines showing alternative continuations.
- */
-function BranchLines({ branchPoint, evalSource, onNodeHover, onNavigate }: BranchLinesProps) {
-  return (
-    <div
-      className="branch-lines"
-      data-testid={`ew-branch-${branchPoint.key}`}
-      style={{ paddingLeft: `${branchPoint.indentChars + 2}ch` }}
-    >
-      {branchPoint.alternatives.map((alt) => {
-        const branchResult = collectBranchMoves(alt, evalSource)
-
-        return (
-          <div
-            key={alt.move}
-            className="branch-line"
-            onClick={() => onNavigate(branchResult.fen)}
-          >
-            <span className="branch-connector">└─</span>
-            <span
-              className="branch-first-move"
-              onMouseEnter={(e) => onNodeHover(e, alt)}
-              onMouseLeave={() => onNodeHover(null, null)}
-            >
-              {alt.san || alt.move || '?'}
-            </span>
-            {branchResult.moves.length > 0 && (
-              <span className="branch-continuation">{' '}{branchResult.moves.join(' ')}</span>
-            )}
-            <span className="branch-arrow">→</span>
-            <span className="branch-eval">
-              {branchResult.leafEval !== null ? formatWinrate(branchResult.leafEval) : '—'}
-            </span>
-          </div>
-        )
-      })}
-
-      <style jsx>{`
-        .branch-lines {
-          margin-top: var(--space-xs, 4px);
-          color: var(--color-text-muted, #666);
-          font-size: var(--font-sm, 13px);
-        }
-
-        .branch-line {
-          display: flex;
-          align-items: center;
-          padding: 2px 0;
-          cursor: pointer;
-          transition: background 0.1s ease;
-        }
-
-        .branch-line:hover {
-          background: var(--color-surface-hover, #1a1a1a);
-        }
-
-        .branch-connector {
-          color: var(--color-border, #333);
-          margin-right: 4px;
-        }
-
-        .branch-first-move {
-          font-weight: 500;
-        }
-
-        .branch-first-move:hover {
-          color: var(--color-text, #fff);
-        }
-
-        .branch-continuation {
-          color: var(--color-text-dim, #444);
-        }
-
-        .branch-arrow {
-          color: var(--color-text-dim, #444);
-          margin: 0 4px;
-        }
-
-        .branch-eval {
-          color: var(--color-text-muted, #666);
         }
       `}</style>
     </div>
