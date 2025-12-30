@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "setup": "npm install",
+    "run": "PORT=$CONDUCTOR_PORT npm run dev",
+    "archive": "pkill -f 'next dev' || true; pkill -f 'playwright' || true; pkill -f 'chromium' || true"
+  },
+  "runScriptMode": "nonconcurrent"
+}
