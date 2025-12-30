@@ -11,6 +11,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import {
   calculateExpectedWinrate,
+  calculateMaiaOnlyEW,
   computeExpectedWinrateFromTree,
   summarizeEWResult,
   compareWithStockfish,
@@ -611,5 +612,106 @@ describe('edge cases', () => {
     )
 
     expect(result.candidates.length).toBeGreaterThan(0)
+  })
+})
+
+// ============================================================================
+// calculateMaiaOnlyEW tests
+// ============================================================================
+
+describe('calculateMaiaOnlyEW', () => {
+  let maia: MockMaia
+
+  beforeEach(async () => {
+    maia = createMockMaia({
+      defaultPolicy: {
+        'e2e4': 0.35,
+        'd2d4': 0.28,
+        'g1f3': 0.15,
+        'c2c4': 0.10,
+      },
+      defaultValue: 0.52,
+    })
+    await maia.init()
+  })
+
+  it('returns candidates for ALL legal moves regardless of maxCandidates', async () => {
+    // Starting position has 20 legal moves for White
+    const result = await calculateMaiaOnlyEW(
+      STARTING_FEN,
+      { probabilityThreshold: 0.05, maxCandidates: 3 }, // maxCandidates should be IGNORED
+      maia
+    )
+
+    // Should return ALL 20 legal moves, not limited to maxCandidates
+    expect(result.candidates.length).toBe(20)
+  })
+
+  it('includes EW trees for all legal moves', async () => {
+    const result = await calculateMaiaOnlyEW(
+      STARTING_FEN,
+      { probabilityThreshold: 0.50 }, // High threshold for shallow trees
+      maia
+    )
+
+    // Every candidate should have a tree
+    for (const candidate of result.candidates) {
+      expect(candidate.tree).toBeDefined()
+      expect(candidate.tree.fen).toBeDefined()
+    }
+
+    // Should have all 20 legal moves
+    expect(result.candidates.length).toBe(20)
+  })
+
+  it('has null SF values in Maia-only mode', async () => {
+    const result = await calculateMaiaOnlyEW(
+      STARTING_FEN,
+      { probabilityThreshold: 0.50 },
+      maia
+    )
+
+    // SF values should be null (not computed)
+    expect(result.baseSFWinrate).toBeNull()
+    expect(result.baseSFCp).toBeNull()
+    expect(result.sfTopMoves).toHaveLength(0)
+
+    for (const candidate of result.candidates) {
+      expect(candidate.stockfishWinrate).toBeNull()
+      expect(candidate.stockfishCp).toBeNull()
+      expect(candidate.expectedWinrateSF).toBeNull()
+    }
+  })
+
+  it('has valid Maia values for all candidates', async () => {
+    const result = await calculateMaiaOnlyEW(
+      STARTING_FEN,
+      { probabilityThreshold: 0.50 },
+      maia
+    )
+
+    expect(result.baseMaiaWinrate).toBeGreaterThanOrEqual(0)
+    expect(result.baseMaiaWinrate).toBeLessThanOrEqual(1)
+
+    for (const candidate of result.candidates) {
+      expect(candidate.maiaWinrate).toBeGreaterThanOrEqual(0)
+      expect(candidate.maiaWinrate).toBeLessThanOrEqual(1)
+      expect(candidate.expectedWinrateMaia).toBeGreaterThanOrEqual(0)
+      expect(candidate.expectedWinrateMaia).toBeLessThanOrEqual(1)
+      expect(candidate.probability).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  it('sorts candidates by EW-Maia (best first)', async () => {
+    const result = await calculateMaiaOnlyEW(
+      STARTING_FEN,
+      { probabilityThreshold: 0.50 },
+      maia
+    )
+
+    for (let i = 1; i < result.candidates.length; i++) {
+      expect(result.candidates[i - 1].expectedWinrateMaia)
+        .toBeGreaterThanOrEqual(result.candidates[i].expectedWinrateMaia)
+    }
   })
 })

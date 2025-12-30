@@ -17,9 +17,9 @@
 ### In Progress
 
 - **Phase 10.5: Maia-First EW Architecture**
-  - [x] `calculateMaiaOnlyEW()` - fast path using Maia only
+  - [x] `calculateMaiaOnlyEW()` - analyzes ALL legal moves with Maia only
   - [x] `enrichWithStockfish()` - adds SF data on-demand
-  - [x] `selectCandidatesByMaiaProbability()` - candidate selection
+  - [x] `selectCandidatesByMaiaProbability()` - returns all legal moves (no maxCandidates limit)
   - [x] Auto-trigger on FEN change with 300ms debounce
   - [x] UI yield mechanism to prevent page freeze
   - [x] LRU prediction cache to prevent memory leaks
@@ -92,13 +92,13 @@ The EW calculation uses a **Maia-first approach** for responsive UI:
 
 | Phase | Trigger | Engine | Speed | Result |
 |-------|---------|--------|-------|--------|
-| **Fast Path** | Auto on position change | Maia only | ~100-500ms | EW(Maia) ready |
+| **Fast Path** | Auto on position change | Maia only | ~20-30s (all moves) | EW(Maia) ready |
 | **Slow Path** | User clicks "Add SF" | Stockfish | ~1-3s | EW(SF) added |
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ FAST PATH: calculateMaiaOnlyEW() - Auto-triggered               │
-│   1. Select candidates by Maia probability (top N moves)        │
+│   1. Select ALL legal moves as candidates (complete analysis)   │
 │   2. Build probability trees using Maia policy head             │
 │   3. Evaluate nodes using Maia value head                       │
 │   4. Compute EW(Maia) immediately                               │
@@ -116,8 +116,9 @@ The EW calculation uses a **Maia-first approach** for responsive UI:
 ```
 
 **Key Functions:**
-- `calculateMaiaOnlyEW(fen, config, maia)` → Fast, Maia-only result
+- `calculateMaiaOnlyEW(fen, config, maia)` → Analyzes ALL legal moves with Maia only
 - `enrichWithStockfish(result, stockfish)` → Adds SF data to existing result
+- `selectCandidatesByMaiaProbability(fen, maia)` → Returns all legal moves sorted by probability
 - `calculateExpectedWinrate(fen, config, sf, maia)` → Full calculation (legacy)
 
 ### UI Responsiveness

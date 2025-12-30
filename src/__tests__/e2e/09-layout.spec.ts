@@ -93,6 +93,10 @@ test.describe('UI Layout Structure', () => {
     const boardSection = bottomRow.locator('[data-testid="board-section"]')
     const ewSection = bottomRow.locator('[data-testid="ew-section-wrapper"]')
 
+    // Wait for elements to be visible before getting bounding box
+    await expect(boardSection).toBeVisible()
+    await expect(ewSection).toBeVisible()
+
     const boardBox = await boardSection.boundingBox()
     const ewBox = await ewSection.boundingBox()
 
@@ -196,6 +200,7 @@ test.describe('EW Section Content', () => {
   test('EW section has results when calculation complete', async ({ page }) => {
     const ewSection = page.locator('[data-testid="ew-section"]')
     // Wait for EW calculation to complete and show results
-    await expect(ewSection.locator('[data-testid="ew-results"]')).toBeVisible({ timeout: 10000 })
+    // With all legal moves (20 from starting position), this can take 30+ seconds
+    await expect(ewSection.locator('[data-testid="ew-results"]')).toBeVisible({ timeout: 60000 })
   })
 })

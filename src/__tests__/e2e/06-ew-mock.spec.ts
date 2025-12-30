@@ -185,7 +185,11 @@ test.describe('06 - Expected Winrate', () => {
       // Navigate to a new position to trigger fresh Maia calculation
       await page.getByTestId('nav-start').click()
 
-      // Wait for Maia calculation to complete
+      // Wait for old results to disappear (calculation starting)
+      // Then wait for new results to appear (calculation complete)
+      await expect(page.getByTestId('ew-results')).not.toBeVisible({ timeout: 5000 }).catch(() => {
+        // Old results may have already been replaced, that's ok
+      })
       await expect(page.getByTestId('ew-results')).toBeVisible({ timeout: EW_CALC_TIMEOUT })
 
       // SF button should appear (status is complete_maia)
@@ -194,7 +198,16 @@ test.describe('06 - Expected Winrate', () => {
     })
 
     test('clicking Add SF Analysis enriches results', async () => {
+      // SF enrichment evaluates many positions (78+ for 20 candidates)
+      // This can take 60+ seconds, so extend the test timeout
+      test.setTimeout(EW_CALC_TIMEOUT + 30000)
+
+      // Ensure Maia calculation is complete before clicking SF button
+      // (previous test may have completed but state could have changed)
+      await expect(page.getByTestId('ew-results')).toBeVisible({ timeout: EW_CALC_TIMEOUT })
+
       const sfButton = page.getByTestId('add-sf-analysis-button')
+      await expect(sfButton).toBeVisible({ timeout: 5000 })
       await sfButton.click()
 
       // Button should disappear or show loading

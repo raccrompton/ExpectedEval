@@ -340,15 +340,19 @@ export async function calculateExpectedWinrate(
  * Calculate Expected Winrate using Maia only (no Stockfish).
  *
  * This is the fast path for auto-triggered calculations. It:
- * 1. Selects candidates by Maia probability (top N moves)
- * 2. Builds probability trees using Maia
+ * 1. Selects ALL legal moves as candidates (ignores maxCandidates config)
+ * 2. Builds probability trees for each move using Maia
  * 3. Computes EW(Maia) only
+ *
+ * NOTE: Unlike calculateExpectedWinrate(), this function returns ALL legal
+ * moves as candidates regardless of the maxCandidates config value. This
+ * provides complete analysis coverage at the cost of more computation.
  *
  * SF fields (stockfishWinrate, stockfishCp, expectedWinrateSF, baseSFWinrate, etc.)
  * are all null until enrichWithStockfish() is called.
  *
  * @param fen - Position to analyze
- * @param config - Algorithm configuration
+ * @param config - Algorithm configuration (maxCandidates is ignored)
  * @param maia - Maia adapter for move predictions
  * @param onProgress - Optional progress callback
  * @returns EW result with Maia values only (SF fields are null)
@@ -556,10 +560,11 @@ async function selectCandidatesByMaiaProbability(
     }
   }
 
-  // Sort by probability (most likely first) and limit to maxCandidates
+  // Sort by probability (most likely first)
+  // NOTE: No maxCandidates limit - Maia-only mode builds trees for ALL legal moves
   candidates.sort((a, b) => b.probability - a.probability)
 
-  return candidates.slice(0, config.maxCandidates)
+  return candidates
 }
 
 // ============================================================================
