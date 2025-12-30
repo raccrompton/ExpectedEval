@@ -28,6 +28,7 @@
   - [x] Two-column EW tree redesign (CandidateColumn + TreeColumn)
   - [x] Vertical recursive tree with VerticalTreeNode component
   - [x] Accordion behavior (one branch per depth level)
+  - [x] EnginePanel side-by-side layout (SF + Maia displayed simultaneously)
 
 ### TODO
 

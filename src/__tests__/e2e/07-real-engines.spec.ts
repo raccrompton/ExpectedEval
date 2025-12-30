@@ -97,6 +97,27 @@ test.describe('07 - Real Engine Integration', () => {
       expect(moveText).toBeTruthy()
       expect(moveText!.length).toBeGreaterThan(0)
     })
+
+    test('stockfish evaluations are reasonable when Black is to move', async () => {
+      // Load a position where Black is to move (after 1. e4)
+      await loadPgnAndWaitForEval(page, '1. e4')
+
+      // Get the centipawn evaluation - should be slightly negative from Black's perspective
+      // (White just played e4, a good opening move, so Black is slightly behind)
+      const sfCp = page.getByTestId('sf-cp')
+      const cpText = await sfCp.textContent()
+      expect(cpText).toBeTruthy()
+
+      // Parse the centipawn value
+      const match = cpText?.match(/([+-]?\d+\.\d+)/)
+      expect(match).toBeTruthy()
+
+      const cp = parseFloat(match![1])
+      // From Black's perspective after 1. e4, evaluation should be around -0.5 to +0.5
+      // NOT wildly positive like +3.0 or higher (which would indicate wrong perspective)
+      expect(cp).toBeGreaterThan(-2.0) // Not losing badly
+      expect(cp).toBeLessThan(1.0) // Not wildly winning (wrong perspective bug)
+    })
   })
 
   test.describe('Maia Evaluation Quality', () => {

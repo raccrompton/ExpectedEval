@@ -42,9 +42,19 @@ export interface StockfishEvaluation {
 
   /**
    * Win probability from the side to move's perspective (0.0 to 1.0).
-   * Derived from centipawn evaluation using standard formula.
+   * Derived from native WDL: (win + draw/2) / 1000.
    */
   winrate: number
+
+  /**
+   * Native Win/Draw/Loss percentages from Stockfish (0-100 scale).
+   * More accurate than calculated winrate as it accounts for position complexity.
+   */
+  wdl?: {
+    win: number
+    draw: number
+    loss: number
+  }
 
   /**
    * Evaluation for each legal move (UCI format → centipawns).

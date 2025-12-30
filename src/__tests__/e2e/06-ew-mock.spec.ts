@@ -80,9 +80,9 @@ test.describe('06 - Expected Winrate', () => {
       await expect(ewMaia).toBeVisible()
       await expect(ewMaia).toContainText(/%/)
 
-      // SF EW may show "—" until enriched
-      const ewSF = page.getByTestId('ew-sf-value')
-      await expect(ewSF).toBeVisible()
+      // SF EW box shows either value (if enriched) or Add SF button (if not)
+      const sfBox = page.locator('.sf-box')
+      await expect(sfBox).toBeVisible()
     })
 
     test('EW results display candidate moves with probabilities', async () => {
