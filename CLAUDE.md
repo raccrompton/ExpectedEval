@@ -38,8 +38,8 @@
 
 | Type | Count | Status |
 |------|-------|--------|
-| Unit tests | 265 | ✅ Passing |
-| E2E tests | 147 | ✅ Passing |
+| Unit tests | 270 | ✅ Passing |
+| E2E tests | 145+ | ✅ Passing |
 
 ---
 
@@ -459,11 +459,15 @@ The tree uses a two-column design for better usability:
 ### Table Display (EWTable)
 
 - **Horizontal layout**: Each ply has its own column, lines are rows
+- **Two display modes**:
+  - **Default Mode**: All ply 1 children shown as separate rows with their continuation mainlines (no + button on ply 1)
+  - **Focused Mode**: When any + button is clicked, other ply 1 rows disappear to reduce visual clutter
 - **Expand/Collapse buttons**: `+` to show alternative moves, `-` to collapse
 - **Line EW column**: Shows EW value for each line (leaf node eval)
 - **Likelihood column**: Shows cumulative probability of reaching that line
 - **Horizontally scrollable**: Deep lines scroll right without breaking layout
 - **Transformation**: Uses `treeToTable()` function to convert TreeNode to flat rows
+- **Key functions**: `buildDefaultModeRows()`, `buildPly1RowCells()` for ply 1 default expansion
 
 ### Core Files
 
@@ -578,7 +582,7 @@ The MVP is complete when:
 - [ ] EW(SF) displays for current position (on-demand enrichment)
 - [x] Maia move probabilities display for current position
 - [x] Expected winrate tree is visualized
-- [x] All unit tests pass (265 passing)
+- [x] All unit tests pass (270 passing)
 - [x] All E2E tests pass after Phase 10.5
 - [ ] App is deployable and performant
 

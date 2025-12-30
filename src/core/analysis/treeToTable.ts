@@ -157,13 +157,15 @@ function getMainlinePath(root: TreeNode): TreeNode[] {
  * @param baseMoveNumber - Starting move number
  * @param baseColor - Color to move at root
  * @param expandedCells - Set of expanded cell keys
+ * @param hidePly0Alternatives - If true, ply 0 cells won't show hasAlternatives
  * @returns Array of EWTableCell objects
  */
 export function buildMainlineCells(
   root: TreeNode,
   baseMoveNumber: number,
   baseColor: 'w' | 'b',
-  expandedCells: Set<string> = new Set()
+  expandedCells: Set<string> = new Set(),
+  hidePly0Alternatives: boolean = false
 ): EWTableCell[] {
   const mainlinePath = getMainlinePath(root)
   const cells: EWTableCell[] = []
@@ -174,7 +176,8 @@ export function buildMainlineCells(
     const { moveNumber, color } = calculateMoveInfo(i, baseMoveNumber, baseColor)
 
     const siblings = parentNode.children.filter(c => c.san !== node.san)
-    const hasAlternatives = siblings.length > 0
+    // In default mode (hidePly0Alternatives=true), ply 0 doesn't show + button
+    const hasAlternatives = i === 0 && hidePly0Alternatives ? false : siblings.length > 0
 
     const cellKey = `${i}-${node.san}`
     const isExpanded = expandedCells.has(cellKey)
@@ -368,9 +371,100 @@ function calculateAlternativeLikelihood(
 }
 
 /**
+ * Build cells for a ply 1 child and its mainline continuation.
+ * Used in default mode to show each ply 1 child as a separate row.
+ */
+function buildPly1RowCells(
+  ply1Node: TreeNode,
+  baseMoveNumber: number,
+  baseColor: 'w' | 'b'
+): EWTableCell[] {
+  const cells: EWTableCell[] = []
+  const { moveNumber, color } = calculateMoveInfo(0, baseMoveNumber, baseColor)
+
+  // First cell (ply 0) - no hasAlternatives since all are shown as rows
+  cells.push({
+    san: ply1Node.san || '?',
+    moveNumber,
+    color,
+    node: ply1Node,
+    hasAlternatives: false,
+    isExpanded: false,
+    plyIndex: 0,
+  })
+
+  // Follow mainline from this node
+  let current = ply1Node
+  let plyOffset = 1
+
+  while (current.children.length > 0) {
+    const sorted = [...current.children].sort((a, b) => b.probability - a.probability)
+    const next = sorted[0]
+    const moveInfo = calculateMoveInfo(plyOffset, baseMoveNumber, baseColor)
+
+    cells.push({
+      san: next.san || '?',
+      moveNumber: moveInfo.moveNumber,
+      color: moveInfo.color,
+      node: next,
+      hasAlternatives: sorted.length > 1,
+      isExpanded: false,
+      plyIndex: plyOffset,
+    })
+
+    current = next
+    plyOffset++
+  }
+
+  return cells
+}
+
+/**
+ * Build rows for default mode: all ply 1 children shown as separate rows.
+ */
+function buildDefaultModeRows(
+  root: TreeNode,
+  baseMoveNumber: number,
+  baseColor: 'w' | 'b'
+): EWTableLine[] {
+  if (root.children.length === 0) {
+    return [{
+      id: 'mainline',
+      moves: [],
+      lineEW: null,
+      likelihood: 1,
+      branchDepth: 0,
+      parentLineId: null,
+    }]
+  }
+
+  // Sort children by probability (highest first)
+  const sortedChildren = [...root.children].sort((a, b) => b.probability - a.probability)
+
+  return sortedChildren.map((child, index) => {
+    const cells = buildPly1RowCells(child, baseMoveNumber, baseColor)
+    const leaf = getAlternativeLeaf(child)
+    const likelihood = calculateAlternativeLikelihood(child, 0, [])
+
+    return {
+      id: index === 0 ? 'mainline' : `ply1-${child.san}`,
+      moves: cells,
+      lineEW: leaf.maiaWinrate,
+      likelihood,
+      branchDepth: 0,
+      parentLineId: null,
+    }
+  })
+}
+
+/**
  * Convert a TreeNode structure into flat table rows.
  *
  * This is the main entry point for the transformation.
+ *
+ * Modes:
+ * - Default mode (expandedCells empty): All ply 1 children shown as separate rows
+ * - Focused mode (expandedCells non-empty): Single mainline + expanded alternatives
  *
  * @param root - Root TreeNode (after candidate move is applied)
  * @param expandedCells - Set of expanded cell keys (format: "plyIndex-san")
@@ -384,9 +478,15 @@ export function treeToTableRows(
   baseMoveNumber: number,
   baseColor: 'w' | 'b'
 ): EWTableLine[] {
+  // Default mode: show all ply 1 children as separate rows
+  if (expandedCells.size === 0) {
+    return buildDefaultModeRows(root, baseMoveNumber, baseColor)
+  }
+
+  // Focused mode: single mainline + expanded alternatives
   const rows: EWTableLine[] = []
 
-  const mainlineCells = buildMainlineCells(root, baseMoveNumber, baseColor, expandedCells)
+  const mainlineCells = buildMainlineCells(root, baseMoveNumber, baseColor, expandedCells, false)
   const mainlineLeaf = getMainlineLeaf(root)
   const mainlineLikelihood = calculateMainlineLikelihood(root)
 

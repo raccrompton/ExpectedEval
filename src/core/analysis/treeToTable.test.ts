@@ -407,3 +407,156 @@ describe('treeToTableRows', () => {
     expect(altAtDepth1).toBeDefined()
   })
 })
+
+describe('treeToTableRows - ply 1 default expansion', () => {
+  test('shows all ply 1 children as rows when nothing is expanded', () => {
+    // Tree with 3 children at ply 0 (e5, d5, c5)
+    const root = createBranchingTree(
+      [
+        { san: 'e5', prob: 0.45 },
+        { san: 'Nf3', prob: 0.40 },
+      ],
+      [
+        {
+          atDepth: 0,
+          alternatives: [
+            { san: 'd5', prob: 0.30 },
+            { san: 'c5', prob: 0.15 },
+          ],
+        },
+      ]
+    )
+
+    // Empty expandedCells = default mode
+    const rows = treeToTableRows(root, new Set(), 1, 'w')
+
+    // Should show all 3 ply 1 children as separate rows
+    expect(rows).toHaveLength(3)
+
+    // Verify all three moves are present
+    const rowSans = rows.map(r => r.moves[0]?.san)
+    expect(rowSans).toContain('e5')
+    expect(rowSans).toContain('d5')
+    expect(rowSans).toContain('c5')
+  })
+
+  test('ply 1 rows are sorted by probability in default mode', () => {
+    const root = createBranchingTree(
+      [{ san: 'e5', prob: 0.45 }],
+      [
+        {
+          atDepth: 0,
+          alternatives: [
+            { san: 'c5', prob: 0.15 },
+            { san: 'd5', prob: 0.30 },
+          ],
+        },
+      ]
+    )
+
+    const rows = treeToTableRows(root, new Set(), 1, 'w')
+
+    // Should be sorted: e5 (0.45), d5 (0.30), c5 (0.15)
+    expect(rows[0].moves[0].san).toBe('e5')
+    expect(rows[1].moves[0].san).toBe('d5')
+    expect(rows[2].moves[0].san).toBe('c5')
+  })
+
+  test('ply 1 cells should not show hasAlternatives in default mode', () => {
+    const root = createBranchingTree(
+      [
+        { san: 'e5', prob: 0.45 },
+        { san: 'Nf3', prob: 0.40 },
+      ],
+      [
+        {
+          atDepth: 0,
+          alternatives: [{ san: 'd5', prob: 0.30 }],
+        },
+      ]
+    )
+
+    const rows = treeToTableRows(root, new Set(), 1, 'w')
+
+    // In default mode, ply 1 cells should NOT show + button
+    // because alternatives are already expanded as separate rows
+    for (const row of rows) {
+      if (row.moves[0]) {
+        expect(row.moves[0].hasAlternatives).toBe(false)
+      }
+    }
+  })
+
+  test('when any + is clicked, other ply 1 rows disappear (focused mode)', () => {
+    const root = createBranchingTree(
+      [
+        { san: 'e5', prob: 0.45 },
+        { san: 'Nf3', prob: 0.40 },
+      ],
+      [
+        {
+          atDepth: 0,
+          alternatives: [
+            { san: 'd5', prob: 0.30 },
+            { san: 'c5', prob: 0.15 },
+          ],
+        },
+        {
+          atDepth: 1,
+          alternatives: [{ san: 'Bc4', prob: 0.35 }],
+        },
+      ]
+    )
+
+    // Expand something at ply 1 (not ply 0)
+    const expanded = new Set(['1-Nf3'])
+    const rows = treeToTableRows(root, expanded, 1, 'w')
+
+    // Should collapse to single mainline + expanded alternative
+    // d5 and c5 rows should disappear
+    const rowIds = rows.map(r => r.id)
+    expect(rowIds).toContain('mainline')
+    expect(rowIds).toContain('alt-1-Bc4')
+
+    // Ply 0 alternative rows should NOT be present
+    expect(rowIds).not.toContain('ply1-d5')
+    expect(rowIds).not.toContain('ply1-c5')
+
+    // And ply 1 cell should now show hasAlternatives (since we're in focused mode)
+    const mainline = rows.find(r => r.id === 'mainline')
+    expect(mainline?.moves[0]?.hasAlternatives).toBe(true)
+  })
+
+  test('each ply 1 row shows its own continuation mainline', () => {
+    // Create tree where each ply 0 child has its own continuation
+    const e5Child = createChildNode('e5', 0.45, 0.50, 1, [
+      createChildNode('Nf3', 0.40, 0.52, 2, [
+        createChildNode('Nc6', 0.50, 0.50, 3, []),
+      ]),
+    ])
+    const d5Child = createChildNode('d5', 0.30, 0.50, 1, [
+      createChildNode('exd5', 0.60, 0.55, 2, [
+        createChildNode('Qxd5', 0.80, 0.53, 3, []),
+      ]),
+    ])
+
+    const root = createMockNode({
+      children: [e5Child, d5Child],
+      isLeaf: false,
+      exploredProbability: 0.75,
+    })
+
+    const rows = treeToTableRows(root, new Set(), 1, 'w')
+
+    // Should show 2 rows, each with their own mainline continuation
+    expect(rows).toHaveLength(2)
+
+    const e5Row = rows.find(r => r.moves[0]?.san === 'e5')
+    expect(e5Row).toBeDefined()
+    expect(e5Row!.moves.map(m => m.san)).toEqual(['e5', 'Nf3', 'Nc6'])
+
+    const d5Row = rows.find(r => r.moves[0]?.san === 'd5')
+    expect(d5Row).toBeDefined()
+    expect(d5Row!.moves.map(m => m.san)).toEqual(['d5', 'exd5', 'Qxd5'])
+  })
+})

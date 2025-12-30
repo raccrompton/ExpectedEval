@@ -156,6 +156,9 @@ test.describe('06 - Expected Winrate', () => {
         const moveText = tableCell.locator('.move-text')
         await moveText.hover()
         await expect(page.getByTestId('ew-node-tooltip')).toBeVisible()
+
+        // Dismiss tooltip by moving mouse away (prevents blocking next test)
+        await page.mouse.move(0, 0)
       }
     })
 
