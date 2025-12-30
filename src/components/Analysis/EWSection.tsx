@@ -123,11 +123,17 @@ export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EW
         </div>
       </div>
 
-      {/* Show progress only when calculating Maia */}
-      {isCalculatingMaia && progress && (
+      {/* Show status during calculation phases and after completion */}
+      {(isCalculatingMaia || isEnrichingSF || status === 'complete') && (
         <div className="ew-status" data-testid="ew-status">
           <span style={{ color: getStatusColor(status) }}>
-            {progress.phase}: {progress.message}
+            {status === 'complete'
+              ? 'Complete (Stockfish enriched)'
+              : progress
+                ? `${progress.phase}: ${progress.message}`
+                : isEnrichingSF
+                  ? 'Enriching with Stockfish...'
+                  : 'Calculating...'}
           </span>
         </div>
       )}
@@ -695,7 +701,7 @@ function CandidateColumn({ candidates, selectedIndex, evalSource, onSelect }: Ca
             key={candidate.move}
             className={`candidate-row ${i === selectedIndex ? 'selected' : ''}`}
             data-testid={`ew-candidate-${i}`}
-            data-selected={i === selectedIndex}
+            data-selected={i === selectedIndex ? 'true' : 'false'}
             onClick={() => onSelect(i)}
           >
             <span className="move-san">{candidate.san}</span>

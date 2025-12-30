@@ -147,7 +147,10 @@ test.describe('07 - Real Engine Integration', () => {
 
   test.describe('Engine Updates on Navigation', () => {
     test('evaluations update when navigating through moves', async () => {
-      // Game was loaded in previous tests - go to start first
+      // Reload SAMPLE_PGN to ensure we have a multi-move game (previous test may have loaded '1. e4')
+      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
+
+      // Go to start first
       await page.getByTestId('nav-start').click()
       await expect(page.getByTestId('maia-moves')).toBeVisible({ timeout: EVAL_TIMEOUT })
 
@@ -155,7 +158,7 @@ test.describe('07 - Real Engine Integration', () => {
       await page.getByTestId('nav-forward').click()
       await expect(page.getByTestId('sf-eval')).toBeVisible({ timeout: EVAL_TIMEOUT })
 
-      // Navigate to end
+      // Navigate to end (should work since SAMPLE_PGN has 6 half-moves)
       await page.getByTestId('nav-end').click()
       await expect(page.getByTestId('sf-eval')).toBeVisible({ timeout: EVAL_TIMEOUT })
       await expect(page.getByTestId('maia-moves')).toBeVisible({ timeout: EVAL_TIMEOUT })

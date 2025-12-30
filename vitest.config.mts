@@ -30,6 +30,16 @@ export default defineConfig({
     environment: 'jsdom',
 
     /**
+     * Reporter configuration.
+     * - 'default' shows standard console output
+     * - 'json' outputs detailed timing data to test-results/
+     */
+    reporters: [
+      'default',
+      ['json', { outputFile: 'test-results/unit-tests.json' }],
+    ],
+
+    /**
      * Glob patterns for test files.
      * We look for .test.ts and .test.tsx files in the src directory.
      * This keeps tests co-located with the code they test.

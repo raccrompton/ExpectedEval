@@ -43,10 +43,15 @@ export default defineConfig({
 
   /**
    * Reporter configuration.
-   * 'html' generates a nice visual report in playwright-report/
-   * 'list' shows test results in the terminal as they run
+   * - 'html' generates a nice visual report in playwright-report/
+   * - 'list' shows test results in the terminal as they run
+   * - 'json' outputs detailed timing data for each test
    */
-  reporter: [['html'], ['list']],
+  reporter: [
+    ['html'],
+    ['list'],
+    ['json', { outputFile: 'test-results/e2e-tests.json' }],
+  ],
 
   /**
    * Shared settings for all projects (browsers).

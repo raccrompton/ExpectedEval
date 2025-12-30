@@ -19,7 +19,8 @@
     "test:engines:stockfish": "npx tsx scripts/test-engines.ts --stockfish",
     "test:engines:verbose": "npx tsx scripts/test-engines.ts --verbose",
     "test:ew": "npx tsx scripts/test-ew.ts",
-    "test:ew:verbose": "npx tsx scripts/test-ew.ts --verbose"
+    "test:ew:verbose": "npx tsx scripts/test-ew.ts --verbose",
+    "test:timing": "npx tsx scripts/test-timing-report.ts"
   },
   "dependencies": {
     "chessground": "^9.1.1",
