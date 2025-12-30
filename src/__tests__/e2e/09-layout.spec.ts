@@ -193,8 +193,9 @@ test.describe('EW Section Content', () => {
     await expect(ewSection.locator('[data-testid="ew-config-toggle"]')).toBeVisible()
   })
 
-  test('EW section has status display', async ({ page }) => {
+  test('EW section has results when calculation complete', async ({ page }) => {
     const ewSection = page.locator('[data-testid="ew-section"]')
-    await expect(ewSection.locator('[data-testid="ew-status"]')).toBeVisible()
+    // Wait for EW calculation to complete and show results
+    await expect(ewSection.locator('[data-testid="ew-results"]')).toBeVisible({ timeout: 10000 })
   })
 })

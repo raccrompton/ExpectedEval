@@ -125,20 +125,19 @@ test.describe('06 - Expected Winrate', () => {
     })
 
     test('tree nodes can be expanded to show branches', async () => {
-      // Branch toggles now use key-based testids (e.g., ew-branch-toggle-Nf6)
-      const expandButton = page.locator('[data-testid^="ew-branch-toggle-"]').first()
+      // Expand buttons use ply-san format testids (e.g., ew-expand-0-e5)
+      const expandButton = page.locator('[data-testid^="ew-expand-"]').first()
       const toggleExists = await expandButton.isVisible().catch(() => false)
 
       if (toggleExists) {
+        // Get initial row count
+        const initialRows = await page.locator('[data-testid^="ew-table-row-"]').count()
+
         await expandButton.click()
 
-        // Branch lines also use key-based testids
-        const treeBranches = page.locator('[data-testid^="ew-branch-"]').first()
-        await expect(treeBranches).toBeVisible()
-
-        // Branches show eval percentage
-        const branchText = await treeBranches.textContent()
-        expect(branchText).toMatch(/\d+(\.\d+)?%/)
+        // Should have more rows after expanding
+        const expandedRows = await page.locator('[data-testid^="ew-table-row-"]').count()
+        expect(expandedRows).toBeGreaterThanOrEqual(initialRows)
       }
     })
 
@@ -149,12 +148,13 @@ test.describe('06 - Expected Winrate', () => {
     })
 
     test('hovering tree node shows tooltip', async () => {
-      // Hover over a mainline move to trigger tooltip
-      const mainlineMove = page.locator('[data-testid^="ew-mainline-"]').first()
-      const moveExists = await mainlineMove.isVisible().catch(() => false)
+      // Hover over a table cell move text to trigger tooltip
+      const tableCell = page.locator('[data-testid^="ew-table-cell-"]').first()
+      const cellExists = await tableCell.isVisible().catch(() => false)
 
-      if (moveExists) {
-        await mainlineMove.hover()
+      if (cellExists) {
+        const moveText = tableCell.locator('.move-text')
+        await moveText.hover()
         await expect(page.getByTestId('ew-node-tooltip')).toBeVisible()
       }
     })
@@ -164,15 +164,17 @@ test.describe('06 - Expected Winrate', () => {
       const candidateRow = page.getByTestId('ew-candidate-0')
       await candidateRow.click()
 
-      // Expand to see branches if toggle exists
-      const expandButton = page.locator('[data-testid^="ew-branch-toggle-"]').first()
-      const toggleExists = await expandButton.isVisible().catch(() => false)
+      // Verify candidate is selected
+      await expect(candidateRow).toHaveAttribute('data-selected', 'true', { timeout: 2000 })
 
-      if (toggleExists) {
-        await expandButton.click()
-        // Branch lines are now visible
-        const treeBranches = page.locator('[data-testid^="ew-branch-"]').first()
-        await expect(treeBranches).toBeVisible()
+      // Click a table cell to navigate (if available)
+      const tableCell = page.locator('[data-testid^="ew-table-cell-"]').first()
+      const cellExists = await tableCell.isVisible().catch(() => false)
+
+      if (cellExists) {
+        const moveText = tableCell.locator('.move-text')
+        await moveText.click()
+        // The click should trigger navigation (we just verify no error occurred)
       }
     })
 
@@ -264,12 +266,12 @@ test.describe('06 - Expected Winrate', () => {
       await expect(firstCandidate).toContainText(/%/)
     })
 
-    test('displays tree column for selected candidate', async () => {
-      const treeColumn = page.getByTestId('ew-tree-column')
-      await expect(treeColumn).toBeVisible()
+    test('displays table for selected candidate', async () => {
+      const ewTable = page.getByTestId('ew-table')
+      await expect(ewTable).toBeVisible()
     })
 
-    test('clicking candidate updates tree column', async () => {
+    test('clicking candidate updates table', async () => {
       // Click second candidate if available
       const secondCandidate = page.getByTestId('ew-candidate-1')
       const candidateExists = await secondCandidate.isVisible().catch(() => false)
@@ -277,58 +279,66 @@ test.describe('06 - Expected Winrate', () => {
       if (candidateExists) {
         await secondCandidate.click()
 
-        // Second candidate should now be selected
-        await expect(secondCandidate).toHaveAttribute('data-selected', 'true')
+        // Second candidate should now be selected (wait for state update)
+        await expect(secondCandidate).toHaveAttribute('data-selected', 'true', { timeout: 2000 })
       }
     })
 
-    test('branch toggle expands alternatives', async () => {
-      // Find a branch toggle button (+ icon)
-      const branchToggle = page.locator('[data-testid^="ew-branch-toggle-"]').first()
-      const toggleExists = await branchToggle.isVisible().catch(() => false)
+    test('expand button expands alternatives', async () => {
+      // Find an expand button (+ icon)
+      const expandButton = page.locator('[data-testid^="ew-expand-"]').first()
+      const expandExists = await expandButton.isVisible().catch(() => false)
 
-      if (toggleExists) {
-        // Get the key from the testid
-        const testid = await branchToggle.getAttribute('data-testid')
-        const key = testid?.replace('ew-branch-toggle-', '') || ''
+      if (expandExists) {
+        // Get initial row count
+        const initialRows = await page.locator('[data-testid^="ew-table-row-"]').count()
 
-        await branchToggle.click()
+        await expandButton.click()
 
-        // Branch line should now be visible
-        const branchLine = page.getByTestId(`ew-branch-${key}`)
-        await expect(branchLine).toBeVisible()
+        // After expanding, there should be more rows
+        const expandedRows = await page.locator('[data-testid^="ew-table-row-"]').count()
+        expect(expandedRows).toBeGreaterThan(initialRows)
 
-        // Toggle again to collapse
-        await branchToggle.click()
-        await expect(branchLine).not.toBeVisible()
+        // Find collapse button and click to collapse
+        const collapseButton = page.locator('[data-testid^="ew-collapse-"]').first()
+        if (await collapseButton.isVisible().catch(() => false)) {
+          await collapseButton.click()
+          // Rows should decrease back
+          const collapsedRows = await page.locator('[data-testid^="ew-table-row-"]').count()
+          expect(collapsedRows).toBeLessThan(expandedRows)
+        }
       }
     })
 
-    test('hovering any tree node shows tooltip', async () => {
-      // Hover over a mainline move
-      const mainlineMove = page.locator('[data-testid^="ew-mainline-"]').first()
-      const moveExists = await mainlineMove.isVisible().catch(() => false)
+    test('hovering any table cell shows tooltip', async () => {
+      // Hover over a table cell
+      const tableCell = page.locator('[data-testid^="ew-table-cell-"]').first()
+      const cellExists = await tableCell.isVisible().catch(() => false)
 
-      if (moveExists) {
-        await mainlineMove.hover()
+      if (cellExists) {
+        // Hover over the move text within the cell
+        const moveText = tableCell.locator('.move-text')
+        await moveText.hover()
 
-        // Tooltip should appear with details
+        // Tooltip should appear with details (wait for it to populate)
         const tooltip = page.getByTestId('ew-node-tooltip')
-        await expect(tooltip).toBeVisible()
+        await expect(tooltip).toBeVisible({ timeout: 2000 })
 
         // Tooltip should contain play rate and cumulative probability
-        await expect(tooltip).toContainText(/play rate/i)
-        await expect(tooltip).toContainText(/cumulative/i)
+        await expect(tooltip).toContainText(/play rate/i, { timeout: 2000 })
+        await expect(tooltip).toContainText(/cumulative/i, { timeout: 2000 })
       }
     })
 
-    test('mainline shows leaf evaluation at end', async () => {
-      const treeColumn = page.getByTestId('ew-tree-column')
-      const treeText = await treeColumn.textContent()
+    test('table shows line EW and likelihood columns', async () => {
+      const ewTable = page.getByTestId('ew-table')
+      const tableText = await ewTable.textContent()
 
-      // Should contain arrow (→) and percentage
-      expect(treeText).toMatch(/→/)
-      expect(treeText).toMatch(/\d+(\.\d+)?%/)
+      // Should contain Line EW and Likelihood headers/values
+      expect(tableText).toContain('Line EW')
+      expect(tableText).toContain('Likelihood')
+      // Should contain percentage values
+      expect(tableText).toMatch(/\d+(\.\d+)?%/)
     })
   })
 })

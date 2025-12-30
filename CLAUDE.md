@@ -38,8 +38,8 @@
 
 | Type | Count | Status |
 |------|-------|--------|
-| Unit tests | 246 | ✅ Passing |
-| E2E tests | 88 | ✅ Passing |
+| Unit tests | 265 | ✅ Passing |
+| E2E tests | 147 | ✅ Passing |
 
 ---
 
@@ -436,17 +436,17 @@ The tree uses a two-column design for better usability:
 | Column | Component | Contents |
 |--------|-----------|----------|
 | **Left** | CandidateColumn | Clickable list of candidate moves with EW values |
-| **Right** | TreeColumn | Vertical recursive tree for selected candidate |
+| **Right** | EWTable | Horizontal table showing variation lines by ply |
 
 ```
-┌─────────────────┬─────────────────────────────────────┐
-│ CANDIDATES      │ TREE (for selected candidate)       │
-│                 │                                     │
-│ ● e4  51%       │ d4                                  │
-│   d4  50%       │ └─ exd4 ▼                           │
-│   Nf3 49%       │    └─ Nxd4 ▼                        │
-│                 │       └─ Nf6 → 51%                  │
-└─────────────────┴─────────────────────────────────────┘
+┌─────────────────┬───────────────────────────────────────────────────────────────┐
+│ CANDIDATES      │ TABLE (for selected candidate)                                │
+│                 │                                                               │
+│ ● e4  51%       │ Ply 1    Ply 2    Ply 3    Ply 4   | Line EW | Likelihood    │
+│   d4  50%       │ d5       exd5     Qxd5     Nc3     | 51%     | 12.3%         │
+│   Nf3 49%       │ + e6                               | 50%     | 8.2%          │
+│                 │   + c5                             | 49%     | 5.1%          │
+└─────────────────┴───────────────────────────────────────────────────────────────┘
 ```
 
 ### Display Structure
@@ -454,30 +454,31 @@ The tree uses a two-column design for better usability:
 | Level | Shows | Sorted by |
 |-------|-------|-----------|
 | **Candidate moves** | EW (probability-weighted average) | EW (highest first) |
-| **Tree nodes** | Eval (position quality) | Play rate (most likely first) |
+| **Table rows** | Line EW and Likelihood | Play rate (most likely first) |
 
-### Tree Display (VerticalTreeNode)
+### Table Display (EWTable)
 
-- **Vertical layout**: Each move on its own line with proper indentation
-- **Visual connectors**: `└─` prefix for tree structure
-- **Toggle indicators**: `▼` (expanded) / `▶` (collapsed) for nodes with alternatives
-- **Accordion behavior**: Opening one branch at a depth level closes others at same level
-- **Inline eval**: Only shown on leaf nodes (e.g., `Nf6 → 51%`)
-- **Navigation button**: `⊞` icon to navigate main board to that position
+- **Horizontal layout**: Each ply has its own column, lines are rows
+- **Expand/Collapse buttons**: `+` to show alternative moves, `-` to collapse
+- **Line EW column**: Shows EW value for each line (leaf node eval)
+- **Likelihood column**: Shows cumulative probability of reaching that line
+- **Horizontally scrollable**: Deep lines scroll right without breaking layout
+- **Transformation**: Uses `treeToTable()` function to convert TreeNode to flat rows
 
-### Hover Tooltip (NodeTooltip)
+### Core Files
 
-Hovering any tree node reveals full details:
-- Play rate (Maia policy %)
-- Cumulative probability (chance of reaching this position)
-- Both SF and Maia evals (when available)
+| File | Purpose |
+|------|---------|
+| `src/core/analysis/treeToTable.ts` | Transforms TreeNode to TableRow[] for display |
+| `src/components/Analysis/EWTable.tsx` | Renders horizontal table with expand/collapse |
+| `src/components/Analysis/EWSection.tsx` | Container integrating CandidateColumn + EWTable |
 
 ### Interactions
 
-1. **Select candidate** - Click candidate in left column to show its tree
-2. **Expand/Collapse branches** - Click toggle (▼/▶) to show/hide alternative moves (accordion: one branch per depth)
-3. **Hover** - See detailed stats in tooltip
-4. **Navigate** - Click ⊞ button to navigate main board to that position
+1. **Select candidate** - Click candidate in left column to show its table
+2. **Expand alternatives** - Click `+` button to show alternative moves as new rows
+3. **Collapse alternatives** - Click `-` button to hide alternative rows
+4. **Horizontal scroll** - Scroll right to see deeper plies
 
 ### Test IDs
 
@@ -486,10 +487,10 @@ Hovering any tree node reveals full details:
 | Container | `ew-candidate-tree-view` |
 | Candidate column | `ew-candidate-column` |
 | Candidate item | `ew-candidate-{index}` |
-| Tree column | `ew-tree-column` |
-| Tree node | `ew-tree-node-{depth}-{move}` |
-| Branch toggle | `ew-branch-toggle-{key}` |
-| Node tooltip | `ew-node-tooltip` |
+| Table container | `ew-table` |
+| Table row | `ew-table-row-{index}` |
+| Expand button | `ew-expand-{rowIndex}-{plyIndex}` |
+| Collapse button | `ew-collapse-{rowIndex}` |
 
 ---
 
@@ -577,7 +578,7 @@ The MVP is complete when:
 - [ ] EW(SF) displays for current position (on-demand enrichment)
 - [x] Maia move probabilities display for current position
 - [x] Expected winrate tree is visualized
-- [x] All unit tests pass (246 passing)
+- [x] All unit tests pass (265 passing)
 - [x] All E2E tests pass after Phase 10.5
 - [ ] App is deployable and performant
 
