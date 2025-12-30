@@ -98,22 +98,34 @@ export function EWTable({
     [rows]
   )
 
-  // Handle cell expand/collapse
+  /**
+   * Handles expand/collapse with accordion behavior:
+   * - Expanding at ply N closes all expansions at ply >= N (siblings and descendants)
+   * - Collapsing closes the node and all its deeper descendants
+   * This ensures only one branch per depth level is expanded at a time.
+   */
   const handleCellToggle = useCallback((plyIndex: number, san: string) => {
     const key = `${plyIndex}-${san}`
     setExpandedCells((prev) => {
       const next = new Set(prev)
       if (next.has(key)) {
-        // Collapse: remove this key and any dependent expansions
+        // Collapse: remove this key and any deeper expansions (children of this node)
         next.delete(key)
-        // Also remove any deeper expansions that branch from this point
         for (const existingKey of prev) {
           const [existingPly] = existingKey.split('-')
-          if (parseInt(existingPly) > plyIndex) {
+          if (parseInt(existingPly, 10) > plyIndex) {
             next.delete(existingKey)
           }
         }
       } else {
+        // Expand: close all expansions at same ply or deeper (accordion behavior)
+        // This keeps only ancestor expansions (ply < N) and adds the new one
+        for (const existingKey of prev) {
+          const [existingPly] = existingKey.split('-')
+          if (parseInt(existingPly, 10) >= plyIndex) {
+            next.delete(existingKey)
+          }
+        }
         next.add(key)
       }
       return next

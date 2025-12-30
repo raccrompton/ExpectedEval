@@ -313,6 +313,37 @@ test.describe('06 - Expected Winrate', () => {
       }
     })
 
+    test('expanding closes unrelated expansions (accordion behavior)', async () => {
+      // Start fresh - select first candidate to reset state
+      const firstCandidate = page.getByTestId('ew-candidate-0')
+      await firstCandidate.click()
+
+      // Get all expand buttons
+      const expandButtons = page.locator('[data-testid^="ew-expand-"]')
+      const buttonCount = await expandButtons.count()
+
+      if (buttonCount >= 2) {
+        // Expand first button
+        await expandButtons.first().click()
+
+        // Count collapse buttons (shows how many expansions are active)
+        const collapseCountAfterFirst = await page.locator('[data-testid^="ew-collapse-"]').count()
+        expect(collapseCountAfterFirst).toBeGreaterThanOrEqual(1)
+
+        // Now expand a different button (second one)
+        const newExpandButtons = page.locator('[data-testid^="ew-expand-"]')
+        const newButtonCount = await newExpandButtons.count()
+        if (newButtonCount >= 1) {
+          await newExpandButtons.first().click()
+
+          // With accordion behavior, there should still be only 1 collapse button
+          // (the new expansion replaces the old unrelated one)
+          const collapseCountAfterSecond = await page.locator('[data-testid^="ew-collapse-"]').count()
+          expect(collapseCountAfterSecond).toBe(1)
+        }
+      }
+    })
+
     test('hovering any table cell shows tooltip', async () => {
       // Hover over a table cell
       const tableCell = page.locator('[data-testid^="ew-table-cell-"]').first()
