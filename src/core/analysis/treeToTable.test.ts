@@ -522,9 +522,42 @@ describe('treeToTableRows - ply 1 default expansion', () => {
     expect(rowIds).not.toContain('ply1-d5')
     expect(rowIds).not.toContain('ply1-c5')
 
-    // And ply 1 cell should now show hasAlternatives (since we're in focused mode)
+    // Ply 0 should NOT show hasAlternatives in focused mode
+    // User must collapse all to return to default mode
     const mainline = rows.find(r => r.id === 'mainline')
-    expect(mainline?.moves[0]?.hasAlternatives).toBe(true)
+    expect(mainline?.moves[0]?.hasAlternatives).toBe(false)
+  })
+
+  test('ply 0 should NOT show hasAlternatives in focused mode', () => {
+    // When user clicks + on ply >= 1, we enter focused mode.
+    // Ply 0 should NOT show + button - user must collapse all to return to default mode.
+    const root = createBranchingTree(
+      [
+        { san: 'e5', prob: 0.45 },
+        { san: 'Nf3', prob: 0.40 },
+      ],
+      [
+        {
+          atDepth: 0,
+          alternatives: [{ san: 'd5', prob: 0.30 }],
+        },
+        {
+          atDepth: 1,
+          alternatives: [{ san: 'Bc4', prob: 0.35 }],
+        },
+      ]
+    )
+
+    // Expand something at ply 1 (not ply 0) - this enters focused mode
+    const expanded = new Set(['1-Nf3'])
+    const rows = treeToTableRows(root, expanded, 1, 'w')
+
+    const mainline = rows.find(r => r.id === 'mainline')
+    expect(mainline).toBeDefined()
+
+    // Ply 0 cell should NOT show hasAlternatives in focused mode
+    // User must collapse all to return to default mode (showing all ply 1 as rows)
+    expect(mainline?.moves[0]?.hasAlternatives).toBe(false)
   })
 
   test('each ply 1 row shows its own continuation mainline', () => {

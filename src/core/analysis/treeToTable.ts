@@ -176,7 +176,7 @@ export function buildMainlineCells(
     const { moveNumber, color } = calculateMoveInfo(i, baseMoveNumber, baseColor)
 
     const siblings = parentNode.children.filter(c => c.san !== node.san)
-    // In default mode (hidePly0Alternatives=true), ply 0 doesn't show + button
+    // When hidePly0Alternatives=true, ply 0 doesn't show + button (used in focused mode)
     const hasAlternatives = i === 0 && hidePly0Alternatives ? false : siblings.length > 0
 
     const cellKey = `${i}-${node.san}`
@@ -484,9 +484,11 @@ export function treeToTableRows(
   }
 
   // Focused mode: single mainline + expanded alternatives
+  // hidePly0Alternatives=true so ply 0 doesn't show + button in focused mode.
+  // User must collapse all to return to default mode (showing all ply 1 as rows).
   const rows: EWTableLine[] = []
 
-  const mainlineCells = buildMainlineCells(root, baseMoveNumber, baseColor, expandedCells, false)
+  const mainlineCells = buildMainlineCells(root, baseMoveNumber, baseColor, expandedCells, true)
   const mainlineLeaf = getMainlineLeaf(root)
   const mainlineLikelihood = calculateMainlineLikelihood(root)
 
