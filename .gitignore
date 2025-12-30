@@ -39,3 +39,4 @@ tsconfig.tsbuildinfo
 
 # Reference code (not tracked - local only)
 maia-platform-frontend/
+conductor.json
