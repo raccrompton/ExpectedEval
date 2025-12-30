@@ -124,6 +124,8 @@ cg-board piece {
   height: 12.5%;
   /* Piece images as backgrounds */
   background-size: cover;
+  /* Center the piece image within the square */
+  background-position: center;
   /* Prevent selection */
   pointer-events: none;
   /* Layer above board */
@@ -772,6 +774,12 @@ cg-board {
     #F0D9B5 270deg
   );
   background-size: 25% 25%;
+  /* NOTE: Do NOT add border here - it breaks chessground's piece positioning
+     due to box-sizing: border-box. Border is on .board-container instead. */
+}
+
+/* Board container gets the border to avoid breaking chessground internals */
+.board-container {
   border: var(--border-thick) solid var(--color-border-strong);
 }
 
