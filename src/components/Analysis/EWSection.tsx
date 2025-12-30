@@ -768,136 +768,243 @@ interface TreeColumnProps {
   onNavigate: (_fen: string) => void
 }
 
-interface VerticalTreeNodeProps {
-  node: TreeNode
-  siblings: TreeNode[]
-  depth: number
+interface HorizontalLineProps {
+  /** All nodes at each depth level for this line */
+  lineNodes: TreeNode[]
+  /** The starting depth of this line (for indentation) */
+  startDepth: number
   evalSource: EvalSource
+  /** Map of depth -> selected SAN at that depth */
   selectedAtDepth: Map<number, string>
+  /** Full tree data to find siblings for branching */
+  treeRoot: TreeNode
   onSelectAtDepth: (_depth: number, _san: string) => void
   onNodeHover: (_event: React.MouseEvent | null, _node: TreeNode | null) => void
   onNavigate: (_fen: string) => void
 }
 
 /**
- * Recursive vertical tree node component.
- * Displays a single node with its children, supporting accordion expand/collapse.
+ * Gets the mainline (selected moves) from a tree given selection state.
+ * Returns array of nodes representing the selected path.
  */
-function VerticalTreeNode({
-  node,
-  siblings,
-  depth,
+function getMainline(root: TreeNode, selectedAtDepth: Map<number, string>): TreeNode[] {
+  const mainline: TreeNode[] = []
+  let current = root
+  let depth = 0
+
+  while (current.children.length > 0) {
+    const sorted = [...current.children].sort((a, b) => b.probability - a.probability)
+    const selectedSan = selectedAtDepth.get(depth)
+    const selected = selectedSan
+      ? sorted.find((c) => (c.san || c.move) === selectedSan) || sorted[0]
+      : sorted[0]
+    mainline.push(selected)
+    current = selected
+    depth++
+  }
+
+  return mainline
+}
+
+
+/**
+ * Horizontal line component - renders a sequence of moves horizontally.
+ * Shows branches below when expanded.
+ */
+function HorizontalLine({
+  lineNodes,
+  startDepth,
   evalSource,
-  selectedAtDepth,
+  selectedAtDepth: _selectedAtDepth,
+  treeRoot,
   onSelectAtDepth,
   onNodeHover,
   onNavigate,
-}: VerticalTreeNodeProps) {
-  const nodeSan = node.san || node.move || '?'
-  const isSelected = selectedAtDepth.get(depth) === nodeSan
-  const hasAlternatives = siblings.length > 0
-  const hasChildren = node.children.length > 0
-  const isLeaf = !hasChildren || !isSelected
-  const nodeEval = evalSource === 'stockfish' ? node.sfWinrate : node.maiaWinrate
+}: HorizontalLineProps) {
+  // Find where branches exist (nodes with siblings at that position)
+  const branches: { depth: number; alternatives: TreeNode[] }[] = []
 
-  const sortedChildren = [...node.children].sort((a, b) => b.probability - a.probability)
+  // Walk the tree to find alternatives at each depth
+  let current = treeRoot
+  for (let d = 0; d < lineNodes.length; d++) {
+    const actualDepth = startDepth + d
+    const sorted = [...current.children].sort((a, b) => b.probability - a.probability)
+    const selectedNode = lineNodes[d]
+    const alternatives = sorted.filter(
+      (c) => (c.san || c.move) !== (selectedNode.san || selectedNode.move),
+    )
+
+    if (alternatives.length > 0) {
+      branches.push({ depth: actualDepth, alternatives })
+    }
+
+    // Move to next level
+    const nextNode = sorted.find((c) => (c.san || c.move) === (selectedNode.san || selectedNode.move))
+    if (nextNode) {
+      current = nextNode
+    } else {
+      break
+    }
+  }
+
+  // Get eval for the last node in the line
+  const lastNode = lineNodes[lineNodes.length - 1]
+  const lastNodeEval = lastNode
+    ? evalSource === 'stockfish'
+      ? lastNode.sfWinrate
+      : lastNode.maiaWinrate
+    : null
+  const isLeafLine = lastNode && lastNode.children.length === 0
 
   return (
-    <div className="tree-node-container">
-      <div
-        className={`tree-node-row ${isSelected ? 'selected' : ''} ${hasAlternatives ? 'has-alternatives' : ''}`}
-        style={{ paddingLeft: `${depth * 20}px` }}
-        onClick={() => hasAlternatives && onSelectAtDepth(depth, nodeSan)}
-        onMouseEnter={(e) => onNodeHover(e, node)}
-        onMouseLeave={() => onNodeHover(null, null)}
-        data-testid={`ew-tree-node-${depth}-${nodeSan}`}
-      >
-        <span className="connector">└─</span>
-        <span className="move-san">{nodeSan}</span>
-        {hasAlternatives && (
-          <span className="toggle-indicator">{isSelected ? '▼' : '▶'}</span>
+    <div className="horizontal-line-container">
+      <div className="horizontal-line" style={{ marginLeft: `${startDepth * 48}px` }}>
+        {startDepth > 0 && <span className="branch-connector">└─</span>}
+        {lineNodes.map((node, idx) => {
+          const actualDepth = startDepth + idx
+          const nodeSan = node.san || node.move || '?'
+          const hasAlternatives = branches.some((b) => b.depth === actualDepth)
+
+          return (
+            <span
+              key={`${actualDepth}-${nodeSan}`}
+              className={`move-chip ${hasAlternatives ? 'has-alternatives' : ''}`}
+              data-testid={`ew-tree-node-${actualDepth}-${nodeSan}`}
+              onClick={() => hasAlternatives && onSelectAtDepth(actualDepth, nodeSan)}
+              onMouseEnter={(e) => onNodeHover(e, node)}
+              onMouseLeave={() => onNodeHover(null, null)}
+            >
+              {nodeSan}
+              {hasAlternatives && <span className="alt-indicator">▼</span>}
+              <button
+                className="nav-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onNavigate(node.fen)
+                }}
+                title="Navigate to position"
+              >
+                ⊞
+              </button>
+            </span>
+          )
+        })}
+        {isLeafLine && lastNodeEval !== null && (
+          <span className="line-eval">→ {formatWinrate(lastNodeEval)}</span>
         )}
-        {isLeaf && nodeEval !== null && (
-          <span className="leaf-eval">→ {formatWinrate(nodeEval)}</span>
-        )}
-        <button
-          className="nav-btn"
-          onClick={(e) => {
-            e.stopPropagation()
-            onNavigate(node.fen)
-          }}
-          title="Navigate to position"
-        >
-          ⊞
-        </button>
       </div>
 
-      {isSelected && hasChildren && (
-        <div className="children">
-          {sortedChildren.map((child, idx) => (
-            <VerticalTreeNode
-              key={child.move || idx}
-              node={child}
-              siblings={sortedChildren.filter((_, i) => i !== idx)}
-              depth={depth + 1}
-              evalSource={evalSource}
-              selectedAtDepth={selectedAtDepth}
-              onSelectAtDepth={onSelectAtDepth}
-              onNodeHover={onNodeHover}
-              onNavigate={onNavigate}
-            />
-          ))}
+      {/* Render branches below */}
+      {branches.map(({ depth, alternatives }) => (
+        <div key={`branch-${depth}`} className="branch-group">
+          {alternatives.map((altNode) => {
+            const altSan = altNode.san || altNode.move || '?'
+            const altNodeEval =
+              evalSource === 'stockfish' ? altNode.sfWinrate : altNode.maiaWinrate
+            const isAltLeaf = altNode.children.length === 0
+
+            return (
+              <div
+                key={altSan}
+                className="alt-line"
+                style={{ marginLeft: `${depth * 48}px` }}
+              >
+                <span className="branch-connector">└─</span>
+                <span
+                  className="move-chip alt-move"
+                  data-testid={`ew-tree-node-${depth}-${altSan}`}
+                  onClick={() => onSelectAtDepth(depth, altSan)}
+                  onMouseEnter={(e) => onNodeHover(e, altNode)}
+                  onMouseLeave={() => onNodeHover(null, null)}
+                >
+                  {altSan}
+                  {altNode.children.length > 0 && <span className="alt-indicator">▶</span>}
+                  <button
+                    className="nav-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onNavigate(altNode.fen)
+                    }}
+                    title="Navigate to position"
+                  >
+                    ⊞
+                  </button>
+                </span>
+                {isAltLeaf && altNodeEval !== null && (
+                  <span className="line-eval">→ {formatWinrate(altNodeEval)}</span>
+                )}
+              </div>
+            )
+          })}
         </div>
-      )}
+      ))}
 
       <style jsx>{`
-        .tree-node-container {
+        .horizontal-line-container {
           font-size: var(--font-sm, 13px);
+          font-family: var(--font-mono);
         }
 
-        .tree-node-row {
+        .horizontal-line {
           display: flex;
+          flex-wrap: wrap;
           align-items: center;
-          gap: 6px;
-          padding: 3px 4px;
-          cursor: default;
-          transition: background 0.1s ease;
-          border-radius: 2px;
+          gap: 4px;
+          padding: 4px 0;
         }
 
-        .tree-node-row.has-alternatives {
-          cursor: pointer;
-        }
-
-        .tree-node-row:hover {
-          background: var(--color-surface-hover, #1a1a1a);
-        }
-
-        .tree-node-row.selected {
-          background: rgba(255, 224, 0, 0.08);
-        }
-
-        .connector {
-          color: var(--color-border, #333);
-          font-family: monospace;
+        .branch-connector {
+          color: var(--color-border, #444);
+          margin-right: 4px;
           flex-shrink: 0;
         }
 
-        .move-san {
-          font-weight: 500;
+        .move-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 2px;
+          padding: 2px 8px;
+          background: var(--color-surface, #111);
+          border: 1px solid var(--color-border, #333);
           color: var(--color-text, #fff);
+          font-weight: 500;
+          cursor: default;
+          transition: all 0.1s ease;
+          white-space: nowrap;
         }
 
-        .toggle-indicator {
+        .move-chip.has-alternatives {
+          cursor: pointer;
+          border-color: var(--color-primary-dim, #665800);
+        }
+
+        .move-chip.has-alternatives:hover {
+          background: var(--color-primary, #FFE000);
+          color: var(--color-background, #0a0a0a);
+          border-color: var(--color-primary, #FFE000);
+        }
+
+        .move-chip.alt-move {
+          background: transparent;
+          border-color: var(--color-border, #333);
+          color: var(--color-text-muted, #888);
+          cursor: pointer;
+        }
+
+        .move-chip.alt-move:hover {
+          background: var(--color-surface-hover, #1a1a1a);
+          color: var(--color-text, #fff);
+          border-color: var(--color-text-muted, #666);
+        }
+
+        .alt-indicator {
+          font-size: 8px;
           color: var(--color-primary, #FFE000);
-          font-size: 10px;
           margin-left: 2px;
         }
 
-        .leaf-eval {
-          color: var(--color-primary, #FFE000);
-          font-weight: 700;
-          margin-left: 4px;
+        .move-chip.has-alternatives:hover .alt-indicator {
+          color: var(--color-background, #0a0a0a);
         }
 
         .nav-btn {
@@ -906,13 +1013,13 @@ function VerticalTreeNode({
           border: none;
           color: var(--color-text-muted, #666);
           cursor: pointer;
-          padding: 2px 4px;
-          font-size: 12px;
-          margin-left: auto;
+          padding: 0 2px;
+          font-size: 11px;
+          margin-left: 2px;
           transition: opacity 0.1s ease;
         }
 
-        .tree-node-row:hover .nav-btn {
+        .move-chip:hover .nav-btn {
           opacity: 1;
         }
 
@@ -920,8 +1027,26 @@ function VerticalTreeNode({
           color: var(--color-primary, #FFE000);
         }
 
-        .children {
-          /* Children are indented via paddingLeft on each row */
+        .move-chip.has-alternatives:hover .nav-btn {
+          color: var(--color-background, #0a0a0a);
+        }
+
+        .line-eval {
+          color: var(--color-primary, #FFE000);
+          font-weight: 700;
+          margin-left: 8px;
+          white-space: nowrap;
+        }
+
+        .branch-group {
+          margin-top: 2px;
+        }
+
+        .alt-line {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 2px 0;
         }
       `}</style>
     </div>
@@ -930,7 +1055,7 @@ function VerticalTreeNode({
 
 /**
  * Right column displaying the tree for the selected candidate.
- * Uses vertical layout with accordion expand/collapse behavior.
+ * Uses horizontal mainline layout with branches flowing underneath.
  */
 function TreeColumn({
   candidate,
@@ -940,7 +1065,8 @@ function TreeColumn({
   onNodeHover,
   onNavigate,
 }: TreeColumnProps) {
-  const rootChildren = [...candidate.tree.children].sort((a, b) => b.probability - a.probability)
+  // Get the mainline based on current selections
+  const mainline = getMainline(candidate.tree, selectedAtDepth)
 
   return (
     <div className="tree-column" data-testid="ew-tree-column">
@@ -958,28 +1084,25 @@ function TreeColumn({
         </span>
       </div>
 
-      {/* Recursive tree starting from first response */}
+      {/* Horizontal tree starting from first response */}
       <div className="tree-content">
-        {rootChildren.length === 0 ? (
+        {mainline.length === 0 ? (
           <div className="no-children">No responses analyzed</div>
         ) : (
-          rootChildren.map((child, idx) => (
-            <VerticalTreeNode
-              key={child.move || idx}
-              node={child}
-              siblings={rootChildren.filter((_, i) => i !== idx)}
-              depth={0}
-              evalSource={evalSource}
-              selectedAtDepth={selectedAtDepth}
-              onSelectAtDepth={onSelectAtDepth}
-              onNodeHover={onNodeHover}
-              onNavigate={onNavigate}
-            />
-          ))
+          <HorizontalLine
+            lineNodes={mainline}
+            startDepth={0}
+            evalSource={evalSource}
+            selectedAtDepth={selectedAtDepth}
+            treeRoot={candidate.tree}
+            onSelectAtDepth={onSelectAtDepth}
+            onNodeHover={onNodeHover}
+            onNavigate={onNavigate}
+          />
         )}
       </div>
 
-      <div className="tree-hint">Click moves to expand/collapse · Hover for details</div>
+      <div className="tree-hint">Click ▼ to see alternatives · Hover for details</div>
 
       <style jsx>{`
         .tree-column {

@@ -30,32 +30,30 @@ function formatMove(uciMove: string): string {
 
 function getStatusText(status: EngineStatus): string {
   switch (status) {
-    case 'not_initialized':
-      return 'Not initialized'
-    case 'loading':
-      return 'Loading...'
     case 'ready':
-      return 'Ready'
+      return 'ready'
     case 'error':
-      return 'Error'
+      return 'error'
     case 'analyzing':
-      return 'Analyzing...'
+      return 'analyzing'
+    case 'loading':
+      return 'loading'
     default:
-      return 'Unknown'
+      return 'init'
   }
 }
 
 function getStatusColor(status: EngineStatus): string {
   switch (status) {
     case 'ready':
-      return 'var(--color-success, #22c55e)'
+      return '#22c55e'
     case 'error':
-      return 'var(--color-error, #ef4444)'
+      return '#ef4444'
     case 'analyzing':
     case 'loading':
-      return 'var(--color-warning, #f59e0b)'
+      return '#f59e0b'
     default:
-      return 'var(--color-text-muted, #6b7280)'
+      return '#6b7280'
   }
 }
 
@@ -68,7 +66,16 @@ export function EnginePanel({
   isMaiaEvaluating,
   currentFen,
 }: EnginePanelProps) {
-  // Show only top 3 moves for compact display
+  // Top 3 moves for Stockfish
+  const sfTopMoves = stockfishEvaluation?.moveEvaluations
+    ? Object.entries(stockfishEvaluation.moveEvaluations)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 3)
+    : stockfishEvaluation
+      ? [[stockfishEvaluation.bestMove, stockfishEvaluation.cp]] as [string, number][]
+      : []
+
+  // Top 3 moves for Maia
   const topMoves = maiaEvaluation
     ? Object.entries(maiaEvaluation.policy)
         .sort(([, a], [, b]) => b - a)
@@ -77,215 +84,241 @@ export function EnginePanel({
 
   return (
     <div className="engine-panel" data-testid="engine-panel">
-      {/* Stockfish section - left column */}
-      <section className="engine-section" data-testid="stockfish-section">
-        <div className="engine-header">
-          <h3>Stockfish</h3>
-          <span
-            className="engine-status"
-            data-testid="sf-status"
-            style={{ color: getStatusColor(stockfishStatus) }}
-          >
+      {/* Stockfish Section */}
+      <div className="engine-section" data-testid="stockfish-section">
+        <div className="section-header">
+          <span className="section-name">SF</span>
+          <span className="section-status" style={{ color: getStatusColor(stockfishStatus) }} data-testid="sf-status">
             {getStatusText(stockfishStatus)}
           </span>
         </div>
-
-        <div className="engine-content" data-testid="sf-eval">
+        <div className="section-content" data-testid="sf-eval">
           {isStockfishEvaluating ? (
-            <div className="loading">Evaluating...</div>
+            <div className="loading">...</div>
           ) : stockfishEvaluation ? (
             <>
-              <div className="eval-main">
-                <span className="eval-cp" data-testid="sf-cp">
+              <div className="eval-row">
+                <span className="eval-value" data-testid="sf-cp">
                   {stockfishEvaluation.isMate
                     ? `M${stockfishEvaluation.mateIn}`
                     : formatCp(stockfishEvaluation.cp)}
                 </span>
-                <span className="eval-winrate" data-testid="sf-winrate">
-                  {formatWinrate(stockfishEvaluation.winrate)}
-                </span>
+                <span className="eval-depth">d{stockfishEvaluation.depth}</span>
               </div>
-              <div className="eval-best">
-                <span className="eval-label">Best:</span>
-                <span className="best-move" data-testid="sf-best-move">
-                  {formatMove(stockfishEvaluation.bestMove)}
-                </span>
-              </div>
-            </>
-          ) : (
-            <div className="no-eval">No evaluation yet</div>
-          )}
-        </div>
-      </section>
-
-      {/* Maia section - right column */}
-      <section className="engine-section" data-testid="maia-section">
-        <div className="engine-header">
-          <h3>Maia {maiaEvaluation?.eloLevel || ''}</h3>
-          <span
-            className="engine-status"
-            data-testid="maia-status"
-            style={{ color: getStatusColor(maiaStatus) }}
-          >
-            {getStatusText(maiaStatus)}
-          </span>
-        </div>
-
-        <div className="engine-content">
-          {isMaiaEvaluating ? (
-            <div className="loading">Predicting...</div>
-          ) : maiaEvaluation ? (
-            <>
-              <div className="eval-main">
-                <span className="eval-winrate" data-testid="maia-value">
-                  {formatWinrate(maiaEvaluation.value)}
-                </span>
-              </div>
-              <div className="maia-moves" data-testid="maia-moves">
-                {topMoves.map(([move, prob]) => (
-                  <div key={move} className="move-item">
-                    {uciToSan(currentFen, move) || formatMove(move)} {formatWinrate(prob)}
+              {stockfishEvaluation.wdl && (
+                <div className="wdl-container">
+                  <span className="wdl-value" data-testid="sf-winrate">
+                    {(stockfishEvaluation.wdl.win + stockfishEvaluation.wdl.draw / 2).toFixed(1)}%
+                  </span>
+                  <div className="wdl-bar">
+                    <div className="wdl-w" style={{ width: `${stockfishEvaluation.wdl.win}%` }} />
+                    <div className="wdl-d" style={{ width: `${stockfishEvaluation.wdl.draw}%` }} />
+                    <div className="wdl-l" style={{ width: `${stockfishEvaluation.wdl.loss}%` }} />
+                  </div>
+                </div>
+              )}
+              <div className="moves-list" data-testid="sf-best-move">
+                {sfTopMoves.map(([move, cp], idx) => (
+                  <div key={move} className={`move-item ${idx === 0 ? 'best' : ''}`}>
+                    <span className="move-name">{uciToSan(currentFen, move) || formatMove(move)}</span>
+                    <span className="move-eval">{formatCp(cp)}</span>
                   </div>
                 ))}
               </div>
             </>
           ) : (
-            <div className="no-eval">No predictions yet</div>
+            <div className="no-eval">—</div>
           )}
         </div>
-      </section>
+      </div>
+
+      {/* Maia Section */}
+      <div className="engine-section" data-testid="maia-section">
+        <div className="section-header">
+          <span className="section-name">Maia</span>
+          <span className="section-status" style={{ color: getStatusColor(maiaStatus) }} data-testid="maia-status">
+            {getStatusText(maiaStatus)}
+          </span>
+        </div>
+        <div className="section-content">
+          {isMaiaEvaluating ? (
+            <div className="loading">...</div>
+          ) : maiaEvaluation ? (
+            <>
+              <div className="eval-row">
+                <span className="eval-value maia" data-testid="maia-value">{formatWinrate(maiaEvaluation.value)}</span>
+                <span className="eval-depth">{maiaEvaluation.eloLevel}</span>
+              </div>
+              <div className="moves-list" data-testid="maia-moves">
+                {topMoves.map(([move, prob], idx) => (
+                  <div key={move} className={`move-item ${idx === 0 ? 'best' : ''}`}>
+                    <span className="move-name">{uciToSan(currentFen, move) || formatMove(move)}</span>
+                    <span className="move-prob">{(prob * 100).toFixed(0)}%</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="no-eval">—</div>
+          )}
+        </div>
+      </div>
 
       <style jsx>{`
         .engine-panel {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: var(--space-sm, 8px);
+          display: flex;
           height: 100%;
-          min-height: 0;
+          background: var(--color-background, #0a0a0a);
+          border: var(--border-medium, 2px) solid var(--color-border, #333);
         }
 
         .engine-section {
-          background: var(--color-background, #0a0a0a);
-          border: var(--border-medium, 2px) solid var(--color-border, #333);
-          padding: var(--space-sm, 8px);
-          overflow: hidden;
+          flex: 1;
           display: flex;
           flex-direction: column;
-          position: relative;
+          min-width: 0;
+          padding: 8px 10px;
         }
 
-        /* Yellow accent line at top */
-        .engine-section::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 24px;
-          height: var(--border-thick, 3px);
-          background: var(--color-primary, #FFE000);
+        .engine-section:first-child {
+          border-right: 1px solid var(--color-border, #333);
         }
 
-        .engine-header {
+        .section-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: var(--space-xs, 4px);
-          padding-bottom: var(--space-xs, 4px);
-          border-bottom: var(--border-thin, 1px) solid var(--color-border, #333);
-          flex-shrink: 0;
+          margin-bottom: 6px;
         }
 
-        .engine-header h3 {
-          margin: 0;
-          font-size: var(--font-xs, 0.75rem);
+        .section-name {
+          font-size: 10px;
           font-weight: 700;
           font-family: var(--font-mono, monospace);
           text-transform: uppercase;
           letter-spacing: 0.05em;
+          color: var(--color-text, #fff);
         }
 
-        .engine-status {
-          font-size: 0.625rem;
+        .section-status {
+          font-size: 9px;
           font-weight: 600;
           font-family: var(--font-mono, monospace);
           text-transform: uppercase;
-          letter-spacing: 0.05em;
         }
 
-        .engine-content {
+        .section-content {
+          flex: 1;
           display: flex;
           flex-direction: column;
-          gap: var(--space-xs, 4px);
-          flex: 1;
+          gap: 4px;
           min-height: 0;
-          overflow: hidden;
-        }
-
-        .eval-main {
-          display: flex;
-          align-items: baseline;
-          gap: var(--space-sm, 8px);
-        }
-
-        .eval-cp {
-          font-size: var(--font-lg, 1.125rem);
-          font-weight: 700;
-          font-family: var(--font-mono, monospace);
-          color: var(--color-text, #FFFFFF);
-        }
-
-        .eval-winrate {
-          font-size: var(--font-md, 1rem);
-          font-weight: 600;
-          font-family: var(--font-mono, monospace);
-          color: var(--color-primary, #FFE000);
-        }
-
-        .eval-best {
-          display: flex;
-          align-items: center;
-          gap: var(--space-xs, 4px);
-          font-size: var(--font-xs, 0.75rem);
-        }
-
-        .eval-label {
-          color: var(--color-text-muted, #888);
-          font-family: var(--font-mono, monospace);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .best-move {
-          font-family: var(--font-mono, monospace);
-          font-weight: 700;
-          color: var(--color-secondary, #00D4FF);
         }
 
         .loading,
         .no-eval {
           color: var(--color-text-dim, #666);
-          font-size: var(--font-xs, 0.75rem);
+          font-size: 11px;
           font-family: var(--font-mono, monospace);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
         }
 
-        .maia-moves {
+        .eval-row {
+          display: flex;
+          align-items: baseline;
+          gap: 6px;
+        }
+
+        .eval-value {
+          font-size: 20px;
+          font-weight: 700;
+          font-family: var(--font-mono, monospace);
+          color: var(--color-text, #fff);
+          line-height: 1;
+        }
+
+        .eval-value.maia {
+          color: var(--color-primary, #FFE000);
+        }
+
+        .eval-depth {
+          font-size: 9px;
+          font-family: var(--font-mono, monospace);
+          color: var(--color-text-dim, #666);
+        }
+
+        .wdl-container {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .wdl-value {
+          font-size: 10px;
+          font-family: var(--font-mono, monospace);
+          color: var(--color-text-muted, #888);
+          min-width: 38px;
+        }
+
+        .wdl-bar {
+          flex: 1;
+          display: flex;
+          height: 10px;
+          overflow: hidden;
+        }
+
+        .wdl-w, .wdl-d, .wdl-l {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 0;
+        }
+
+        .wdl-w {
+          background: #22c55e;
+          color: #000;
+        }
+
+        .wdl-d {
+          background: #666;
+          color: #fff;
+        }
+
+        .wdl-l {
+          background: #ef4444;
+          color: #fff;
+        }
+
+        .moves-list {
           display: flex;
           flex-direction: column;
-          gap: 2px;
-          font-size: var(--font-xs, 0.75rem);
+          gap: 1px;
+          flex: 1;
         }
 
         .move-item {
+          display: flex;
+          justify-content: space-between;
+          font-size: 10px;
           font-family: var(--font-mono, monospace);
-          color: var(--color-text-muted, #888);
-          font-weight: 500;
         }
 
-        .move-item:first-child {
+        .move-item .move-name {
+          color: var(--color-text-muted, #888);
+        }
+
+        .move-item.best .move-name {
           color: var(--color-secondary, #00D4FF);
           font-weight: 700;
+        }
+
+        .move-item .move-eval,
+        .move-item .move-prob {
+          color: var(--color-text-dim, #666);
+        }
+
+        .move-item.best .move-eval,
+        .move-item.best .move-prob {
+          color: var(--color-secondary, #00D4FF);
         }
       `}</style>
     </div>

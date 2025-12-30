@@ -84,6 +84,7 @@ cg-board square.selected {
 /* Last move highlight - origin square */
 cg-board square.last-move {
   background-color: rgba(155, 199, 0, 0.41);
+  will-change: transform;
 }
 
 /* Move destination hints */
@@ -123,12 +124,12 @@ cg-board piece {
   height: 12.5%;
   /* Piece images as backgrounds */
   background-size: cover;
-  /* Center the piece */
-  background-position: center;
   /* Prevent selection */
   pointer-events: none;
-  /* Allow clicks to pass through to squares */
+  /* Layer above board */
   z-index: 2;
+  /* Required for chessground's transform-based positioning */
+  will-change: transform;
 }
 
 /* Make pieces draggable */

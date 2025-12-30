@@ -31,7 +31,7 @@ test.describe('01 - Minimal Page', () => {
 
   test('shows ExpectedEval header', async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('h1')).toContainText('ExpectedEval')
+    await expect(page.locator('h1')).toContainText(/expectedeval/i)
   })
 
   test('no console errors', async ({ page }) => {

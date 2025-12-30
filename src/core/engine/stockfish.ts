@@ -33,7 +33,6 @@
 
 import type StockfishWeb from 'lila-stockfish-web'
 import type { StockfishAdapter, StockfishConfig, StockfishEvaluation } from './types'
-import { cpToWinrate } from './types'
 import { Chess } from 'chessops/chess'
 import { parseFen } from 'chessops/fen'
 import { makeSquare } from 'chessops/util'
@@ -219,6 +218,9 @@ export class RealStockfish implements StockfishAdapter {
       // Set MultiPV to analyze many moves at once (not just the best)
       // 100 is high enough to get all legal moves in most positions
       this.stockfish.uci('setoption name MultiPV value 100')
+
+      // Enable native WDL (Win/Draw/Loss) output instead of calculating from cp
+      this.stockfish.uci('setoption name UCI_ShowWDL value true')
 
       // Set up message handlers
       this.stockfish.onError = this.onError.bind(this)
@@ -418,10 +420,10 @@ export class RealStockfish implements StockfishAdapter {
     if (!this.isEvaluating) return
 
     // Parse UCI info lines with regex
-    // Format: info depth N seldepth N multipv N score cp N|mate N pv MOVES
+    // Format: info depth N seldepth N multipv N score cp N|mate N wdl W D L ... pv MOVES
     const matches = [
       ...msg.matchAll(
-        /info depth (\d+) seldepth (\d+) multipv (\d+) score (?:cp (-?\d+)|mate (-?\d+)).+ pv ((?:\S+\s*)+)/g,
+        /info depth (\d+) seldepth (\d+) multipv (\d+) score (?:cp (-?\d+)|mate (-?\d+)) wdl (\d+) (\d+) (\d+).+ pv ((?:\S+\s*)+)/g,
       ),
     ][0]
 
@@ -432,7 +434,10 @@ export class RealStockfish implements StockfishAdapter {
     const multipv = parseInt(matches[3], 10)
     let cp = parseInt(matches[4], 10)
     const mate = parseInt(matches[5], 10)
-    const pv = matches[6]
+    const wdlWin = parseInt(matches[6], 10)   // Win permille (out of 1000)
+    const wdlDraw = parseInt(matches[7], 10)  // Draw permille
+    const wdlLoss = parseInt(matches[8], 10)  // Loss permille
+    const pv = matches[9]
     const move = pv.split(' ')[0]  // First move of the principal variation
 
     // Skip if not a legal move (shouldn't happen, but be safe)
@@ -447,12 +452,17 @@ export class RealStockfish implements StockfishAdapter {
       cp = mate > 0 ? 10000 : -10000
     }
 
-    // Adjust perspective: Stockfish always reports from White's view
-    // If it's Black to move, flip the sign so positive = good for Black
-    const isBlackTurn = this.currentFen.split(' ')[1] === 'b'
-    if (isBlackTurn) {
-      cp *= -1
-    }
+    // NOTE: UCI Stockfish reports scores from the SIDE-TO-MOVE's perspective
+    // (not White's perspective). Positive cp = good for side to move.
+    // No perspective flip needed - the values are already correct.
+
+    // Calculate winrate from native WDL (Win/Draw/Loss permille)
+    // WDL is also from side-to-move's perspective per UCI spec
+    // Formula: (win + draw/2) / 1000 treats draws as half-wins
+    const winrate = (wdlWin + wdlDraw / 2) / 1000
+
+    // Convert WDL permille to percentages (already from side-to-move's view)
+    const wdl = { win: wdlWin / 10, draw: wdlDraw / 10, loss: wdlLoss / 10 }
 
     // Store or update evaluation data for this depth
     if (this.store[depth]) {
@@ -466,23 +476,24 @@ export class RealStockfish implements StockfishAdapter {
         this.store[depth].mate_vec[move] = mateIn
       }
 
-      // Calculate winrate for this move
-      // Use cp from White's perspective for the formula
-      const winrate = cpToWinrate(cp * (isBlackTurn ? -1 : 1))
       if (!this.store[depth].winrate_vec) {
         this.store[depth].winrate_vec = {}
       }
       this.store[depth].winrate_vec[move] = winrate
+
+      if (!this.store[depth].wdl_vec) {
+        this.store[depth].wdl_vec = {}
+      }
+      this.store[depth].wdl_vec[move] = wdl
     } else {
       // First move at this depth - create new entry
-      const winrate = cpToWinrate(cp * (isBlackTurn ? -1 : 1))
-
       this.store[depth] = {
         depth,
         model_move: move,
         model_optimal_cp: cp,
         cp_vec: { [move]: cp },
         winrate_vec: { [move]: winrate },
+        wdl_vec: { [move]: wdl },
         mate_vec: mateIn !== undefined ? { [move]: mateIn } : undefined,
         sent: false,
       }
@@ -534,12 +545,16 @@ export class RealStockfish implements StockfishAdapter {
     // Get centipawn for best move
     const cp = data.cp_vec[bestMove] ?? data.model_optimal_cp
 
+    // Get WDL for best move
+    const wdl = data.wdl_vec?.[bestMove]
+
     // Build the evaluation result
     const result: StockfishEvaluation = {
       depth,
       bestMove,
       cp,
       winrate: bestWinrate,
+      wdl,
       isMate,
       mateIn,
       moveEvaluations: { ...data.cp_vec },
@@ -581,6 +596,7 @@ interface EvaluationData {
   model_optimal_cp: number
   cp_vec: Record<string, number>
   winrate_vec?: Record<string, number>
+  wdl_vec?: Record<string, { win: number; draw: number; loss: number }>
   mate_vec?: Record<string, number>
   sent: boolean
 }

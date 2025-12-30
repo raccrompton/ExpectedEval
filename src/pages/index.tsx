@@ -113,8 +113,7 @@ export default function Home() {
               onMoveClick={actions.goToPath}
             />
           </section>
-          <div className="eval-panel-wrapper" data-testid="eval-panel">
-            <h2>Engine Analysis</h2>
+          <div className="eval-panel-wrapper no-header" data-testid="eval-panel">
             <EnginePanel
               stockfishEvaluation={stockfishEvaluation}
               maiaEvaluation={maiaEvaluation}
@@ -187,8 +186,6 @@ export default function Home() {
           flex-shrink: 0;
           position: relative;
           z-index: 1;
-          padding-bottom: var(--space-md);
-          border-bottom: var(--border-thick) solid var(--color-border);
         }
 
         .header-title {
@@ -239,9 +236,9 @@ export default function Home() {
         /* Middle row - Brutalist panels */
         .middle-row {
           display: grid;
-          grid-template-columns: 220px 1fr 420px;
+          grid-template-columns: 220px 1fr 440px;
           gap: var(--space-md);
-          height: 160px;
+          height: 200px;
           flex-shrink: 0;
         }
 
@@ -277,6 +274,14 @@ export default function Home() {
           flex-shrink: 0;
         }
 
+        .eval-panel-wrapper.no-header {
+          padding: 0;
+        }
+
+        .eval-panel-wrapper.no-header::before {
+          display: none;
+        }
+
         /* Bottom row: Board + Nav | EW Section */
         .bottom-row {
           display: grid;
@@ -300,7 +305,6 @@ export default function Home() {
           width: auto;
           height: calc(100% - 56px);
           aspect-ratio: 1;
-          box-shadow: 8px 8px 0 0 #111111;
         }
 
         .ew-section-wrapper {
@@ -328,8 +332,8 @@ export default function Home() {
 
         @media (max-width: 1024px) {
           .middle-row {
-            grid-template-columns: 160px 1fr 300px;
-            height: 140px;
+            grid-template-columns: 160px 1fr 340px;
+            height: 180px;
           }
           .header h1 {
             font-size: var(--font-xl);
