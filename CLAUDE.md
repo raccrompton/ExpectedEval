@@ -43,6 +43,18 @@
 
 ---
 
+## Quick Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run test:run` | Run unit tests (outputs JSON to `test-results/unit-tests.json`) |
+| `npm run test:e2e` | Run E2E tests (outputs JSON to `test-results/e2e-tests.json`) |
+| `npm run test:timing` | View timing report for slowest tests |
+| `npm run test:timing -- --unit` | Timing report for unit tests only |
+| `npm run test:timing -- --e2e` | Timing report for E2E tests only |
+
+---
+
 ## Project Goal
 
 Build a single-purpose **Expected Evaluation Analysis Page** that combines:
@@ -197,6 +209,11 @@ src/
 ├── contexts/                    # React contexts (minimal)
 ├── pages/                       # Next.js pages
 └── __tests__/                   # E2E and integration tests
+scripts/
+└── test-timing-report.ts        # Parse test JSON and display timing summaries
+test-results/                    # Generated test output (gitignored)
+├── unit-tests.json              # Vitest JSON reporter output
+└── e2e-tests.json               # Playwright JSON reporter output
 ```
 
 ### Dependency Flow
