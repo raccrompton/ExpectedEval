@@ -57,8 +57,9 @@ export default defineConfig({
      * Base URL for page.goto() calls.
      * This means we can write page.goto('/analysis') instead of
      * page.goto('http://localhost:3000/analysis')
+     * Uses CONDUCTOR_PORT if set, otherwise defaults to 3000.
      */
-    baseURL: 'http://localhost:3000',
+    baseURL: `http://localhost:${process.env.CONDUCTOR_PORT || 3000}`,
 
     /**
      * Collect trace when retrying a failed test.
@@ -100,10 +101,12 @@ export default defineConfig({
    *
    * The reuseExistingServer option means if you already have a dev server
    * running, Playwright will use that instead of starting a new one.
+   *
+   * Uses CONDUCTOR_PORT if set, otherwise defaults to 3000.
    */
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    command: `PORT=${process.env.CONDUCTOR_PORT || 3000} npm run dev`,
+    url: `http://localhost:${process.env.CONDUCTOR_PORT || 3000}`,
     reuseExistingServer: !process.env.CI,
     // Wait up to 2 minutes for the server to start
     timeout: 120000,
