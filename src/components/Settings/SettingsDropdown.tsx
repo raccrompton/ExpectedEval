@@ -2,7 +2,7 @@
  * SettingsDropdown Component
  *
  * Dropdown menu for configuring application settings:
- * - Probability Threshold (1%, 2%, 5%)
+ * - Probability Threshold (10%, 5%, 2%, 1%)
  * - Maia Level (1100-1900)
  * - SF Depth (10, 12, 14, 16, 18)
  * - Winrate Loss Threshold (3%, 5%, 10%)
@@ -12,9 +12,10 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useSettingsContext } from '@/contexts/SettingsContext'
 
 const PROB_OPTIONS = [
-  { value: 0.01, label: '1%' },
-  { value: 0.02, label: '2%' },
+  { value: 0.10, label: '10%' },
   { value: 0.05, label: '5%' },
+  { value: 0.02, label: '2%' },
+  { value: 0.01, label: '1%' },
 ]
 
 const MAIA_OPTIONS = [

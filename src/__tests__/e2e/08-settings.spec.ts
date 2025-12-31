@@ -81,9 +81,10 @@ test.describe('08 - Settings', () => {
     test('probability threshold has correct options', async ({ page }) => {
       const selector = page.getByTestId('settings-prob-threshold')
 
-      await expect(selector.locator('option[value="0.01"]')).toBeAttached()
-      await expect(selector.locator('option[value="0.02"]')).toBeAttached()
+      await expect(selector.locator('option[value="0.1"]')).toBeAttached()
       await expect(selector.locator('option[value="0.05"]')).toBeAttached()
+      await expect(selector.locator('option[value="0.02"]')).toBeAttached()
+      await expect(selector.locator('option[value="0.01"]')).toBeAttached()
     })
 
     test('maia level selector is visible', async ({ page }) => {
@@ -212,7 +213,7 @@ test.describe('08 - Settings', () => {
       await page.reload()
       await page.getByTestId('settings-button').click()
 
-      await expect(page.getByTestId('settings-prob-threshold')).toHaveValue('0.01')
+      await expect(page.getByTestId('settings-prob-threshold')).toHaveValue('0.1')
       await expect(page.getByTestId('settings-maia-level')).toHaveValue('1500')
     })
   })
