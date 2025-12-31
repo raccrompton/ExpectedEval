@@ -66,29 +66,34 @@ function createChildNode(
  * Factory to create a simple linear tree (mainline only, no branches).
  * Root node has san=null (represents position after candidate move).
  * Children are the actual moves in sequence.
+ * Correctly computes cumulativeProbability for each node.
  */
 function createLinearTree(moves: Array<{ san: string; prob: number; maiaWinrate: number }>): TreeNode {
   function buildChildChain(
     movesRemaining: Array<{ san: string; prob: number; maiaWinrate: number }>,
-    depth: number
+    depth: number,
+    parentCumProb: number
   ): TreeNode | null {
     if (movesRemaining.length === 0) {
       return null
     }
 
     const [first, ...rest] = movesRemaining
-    const childNode = buildChildChain(rest, depth + 1)
+    const cumProb = parentCumProb * first.prob
+    const childNode = buildChildChain(rest, depth + 1, cumProb)
 
-    return createChildNode(
+    const node = createChildNode(
       first.san,
       first.prob,
       first.maiaWinrate,
       depth,
       childNode ? [childNode] : []
     )
+    node.cumulativeProbability = cumProb
+    return node
   }
 
-  const firstChild = buildChildChain(moves, 1)
+  const firstChild = buildChildChain(moves, 1, 1.0)
 
   return createMockNode({
     san: null,
@@ -595,25 +600,28 @@ describe('treeToTableRows - ply 1 default expansion', () => {
 })
 
 describe('treeToTableRows - alternative likelihood calculation', () => {
-  test('alternative at ply 2 includes ancestor probabilities from mainline', () => {
-    // Tree structure:
-    // root (san=null)
-    //   └─ Nxd1 (30%) [ply 0]
-    //        └─ Bxg7 (50%) [ply 1]
-    //             ├─ Qb1 (40%) [ply 2, mainline]
-    //             └─ Kxg7 (35%) [ply 2, alternative]
+  test('likelihood uses leaf cumulativeProbability for accuracy', () => {
+    // Tree structure with correct cumulativeProbability values:
+    // root (cumProb=1.0)
+    //   └─ Nxd1 (prob=0.30, cumProb=0.30) [ply 0]
+    //        └─ Bxg7 (prob=0.50, cumProb=0.15) [ply 1]
+    //             ├─ Qb1 (prob=0.40, cumProb=0.06) [ply 2, mainline]
+    //             └─ Kxg7 (prob=0.35, cumProb=0.0525) [ply 2, alternative]
     //
-    // mainlinePath = [Nxd1, Bxg7, Qb1]
-    // To show Kxg7 as alternative to Qb1, expand at ply 2: "2-Qb1"
-    //
-    // Current bug: likelihood = P(Kxg7) = 0.35
-    // Correct: likelihood = P(Nxd1) × P(Bxg7) × P(Kxg7) = 0.30 × 0.50 × 0.35 = 0.0525
+    // Likelihood for Kxg7 row = leaf.cumulativeProbability = 0.0525
 
+    // Build nodes with correct cumulativeProbability values
     const Qb1 = createChildNode('Qb1', 0.40, 0.60, 3, [])
+    Qb1.cumulativeProbability = 0.30 * 0.50 * 0.40 // 0.06
+
     const Kxg7 = createChildNode('Kxg7', 0.35, 0.58, 3, [])
+    Kxg7.cumulativeProbability = 0.30 * 0.50 * 0.35 // 0.0525
 
     const Bxg7 = createChildNode('Bxg7', 0.50, 0.55, 2, [Qb1, Kxg7])
+    Bxg7.cumulativeProbability = 0.30 * 0.50 // 0.15
+
     const Nxd1 = createChildNode('Nxd1', 0.30, 0.52, 1, [Bxg7])
+    Nxd1.cumulativeProbability = 0.30
 
     const root = createMockNode({
       children: [Nxd1],
@@ -629,30 +637,31 @@ describe('treeToTableRows - alternative likelihood calculation', () => {
     const kxg7Row = rows.find(r => r.id === 'alt-2-Kxg7')
     expect(kxg7Row).toBeDefined()
 
-    // Likelihood should include ALL ancestors:
-    // P(Nxd1) × P(Bxg7) × P(Kxg7) = 0.30 × 0.50 × 0.35 = 0.0525
+    // Likelihood = leaf.cumulativeProbability = 0.0525
     expect(kxg7Row!.likelihood).toBeCloseTo(0.0525, 4)
   })
 
-  test('alternative at ply 1 includes ancestor probability', () => {
+  test('alternative at ply 1 uses leaf cumulativeProbability', () => {
     // Tree structure:
-    // root (san=null)
-    //   └─ e5 (50%) [ply 0]
-    //        ├─ Nf3 (40%) [ply 1, mainline]
-    //        │    └─ Nc6 (60%) [ply 2]
-    //        └─ Bc4 (35%) [ply 1, alternative]
+    // root (cumProb=1.0)
+    //   └─ e5 (prob=0.50, cumProb=0.50) [ply 0]
+    //        ├─ Nf3 (prob=0.40, cumProb=0.20) [ply 1, mainline]
+    //        │    └─ Nc6 (prob=0.60, cumProb=0.12) [ply 2]
+    //        └─ Bc4 (prob=0.35, cumProb=0.175) [ply 1, alternative]
     //
-    // mainlinePath = [e5, Nf3, Nc6]
-    // To show Bc4 as alternative to Nf3, expand at ply 1: "1-Nf3"
-    //
-    // Current bug: likelihood = P(Bc4) = 0.35
-    // Correct: likelihood = P(e5) × P(Bc4) = 0.50 × 0.35 = 0.175
+    // Likelihood for Bc4 row = leaf.cumulativeProbability = 0.175 (Bc4 is leaf)
 
     const Nc6 = createChildNode('Nc6', 0.60, 0.50, 3, [])
+    Nc6.cumulativeProbability = 0.50 * 0.40 * 0.60 // 0.12
+
     const Nf3 = createChildNode('Nf3', 0.40, 0.52, 2, [Nc6])
+    Nf3.cumulativeProbability = 0.50 * 0.40 // 0.20
+
     const Bc4 = createChildNode('Bc4', 0.35, 0.48, 2, [])
+    Bc4.cumulativeProbability = 0.50 * 0.35 // 0.175
 
     const e5 = createChildNode('e5', 0.50, 0.48, 1, [Nf3, Bc4])
+    e5.cumulativeProbability = 0.50
 
     const root = createMockNode({
       children: [e5],
@@ -668,17 +677,22 @@ describe('treeToTableRows - alternative likelihood calculation', () => {
     const bc4Row = rows.find(r => r.id === 'alt-1-Bc4')
     expect(bc4Row).toBeDefined()
 
-    // Likelihood = P(e5) × P(Bc4) = 0.50 × 0.35 = 0.175
+    // Likelihood = leaf.cumulativeProbability = 0.175
     expect(bc4Row!.likelihood).toBeCloseTo(0.175, 3)
   })
 
-  test('mainline likelihood calculation is correct', () => {
+  test('mainline likelihood uses leaf cumulativeProbability', () => {
     // Mainline: e5 (50%) → Nf3 (40%) → Nc6 (60%)
-    // Likelihood = 0.50 × 0.40 × 0.60 = 0.12
+    // Likelihood = leaf.cumulativeProbability = 0.12
 
     const Nc6 = createChildNode('Nc6', 0.60, 0.50, 3, [])
+    Nc6.cumulativeProbability = 0.50 * 0.40 * 0.60 // 0.12
+
     const Nf3 = createChildNode('Nf3', 0.40, 0.52, 2, [Nc6])
+    Nf3.cumulativeProbability = 0.50 * 0.40 // 0.20
+
     const e5 = createChildNode('e5', 0.50, 0.48, 1, [Nf3])
+    e5.cumulativeProbability = 0.50
 
     const root = createMockNode({
       children: [e5],
@@ -693,7 +707,7 @@ describe('treeToTableRows - alternative likelihood calculation', () => {
     const mainline = rows.find(r => r.id === 'mainline')
     expect(mainline).toBeDefined()
 
-    // Likelihood = P(e5) × P(Nf3) × P(Nc6) = 0.50 × 0.40 × 0.60 = 0.12
+    // Likelihood = leaf.cumulativeProbability = 0.12
     expect(mainline!.likelihood).toBeCloseTo(0.12, 3)
   })
 })

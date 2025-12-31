@@ -213,19 +213,14 @@ function getMainlineLeaf(root: TreeNode): TreeNode {
 }
 
 /**
- * Calculate cumulative probability by walking down the mainline.
+ * Calculate cumulative probability of the mainline leaf.
+ *
+ * Uses the leaf's pre-computed cumulativeProbability from tree building
+ * for consistency with alternative likelihood calculations.
  */
 function calculateMainlineLikelihood(root: TreeNode): number {
-  const path = getMainlinePath(root)
-  if (path.length === 0) {
-    return root.probability
-  }
-
-  let cumProb = 1
-  for (const node of path) {
-    cumProb *= node.probability
-  }
-  return cumProb
+  const leaf = getMainlineLeaf(root)
+  return leaf.cumulativeProbability
 }
 
 /**
@@ -267,7 +262,7 @@ function buildAlternativeRows(
         )
 
         const altLeaf = getAlternativeLeaf(altNode)
-        const altLikelihood = calculateAlternativeLikelihood(altNode, plyIndex, mainlinePath)
+        const altLikelihood = calculateAlternativeLikelihood(altNode)
 
         alternativeRows.push({
           id: `alt-${plyIndex}-${altNode.san}`,
@@ -353,35 +348,24 @@ function getAlternativeLeaf(altRoot: TreeNode): TreeNode {
 /**
  * Calculate likelihood for an alternative branch.
  *
- * The likelihood is the cumulative probability of reaching this alternative line,
- * which includes:
- * 1. The probability of all mainline ancestors (mainlinePath[0] through mainlinePath[branchPly-1])
- * 2. The probability of the alternative node itself
- * 3. The probability of all descendants following the mainline within the alternative branch
+ * Returns the cumulative probability of reaching the leaf node of this alternative line.
+ * Uses the leaf's pre-computed cumulativeProbability from tree building, which is more
+ * accurate than recomputing from mainline ancestors (avoids discrepancies when the
+ * alternative's actual path differs from the mainline path).
  */
 function calculateAlternativeLikelihood(
-  altNode: TreeNode,
-  branchPly: number,
-  mainlinePath: TreeNode[]
+  altNode: TreeNode
 ): number {
-  // Start with ancestor probabilities from mainline (up to but not including the branch point)
-  let cumProb = 1
-  for (let i = 0; i < branchPly; i++) {
-    cumProb *= mainlinePath[i].probability
-  }
-
-  // Add the alternative node's probability
-  cumProb *= altNode.probability
-
-  // Follow mainline within the alternative branch
+  // Find the leaf node by following highest-probability children
   let current = altNode
   while (current.children.length > 0) {
     const sorted = [...current.children].sort((a, b) => b.probability - a.probability)
-    cumProb *= sorted[0].probability
     current = sorted[0]
   }
 
-  return cumProb
+  // Return the leaf's pre-computed cumulative probability
+  // This was calculated during tree building and accounts for the actual path taken
+  return current.cumulativeProbability
 }
 
 /**
@@ -458,7 +442,7 @@ function buildDefaultModeRows(
   return sortedChildren.map((child, index) => {
     const cells = buildPly1RowCells(child, baseMoveNumber, baseColor)
     const leaf = getAlternativeLeaf(child)
-    const likelihood = calculateAlternativeLikelihood(child, 0, [])
+    const likelihood = calculateAlternativeLikelihood(child)
 
     return {
       id: index === 0 ? 'mainline' : `ply1-${child.san}`,
