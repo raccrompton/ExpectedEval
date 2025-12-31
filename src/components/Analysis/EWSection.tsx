@@ -73,7 +73,7 @@ function getStatusColor(status: EWStatus): string {
 }
 
 export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EWSectionProps) {
-  const { settings } = useSettingsContext()
+  const { settings, updateSetting } = useSettingsContext()
 
   // Hook now auto-triggers on fen change
   const {
@@ -81,7 +81,7 @@ export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EW
     status,
     progress,
     error,
-    config,
+    config: _config,
     enrichWithSF,
     updateConfig,
     canEnrichSF,
@@ -142,16 +142,50 @@ export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EW
       {showConfig && (
         <div className="ew-config-panel" data-testid="ew-config-panel">
           <div className="config-row">
-            <label>Probability Threshold:</label>
-            <span>{(config.probabilityThreshold * 100).toFixed(0)}%</span>
+            <label htmlFor="ew-prob-threshold">Probability Threshold:</label>
+            <select
+              id="ew-prob-threshold"
+              data-testid="ew-prob-threshold"
+              value={settings.probabilityThreshold}
+              onChange={(e) => updateSetting('probabilityThreshold', Number(e.target.value))}
+            >
+              <option value={0.10}>10%</option>
+              <option value={0.05}>5%</option>
+              <option value={0.02}>2%</option>
+              <option value={0.01}>1%</option>
+            </select>
           </div>
           <div className="config-row">
-            <label>Winrate Loss Threshold:</label>
-            <span>{(config.winrateLossThreshold * 100).toFixed(0)}%</span>
+            <label htmlFor="ew-winrate-loss">Winrate Loss Threshold:</label>
+            <select
+              id="ew-winrate-loss"
+              data-testid="ew-winrate-loss"
+              value={settings.winrateLossThreshold}
+              onChange={(e) => updateSetting('winrateLossThreshold', Number(e.target.value))}
+            >
+              <option value={0.03}>3%</option>
+              <option value={0.05}>5%</option>
+              <option value={0.10}>10%</option>
+            </select>
           </div>
           <div className="config-row">
-            <label>Maia Level:</label>
-            <span>{config.maiaLevel}</span>
+            <label htmlFor="ew-maia-level">Maia Level:</label>
+            <select
+              id="ew-maia-level"
+              data-testid="ew-maia-level"
+              value={settings.maiaLevel}
+              onChange={(e) => updateSetting('maiaLevel', Number(e.target.value))}
+            >
+              <option value={1100}>1100</option>
+              <option value={1200}>1200</option>
+              <option value={1300}>1300</option>
+              <option value={1400}>1400</option>
+              <option value={1500}>1500</option>
+              <option value={1600}>1600</option>
+              <option value={1700}>1700</option>
+              <option value={1800}>1800</option>
+              <option value={1900}>1900</option>
+            </select>
           </div>
         </div>
       )}
@@ -240,6 +274,25 @@ export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EW
           color: var(--color-text-muted, #666);
           text-transform: uppercase;
           letter-spacing: 0.05em;
+        }
+
+        .config-row select {
+          background: var(--color-background, #0a0a0a);
+          border: 1px solid var(--color-border, #333);
+          color: var(--color-text, #fff);
+          padding: 2px 8px;
+          font-size: var(--font-xs, 11px);
+          font-family: var(--font-mono);
+          cursor: pointer;
+        }
+
+        .config-row select:hover {
+          border-color: var(--color-primary, #FFE000);
+        }
+
+        .config-row select:focus {
+          outline: none;
+          border-color: var(--color-primary, #FFE000);
         }
 
         .sf-button {
@@ -710,6 +763,7 @@ function CandidateColumn({ candidates, selectedIndex, evalSource, onSelect }: Ca
         .move-san {
           font-weight: 600;
           color: var(--color-text, #fff);
+          white-space: nowrap;
         }
 
         .move-ew {
