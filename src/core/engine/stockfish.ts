@@ -69,6 +69,29 @@ export function computeMateInfo(
 }
 
 /**
+ * Converts a centipawn evaluation from side-to-move's perspective to White's perspective.
+ *
+ * UCI Stockfish outputs scores from the side-to-move's perspective:
+ * - Positive = good for the player whose turn it is
+ * - Negative = bad for the player whose turn it is
+ *
+ * Standard chess UI convention is White's perspective:
+ * - Positive = White is better
+ * - Negative = Black is better
+ *
+ * @param cp - Centipawn value from UCI (side-to-move's perspective)
+ * @param fen - FEN string to determine whose turn it is
+ * @returns Centipawn value from White's perspective
+ */
+export function convertToWhitePerspective(cp: number, fen: string): number {
+  // Handle zero explicitly to avoid -0 quirk
+  if (cp === 0) return 0
+
+  const isBlackTurn = fen.split(' ')[1] === 'b'
+  return isBlackTurn ? -cp : cp
+}
+
+/**
  * Creates shared WebAssembly memory for Stockfish.
  *
  * Stockfish uses multi-threading for parallel search, which requires
@@ -481,9 +504,10 @@ export class RealStockfish implements StockfishAdapter {
       cp = mate > 0 ? 10000 : -10000
     }
 
-    // NOTE: UCI Stockfish reports scores from the SIDE-TO-MOVE's perspective
-    // (not White's perspective). Positive cp = good for side to move.
-    // No perspective flip needed - the values are already correct.
+    // Convert cp from side-to-move's perspective to White's perspective
+    // UCI Stockfish reports scores from the SIDE-TO-MOVE's perspective,
+    // but our interface expects White's perspective (positive = White better).
+    cp = convertToWhitePerspective(cp, this.currentFen)
 
     // Calculate winrate from native WDL (Win/Draw/Loss permille)
     // WDL is also from side-to-move's perspective per UCI spec

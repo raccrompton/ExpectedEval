@@ -66,10 +66,14 @@ export function EnginePanel({
   isMaiaEvaluating,
   currentFen,
 }: EnginePanelProps) {
+  // Determine whose turn it is for sorting
+  const isBlackTurn = currentFen.split(' ')[1] === 'b'
+
   // Top 3 moves for Stockfish
+  // Sort descending for White (higher cp = better), ascending for Black (lower cp = better)
   const sfTopMoves = stockfishEvaluation?.moveEvaluations
     ? Object.entries(stockfishEvaluation.moveEvaluations)
-        .sort(([, a], [, b]) => b - a)
+        .sort(([, a], [, b]) => isBlackTurn ? a - b : b - a)
         .slice(0, 3)
     : stockfishEvaluation
       ? [[stockfishEvaluation.bestMove, stockfishEvaluation.cp]] as [string, number][]

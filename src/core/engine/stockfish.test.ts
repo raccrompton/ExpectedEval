@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { computeMateInfo } from './stockfish'
+import { computeMateInfo, convertToWhitePerspective } from './stockfish'
 
 describe('computeMateInfo', () => {
   /**
@@ -79,5 +79,54 @@ describe('computeMateInfo', () => {
         expect(typeof result.mateIn).toBe('number')
       }
     }
+  })
+})
+
+describe('convertToWhitePerspective', () => {
+  /**
+   * Test: White to move - cp stays the same
+   * UCI outputs from side-to-move's perspective. When White is to move,
+   * +39 cp means White is better by 0.39 pawns - no conversion needed.
+   */
+  it('keeps cp unchanged when White to move', () => {
+    // Starting position - White to move
+    const whiteFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+
+    expect(convertToWhitePerspective(39, whiteFen)).toBe(39)
+    expect(convertToWhitePerspective(-50, whiteFen)).toBe(-50)
+    expect(convertToWhitePerspective(0, whiteFen)).toBe(0)
+  })
+
+  /**
+   * Test: Black to move - cp gets flipped
+   * UCI outputs from side-to-move's perspective. When Black is to move,
+   * -39 cp (bad for Black) should become +39 cp (good for White).
+   */
+  it('flips cp sign when Black to move', () => {
+    // After 1. e4 e5 2. Nf3 - Black to move
+    const blackFen = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2'
+
+    // UCI says -39 (bad for Black) -> should be +39 (good for White)
+    expect(convertToWhitePerspective(-39, blackFen)).toBe(39)
+
+    // UCI says +39 (good for Black) -> should be -39 (bad for White)
+    expect(convertToWhitePerspective(39, blackFen)).toBe(-39)
+
+    // Zero stays zero
+    expect(convertToWhitePerspective(0, blackFen)).toBe(0)
+  })
+
+  /**
+   * Test: Mate scores get flipped correctly
+   * Large values like +/-10000 for mate should also flip based on perspective.
+   */
+  it('flips mate scores correctly for Black to move', () => {
+    const blackFen = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2'
+
+    // UCI says +10000 (Black is mating) -> should be -10000 (White is getting mated)
+    expect(convertToWhitePerspective(10000, blackFen)).toBe(-10000)
+
+    // UCI says -10000 (Black is getting mated) -> should be +10000 (White is mating)
+    expect(convertToWhitePerspective(-10000, blackFen)).toBe(10000)
   })
 })

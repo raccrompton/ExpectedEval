@@ -38,7 +38,7 @@
 
 | Type | Count | Status |
 |------|-------|--------|
-| Unit tests | 270 | ✅ Passing |
+| Unit tests | 284 | ✅ Passing |
 | E2E tests | 145+ | ✅ Passing |
 
 ---

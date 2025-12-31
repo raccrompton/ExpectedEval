@@ -387,7 +387,9 @@ export class NodeStockfish implements StockfishAdapter {
       cp = mate > 0 ? 10000 : -10000
     }
 
-    // Adjust perspective: Stockfish reports from White's view
+    // Convert cp from side-to-move's perspective to White's perspective
+    // UCI Stockfish reports scores from the SIDE-TO-MOVE's perspective,
+    // but our interface expects White's perspective (positive = White better).
     const isBlackTurn = this.currentFen.split(' ')[1] === 'b'
     if (isBlackTurn) {
       cp *= -1
