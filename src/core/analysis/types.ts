@@ -478,7 +478,7 @@ function getEWConfigFromEnv(): Partial<EWConfig> {
  * In test mode (?testMode=true or ?sfDepth=1), uses faster settings.
  */
 export const DEFAULT_EW_CONFIG: EWConfig = {
-  probabilityThreshold: 0.01,    // 1% - explore branches with ≥1% cumulative probability
+  probabilityThreshold: 0.10,    // 10% - explore branches with ≥10% cumulative probability
   winrateLossThreshold: 0.05,    // 5% - filter moves losing more than 5% winrate
   maiaLevel: 1500,               // Intermediate human level
   stockfishDepth: 10,            // Reasonable depth for batch evaluation

@@ -181,19 +181,31 @@ coords {
 }
 
 /* Rank labels (1-8) on the left */
+/* Default (white orientation): 8 at top, 1 at bottom = column-reverse */
 coords.ranks {
   left: 2px;
   top: 0;
-  flex-direction: column;
+  flex-flow: column-reverse;
   height: 100%;
 }
 
+/* Black orientation: 1 at top, 8 at bottom = column */
+coords.ranks.black {
+  flex-flow: column;
+}
+
 /* File labels (a-h) at the bottom */
+/* Default (white orientation): a on left, h on right = row */
 coords.files {
   bottom: 2px;
   left: 0;
-  flex-direction: row;
+  flex-flow: row;
   width: 100%;
+}
+
+/* Black orientation: h on left, a on right = row-reverse */
+coords.files.black {
+  flex-flow: row-reverse;
 }
 
 /* Individual coordinate labels */
