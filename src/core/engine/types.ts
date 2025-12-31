@@ -9,6 +9,27 @@
  *
  * Both Stockfish and Maia implement these interfaces, allowing
  * the Expected Winrate algorithm to work with either or mock versions.
+ *
+ * ============================================================================
+ * PERSPECTIVE CONVENTIONS (IMPORTANT!)
+ * ============================================================================
+ *
+ * Different evaluation fields use different perspectives:
+ *
+ * | Field              | Perspective      | Example: White winning, Black to move |
+ * |--------------------|------------------|---------------------------------------|
+ * | cp                 | WHITE's          | +150 (positive = White better)        |
+ * | moveEvaluations    | WHITE's          | { "d6": +150, "Nc6": +148 }           |
+ * | winrate            | SIDE-TO-MOVE's   | 0.25 (25% = Black's chance of winning)|
+ * | wdl                | SIDE-TO-MOVE's   | { win: 5, draw: 40, loss: 55 }        |
+ * | moveWinrates       | SIDE-TO-MOVE's   | { "d6": 0.25, "Nc6": 0.26 }           |
+ * | Maia value         | SIDE-TO-MOVE's   | 0.25 (25% = Black's chance of winning)|
+ *
+ * WHY THE DIFFERENCE?
+ * - cp in White's perspective matches standard chess UI convention (+0.50 = White better)
+ * - winrate/WDL in side-to-move perspective is more useful for "best move for me" logic
+ *
+ * The perspective.test.ts file empirically verifies these conventions.
  */
 
 // ============================================================================
@@ -34,21 +55,31 @@ export interface StockfishEvaluation {
   bestMove: string
 
   /**
-   * Centipawn evaluation from White's perspective.
+   * Centipawn evaluation from WHITE's perspective.
    * Positive = White is better, Negative = Black is better.
    * 100 cp ≈ 1 pawn advantage.
+   *
+   * PERSPECTIVE: Always from White's view, regardless of whose turn it is.
+   * Example: After 1.e4 e5 2.Nf3, cp=+39 means White is slightly better.
    */
   cp: number
 
   /**
-   * Win probability from the side to move's perspective (0.0 to 1.0).
+   * Win probability from the SIDE-TO-MOVE's perspective (0.0 to 1.0).
    * Derived from native WDL: (win + draw/2) / 1000.
+   *
+   * PERSPECTIVE: From the current player's view.
+   * Example: After 1.e4 e5 2.Nf3 (Black to move), winrate=0.45 means
+   * Black has 45% chance of winning (Black is slightly worse).
    */
   winrate: number
 
   /**
    * Native Win/Draw/Loss percentages from Stockfish (0-100 scale).
    * More accurate than calculated winrate as it accounts for position complexity.
+   *
+   * PERSPECTIVE: From the SIDE-TO-MOVE's view.
+   * win = side-to-move's winning chances, loss = side-to-move's losing chances.
    */
   wdl?: {
     win: number
@@ -59,12 +90,16 @@ export interface StockfishEvaluation {
   /**
    * Evaluation for each legal move (UCI format → centipawns).
    * Useful for filtering candidate moves.
+   *
+   * PERSPECTIVE: From WHITE's view (same as `cp`).
    */
   moveEvaluations?: Record<string, number>
 
   /**
    * Win probability for each legal move (UCI format → probability).
    * Useful for comparing move quality.
+   *
+   * PERSPECTIVE: From SIDE-TO-MOVE's view (same as `winrate`).
    */
   moveWinrates?: Record<string, number>
 

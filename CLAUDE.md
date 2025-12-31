@@ -36,22 +36,22 @@
 
 ### Test Status
 
-| Type | Count | Status |
-|------|-------|--------|
-| Unit tests | 284 | ✅ Passing |
-| E2E tests | 145+ | ✅ Passing |
+| Type       | Count | Status     |
+| ---------- | ----- | ---------- |
+| Unit tests | 286 | ✅ Passing |
+| E2E tests  | 145+  | ✅ Passing |
 
 ---
 
 ## Quick Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run test:run` | Run unit tests (outputs JSON to `test-results/unit-tests.json`) |
-| `npm run test:e2e` | Run E2E tests (outputs JSON to `test-results/e2e-tests.json`) |
-| `npm run test:timing` | View timing report for slowest tests |
-| `npm run test:timing -- --unit` | Timing report for unit tests only |
-| `npm run test:timing -- --e2e` | Timing report for E2E tests only |
+| Command                         | Description                                                     |
+| ------------------------------- | --------------------------------------------------------------- |
+| `npm run test:run`              | Run unit tests (outputs JSON to `test-results/unit-tests.json`) |
+| `npm run test:e2e`              | Run E2E tests (outputs JSON to `test-results/e2e-tests.json`)   |
+| `npm run test:timing`           | View timing report for slowest tests                            |
+| `npm run test:timing -- --unit` | Timing report for unit tests only                               |
+| `npm run test:timing -- --e2e`  | Timing report for E2E tests only                                |
 
 ---
 
@@ -74,12 +74,12 @@ Traditional chess engines evaluate the "best possible" result assuming perfect p
 
 The analysis provides **four evaluation methods** for any position:
 
-| # | Method | What It Shows | Source |
-|---|--------|---------------|--------|
-| 1 | **SF Baseline** | Traditional engine evaluation | Stockfish evaluates position directly |
-| 2 | **Maia Baseline** | Human win probability | Maia's neural network value head |
-| 3 | **EW (SF leaves)** | Expected outcome with accurate evals | Tree search: Maia probs → SF values |
-| 4 | **EW (Maia leaves)** | Expected outcome with human perception | Tree search: Maia probs → Maia values |
+| #   | Method               | What It Shows                          | Source                                |
+| --- | -------------------- | -------------------------------------- | ------------------------------------- |
+| 1   | **SF Baseline**      | Traditional engine evaluation          | Stockfish evaluates position directly |
+| 2   | **Maia Baseline**    | Human win probability                  | Maia's neural network value head      |
+| 3   | **EW (SF leaves)**   | Expected outcome with accurate evals   | Tree search: Maia probs → SF values   |
+| 4   | **EW (Maia leaves)** | Expected outcome with human perception | Tree search: Maia probs → Maia values |
 
 It combines:
 
@@ -90,10 +90,10 @@ It combines:
 
 The EW calculation uses a **Maia-first approach** for responsive UI:
 
-| Phase | Trigger | Engine | Speed | Result |
-|-------|---------|--------|-------|--------|
+| Phase         | Trigger                 | Engine    | Speed               | Result         |
+| ------------- | ----------------------- | --------- | ------------------- | -------------- |
 | **Fast Path** | Auto on position change | Maia only | ~20-30s (all moves) | EW(Maia) ready |
-| **Slow Path** | User clicks "Add SF" | Stockfish | ~1-3s | EW(SF) added |
+| **Slow Path** | User clicks "Add SF"    | Stockfish | ~1-3s               | EW(SF) added   |
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -116,6 +116,7 @@ The EW calculation uses a **Maia-first approach** for responsive UI:
 ```
 
 **Key Functions:**
+
 - `calculateMaiaOnlyEW(fen, config, maia)` → Analyzes ALL legal moves with Maia only
 - `enrichWithStockfish(result, stockfish)` → Adds SF data to existing result
 - `selectCandidatesByMaiaProbability(fen, maia)` → Returns all legal moves sorted by probability
@@ -126,6 +127,7 @@ The EW calculation uses a **Maia-first approach** for responsive UI:
 Tree building yields to the browser event loop every 3 Maia predictions via `yieldToUI()` (a `setTimeout(resolve, 0)` wrapper in [treeBuilder.ts](src/core/analysis/treeBuilder.ts)). This prevents page freezing during calculation while keeping the implementation simple (no web workers needed for Maia).
 
 Additional responsiveness measures:
+
 - **300ms debounce** on position changes before auto-triggering EW calculation
 - **Stale result detection** via `currentFenRef` - discards results if position changed during calculation
 - **Concurrent engine guard** - waits for panel evaluation to complete before starting EW calc
@@ -189,6 +191,37 @@ Where:
 | `sfDepth`              | Stockfish search depth for evaluations           | 10-18         |
 
 **Note**: No `maxDepth` parameter - tree termination is purely probability-based. Branches are pruned when their cumulative probability falls below `probabilityThreshold`.
+
+---
+
+## Engine Evaluation Perspective Conventions
+
+**CRITICAL:** Different evaluation fields use different perspectives. Getting this wrong causes display bugs.
+
+| Field              | Perspective      | Example: White winning, Black to move |
+|--------------------|------------------|---------------------------------------|
+| `cp`               | WHITE's          | `+150` (positive = White better)      |
+| `moveEvaluations`  | WHITE's          | `{ "d6": +150, "Nc6": +148 }`         |
+| `winrate`          | SIDE-TO-MOVE's   | `0.25` (Black has 25% chance)         |
+| `wdl`              | SIDE-TO-MOVE's   | `{ win: 5, draw: 40, loss: 55 }`      |
+| `moveWinrates`     | SIDE-TO-MOVE's   | `{ "d6": 0.25, "Nc6": 0.26 }`         |
+| Maia `value`       | SIDE-TO-MOVE's   | `0.25` (Black has 25% chance)         |
+
+### Why the Difference?
+
+- **cp in White's perspective**: Matches standard chess UI convention (`+0.50` = White better)
+- **winrate in side-to-move perspective**: More useful for "best move for me" sorting logic
+
+### Key Implementation Details
+
+1. **UCI Stockfish** outputs cp from **side-to-move's** perspective
+2. Our `stockfish.ts` converts cp to **White's perspective** via `convertToWhitePerspective()`
+3. **winrate/WDL** are passed through unchanged (stay in side-to-move perspective)
+4. When **sorting moves** in UI, sort descending for White, ascending for Black
+
+### Regression Test
+
+The `src/core/engine/perspective.test.ts` file **empirically verifies** these conventions by evaluating positions where one side is clearly winning. Any perspective bug will cause these tests to fail.
 
 ---
 
@@ -283,6 +316,7 @@ Core logic has NO React dependencies. This enables:
 ```
 
 **Layout Key:**
+
 - **Top row (Header):** Fixed ~40px with settings
 - **Middle row:** PgnInput (compact, rows=3) | MoveList (truncates with "...") | EnginePanel (SF+Maia side-by-side, top 3 moves, no bars)
 - **Bottom row:** Board + NavButtons (left, square) | EWSection (right, no baselines - shown in EnginePanel)
@@ -296,14 +330,14 @@ We use **chessops** as the foundation for all chess logic. Don't reinvent the wh
 
 ### Why chessops
 
-| Feature             | chessops provides | We don't write    |
-| ------------------- | ----------------- | ----------------- |
-| PGN parsing         | `parsePgn()`      | Parser            |
-| PGN export          | `makePgn()`       | Serializer        |
-| Move validation     | `Chess.isLegal()` | Validation logic  |
-| FEN generation      | `makeFen()`       | Position tracking |
-| Variation handling  | Built-in tree     | Tree structure    |
-| NAG support         | `nags: number[]`  | Quality markers   |
+| Feature            | chessops provides | We don't write    |
+| ------------------ | ----------------- | ----------------- |
+| PGN parsing        | `parsePgn()`      | Parser            |
+| PGN export         | `makePgn()`       | Serializer        |
+| Move validation    | `Chess.isLegal()` | Validation logic  |
+| FEN generation     | `makeFen()`       | Position tracking |
+| Variation handling | Built-in tree     | Tree structure    |
+| NAG support        | `nags: number[]`  | Quality markers   |
 
 ### Key Insight: EW Tree = chessops Variations
 
@@ -328,6 +362,7 @@ Probabilities and evaluations are stored as **PGN comment annotations**:
 ```
 
 Annotation format:
+
 - `[%prob X.XX]` - Maia move probability (0.0-1.0)
 - `[%eval X.XX]` - Stockfish winrate (0.0-1.0)
 - `[%ew X.XX]` - Expected Winrate result (only on candidate moves)
@@ -344,10 +379,10 @@ We write minimal code on top of chessops. Our wrappers handle:
 ```typescript
 // src/core/chess/annotations.ts - parsing [%prob][%eval] from comment strings
 interface ParsedAnnotations {
-  prob?: number;   // Maia probability
-  eval?: number;   // SF winrate
-  ew?: number;     // Expected Winrate
-  cp?: number;     // SF centipawns
+  prob?: number; // Maia probability
+  eval?: number; // SF winrate
+  ew?: number; // Expected Winrate
+  cp?: number; // SF centipawns
 }
 
 function parseAnnotations(comments: string[]): ParsedAnnotations;
@@ -356,7 +391,7 @@ function serializeAnnotations(annotations: ParsedAnnotations): string;
 
 ```typescript
 // src/core/chess/game.ts - thin wrapper around chessops
-import { parsePgn, makePgn } from 'chessops/pgn';
+import { parsePgn, makePgn } from "chessops/pgn";
 
 // These just call chessops
 function loadGame(pgn: string): Game<PgnNodeData>;
@@ -371,9 +406,9 @@ function addEWVariations(node: PgnNodeData, ewResults: EWCandidate[]): void;
 // chessops tree is stateless; we track where user is viewing
 
 interface NavigationState {
-  game: Game<PgnNodeData>;     // The chessops tree
-  currentPath: number[];        // Path to current node (index at each depth)
-  currentFen: string;           // FEN at current position (computed)
+  game: Game<PgnNodeData>; // The chessops tree
+  currentPath: number[]; // Path to current node (index at each depth)
+  currentFen: string; // FEN at current position (computed)
 }
 
 function getCurrentNode(state: NavigationState): PgnNodeData;
@@ -410,7 +445,13 @@ interface UseChessGameReturn {
 ```typescript
 interface UseExpectedWinrateReturn {
   result: EWResult | null;
-  status: 'idle' | 'calculating_maia' | 'complete_maia' | 'enriching_sf' | 'complete' | 'error';
+  status:
+    | "idle"
+    | "calculating_maia"
+    | "complete_maia"
+    | "enriching_sf"
+    | "complete"
+    | "error";
   hasSFResults: boolean;
   canEnrichSF: boolean;
   enrichWithSF: () => Promise<void>;
@@ -434,10 +475,10 @@ The EW tree answers: **"Which move has the best realistic outcome given how huma
 
 The tree uses a two-column design for better usability:
 
-| Column | Component | Contents |
-|--------|-----------|----------|
-| **Left** | CandidateColumn | Clickable list of candidate moves with EW values |
-| **Right** | EWTable | Horizontal table showing variation lines by ply |
+| Column    | Component       | Contents                                         |
+| --------- | --------------- | ------------------------------------------------ |
+| **Left**  | CandidateColumn | Clickable list of candidate moves with EW values |
+| **Right** | EWTable         | Horizontal table showing variation lines by ply  |
 
 ```
 ┌─────────────────┬───────────────────────────────────────────────────────────────┐
@@ -452,10 +493,10 @@ The tree uses a two-column design for better usability:
 
 ### Display Structure
 
-| Level | Shows | Sorted by |
-|-------|-------|-----------|
-| **Candidate moves** | EW (probability-weighted average) | EW (highest first) |
-| **Table rows** | Line EW and Likelihood | Play rate (most likely first) |
+| Level               | Shows                             | Sorted by                     |
+| ------------------- | --------------------------------- | ----------------------------- |
+| **Candidate moves** | EW (probability-weighted average) | EW (highest first)            |
+| **Table rows**      | Line EW and Likelihood            | Play rate (most likely first) |
 
 ### Table Display (EWTable)
 
@@ -472,10 +513,10 @@ The tree uses a two-column design for better usability:
 
 ### Core Files
 
-| File | Purpose |
-|------|---------|
-| `src/core/analysis/treeToTable.ts` | Transforms TreeNode to TableRow[] for display |
-| `src/components/Analysis/EWTable.tsx` | Renders horizontal table with expand/collapse |
+| File                                    | Purpose                                         |
+| --------------------------------------- | ----------------------------------------------- |
+| `src/core/analysis/treeToTable.ts`      | Transforms TreeNode to TableRow[] for display   |
+| `src/components/Analysis/EWTable.tsx`   | Renders horizontal table with expand/collapse   |
 | `src/components/Analysis/EWSection.tsx` | Container integrating CandidateColumn + EWTable |
 
 ### Interactions
@@ -487,15 +528,15 @@ The tree uses a two-column design for better usability:
 
 ### Test IDs
 
-| Element | Test ID Pattern |
-|---------|-----------------|
-| Container | `ew-candidate-tree-view` |
-| Candidate column | `ew-candidate-column` |
-| Candidate item | `ew-candidate-{index}` |
-| Table container | `ew-table` |
-| Table row | `ew-table-row-{index}` |
-| Expand button | `ew-expand-{rowIndex}-{plyIndex}` |
-| Collapse button | `ew-collapse-{rowIndex}` |
+| Element          | Test ID Pattern                   |
+| ---------------- | --------------------------------- |
+| Container        | `ew-candidate-tree-view`          |
+| Candidate column | `ew-candidate-column`             |
+| Candidate item   | `ew-candidate-{index}`            |
+| Table container  | `ew-table`                        |
+| Table row        | `ew-table-row-{index}`            |
+| Expand button    | `ew-expand-{rowIndex}-{plyIndex}` |
+| Collapse button  | `ew-collapse-{rowIndex}`          |
 
 ---
 
@@ -594,21 +635,24 @@ The MVP is complete when:
 The UI follows a **Brutalist/Geometric** design language:
 
 ### Colors
-| Token | Value | Usage |
-|-------|-------|-------|
-| Background | `#0a0a0a` | Near-black base |
-| Primary | `#FFE000` | Electric yellow accents, borders |
-| Secondary | `#00D4FF` | Cyan for best moves, highlights |
-| Text | `#ffffff` | Primary text |
-| Muted | `#666666` | Secondary text |
+
+| Token      | Value     | Usage                            |
+| ---------- | --------- | -------------------------------- |
+| Background | `#0a0a0a` | Near-black base                  |
+| Primary    | `#FFE000` | Electric yellow accents, borders |
+| Secondary  | `#00D4FF` | Cyan for best moves, highlights  |
+| Text       | `#ffffff` | Primary text                     |
+| Muted      | `#666666` | Secondary text                   |
 
 ### Typography
-| Font | Usage |
-|------|-------|
-| **Archivo Black** | Display headers, titles |
+
+| Font              | Usage                                |
+| ----------------- | ------------------------------------ |
+| **Archivo Black** | Display headers, titles              |
 | **IBM Plex Mono** | Data, UI elements, monospace content |
 
 ### Styling Conventions
+
 - **No border-radius** - All corners are sharp (0px)
 - **Thick borders** - 2-3px solid borders
 - **Harsh shadows** - Box-shadows without blur (`4px 4px 0 rgba(255,224,0,0.3)`)
@@ -616,6 +660,7 @@ The UI follows a **Brutalist/Geometric** design language:
 - **Grid overlay** - 64px grid pattern (chess board reference)
 
 ### Key Files
+
 - `src/styles/globals.css` - Design tokens and base styles
 - `src/pages/index.tsx` - Main layout with brutalist panels
 - `src/components/Analysis/EWSection.tsx` - EW display styling
@@ -637,3 +682,36 @@ When implementing, these files from `maia-platform-frontend/` are useful referen
 | Move list display          | `src/components/Board/MovesContainer.tsx` |
 
 **Note:** Reference for patterns only. Build fresh implementations.
+
+Handy notes:
+
+### Engine Evaluation Perspective (IMPORTANT)
+
+**⚠️ BUG IDENTIFIED - Needs fixing before EW calculations are correct**
+
+Empirical testing (`src/core/engine/perspective.test.ts`) revealed perspective inconsistencies:
+
+| Engine             | File                | Output    | Perspective                      |
+| ------------------ | ------------------- | --------- | -------------------------------- |
+| **Stockfish Node** | `stockfish.node.ts` | `cp`      | White's                          |
+| **Stockfish Node** | `stockfish.node.ts` | `winrate` | **Side-to-move** (inconsistent!) |
+| **Maia Node**      | `maia.node.ts`      | `value`   | White's (flips for Black)        |
+| **Maia Browser**   | `maia.ts`           | `value`   | **Side-to-move** (no flip)       |
+
+**The Problem:**
+
+- `treeBuilder.ts` assumes Maia returns from **White's perspective** (lines 149, 262)
+- Browser `maia.ts` actually returns from **side-to-move's perspective**
+- This causes EW values to be inverted when Black is the root player
+
+**Evidence:** Position after e4 e5 Nf3 (Black to move), candidate Qg5 (hangs queen):
+
+- After Nxg5 (takes queen), UI shows 92% EW for Black
+- Should show ~8% (Black just lost their queen!)
+
+**Fix Options:**
+
+1. **Option A**: Make `maia.ts` return White's perspective (un-comment flip at line 411-413)
+2. **Option B**: Fix `treeBuilder.ts` to use `currentTurn === rootTurn` pattern (like SF handling)
+
+**Test file:** `src/core/engine/perspective.test.ts` - run to verify perspective behavior
