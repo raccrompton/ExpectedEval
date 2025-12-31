@@ -310,16 +310,12 @@ export class NodeMaia implements MaiaAdapter {
     const rawValue = value[0] as number
     let winProb = Math.min(Math.max(rawValue / 2 + 0.5, 0), 1)
 
-    // Check if it's Black's turn
-    const isBlackTurn = fen.split(' ')[1] === 'b'
+    // Value is from side-to-move's perspective (matches types.ts documentation).
+    // Consumers (e.g., treeBuilder.ts) normalize to root player's perspective.
+    // NO flip here - that would cause double-inversion bugs.
 
-    // IMPORTANT: Flip the value when Black is to move to get consistent "White's expected score"
-    // This matches the original maia-platform-frontend implementation.
-    // Without this flip, we'd be returning Black's expected score when it's Black's turn,
-    // which breaks Expected Winrate calculations that need consistent perspective.
-    if (isBlackTurn) {
-      winProb = 1 - winProb
-    }
+    // Check if it's Black's turn (needed for move mirroring below)
+    const isBlackTurn = fen.split(' ')[1] === 'b'
 
     // Round to 4 decimal places
     winProb = Math.round(winProb * 10000) / 10000

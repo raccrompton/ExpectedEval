@@ -38,8 +38,8 @@
 
 | Type       | Count | Status     |
 | ---------- | ----- | ---------- |
-| Unit tests | 286 | ✅ Passing |
-| E2E tests  | 145+  | ✅ Passing |
+| Unit tests | 286   | ✅ Passing |
+| E2E tests  | 148   | ✅ Passing |
 
 ---
 
@@ -191,37 +191,6 @@ Where:
 | `sfDepth`              | Stockfish search depth for evaluations           | 10-18         |
 
 **Note**: No `maxDepth` parameter - tree termination is purely probability-based. Branches are pruned when their cumulative probability falls below `probabilityThreshold`.
-
----
-
-## Engine Evaluation Perspective Conventions
-
-**CRITICAL:** Different evaluation fields use different perspectives. Getting this wrong causes display bugs.
-
-| Field              | Perspective      | Example: White winning, Black to move |
-|--------------------|------------------|---------------------------------------|
-| `cp`               | WHITE's          | `+150` (positive = White better)      |
-| `moveEvaluations`  | WHITE's          | `{ "d6": +150, "Nc6": +148 }`         |
-| `winrate`          | SIDE-TO-MOVE's   | `0.25` (Black has 25% chance)         |
-| `wdl`              | SIDE-TO-MOVE's   | `{ win: 5, draw: 40, loss: 55 }`      |
-| `moveWinrates`     | SIDE-TO-MOVE's   | `{ "d6": 0.25, "Nc6": 0.26 }`         |
-| Maia `value`       | SIDE-TO-MOVE's   | `0.25` (Black has 25% chance)         |
-
-### Why the Difference?
-
-- **cp in White's perspective**: Matches standard chess UI convention (`+0.50` = White better)
-- **winrate in side-to-move perspective**: More useful for "best move for me" sorting logic
-
-### Key Implementation Details
-
-1. **UCI Stockfish** outputs cp from **side-to-move's** perspective
-2. Our `stockfish.ts` converts cp to **White's perspective** via `convertToWhitePerspective()`
-3. **winrate/WDL** are passed through unchanged (stay in side-to-move perspective)
-4. When **sorting moves** in UI, sort descending for White, ascending for Black
-
-### Regression Test
-
-The `src/core/engine/perspective.test.ts` file **empirically verifies** these conventions by evaluating positions where one side is clearly winning. Any perspective bug will cause these tests to fail.
 
 ---
 
@@ -562,6 +531,8 @@ interface MaiaResult {
 
 **Key insight**: Maia's value head provides an alternative position evaluation to Stockfish. This enables computing EW(Maia) which represents "human-perceived" expected outcomes.
 
+**Perspective convention**: Maia `value` is returned from **side-to-move's perspective** (see `docs/perspective.md` for details).
+
 ### Stockfish Engine (WebAssembly)
 
 - Uses Stockfish WASM (~75MB with NNUE)
@@ -577,6 +548,8 @@ interface StockfishEvaluation {
   winrate_vec: Record<string, number>; // Move → win probability
 }
 ```
+
+**Perspective convention**: `cp` is from **White's perspective**, `winrate` is from **side-to-move's perspective** (see `docs/perspective.md` for details).
 
 ### Required CORS Headers
 
@@ -682,36 +655,3 @@ When implementing, these files from `maia-platform-frontend/` are useful referen
 | Move list display          | `src/components/Board/MovesContainer.tsx` |
 
 **Note:** Reference for patterns only. Build fresh implementations.
-
-Handy notes:
-
-### Engine Evaluation Perspective (IMPORTANT)
-
-**⚠️ BUG IDENTIFIED - Needs fixing before EW calculations are correct**
-
-Empirical testing (`src/core/engine/perspective.test.ts`) revealed perspective inconsistencies:
-
-| Engine             | File                | Output    | Perspective                      |
-| ------------------ | ------------------- | --------- | -------------------------------- |
-| **Stockfish Node** | `stockfish.node.ts` | `cp`      | White's                          |
-| **Stockfish Node** | `stockfish.node.ts` | `winrate` | **Side-to-move** (inconsistent!) |
-| **Maia Node**      | `maia.node.ts`      | `value`   | White's (flips for Black)        |
-| **Maia Browser**   | `maia.ts`           | `value`   | **Side-to-move** (no flip)       |
-
-**The Problem:**
-
-- `treeBuilder.ts` assumes Maia returns from **White's perspective** (lines 149, 262)
-- Browser `maia.ts` actually returns from **side-to-move's perspective**
-- This causes EW values to be inverted when Black is the root player
-
-**Evidence:** Position after e4 e5 Nf3 (Black to move), candidate Qg5 (hangs queen):
-
-- After Nxg5 (takes queen), UI shows 92% EW for Black
-- Should show ~8% (Black just lost their queen!)
-
-**Fix Options:**
-
-1. **Option A**: Make `maia.ts` return White's perspective (un-comment flip at line 411-413)
-2. **Option B**: Fix `treeBuilder.ts` to use `currentTurn === rootTurn` pattern (like SF handling)
-
-**Test file:** `src/core/engine/perspective.test.ts` - run to verify perspective behavior

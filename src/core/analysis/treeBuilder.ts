@@ -145,10 +145,10 @@ export async function buildTree(
   )
   predictionCount++
 
-  // Normalize Maia value to root player's perspective
-  // Maia returns value from White's perspective
-  // We need it from the perspective of who made the candidate move
-  const normalizedMaiaValue = actualRootTurn === 'w'
+  // Maia returns value from side-to-move's perspective.
+  // Normalize to root player's perspective using the same pattern as SF.
+  const rootFenTurn = getTurnFromFen(rootFen)
+  const normalizedMaiaValue = rootFenTurn === actualRootTurn
     ? rootMaiaEval.value
     : 1 - rootMaiaEval.value
 
@@ -258,8 +258,10 @@ async function expandNodeWithMaia(
       await yieldToUI()
     }
 
-    // Normalize Maia value to root player's perspective
-    const normalizedChildValue = rootTurn === 'w'
+    // Maia returns value from side-to-move's perspective.
+    // Normalize to root player's perspective using the same pattern as SF.
+    const childTurn = getTurnFromFen(newFen)
+    const normalizedChildValue = childTurn === rootTurn
       ? childMaiaEval.value
       : 1 - childMaiaEval.value
 
