@@ -593,3 +593,107 @@ describe('treeToTableRows - ply 1 default expansion', () => {
     expect(d5Row!.moves.map(m => m.san)).toEqual(['d5', 'exd5', 'Qxd5'])
   })
 })
+
+describe('treeToTableRows - alternative likelihood calculation', () => {
+  test('alternative at ply 2 includes ancestor probabilities from mainline', () => {
+    // Tree structure:
+    // root (san=null)
+    //   └─ Nxd1 (30%) [ply 0]
+    //        └─ Bxg7 (50%) [ply 1]
+    //             ├─ Qb1 (40%) [ply 2, mainline]
+    //             └─ Kxg7 (35%) [ply 2, alternative]
+    //
+    // mainlinePath = [Nxd1, Bxg7, Qb1]
+    // To show Kxg7 as alternative to Qb1, expand at ply 2: "2-Qb1"
+    //
+    // Current bug: likelihood = P(Kxg7) = 0.35
+    // Correct: likelihood = P(Nxd1) × P(Bxg7) × P(Kxg7) = 0.30 × 0.50 × 0.35 = 0.0525
+
+    const Qb1 = createChildNode('Qb1', 0.40, 0.60, 3, [])
+    const Kxg7 = createChildNode('Kxg7', 0.35, 0.58, 3, [])
+
+    const Bxg7 = createChildNode('Bxg7', 0.50, 0.55, 2, [Qb1, Kxg7])
+    const Nxd1 = createChildNode('Nxd1', 0.30, 0.52, 1, [Bxg7])
+
+    const root = createMockNode({
+      children: [Nxd1],
+      isLeaf: false,
+      exploredProbability: 0.30,
+    })
+
+    // Expand at ply 2 (Qb1) to show Kxg7 alternative
+    const expanded = new Set(['2-Qb1'])
+    const rows = treeToTableRows(root, expanded, 16, 'b')
+
+    // Find the Kxg7 alternative row
+    const kxg7Row = rows.find(r => r.id === 'alt-2-Kxg7')
+    expect(kxg7Row).toBeDefined()
+
+    // Likelihood should include ALL ancestors:
+    // P(Nxd1) × P(Bxg7) × P(Kxg7) = 0.30 × 0.50 × 0.35 = 0.0525
+    expect(kxg7Row!.likelihood).toBeCloseTo(0.0525, 4)
+  })
+
+  test('alternative at ply 1 includes ancestor probability', () => {
+    // Tree structure:
+    // root (san=null)
+    //   └─ e5 (50%) [ply 0]
+    //        ├─ Nf3 (40%) [ply 1, mainline]
+    //        │    └─ Nc6 (60%) [ply 2]
+    //        └─ Bc4 (35%) [ply 1, alternative]
+    //
+    // mainlinePath = [e5, Nf3, Nc6]
+    // To show Bc4 as alternative to Nf3, expand at ply 1: "1-Nf3"
+    //
+    // Current bug: likelihood = P(Bc4) = 0.35
+    // Correct: likelihood = P(e5) × P(Bc4) = 0.50 × 0.35 = 0.175
+
+    const Nc6 = createChildNode('Nc6', 0.60, 0.50, 3, [])
+    const Nf3 = createChildNode('Nf3', 0.40, 0.52, 2, [Nc6])
+    const Bc4 = createChildNode('Bc4', 0.35, 0.48, 2, [])
+
+    const e5 = createChildNode('e5', 0.50, 0.48, 1, [Nf3, Bc4])
+
+    const root = createMockNode({
+      children: [e5],
+      isLeaf: false,
+      exploredProbability: 0.50,
+    })
+
+    // Expand at ply 1 (Nf3) to show Bc4 alternative
+    const expanded = new Set(['1-Nf3'])
+    const rows = treeToTableRows(root, expanded, 1, 'w')
+
+    // Find the Bc4 alternative row
+    const bc4Row = rows.find(r => r.id === 'alt-1-Bc4')
+    expect(bc4Row).toBeDefined()
+
+    // Likelihood = P(e5) × P(Bc4) = 0.50 × 0.35 = 0.175
+    expect(bc4Row!.likelihood).toBeCloseTo(0.175, 3)
+  })
+
+  test('mainline likelihood calculation is correct', () => {
+    // Mainline: e5 (50%) → Nf3 (40%) → Nc6 (60%)
+    // Likelihood = 0.50 × 0.40 × 0.60 = 0.12
+
+    const Nc6 = createChildNode('Nc6', 0.60, 0.50, 3, [])
+    const Nf3 = createChildNode('Nf3', 0.40, 0.52, 2, [Nc6])
+    const e5 = createChildNode('e5', 0.50, 0.48, 1, [Nf3])
+
+    const root = createMockNode({
+      children: [e5],
+      isLeaf: false,
+      exploredProbability: 0.50,
+    })
+
+    // Use focused mode (non-empty expandedCells) to get single mainline row
+    const expanded = new Set(['1-Nf3']) // Any expansion triggers focused mode
+    const rows = treeToTableRows(root, expanded, 1, 'w')
+
+    const mainline = rows.find(r => r.id === 'mainline')
+    expect(mainline).toBeDefined()
+
+    // Likelihood = P(e5) × P(Nf3) × P(Nc6) = 0.50 × 0.40 × 0.60 = 0.12
+    expect(mainline!.likelihood).toBeCloseTo(0.12, 3)
+  })
+})

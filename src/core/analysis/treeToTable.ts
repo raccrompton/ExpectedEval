@@ -352,14 +352,28 @@ function getAlternativeLeaf(altRoot: TreeNode): TreeNode {
 
 /**
  * Calculate likelihood for an alternative branch.
+ *
+ * The likelihood is the cumulative probability of reaching this alternative line,
+ * which includes:
+ * 1. The probability of all mainline ancestors (mainlinePath[0] through mainlinePath[branchPly-1])
+ * 2. The probability of the alternative node itself
+ * 3. The probability of all descendants following the mainline within the alternative branch
  */
 function calculateAlternativeLikelihood(
   altNode: TreeNode,
-  _branchPly: number,
-  _mainlinePath: TreeNode[]
+  branchPly: number,
+  mainlinePath: TreeNode[]
 ): number {
-  let cumProb = altNode.probability
+  // Start with ancestor probabilities from mainline (up to but not including the branch point)
+  let cumProb = 1
+  for (let i = 0; i < branchPly; i++) {
+    cumProb *= mainlinePath[i].probability
+  }
 
+  // Add the alternative node's probability
+  cumProb *= altNode.probability
+
+  // Follow mainline within the alternative branch
   let current = altNode
   while (current.children.length > 0) {
     const sorted = [...current.children].sort((a, b) => b.probability - a.probability)
