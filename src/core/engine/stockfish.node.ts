@@ -43,6 +43,7 @@ import type {
   StockfishEvaluation,
 } from './types'
 import { cpToWinrate } from './types'
+import { computeMateInfo } from './stockfish'
 
 // Import chessops for legal move calculation
 import { Chess } from 'chessops/chess'
@@ -452,13 +453,8 @@ export class NodeStockfish implements StockfishAdapter {
       }
     }
 
-    // Check for checkmate
-    const isMate =
-      data.mate_vec !== undefined && Object.keys(data.mate_vec).length > 0
-    let mateIn: number | undefined = undefined
-    if (isMate && data.mate_vec) {
-      mateIn = data.mate_vec[bestMove]
-    }
+    // Check for checkmate - only true if bestMove leads to mate
+    const { isMate, mateIn } = computeMateInfo(data.mate_vec, bestMove)
 
     // Get centipawn for best move
     const cp = data.cp_vec[bestMove] ?? data.model_optimal_cp

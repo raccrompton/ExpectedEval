@@ -40,6 +40,35 @@ import { SquareSet } from 'chessops/squareSet'
 // Types used for documentation/clarity but not directly in this file
 
 /**
+ * Result of computing mate information from engine data.
+ */
+export interface MateInfo {
+  isMate: boolean
+  mateIn: number | undefined
+}
+
+/**
+ * Computes mate information from engine evaluation data.
+ *
+ * Ensures the invariant: if isMate is true, mateIn must be defined.
+ * This prevents displaying "Mundefined" when mate_vec has entries
+ * for moves other than the best move.
+ *
+ * @param mateVec - Map of move to mate distance, or undefined if no mates
+ * @param bestMove - The best move selected by the engine
+ * @returns Object with isMate and mateIn fields
+ */
+export function computeMateInfo(
+  mateVec: Record<string, number> | undefined,
+  bestMove: string
+): MateInfo {
+  const mateIn = mateVec?.[bestMove]
+  const isMate = mateIn !== undefined
+
+  return { isMate, mateIn }
+}
+
+/**
  * Creates shared WebAssembly memory for Stockfish.
  *
  * Stockfish uses multi-threading for parallel search, which requires
@@ -534,13 +563,8 @@ export class RealStockfish implements StockfishAdapter {
       }
     }
 
-    // Check for checkmate
-    const isMate = data.mate_vec !== undefined && Object.keys(data.mate_vec).length > 0
-    let mateIn: number | undefined = undefined
-    if (isMate && data.mate_vec) {
-      // Get mate distance for best move
-      mateIn = data.mate_vec[bestMove]
-    }
+    // Check for checkmate - only true if bestMove leads to mate
+    const { isMate, mateIn } = computeMateInfo(data.mate_vec, bestMove)
 
     // Get centipawn for best move
     const cp = data.cp_vec[bestMove] ?? data.model_optimal_cp

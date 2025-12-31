@@ -70,7 +70,7 @@ export interface StockfishEvaluation {
 
   /**
    * Whether this is a mate score (not centipawns).
-   * If true, `mateIn` contains the number of moves to mate.
+   * Invariant: if true, `mateIn` is guaranteed to be defined.
    */
   isMate: boolean
 
