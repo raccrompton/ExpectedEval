@@ -19,7 +19,7 @@ export default function Home() {
   } = useChessGame()
 
   // Tab state for switching between EW and Win Finder
-  const [activeTab, setActiveTab] = useState<'ew' | 'winfinder'>('ew')
+  const [activeTab, setActiveTab] = useState<'ew' | 'winfinder'>('winfinder')
 
   // Preview FEN for EW tree node clicks (overrides currentFen temporarily)
   const [previewFen, setPreviewFen] = useState<string | null>(null)
