@@ -36,6 +36,7 @@ const DEFAULT_CONFIG: WinFinderConfig = {
   maiaLevel: 1500,
   minDisagreement: 0,
   maxResults: 20,
+  skipFirstPly: 0,  // Analyze all positions in tests
 }
 
 // ============================================================================

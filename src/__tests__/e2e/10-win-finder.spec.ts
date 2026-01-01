@@ -23,6 +23,20 @@ import {
   logCollectedErrors,
 } from './helpers'
 
+// PGN with comments - shortened Game of the Century opening (Fischer 1956)
+// Used to test that PGN comments are handled correctly
+// 30 ply total, 10 positions analyzed after skipping first 20
+const PGN_WITH_COMMENTS = `[Event "Third Rosenwald Trophy"]
+[Site "New York, NY USA"]
+[Date "1956.10.17"]
+[White "Donald Byrne"]
+[Black "Robert James Fischer"]
+[Result "*"]
+
+1. Nf3 Nf6 2. c4 g6 3. Nc3 Bg7 4. d4 O-O 5. Bf4 d5 6. Qb3 dxc4 7. Qxc4 c6
+8. e4 Nbd7 9. Rd1 Nb6 10. Qc5 Bg4 11. Bg5 {threatening Bxf6 and Nxe4} Na4 {!}
+12. Qa3 Nxc3 13. bxc3 Nxe4 {!} 14. Bxe7 Qb6 15. Bc4 Nxc3 {sacrifices the queen!} *`
+
 test.describe('10 - Win Finder', () => {
   // Tab visibility and switching tests - no engine needed
   test.describe('Tab System', () => {
@@ -121,7 +135,11 @@ test.describe('10 - Win Finder', () => {
 
       await page.goto(TEST_URL)
       await waitForEnginesReady(page)
-      await loadPgnAndWaitForEval(page, SAMPLE_PGN)
+      // Use a longer game so skipFirstPly doesn't skip all positions
+      // (default skipFirstPly=20, so we need at least 22+ ply)
+      // Ruy Lopez mainline: 22 ply
+      const longerPgn = '1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6 8. c3 O-O 9. h3 Na5 10. Bc2 c5 11. d4 Qc7'
+      await loadPgnAndWaitForEval(page, longerPgn)
     })
 
     test.afterAll(async () => {
@@ -197,9 +215,9 @@ test.describe('10 - Win Finder', () => {
       await page.goto(TEST_URL)
       await waitForEnginesReady(page)
 
-      // Load a longer game that might have more disagreements
-      const longerPgn = '1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7'
-      await loadPgnAndWaitForEval(page, longerPgn)
+      // Load PGN with comments - tests that comments are handled correctly
+      // 30 ply total, 10 positions analyzed after skipFirstPly=20
+      await loadPgnAndWaitForEval(page, PGN_WITH_COMMENTS)
 
       // Switch to Win Finder and run analysis
       await page.getByTestId('tab-winfinder').click()

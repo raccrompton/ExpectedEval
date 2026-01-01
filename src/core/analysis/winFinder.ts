@@ -100,6 +100,8 @@ export interface WinFinderConfig {
   minDisagreement: number
   /** Maximum positions to return (default: 20) */
   maxResults: number
+  /** Skip first N half-moves (default: 20 = first 10 moves per side) */
+  skipFirstPly: number
 }
 
 /**
@@ -123,10 +125,11 @@ export type WinFinderProgressCallback = (current: number, total: number) => void
 
 export const DEFAULT_WIN_FINDER_CONFIG: WinFinderConfig = {
   sfTopN: 5,
-  sfDepth: 12,
+  sfDepth: 8,  // Reduced from 12 for faster analysis
   maiaLevel: 1500,
   minDisagreement: 3,
   maxResults: 20,
+  skipFirstPly: 20,  // Skip first 10 moves per side (opening theory)
 }
 
 // ============================================================================
@@ -188,61 +191,54 @@ export async function analyzePositionForDisagreement(
     multiPv: 64,  // Get evaluations for many moves
   })
 
-  // Get Maia prediction for base position
-  const maiaPrediction = await maia.predict(fen, { eloLevel: config.maiaLevel })
-
   // Build move rankings
   const moveRankings: MoveRanking[] = []
 
-  // Get all legal moves using allDests() pattern from existing codebase
+  // Collect all moves first to count them
+  const allMoves: { uci: string; san: string }[] = []
   const ctx = chess.ctx()
   for (const [from, dests] of chess.allDests(ctx)) {
     const piece = chess.board.get(from)
     const isPawn = piece?.role === 'pawn'
-
-    // Check for promotion destinations
     const backrank = chess.turn === 'white'
-      ? SquareSet.fromRank(7)  // 8th rank
-      : SquareSet.fromRank(0)  // 1st rank
+      ? SquareSet.fromRank(7)
+      : SquareSet.fromRank(0)
 
     for (const to of dests) {
       const fromStr = makeSquare(from)
       const toStr = makeSquare(to)
       const isPromotion = isPawn && backrank.has(to)
-
-      // Build moves to process (with promotions if applicable)
       const movesToProcess = isPromotion
         ? [`${fromStr}${toStr}q`, `${fromStr}${toStr}r`, `${fromStr}${toStr}b`, `${fromStr}${toStr}n`]
         : [`${fromStr}${toStr}`]
 
       for (const uci of movesToProcess) {
-        // Get SAN for display
         const san = uciToSan(fen, uci) || uci
-
-        // Get SF winrate for this move
-        const sfWinrate = sfEval.moveWinrates?.[uci] ?? sfEval.winrate
-
-        // Get Maia value for resulting position
-        const resultingFen = applyMove(fen, uci)
-        if (!resultingFen) continue
-
-        // Get Maia's evaluation of the resulting position
-        const maiaResult = await maia.predict(resultingFen, { eloLevel: config.maiaLevel })
-
-        // Flip perspective: Maia returns value from side-to-move's perspective
-        // After our move, it's opponent's turn, so we flip
-        const playerMaiaWinrate = 1 - maiaResult.value
-
-        moveRankings.push({
-          move: san,
-          uci,
-          sfWinrate,
-          sfRank: 0,  // Will be set after sorting
-          maiaWinrate: playerMaiaWinrate,
-          maiaRank: 0,  // Will be set after sorting
-        })
+        allMoves.push({ uci, san })
       }
     }
+  }
+
+  // Evaluate each move with Maia
+  for (const { uci, san } of allMoves) {
+    const sfWinrate = sfEval.moveWinrates?.[uci] ?? sfEval.winrate
+    const resultingFen = applyMove(fen, uci)
+    if (!resultingFen) continue
+
+    const maiaResult = await maia.predict(resultingFen, { eloLevel: config.maiaLevel })
+
+    // Flip perspective: Maia returns value from side-to-move's perspective
+    // After our move, it's opponent's turn, so we flip
+    const playerMaiaWinrate = 1 - maiaResult.value
+
+    moveRankings.push({
+      move: san,
+      uci,
+      sfWinrate,
+      sfRank: 0,
+      maiaWinrate: playerMaiaWinrate,
+      maiaRank: 0,
+    })
   }
 
   // Create a Map for O(1) lookups when assigning ranks
@@ -274,6 +270,19 @@ export async function analyzePositionForDisagreement(
 
   // Calculate disagreement score
   const disagreementScore = calculateDisagreementScore(sfSpread, maiaAdvantage)
+
+  // Handle positions with no legal moves (checkmate/stalemate)
+  if (moveRankings.length === 0) {
+    return {
+      fen,
+      ply,
+      disagreementScore: 0,
+      sfTopMove: { move: '-', uci: '-', sfWinrate: 0, sfRank: 0, maiaWinrate: 0, maiaRank: 0 },
+      maiaTopMove: { move: '-', uci: '-', sfWinrate: 0, sfRank: 0, maiaWinrate: 0, maiaRank: 0 },
+      allMoves: [],
+      description: 'Position has no legal moves',
+    }
+  }
 
   // Find top moves
   const sfTopMove = moveRankings.find(m => m.sfRank === 1)!
@@ -348,7 +357,10 @@ export async function analyzeGameForDisagreements(
 ): Promise<WinFinderResult> {
   const startTime = performance.now()
 
-  if (positions.length === 0) {
+  // Filter out early positions (opening theory)
+  const positionsToAnalyze = positions.filter(p => p.ply >= config.skipFirstPly)
+
+  if (positionsToAnalyze.length === 0) {
     return {
       positions: [],
       analyzedPositions: 0,
@@ -358,10 +370,9 @@ export async function analyzeGameForDisagreements(
 
   const results: PositionDisagreement[] = []
 
-  for (let i = 0; i < positions.length; i++) {
-    const pos = positions[i]
-
-    onProgress?.(i + 1, positions.length)
+  for (let i = 0; i < positionsToAnalyze.length; i++) {
+    const pos = positionsToAnalyze[i]
+    onProgress?.(i + 1, positionsToAnalyze.length)
 
     try {
       const disagreement = await analyzePositionForDisagreement(
@@ -404,7 +415,7 @@ export async function analyzeGameForDisagreements(
 
   return {
     positions: limited,
-    analyzedPositions: positions.length,
+    analyzedPositions: positionsToAnalyze.length,
     calculationTimeMs: Math.round(endTime - startTime),
   }
 }
