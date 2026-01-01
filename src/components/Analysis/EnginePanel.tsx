@@ -107,21 +107,20 @@ export function EnginePanel({
                     ? `M${stockfishEvaluation.mateIn}`
                     : formatCp(stockfishEvaluation.cp)}
                 </span>
-                <span className="eval-depth">d{stockfishEvaluation.depth}</span>
+                <span className="eval-labels">
+                  <span className="eval-depth">d{stockfishEvaluation.depth}</span>
+                  {stockfishEvaluation.wdl && (
+                    <span className="wdl-label" data-testid="sf-winrate">
+                      WDL% {Math.round(stockfishEvaluation.wdl.win)}/{Math.round(stockfishEvaluation.wdl.draw)}/{Math.round(stockfishEvaluation.wdl.loss)}
+                    </span>
+                  )}
+                </span>
               </div>
-              {stockfishEvaluation.wdl && (
-                <div className="wdl-container">
-                  <span className="wdl-value" data-testid="sf-winrate">
-                    {(stockfishEvaluation.wdl.win + stockfishEvaluation.wdl.draw / 2).toFixed(1)}%
-                  </span>
-                  <div className="wdl-bar">
-                    <div className="wdl-w" style={{ width: `${stockfishEvaluation.wdl.win}%` }} />
-                    <div className="wdl-d" style={{ width: `${stockfishEvaluation.wdl.draw}%` }} />
-                    <div className="wdl-l" style={{ width: `${stockfishEvaluation.wdl.loss}%` }} />
-                  </div>
-                </div>
-              )}
               <div className="moves-list" data-testid="sf-best-move">
+                <div className="moves-header">
+                  <span>Best Move</span>
+                  <span>Eval</span>
+                </div>
                 {sfTopMoves.map(([move, cp], idx) => (
                   <div key={move} className={`move-item ${idx === 0 ? 'best' : ''}`}>
                     <span className="move-name">{uciToSan(currentFen, move) || formatMove(move)}</span>
@@ -154,6 +153,10 @@ export function EnginePanel({
                 <span className="eval-depth">{maiaEvaluation.eloLevel}</span>
               </div>
               <div className="moves-list" data-testid="maia-moves">
+                <div className="moves-header">
+                  <span>Likely Move</span>
+                  <span>Played</span>
+                </div>
                 {topMoves.map(([move, prob], idx) => (
                   <div key={move} className={`move-item ${idx === 0 ? 'best' : ''}`}>
                     <span className="move-name">{uciToSan(currentFen, move) || formatMove(move)}</span>
@@ -229,6 +232,7 @@ export function EnginePanel({
         .eval-row {
           display: flex;
           align-items: baseline;
+          justify-content: space-between;
           gap: 6px;
         }
 
@@ -244,52 +248,36 @@ export function EnginePanel({
           color: var(--color-primary, #FFE000);
         }
 
+        .eval-labels {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 1px;
+        }
+
         .eval-depth {
           font-size: 9px;
           font-family: var(--font-mono, monospace);
           color: var(--color-text-dim, #666);
         }
 
-        .wdl-container {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .wdl-value {
-          font-size: 10px;
+        .wdl-label {
+          font-size: 9px;
           font-family: var(--font-mono, monospace);
-          color: var(--color-text-muted, #888);
-          min-width: 38px;
+          color: var(--color-text-dim, #666);
         }
 
-        .wdl-bar {
-          flex: 1;
+        .moves-header {
           display: flex;
-          height: 10px;
-          overflow: hidden;
-        }
-
-        .wdl-w, .wdl-d, .wdl-l {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-width: 0;
-        }
-
-        .wdl-w {
-          background: #22c55e;
-          color: #000;
-        }
-
-        .wdl-d {
-          background: #666;
-          color: #fff;
-        }
-
-        .wdl-l {
-          background: #ef4444;
-          color: #fff;
+          justify-content: space-between;
+          font-size: 9px;
+          font-family: var(--font-mono, monospace);
+          color: var(--color-text-dim, #666);
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+          padding-bottom: 2px;
+          border-bottom: 1px solid var(--color-border, #333);
+          margin-bottom: 2px;
         }
 
         .moves-list {

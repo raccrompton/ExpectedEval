@@ -719,6 +719,7 @@ function CandidateColumn({ candidates, selectedIndex, evalSource, onSelect }: Ca
           >
             <span className="move-san">{candidate.san}</span>
             <span className="move-ew">EW: {formatWinrate(ew)}</span>
+            <span className="move-maia">Maia: {formatWinrate(candidate.maiaWinrate)}</span>
           </div>
         )
       })}
@@ -743,12 +744,12 @@ function CandidateColumn({ candidates, selectedIndex, evalSource, onSelect }: Ca
 
         .candidate-row {
           display: flex;
-          justify-content: space-between;
+          flex-direction: column;
+          gap: 2px;
           padding: var(--space-xs, 4px) var(--space-sm, 8px);
           cursor: pointer;
           border-left: 3px solid transparent;
           transition: all 0.1s ease;
-          font-size: var(--font-sm, 13px);
         }
 
         .candidate-row:hover {
@@ -761,7 +762,8 @@ function CandidateColumn({ candidates, selectedIndex, evalSource, onSelect }: Ca
         }
 
         .move-san {
-          font-weight: 600;
+          font-weight: 700;
+          font-size: var(--font-md, 15px);
           color: var(--color-text, #fff);
           white-space: nowrap;
         }
@@ -771,8 +773,17 @@ function CandidateColumn({ candidates, selectedIndex, evalSource, onSelect }: Ca
           font-size: var(--font-xs, 11px);
         }
 
+        .move-maia {
+          color: var(--color-text-dim, #444);
+          font-size: var(--font-xs, 11px);
+        }
+
         .candidate-row.selected .move-ew {
           color: var(--color-primary, #FFE000);
+        }
+
+        .candidate-row.selected .move-maia {
+          color: var(--color-text-muted, #666);
         }
       `}</style>
     </div>
