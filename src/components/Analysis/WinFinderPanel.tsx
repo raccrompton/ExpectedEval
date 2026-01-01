@@ -412,14 +412,14 @@ function WinFinderItem({
         <div className="summary-row">
           <span className="label">SF:</span>
           <span className="value">
-            All moves ~{formatWinrate(position.sfTopMove.sfWinrate)} (spread: {formatWinrate(sfSpread)})
+            All moves {formatWinrate(position.sfTopMove.sfWinrate)} (spread: {formatWinrate(sfSpread)})
           </span>
         </div>
         <div className="summary-row">
           <span className="label">Maia:</span>
           <span className="value">
             {position.maiaTopMove.move} is {formatWinrate(position.maiaTopMove.maiaWinrate)},
-            others ~{formatWinrate(position.maiaTopMove.maiaWinrate - maiaAdvantage)}
+            others {formatWinrate(position.maiaTopMove.maiaWinrate - maiaAdvantage)}
             (advantage: {formatWinrate(maiaAdvantage)})
           </span>
         </div>
