@@ -470,15 +470,14 @@ The tree uses a two-column design for better usability:
 ### Table Display (EWTable)
 
 - **Horizontal layout**: Each ply has its own column, lines are rows
-- **Two display modes**:
-  - **Default Mode**: All ply 1 children shown as separate rows with their continuation mainlines (no + button on ply 1)
-  - **Focused Mode**: When any + button is clicked, other ply 1 rows disappear to reduce visual clutter
-- **Expand/Collapse buttons**: `+` to show alternative moves, `-` to collapse
+- **All ply-0 rows visible**: Each ply-0 child is shown as a separate row with its continuation mainline
+- **Per-branch expansion**: Click `+` to expand alternatives within a specific branch (expansions are scoped to their branch context)
+- **Expand/Collapse buttons**: `+` to show alternative moves as new rows, `-` to collapse
 - **Line EW column**: Shows EW value for each line (leaf node eval)
 - **Likelihood column**: Shows cumulative probability of reaching that line
 - **Horizontally scrollable**: Deep lines scroll right without breaking layout
 - **Transformation**: Uses `treeToTable()` function to convert TreeNode to flat rows
-- **Key functions**: `buildDefaultModeRows()`, `buildPly1RowCells()` for ply 1 default expansion
+- **Key functions**: `buildDefaultModeRows()`, `buildPly1RowCells()`, `buildPly1BranchAlternatives()` for expansion within branches
 
 ### Core Files
 

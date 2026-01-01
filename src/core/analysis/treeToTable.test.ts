@@ -293,72 +293,102 @@ describe('treeToTableRows', () => {
   })
 
   test('adds alternative rows when cell is expanded', () => {
-    const root = createBranchingTree(
-      [
-        { san: 'e5', prob: 0.45 },
-        { san: 'Nf3', prob: 0.40 },
-      ],
-      [
-        {
-          atDepth: 0,
-          alternatives: [
-            { san: 'd5', prob: 0.30 },
-            { san: 'c5', prob: 0.15 },
-          ],
-        },
-      ]
-    )
+    // Tree structure:
+    // root → e5 (0.45) → Nf3 (0.40) [mainline at ply 1]
+    //                  → Bc4 (0.30) [alternative at ply 1]
+    //      → d5 (0.30) → ...
+    //
+    // When we expand Nf3 at ply 1, Bc4 should appear as an alternative
 
-    const expanded = new Set(['0-e5'])
+    // Build e5 branch with alternatives at ply 1
+    const e5Nf3 = createChildNode('Nf3', 0.40, 0.52, 2, [])
+    e5Nf3.cumulativeProbability = 0.45 * 0.40
+    const e5Bc4 = createChildNode('Bc4', 0.30, 0.50, 2, [])
+    e5Bc4.cumulativeProbability = 0.45 * 0.30
+
+    const e5 = createChildNode('e5', 0.45, 0.50, 1, [e5Nf3, e5Bc4])
+    e5.cumulativeProbability = 0.45
+
+    const d5 = createChildNode('d5', 0.30, 0.50, 1, [])
+    d5.cumulativeProbability = 0.30
+
+    const root = createMockNode({
+      children: [e5, d5],
+      isLeaf: false,
+      exploredProbability: 0.75,
+    })
+
+    const expanded = new Set(['1-Nf3'])
     const rows = treeToTableRows(root, expanded, 1, 'w')
 
+    // Should have: mainline (e5), e5's Bc4 alt, ply1-d5
     expect(rows).toHaveLength(3)
     expect(rows[0].id).toBe('mainline')
     expect(rows[0].moves[0].san).toBe('e5')
 
-    expect(rows[1].id).toBe('alt-0-d5')
-    expect(rows[1].moves[0].san).toBe('d5')
-    expect(rows[1].branchDepth).toBe(0)
+    // Alternative row for Bc4 (within e5 branch)
+    expect(rows[1].id).toBe('mainline-alt-1-Bc4')
+    expect(rows[1].moves[0].san).toBe('Bc4')
+    expect(rows[1].branchDepth).toBe(1)
 
-    expect(rows[2].id).toBe('alt-0-c5')
-    expect(rows[2].moves[0].san).toBe('c5')
+    // d5 row still visible
+    expect(rows[2].id).toBe('ply1-d5')
+    expect(rows[2].moves[0].san).toBe('d5')
   })
 
   test('sorts alternative rows by probability (highest first)', () => {
-    const root = createBranchingTree(
-      [{ san: 'e5', prob: 0.45 }],
-      [
-        {
-          atDepth: 0,
-          alternatives: [
-            { san: 'c5', prob: 0.15 },
-            { san: 'd5', prob: 0.30 },
-          ],
-        },
-      ]
-    )
+    // Tree: root → e5 → [Nf3 (0.40), Bc4 (0.30), d4 (0.15)]
+    // When Nf3 is expanded, Bc4 should come before d4 (higher prob)
 
-    const expanded = new Set(['0-e5'])
+    const e5Nf3 = createChildNode('Nf3', 0.40, 0.52, 2, [])
+    e5Nf3.cumulativeProbability = 0.45 * 0.40
+    const e5Bc4 = createChildNode('Bc4', 0.30, 0.50, 2, [])
+    e5Bc4.cumulativeProbability = 0.45 * 0.30
+    const e5d4 = createChildNode('d4', 0.15, 0.48, 2, [])
+    e5d4.cumulativeProbability = 0.45 * 0.15
+
+    const e5 = createChildNode('e5', 0.45, 0.50, 1, [e5Nf3, e5Bc4, e5d4])
+    e5.cumulativeProbability = 0.45
+
+    const root = createMockNode({
+      children: [e5],
+      isLeaf: false,
+      exploredProbability: 0.45,
+    })
+
+    const expanded = new Set(['1-Nf3'])
     const rows = treeToTableRows(root, expanded, 1, 'w')
 
-    expect(rows[1].moves[0].san).toBe('d5')
-    expect(rows[2].moves[0].san).toBe('c5')
+    // rows[0] = mainline (e5), rows[1] = Bc4 alt, rows[2] = d4 alt
+    expect(rows[1].moves[0].san).toBe('Bc4')
+    expect(rows[2].moves[0].san).toBe('d4')
   })
 
   test('marks cells as expanded when in expandedCells set', () => {
-    const root = createBranchingTree(
-      [
-        { san: 'e5', prob: 0.45 },
-        { san: 'Nf3', prob: 0.40 },
-      ],
-      [{ atDepth: 0, alternatives: [{ san: 'd5', prob: 0.30 }] }]
-    )
+    // In default mode, ply 0 cells never show isExpanded (they're always visible as rows)
+    // Only ply 1+ cells can be expanded
 
-    const expanded = new Set(['0-e5'])
+    const e5Nf3 = createChildNode('Nf3', 0.40, 0.52, 2, [])
+    e5Nf3.cumulativeProbability = 0.45 * 0.40
+    const e5Bc4 = createChildNode('Bc4', 0.30, 0.50, 2, [])
+    e5Bc4.cumulativeProbability = 0.45 * 0.30
+
+    const e5 = createChildNode('e5', 0.45, 0.50, 1, [e5Nf3, e5Bc4])
+    e5.cumulativeProbability = 0.45
+
+    const root = createMockNode({
+      children: [e5],
+      isLeaf: false,
+      exploredProbability: 0.45,
+    })
+
+    const expanded = new Set(['1-Nf3'])
     const rows = treeToTableRows(root, expanded, 1, 'w')
 
-    expect(rows[0].moves[0].isExpanded).toBe(true)
-    expect(rows[0].moves[1].isExpanded).toBe(false)
+    // Ply 0 cell (e5) should not be marked as expanded
+    expect(rows[0].moves[0].isExpanded).toBe(false)
+    // Ply 1 cell (Nf3) should be marked as expanded
+    expect(rows[0].moves[1].isExpanded).toBe(true)
   })
 
   test('handles empty tree (root only)', () => {
@@ -385,30 +415,50 @@ describe('treeToTableRows', () => {
   })
 
   test('nested expansion adds more alternative rows', () => {
-    const root = createBranchingTree(
-      [
-        { san: 'e5', prob: 0.45 },
-        { san: 'Nf3', prob: 0.40 },
-        { san: 'Nc6', prob: 0.50 },
-      ],
-      [
-        { atDepth: 0, alternatives: [{ san: 'd5', prob: 0.30 }] },
-        { atDepth: 1, alternatives: [{ san: 'Bc4', prob: 0.35 }] },
-      ]
-    )
+    // Tree: root → e5 → Nf3 (mainline) → Nc6 (mainline)
+    //                  → Bc4 (alt)
+    //             → d5 (always visible as separate ply-0 row)
+    //
+    // Only ply 1+ can be expanded. Ply 0 alternatives are always visible.
 
-    const expanded = new Set(['0-e5', '1-Nf3'])
+    // Build e5 branch with alternatives at ply 1
+    const Nc6 = createChildNode('Nc6', 0.50, 0.50, 3, [])
+    Nc6.cumulativeProbability = 0.45 * 0.40 * 0.50
+
+    const Nf3 = createChildNode('Nf3', 0.40, 0.52, 2, [Nc6])
+    Nf3.cumulativeProbability = 0.45 * 0.40
+
+    const Bc4 = createChildNode('Bc4', 0.35, 0.50, 2, [])
+    Bc4.cumulativeProbability = 0.45 * 0.35
+
+    const e5 = createChildNode('e5', 0.45, 0.50, 1, [Nf3, Bc4])
+    e5.cumulativeProbability = 0.45
+
+    const d5 = createChildNode('d5', 0.30, 0.50, 1, [])
+    d5.cumulativeProbability = 0.30
+
+    const root = createMockNode({
+      children: [e5, d5],
+      isLeaf: false,
+      exploredProbability: 0.75,
+    })
+
+    // Expand at ply 1 (Nf3)
+    const expanded = new Set(['1-Nf3'])
     const rows = treeToTableRows(root, expanded, 1, 'w')
 
     expect(rows.length).toBeGreaterThan(1)
 
+    // Mainline row should exist
     const mainline = rows.find(r => r.id === 'mainline')
     expect(mainline).toBeDefined()
 
-    const altAtDepth0 = rows.find(r => r.id === 'alt-0-d5')
-    expect(altAtDepth0).toBeDefined()
+    // Ply-0 alternatives are always visible as separate rows
+    const d5Row = rows.find(r => r.id === 'ply1-d5')
+    expect(d5Row).toBeDefined()
 
-    const altAtDepth1 = rows.find(r => r.id === 'alt-1-Bc4')
+    // Ply-1 alternative should be visible under mainline
+    const altAtDepth1 = rows.find(r => r.id === 'mainline-alt-1-Bc4')
     expect(altAtDepth1).toBeDefined()
   })
 })
@@ -492,7 +542,10 @@ describe('treeToTableRows - ply 1 default expansion', () => {
     }
   })
 
-  test('when any + is clicked, other ply 1 rows disappear (focused mode)', () => {
+  test('when any + is clicked, all ply 0 rows stay visible (no focused mode)', () => {
+    // NEW BEHAVIOR: Ply-0 rows always stay visible when expanding cells.
+    // There is no "focused mode" anymore - expansions are per-branch.
+
     const root = createBranchingTree(
       [
         { san: 'e5', prob: 0.45 },
@@ -513,29 +566,28 @@ describe('treeToTableRows - ply 1 default expansion', () => {
       ]
     )
 
-    // Expand something at ply 1 (not ply 0)
+    // Expand something at ply 1
     const expanded = new Set(['1-Nf3'])
     const rows = treeToTableRows(root, expanded, 1, 'w')
 
-    // Should collapse to single mainline + expanded alternative
-    // d5 and c5 rows should disappear
     const rowIds = rows.map(r => r.id)
     expect(rowIds).toContain('mainline')
-    expect(rowIds).toContain('alt-1-Bc4')
 
-    // Ply 0 alternative rows should NOT be present
-    expect(rowIds).not.toContain('ply1-d5')
-    expect(rowIds).not.toContain('ply1-c5')
+    // Alternative at ply 1 should be visible (within mainline branch)
+    expect(rowIds).toContain('mainline-alt-1-Bc4')
 
-    // Ply 0 should NOT show hasAlternatives in focused mode
-    // User must collapse all to return to default mode
+    // Ply 0 alternative rows should STILL be present (not hidden)
+    expect(rowIds).toContain('ply1-d5')
+    expect(rowIds).toContain('ply1-c5')
+
+    // Ply 0 cells still don't show hasAlternatives (all are visible as rows)
     const mainline = rows.find(r => r.id === 'mainline')
     expect(mainline?.moves[0]?.hasAlternatives).toBe(false)
   })
 
-  test('ply 0 should NOT show hasAlternatives in focused mode', () => {
-    // When user clicks + on ply >= 1, we enter focused mode.
-    // Ply 0 should NOT show + button - user must collapse all to return to default mode.
+  test('ply 0 cells never show hasAlternatives (all visible as rows)', () => {
+    // Ply 0 cells should NEVER show hasAlternatives because all ply-0
+    // children are already visible as separate rows. No expansion needed.
     const root = createBranchingTree(
       [
         { san: 'e5', prob: 0.45 },
@@ -553,16 +605,16 @@ describe('treeToTableRows - ply 1 default expansion', () => {
       ]
     )
 
-    // Expand something at ply 1 (not ply 0) - this enters focused mode
+    // Test with expansions (any ply 1 cell expanded)
     const expanded = new Set(['1-Nf3'])
     const rows = treeToTableRows(root, expanded, 1, 'w')
 
-    const mainline = rows.find(r => r.id === 'mainline')
-    expect(mainline).toBeDefined()
-
-    // Ply 0 cell should NOT show hasAlternatives in focused mode
-    // User must collapse all to return to default mode (showing all ply 1 as rows)
-    expect(mainline?.moves[0]?.hasAlternatives).toBe(false)
+    // Check all ply-0 cells - none should have hasAlternatives
+    for (const row of rows) {
+      if (row.branchDepth === 0 && row.moves[0]) {
+        expect(row.moves[0].hasAlternatives).toBe(false)
+      }
+    }
   })
 
   test('each ply 1 row shows its own continuation mainline', () => {
@@ -596,6 +648,176 @@ describe('treeToTableRows - ply 1 default expansion', () => {
     const d5Row = rows.find(r => r.moves[0]?.san === 'd5')
     expect(d5Row).toBeDefined()
     expect(d5Row!.moves.map(m => m.san)).toEqual(['d5', 'exd5', 'Qxd5'])
+  })
+})
+
+describe('treeToTableRows - per-branch expansion in default mode', () => {
+  /**
+   * This test suite verifies that clicking + on a cell expands alternatives
+   * WITHIN that specific ply-0 branch, rather than switching to focused mode.
+   *
+   * Bug context: Previously, clicking + on Bg7 in the Nf3 row would switch
+   * to focused mode showing the global mainline (d4 branch), losing the
+   * expansion context and showing no alternatives.
+   */
+
+  test('expanding cell at ply 1 in one branch shows alternatives for that branch only', () => {
+    // Tree structure:
+    // root
+    //   ├─ e5 (0.45) [ply 0, mainline]
+    //   │    └─ Nf3 (0.40) [ply 1] - NO alternatives to Nf3 in e5 branch
+    //   └─ d5 (0.30) [ply 0]
+    //        ├─ Nf3 (0.35) [ply 1, mainline in d5 branch]
+    //        └─ Bc4 (0.25) [ply 1, alternative to Nf3 in d5 branch]
+    //
+    // When user expands "1-Nf3", they expect to see Bc4 as alternative
+    // in the d5 branch, NOT nothing (which happens if we look in e5 branch).
+
+    // Build the e5 branch (no alternatives to Nf3)
+    const e5Nf3 = createChildNode('Nf3', 0.40, 0.52, 2, [])
+    e5Nf3.cumulativeProbability = 0.45 * 0.40
+
+    const e5 = createChildNode('e5', 0.45, 0.50, 1, [e5Nf3])
+    e5.cumulativeProbability = 0.45
+
+    // Build the d5 branch (Nf3 has sibling Bc4)
+    const d5Nf3 = createChildNode('Nf3', 0.35, 0.48, 2, [])
+    d5Nf3.cumulativeProbability = 0.30 * 0.35
+
+    const d5Bc4 = createChildNode('Bc4', 0.25, 0.46, 2, [])
+    d5Bc4.cumulativeProbability = 0.30 * 0.25
+
+    const d5 = createChildNode('d5', 0.30, 0.50, 1, [d5Nf3, d5Bc4])
+    d5.cumulativeProbability = 0.30
+
+    const root = createMockNode({
+      children: [e5, d5],
+      isLeaf: false,
+      exploredProbability: 0.75,
+    })
+
+    // Expand Nf3 at ply 1
+    const expanded = new Set(['1-Nf3'])
+    const rows = treeToTableRows(root, expanded, 1, 'w')
+
+    // Should still show both ply-0 branches (e5 and d5) - NOT switch to focused mode
+    const ply0Moves = rows.filter(r => r.branchDepth === 0).map(r => r.moves[0]?.san)
+    expect(ply0Moves).toContain('e5')
+    expect(ply0Moves).toContain('d5')
+
+    // Should have an alternative row for Bc4 (from d5 branch)
+    const bc4Row = rows.find(r => r.moves[0]?.san === 'Bc4')
+    expect(bc4Row).toBeDefined()
+    expect(bc4Row!.branchDepth).toBe(1) // Branches at ply 1
+  })
+
+  test('alternative rows appear after their parent ply-0 row', () => {
+    // Tree: root → [e5 (0.45), d5 (0.30)]
+    // d5 → [Nf3 (0.35), Bc4 (0.25)]
+
+    const e5 = createChildNode('e5', 0.45, 0.50, 1, [])
+    e5.cumulativeProbability = 0.45
+
+    const d5Nf3 = createChildNode('Nf3', 0.35, 0.48, 2, [])
+    d5Nf3.cumulativeProbability = 0.30 * 0.35
+
+    const d5Bc4 = createChildNode('Bc4', 0.25, 0.46, 2, [])
+    d5Bc4.cumulativeProbability = 0.30 * 0.25
+
+    const d5 = createChildNode('d5', 0.30, 0.50, 1, [d5Nf3, d5Bc4])
+    d5.cumulativeProbability = 0.30
+
+    const root = createMockNode({
+      children: [e5, d5],
+      isLeaf: false,
+      exploredProbability: 0.75,
+    })
+
+    const expanded = new Set(['1-Nf3'])
+    const rows = treeToTableRows(root, expanded, 1, 'w')
+
+    // Find positions of e5, d5, and Bc4 rows
+    const e5Index = rows.findIndex(r => r.moves[0]?.san === 'e5')
+    const d5Index = rows.findIndex(r => r.moves[0]?.san === 'd5')
+    const bc4Index = rows.findIndex(r => r.moves[0]?.san === 'Bc4')
+
+    // Bc4 should come after d5 (its parent), not after e5
+    expect(d5Index).toBeLessThan(bc4Index)
+    // e5 should still be first (highest prob)
+    expect(e5Index).toBeLessThan(d5Index)
+  })
+
+  test('cells in default mode rows show isExpanded when expanded', () => {
+    // Verify that the isExpanded flag is properly set on cells in default mode
+
+    const d5Nf3 = createChildNode('Nf3', 0.35, 0.48, 2, [])
+    d5Nf3.cumulativeProbability = 0.35
+
+    const d5Bc4 = createChildNode('Bc4', 0.25, 0.46, 2, [])
+    d5Bc4.cumulativeProbability = 0.25
+
+    const d5 = createChildNode('d5', 0.50, 0.50, 1, [d5Nf3, d5Bc4])
+    d5.cumulativeProbability = 0.50
+
+    const root = createMockNode({
+      children: [d5],
+      isLeaf: false,
+      exploredProbability: 0.50,
+    })
+
+    const expanded = new Set(['1-Nf3'])
+    const rows = treeToTableRows(root, expanded, 1, 'w')
+
+    // Find the d5 main row
+    const d5Row = rows.find(r => r.moves[0]?.san === 'd5')
+    expect(d5Row).toBeDefined()
+
+    // The Nf3 cell at ply 1 should be marked as expanded
+    const nf3Cell = d5Row!.moves.find(c => c.san === 'Nf3')
+    expect(nf3Cell).toBeDefined()
+    expect(nf3Cell!.isExpanded).toBe(true)
+  })
+
+  test('expanding in one ply-0 branch does not affect other branches', () => {
+    // Tree:
+    // root
+    //   ├─ e5 → Nf3 (has sibling Bc4)
+    //   └─ d5 → Nf3 (has sibling Bc4)
+    //
+    // Expanding Nf3 should only show Bc4 in the branches where Nf3 has siblings
+
+    // e5 branch with alternatives
+    const e5Nf3 = createChildNode('Nf3', 0.40, 0.52, 2, [])
+    e5Nf3.cumulativeProbability = 0.45 * 0.40
+    const e5Bc4 = createChildNode('Bc4', 0.30, 0.50, 2, [])
+    e5Bc4.cumulativeProbability = 0.45 * 0.30
+    const e5 = createChildNode('e5', 0.45, 0.50, 1, [e5Nf3, e5Bc4])
+    e5.cumulativeProbability = 0.45
+
+    // d5 branch with alternatives
+    const d5Nf3 = createChildNode('Nf3', 0.35, 0.48, 2, [])
+    d5Nf3.cumulativeProbability = 0.30 * 0.35
+    const d5Bc4 = createChildNode('Bc4', 0.25, 0.46, 2, [])
+    d5Bc4.cumulativeProbability = 0.30 * 0.25
+    const d5 = createChildNode('d5', 0.30, 0.50, 1, [d5Nf3, d5Bc4])
+    d5.cumulativeProbability = 0.30
+
+    const root = createMockNode({
+      children: [e5, d5],
+      isLeaf: false,
+      exploredProbability: 0.75,
+    })
+
+    const expanded = new Set(['1-Nf3'])
+    const rows = treeToTableRows(root, expanded, 1, 'w')
+
+    // Should have 4 rows: e5 main, e5's Bc4 alt, d5 main, d5's Bc4 alt
+    // (Both branches have Nf3 at ply 1 with Bc4 sibling)
+    expect(rows.length).toBe(4)
+
+    // Both Bc4 alternatives should be present
+    const bc4Rows = rows.filter(r => r.moves[0]?.san === 'Bc4')
+    expect(bc4Rows.length).toBe(2)
   })
 })
 
@@ -633,8 +855,8 @@ describe('treeToTableRows - alternative likelihood calculation', () => {
     const expanded = new Set(['2-Qb1'])
     const rows = treeToTableRows(root, expanded, 16, 'b')
 
-    // Find the Kxg7 alternative row
-    const kxg7Row = rows.find(r => r.id === 'alt-2-Kxg7')
+    // Find the Kxg7 alternative row (under mainline)
+    const kxg7Row = rows.find(r => r.id === 'mainline-alt-2-Kxg7')
     expect(kxg7Row).toBeDefined()
 
     // Likelihood = leaf.cumulativeProbability = 0.0525
@@ -673,8 +895,8 @@ describe('treeToTableRows - alternative likelihood calculation', () => {
     const expanded = new Set(['1-Nf3'])
     const rows = treeToTableRows(root, expanded, 1, 'w')
 
-    // Find the Bc4 alternative row
-    const bc4Row = rows.find(r => r.id === 'alt-1-Bc4')
+    // Find the Bc4 alternative row (under mainline)
+    const bc4Row = rows.find(r => r.id === 'mainline-alt-1-Bc4')
     expect(bc4Row).toBeDefined()
 
     // Likelihood = leaf.cumulativeProbability = 0.175
@@ -700,8 +922,8 @@ describe('treeToTableRows - alternative likelihood calculation', () => {
       exploredProbability: 0.50,
     })
 
-    // Use focused mode (non-empty expandedCells) to get single mainline row
-    const expanded = new Set(['1-Nf3']) // Any expansion triggers focused mode
+    // Expand at ply 1 to verify likelihood is still computed correctly
+    const expanded = new Set(['1-Nf3'])
     const rows = treeToTableRows(root, expanded, 1, 'w')
 
     const mainline = rows.find(r => r.id === 'mainline')
