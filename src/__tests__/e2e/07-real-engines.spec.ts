@@ -79,13 +79,21 @@ test.describe('07 - Real Engine Integration', () => {
 
       const sfWinrate = page.getByTestId('sf-winrate')
       const winrateText = await sfWinrate.textContent()
-      expect(winrateText).toMatch(/%/)
+      // Now displays WDL (Win/Draw/Loss) in format W/D/L
+      expect(winrateText).toMatch(/\d+\/\d+\/\d+/)
 
-      const match = winrateText?.match(/(\d+(?:\.\d+)?)%/)
+      // Parse WDL format: win/draw/loss
+      const match = winrateText?.match(/(\d+)\/(\d+)\/(\d+)/)
       if (match) {
-        const winrate = parseFloat(match[1])
-        expect(winrate).toBeGreaterThan(MIN_REASONABLE_SF_WINRATE)
-        expect(winrate).toBeLessThan(MAX_REASONABLE_SF_WINRATE)
+        const win = parseInt(match[1])
+        const draw = parseInt(match[2])
+        const loss = parseInt(match[3])
+        // In equal positions, neither win nor loss should be extreme
+        // High draw percentage is expected for normal opening positions
+        expect(win + draw + loss).toBeCloseTo(100, 0)
+        // Neither side should have a decisive advantage (win or loss > 50%)
+        expect(win).toBeLessThan(50)
+        expect(loss).toBeLessThan(50)
       }
     })
 

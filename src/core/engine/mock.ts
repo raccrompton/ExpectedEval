@@ -88,6 +88,9 @@ export class MockStockfish implements StockfishAdapter {
   // Engine state
   private ready = false
 
+  // Dynamic overrides (set at runtime for tests)
+  private moveEvaluationsOverride: Record<string, number> | null = null
+
   /**
    * Create a mock Stockfish instance.
    *
@@ -100,6 +103,15 @@ export class MockStockfish implements StockfishAdapter {
       shouldFail: false,
       ...options,
     }
+  }
+
+  /**
+   * Set move evaluations for testing.
+   * These override the default evaluations when evaluate() is called.
+   * Values are winrates (0-1), not centipawns.
+   */
+  setMoveEvaluations(evaluations: Record<string, number>): void {
+    this.moveEvaluationsOverride = evaluations
   }
 
   /**
@@ -161,12 +173,27 @@ export class MockStockfish implements StockfishAdapter {
     // Generate mock best move (just pick something reasonable)
     const bestMove = this.getMockBestMove(fen)
 
+    // Build moveWinrates if we have overrides
+    let moveWinrates: Record<string, number> | undefined
+    let moveEvaluations: Record<string, number> | undefined
+    if (this.moveEvaluationsOverride) {
+      moveWinrates = { ...this.moveEvaluationsOverride }
+      // Convert winrates to centipawns for moveEvaluations
+      moveEvaluations = {}
+      for (const [move, wr] of Object.entries(this.moveEvaluationsOverride)) {
+        // Approximate cp from winrate using inverse formula
+        moveEvaluations[move] = Math.round(-400 * Math.log10((1 - wr) / wr))
+      }
+    }
+
     return {
       depth: config?.depth ?? 14,
       bestMove,
       cp,
       winrate,
       isMate: false,
+      moveWinrates,
+      moveEvaluations,
     }
   }
 
@@ -264,6 +291,10 @@ export class MockMaia implements MaiaAdapter {
   // Engine state
   private ready = false
 
+  // Dynamic overrides (set at runtime for tests)
+  private policyOverride: Record<string, number> | null = null
+  private valueOverride: number | null = null
+
   /**
    * Create a mock Maia instance.
    *
@@ -283,6 +314,21 @@ export class MockMaia implements MaiaAdapter {
       shouldFail: false,
       ...options,
     }
+  }
+
+  /**
+   * Set policy (move probabilities) override for testing.
+   */
+  setPolicyOverride(policy: Record<string, number>): void {
+    this.policyOverride = policy
+  }
+
+  /**
+   * Set value override for testing.
+   * The value represents win probability from side-to-move perspective.
+   */
+  setValueOverride(value: number): void {
+    this.valueOverride = value
   }
 
   /**
@@ -331,10 +377,13 @@ export class MockMaia implements MaiaAdapter {
       return this.options.positionPredictions[fen]
     }
 
-    // Return default prediction
+    // Use overrides if set, otherwise use defaults
+    const policy = this.policyOverride ?? { ...this.options.defaultPolicy! }
+    const value = this.valueOverride ?? this.options.defaultValue!
+
     return {
-      policy: { ...this.options.defaultPolicy! },
-      value: this.options.defaultValue!,
+      policy,
+      value,
       eloLevel: config?.eloLevel ?? 1500,
     }
   }

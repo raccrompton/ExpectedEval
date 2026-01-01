@@ -51,3 +51,19 @@ export {
   clearCache as clearPredictionCache,
   getCacheStats,
 } from './predictionCache'
+
+// Win Finder
+export type {
+  MoveRanking,
+  PositionDisagreement,
+  WinFinderResult,
+  WinFinderConfig,
+  PositionInput,
+  WinFinderProgressCallback,
+} from './winFinder'
+export {
+  calculateDisagreementScore,
+  analyzePositionForDisagreement,
+  analyzeGameForDisagreements,
+  DEFAULT_WIN_FINDER_CONFIG,
+} from './winFinder'

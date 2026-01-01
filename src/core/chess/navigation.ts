@@ -511,3 +511,75 @@ export function getAvailableMoves(
     isMainline: index === 0,
   }))
 }
+
+// ============================================================================
+// POSITION EXTRACTION
+// ============================================================================
+
+/**
+ * Position data for Win Finder analysis.
+ */
+export interface GamePosition {
+  fen: string
+  ply: number
+  path: number[]
+}
+
+/**
+ * Extract all positions from a game tree (mainline only).
+ *
+ * This is useful for Win Finder analysis which needs to analyze
+ * each position in the game.
+ *
+ * @param game - The game tree
+ * @returns Array of positions with FEN and ply
+ */
+export function extractPositionsFromGame(
+  game: Game<PgnNodeData>
+): GamePosition[] {
+  const positions: GamePosition[] = []
+
+  // Add starting position
+  const startFen = game.headers.get('FEN') || STARTING_FEN
+  positions.push({ fen: startFen, ply: 0, path: [] })
+
+  // Parse starting position for replay
+  const setupResult = parseFen(startFen)
+  if (!setupResult.isOk) {
+    return positions
+  }
+
+  const chess = Chess.fromSetup(setupResult.value)
+  if (!chess.isOk) {
+    return positions
+  }
+
+  const position = chess.value
+  let node: Node<PgnNodeData> = game.moves
+  let ply = 0
+  const path: number[] = []
+
+  // Traverse mainline (index 0 at each level)
+  while (node.children.length > 0) {
+    const child = node.children[0]
+    ply++
+    path.push(0)
+
+    // Apply move to position
+    if (child.data.san) {
+      const move = parseSan(position, child.data.san)
+      if (move) {
+        position.play(move)
+        positions.push({
+          fen: makeFen(position.toSetup()),
+          ply,
+          path: [...path],
+        })
+      }
+    }
+
+    node = child
+  }
+
+  return positions
+}

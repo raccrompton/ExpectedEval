@@ -75,10 +75,10 @@ test.describe('05 - Engine Display', () => {
       await expect(sfCp).toBeVisible()
       await expect(sfCp).toContainText(/[+-]?\d+\.\d+|M\d+/)
 
-      // Shows winrate percentage
+      // Shows WDL (Win/Draw/Loss) percentages in format W/D/L
       const sfWinrate = page.getByTestId('sf-winrate')
       await expect(sfWinrate).toBeVisible()
-      await expect(sfWinrate).toContainText(/%/)
+      await expect(sfWinrate).toContainText(/\d+\/\d+\/\d+/)
 
       // Shows best move
       await expect(page.getByTestId('sf-best-move')).toBeVisible()

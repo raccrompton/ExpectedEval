@@ -13,24 +13,10 @@
 - **Phase 4-7: UI Foundation** - Board, PGN input, move list, navigation, variations display
 - **Phase 8-9: Engine Display** - Mock engine panels, EW section with tree visualization
 - **Phase 10: Real Engines + Settings** - Stockfish WASM, Maia ONNX, configurable settings with localStorage
+- **Phase 10.5: Maia-First EW Architecture** - Two-phase EW calculation, UI responsiveness, two-column tree layout
+- **Phase 10.6: Win Finder Feature** - Disagreement analysis to find positions where SF and Maia disagree
 
 ### In Progress
-
-- **Phase 10.5: Maia-First EW Architecture**
-  - [x] `calculateMaiaOnlyEW()` - analyzes ALL legal moves with Maia only
-  - [x] `enrichWithStockfish()` - adds SF data on-demand
-  - [x] `selectCandidatesByMaiaProbability()` - returns all legal moves (no maxCandidates limit)
-  - [x] Auto-trigger on FEN change with 300ms debounce
-  - [x] UI yield mechanism to prevent page freeze
-  - [x] LRU prediction cache to prevent memory leaks
-  - [x] ONNX tensor disposal in Maia engine
-  - [x] Verify all E2E tests pass after changes
-  - [x] Two-column EW tree redesign (CandidateColumn + TreeColumn)
-  - [x] Vertical recursive tree with VerticalTreeNode component
-  - [x] Accordion behavior (one branch per depth level)
-  - [x] EnginePanel side-by-side layout (SF + Maia displayed simultaneously)
-
-### TODO
 
 - **Phase 11: Full E2E + Polish** - Error handling, loading states, responsive layout
 
@@ -38,8 +24,8 @@
 
 | Type       | Count | Status     |
 | ---------- | ----- | ---------- |
-| Unit tests | 289   | ✅ Passing |
-| E2E tests  | 148   | ✅ Passing |
+| Unit tests | 310   | ✅ Passing |
+| E2E tests  | 167   | ✅ Passing |
 
 ---
 
@@ -288,7 +274,8 @@ Core logic has NO React dependencies. This enables:
 
 - **Top row (Header):** Fixed ~40px with settings
 - **Middle row:** PgnInput (compact, rows=3) | MoveList (truncates with "...") | EnginePanel (SF+Maia side-by-side, top 3 moves, no bars)
-- **Bottom row:** Board + NavButtons (left, square) | EWSection (right, no baselines - shown in EnginePanel)
+- **Bottom row:** Board + NavButtons (left, square) | Analysis panel with tabs (EW / Win Finder)
+- **Tab system:** Toggle between Expected Winrate tree and Win Finder disagreement analysis
 - **All panels fit on desktop viewport without scrolling**
 
 ---
@@ -505,6 +492,85 @@ The tree uses a two-column design for better usability:
 | Table row        | `ew-table-row-{index}`            |
 | Expand button    | `ew-expand-{rowIndex}-{plyIndex}` |
 | Collapse button  | `ew-collapse-{rowIndex}`          |
+
+---
+
+## Win Finder Feature
+
+The Win Finder identifies positions where Stockfish and Maia disagree about the best move - these are opportunities where understanding human tendencies provides an advantage.
+
+### Concept
+
+**Disagreement** occurs when Maia predicts humans will play a move that Stockfish considers suboptimal. High disagreement positions are where:
+- SF's best move is not what humans typically play
+- The human-preferred moves lose significant evaluation
+
+### The Algorithm
+
+```
+disagreementScore = maiaAdvantage / (sfSpread + epsilon)
+
+Where:
+- maiaAdvantage = SF eval of Maia's top move - SF eval of SF's best move
+- sfSpread = SF eval of best move - SF eval of worst considered move
+- epsilon = 0.01 (prevents division by zero)
+```
+
+A high disagreement score means Maia strongly prefers a move that SF considers significantly worse than alternatives.
+
+### Key Functions
+
+| Function | Purpose |
+| --- | --- |
+| `calculateDisagreementScore()` | Core formula: maiaAdvantage / (sfSpread + epsilon) |
+| `analyzePositionForDisagreement()` | Analyzes single position, returns move rankings |
+| `analyzeGameForDisagreements()` | Analyzes all mainline positions in a game |
+| `extractPositionsFromGame()` | Extracts FEN + ply + path for navigation |
+
+### Types
+
+```typescript
+interface MoveRanking {
+  move: string;
+  sfWinrate: number;
+  maiaProb: number;
+  sfRank: number;    // 1 = SF's best
+  maiaRank: number;  // 1 = Maia's top prediction
+}
+
+interface PositionDisagreement {
+  fen: string;
+  ply: number;
+  path: number[];
+  disagreementScore: number;
+  moveRankings: MoveRanking[];
+  sfBestMove: string;
+  maiaBestMove: string;
+}
+
+interface WinFinderResult {
+  positions: PositionDisagreement[];  // Sorted by disagreement score
+  analyzedCount: number;
+  totalPositions: number;
+}
+```
+
+### Core Files
+
+| File | Purpose |
+| --- | --- |
+| `src/core/analysis/winFinder.ts` | Core algorithm and types |
+| `src/hooks/useWinFinder.ts` | React hook with progress tracking |
+| `src/components/Analysis/WinFinderPanel.tsx` | UI with results list |
+| `src/core/chess/navigation.ts` | `extractPositionsFromGame()` helper |
+
+### UI Integration
+
+- **Tab system** in main page switches between EW and Win Finder views
+- Both components stay mounted (CSS visibility toggle) for performance
+- Manual trigger via "Analyze Game" button (not auto-triggered like EW)
+- Progress bar during analysis
+- Click result to navigate to that position
 
 ---
 

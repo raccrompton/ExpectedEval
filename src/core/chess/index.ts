@@ -56,8 +56,9 @@ export {
   getTotalMainlinePlies,
   hasVariations,
   getAvailableMoves,
+  extractPositionsFromGame,
   STARTING_FEN,
 } from './navigation'
 
 // Re-export navigation state type
-export type { NavigationState } from './navigation'
+export type { NavigationState, GamePosition } from './navigation'

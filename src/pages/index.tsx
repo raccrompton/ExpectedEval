@@ -1,12 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { GameBoard, NavigationControls } from '@/components/Board'
-import { PgnInput, MoveList, EnginePanel, EWSection } from '@/components/Analysis'
+import { PgnInput, MoveList, EnginePanel, EWSection, WinFinderPanel } from '@/components/Analysis'
 import { SettingsDropdown } from '@/components/Settings'
 import { useChessGame } from '@/hooks'
 import { useEngines } from '@/contexts'
+import { extractPositionsFromGame } from '@/core/chess'
 
 export default function Home() {
   const {
+    game,
     currentFen,
     currentPath,
     displayedMoves,
@@ -16,8 +18,17 @@ export default function Home() {
     actions,
   } = useChessGame()
 
+  // Tab state for switching between EW and Win Finder
+  const [activeTab, setActiveTab] = useState<'ew' | 'winfinder'>('ew')
+
   // Preview FEN for EW tree node clicks (overrides currentFen temporarily)
   const [previewFen, setPreviewFen] = useState<string | null>(null)
+
+  // Extract positions from game for Win Finder
+  const gamePositions = useMemo(() => {
+    if (!game) return []
+    return extractPositionsFromGame(game)
+  }, [game])
 
   const {
     stockfishEvaluation,
@@ -43,6 +54,11 @@ export default function Home() {
   const handleEWNavigate = useCallback((fen: string) => {
     setPreviewFen(fen)
   }, [])
+
+  // Handle Win Finder position click - navigate to that position
+  const handleWinFinderNavigate = useCallback((path: number[]) => {
+    actions.goToPath(path)
+  }, [actions])
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -142,12 +158,45 @@ export default function Home() {
             />
           </div>
           <div className="ew-section-wrapper" data-testid="ew-section-wrapper">
-            <h2>Expected Winrate</h2>
-            <EWSection
-              fen={currentFen}
-              isEngineReady={stockfishStatus === 'ready' && maiaStatus === 'ready'}
-              onNavigate={handleEWNavigate}
-            />
+            <div className="tab-header">
+              <div className="tab-buttons">
+                <button
+                  className={`tab-button ${activeTab === 'ew' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('ew')}
+                  data-testid="tab-ew"
+                >
+                  Expected Winrate
+                </button>
+                <button
+                  className={`tab-button ${activeTab === 'winfinder' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('winfinder')}
+                  data-testid="tab-winfinder"
+                >
+                  Win Finder
+                </button>
+              </div>
+            </div>
+            <div
+              className="tab-content"
+              style={{ display: activeTab === 'ew' ? 'block' : 'none' }}
+              data-testid="tab-content-ew"
+            >
+              <EWSection
+                fen={currentFen}
+                isEngineReady={stockfishStatus === 'ready' && maiaStatus === 'ready'}
+                onNavigate={handleEWNavigate}
+              />
+            </div>
+            <div
+              className="tab-content"
+              style={{ display: activeTab === 'winfinder' ? 'block' : 'none' }}
+              data-testid="tab-content-winfinder"
+            >
+              <WinFinderPanel
+                positions={gamePositions}
+                onNavigate={handleWinFinderNavigate}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -328,6 +377,45 @@ export default function Home() {
 
         .ew-section-wrapper h2 {
           margin: 0 0 var(--space-sm) 0;
+        }
+
+        /* Tab styles */
+        .tab-header {
+          margin-bottom: var(--space-md);
+        }
+
+        .tab-buttons {
+          display: flex;
+          gap: var(--space-xs);
+        }
+
+        .tab-button {
+          background: transparent;
+          border: var(--border-medium) solid var(--color-border);
+          color: var(--color-text-muted);
+          padding: var(--space-xs) var(--space-md);
+          font-family: var(--font-mono);
+          font-size: var(--font-sm);
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .tab-button:hover {
+          border-color: var(--color-text-muted);
+          color: var(--color-text);
+        }
+
+        .tab-button.active {
+          background: var(--color-primary);
+          border-color: var(--color-primary);
+          color: var(--color-bg);
+          font-weight: 600;
+        }
+
+        .tab-content {
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
         }
 
         @media (max-width: 1024px) {

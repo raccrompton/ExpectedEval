@@ -14,3 +14,10 @@ export type { UseExpectedWinrateReturn, EWStatus } from './useExpectedWinrate'
 
 export { useSettings } from './useSettings'
 export type { UseSettingsReturn, SettingsState } from './useSettings'
+
+export { useWinFinder } from './useWinFinder'
+export type {
+  UseWinFinderReturn,
+  WinFinderStatus,
+  WinFinderProgress,
+} from './useWinFinder'
