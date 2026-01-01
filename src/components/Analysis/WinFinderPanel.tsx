@@ -73,29 +73,66 @@ export function WinFinderPanel({ positions, onNavigate }: WinFinderPanelProps) {
   )
 
   const isAnalyzing = status === 'analyzing'
+  const isIdle = status === 'idle'
   const hasResult = status === 'complete' && result !== null
 
   return (
     <div className="win-finder-panel" data-testid="win-finder-panel">
-      <div className="wf-header">
-        <button
-          className="analyze-button"
-          data-testid="wf-analyze-button"
-          onClick={handleAnalyze}
-          disabled={!canAnalyze || positions.length === 0}
-        >
-          {isAnalyzing ? 'Analyzing...' : 'Analyze Game'}
-        </button>
-        {hasResult && (
+      {/* Show explanation and button when idle */}
+      {isIdle && (
+        <div className="wf-idle" data-testid="wf-idle">
+          <div className="wf-description">
+            <p className="wf-headline">
+              Win Finder scans your game for &quot;hidden edge&quot; positions where you have a practical advantage.
+            </p>
+            <ul className="wf-benefits">
+              <li>
+                <strong>Spot tricky positions</strong> — Find where the engine shows equality
+                but one side has an easier path to play
+              </li>
+              <li>
+                <strong>Exploit human tendencies</strong> — See positions where your opponent
+                is likely to make natural but costly mistakes
+              </li>
+              <li>
+                <strong>Learn from disagreements</strong> — Understand why certain
+                &quot;equal&quot; positions favor one side in practice
+              </li>
+            </ul>
+          </div>
           <button
-            className="reset-button"
-            data-testid="wf-reset-button"
-            onClick={reset}
+            className="analyze-button"
+            data-testid="wf-analyze-button"
+            onClick={handleAnalyze}
+            disabled={!canAnalyze || positions.length === 0}
           >
-            Clear
+            {canAnalyze && positions.length > 0 ? 'Analyze Game' : 'Loading...'}
           </button>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Header with button during/after analysis */}
+      {!isIdle && (
+        <div className="wf-header">
+          <button
+            className="analyze-button"
+            data-testid="wf-analyze-button"
+            onClick={handleAnalyze}
+            disabled={!canAnalyze || positions.length === 0 || isAnalyzing}
+          >
+            {isAnalyzing ? 'Analyzing...' : 'Re-analyze'}
+          </button>
+          {hasResult && (
+            <button
+              className="reset-button"
+              data-testid="wf-reset-button"
+              onClick={reset}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
 
       {isAnalyzing && progress && (
         <div className="wf-progress" data-testid="wf-progress">
@@ -151,6 +188,50 @@ export function WinFinderPanel({ positions, onNavigate }: WinFinderPanelProps) {
           display: flex;
           flex-direction: column;
           gap: var(--space-md, 16px);
+        }
+
+        .wf-idle {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-md, 16px);
+          padding: var(--space-md, 16px);
+          background: var(--color-surface, #111);
+          border: var(--border-thin, 1px) solid var(--color-border, #333);
+        }
+
+        .wf-description {
+          font-size: var(--font-sm, 13px);
+          font-family: var(--font-mono);
+          color: var(--color-text-muted, #888);
+          line-height: 1.6;
+        }
+
+        .wf-headline {
+          margin: 0 0 var(--space-sm, 8px) 0;
+          color: var(--color-text, #fff);
+          font-weight: 600;
+        }
+
+        .wf-benefits {
+          margin: 0;
+          padding-left: var(--space-md, 16px);
+          list-style: none;
+        }
+
+        .wf-benefits li {
+          margin-bottom: var(--space-xs, 4px);
+          position: relative;
+        }
+
+        .wf-benefits li::before {
+          content: '→';
+          position: absolute;
+          left: calc(-1 * var(--space-md, 16px));
+          color: var(--color-primary, #FFE000);
+        }
+
+        .wf-benefits strong {
+          color: var(--color-text, #fff);
         }
 
         .wf-header {

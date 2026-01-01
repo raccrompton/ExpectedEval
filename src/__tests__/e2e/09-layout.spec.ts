@@ -197,10 +197,10 @@ test.describe('EW Section Content', () => {
     await expect(ewSection.locator('[data-testid="ew-config-toggle"]')).toBeVisible()
   })
 
-  test('EW section has results when calculation complete', async ({ page }) => {
+  test('EW section shows idle state with analyze button initially', async ({ page }) => {
     const ewSection = page.locator('[data-testid="ew-section"]')
-    // Wait for EW calculation to complete and show results
-    // With all legal moves (20 from starting position), this can take 30+ seconds
-    await expect(ewSection.locator('[data-testid="ew-results"]')).toBeVisible({ timeout: 60000 })
+    // Before clicking analyze, should show idle state with description and button
+    await expect(ewSection.locator('[data-testid="ew-idle"]')).toBeVisible()
+    await expect(ewSection.locator('[data-testid="ew-analyze-button"]')).toBeVisible()
   })
 })

@@ -1,15 +1,15 @@
 /**
  * useExpectedWinrate Hook
  *
- * React hook for Expected Winrate calculation with auto-trigger on position change.
+ * React hook for Expected Winrate calculation with manual trigger.
  *
- * The hook automatically calculates EW using Maia (fast ~5ms/call) when the position
- * changes, with optional Stockfish enrichment on demand (slow ~50-100ms/call).
+ * The hook provides a calculate() function to trigger EW calculation using Maia.
+ * Stockfish enrichment is available but hidden by default.
  *
  * Flow:
- * 1. Position changes → auto-trigger Maia-only calculation (300ms debounce)
+ * 1. User clicks "Analyze Position" → calculate()
  * 2. Status: idle → calculating_maia → complete_maia
- * 3. User clicks "Add SF Analysis" → enrichWithSF()
+ * 3. (Hidden) User clicks "Add SF Analysis" → enrichWithSF()
  * 4. Status: complete_maia → enriching_sf → complete
  */
 
@@ -55,6 +55,8 @@ export interface UseExpectedWinrateReturn {
   error: Error | null
   /** Current algorithm configuration */
   config: EWConfig
+  /** Trigger Maia-only EW calculation */
+  calculate: () => Promise<void>
   /** Trigger SF enrichment (available when status is 'complete_maia') */
   enrichWithSF: () => Promise<void>
   /** Update algorithm configuration */
@@ -65,24 +67,23 @@ export interface UseExpectedWinrateReturn {
   hasSFResults: boolean
   /** Whether SF enrichment can be triggered */
   canEnrichSF: boolean
+  /** Whether Maia calculation can be triggered */
+  canCalculate: boolean
 }
 
-/** Debounce delay for auto-calculation (ms) */
-const DEBOUNCE_DELAY = 300
-
 /**
- * Hook for Expected Winrate analysis with auto-trigger.
+ * Hook for Expected Winrate analysis with manual trigger.
  *
- * Automatically calculates EW using Maia when the position changes.
- * Provides enrichWithSF() for on-demand Stockfish analysis.
+ * Provides calculate() to trigger EW calculation using Maia.
+ * Provides enrichWithSF() for on-demand Stockfish analysis (hidden by default).
  *
- * @param currentFen - Current position FEN (triggers auto-calculation on change)
+ * @param currentFen - Current position FEN to analyze
  * @param initialConfig - Optional initial configuration override
  * @returns Hook state and actions
  *
  * @example
  * function EWPanel({ fen }: { fen: string }) {
- *   const { result, status, progress, enrichWithSF, canEnrichSF } = useExpectedWinrate(fen)
+ *   const { result, status, progress, calculate, canCalculate } = useExpectedWinrate(fen)
  *
  *   if (status === 'calculating_maia') {
  *     return <div>Analyzing... {progress?.message}</div>
@@ -90,10 +91,10 @@ const DEBOUNCE_DELAY = 300
  *
  *   return (
  *     <div>
- *       <EWResults result={result} />
- *       {canEnrichSF && (
- *         <button onClick={enrichWithSF}>Add Stockfish Analysis</button>
+ *       {canCalculate && (
+ *         <button onClick={calculate}>Analyze Position</button>
  *       )}
+ *       {result && <EWResults result={result} />}
  *     </div>
  *   )
  * }
@@ -102,7 +103,7 @@ export function useExpectedWinrate(
   currentFen: string,
   initialConfig?: Partial<EWConfig>
 ): UseExpectedWinrateReturn {
-  const { stockfish, maia, isInitialized, isMaiaEvaluating, isStockfishEvaluating } = useEngines()
+  const { stockfish, maia, isInitialized, isMaiaEvaluating } = useEngines()
 
   const [result, setResult] = useState<EWResult | null>(null)
   const [status, setStatus] = useState<EWStatus>('idle')
@@ -115,15 +116,16 @@ export function useExpectedWinrate(
 
   // Track the FEN we're currently calculating for
   const currentFenRef = useRef<string | null>(null)
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Derived state helpers
   const hasSFResults = result?.baseSFWinrate !== null && result?.baseSFWinrate !== undefined
   const canEnrichSF = status === 'complete_maia' && !hasSFResults
+  const isCalculating = status === 'calculating_maia' || status === 'enriching_sf'
+  const canCalculate = !!(maia && isInitialized && !isCalculating && !isMaiaEvaluating)
 
   /**
    * Run Maia-only EW calculation.
-   * Called automatically when position changes (with debounce).
+   * Called manually when user clicks "Analyze Position".
    */
   const calculateMaia = useCallback(
     async (fen: string) => {
@@ -209,42 +211,23 @@ export function useExpectedWinrate(
   }, [stockfish, result, status, config])
 
   /**
-   * Auto-trigger Maia calculation when position changes.
-   * Uses debounce to avoid rapid recalculation during navigation.
-   * Waits for panel evaluation to complete before starting EW calculation.
+   * Public API: Trigger Maia-only EW calculation.
+   * Call this when user clicks "Analyze Position".
    */
+  const calculate = useCallback(async () => {
+    await calculateMaia(currentFen)
+  }, [calculateMaia, currentFen])
+
+  // Reset result when position changes (clear stale data)
   useEffect(() => {
-    // Clear any pending debounce timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current)
+    if (result && result.fen !== currentFen) {
+      setResult(null)
+      setStatus('idle')
+      setProgress(null)
+      setError(null)
+      currentFenRef.current = null
     }
-
-    // Don't auto-calculate if Maia isn't ready
-    if (!maia || !isInitialized) {
-      return
-    }
-
-    // Wait for panel evaluation to complete (avoid concurrent Maia usage)
-    if (isMaiaEvaluating || isStockfishEvaluating) {
-      return
-    }
-
-    // Skip if we already have a result for this FEN (or are calculating it)
-    if (currentFenRef.current === currentFen) {
-      return
-    }
-
-    // Debounce the calculation
-    debounceTimerRef.current = setTimeout(() => {
-      calculateMaia(currentFen)
-    }, DEBOUNCE_DELAY)
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current)
-      }
-    }
-  }, [currentFen, maia, isInitialized, calculateMaia, isMaiaEvaluating, isStockfishEvaluating])
+  }, [currentFen, result])
 
   const updateConfig = useCallback((partial: Partial<EWConfig>) => {
     setConfig((prev) => ({ ...prev, ...partial }))
@@ -256,9 +239,6 @@ export function useExpectedWinrate(
   }, [config.maiaLevel])
 
   const reset = useCallback(() => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current)
-    }
     currentFenRef.current = null
     setResult(null)
     setStatus('idle')
@@ -274,10 +254,12 @@ export function useExpectedWinrate(
     progress,
     error,
     config,
+    calculate,
     enrichWithSF,
     updateConfig,
     reset,
     hasSFResults,
     canEnrichSF,
+    canCalculate,
   }
 }

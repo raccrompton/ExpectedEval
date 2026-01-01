@@ -1,12 +1,12 @@
 /**
  * E2E Tests for Expected Winrate (Phase 9)
  *
- * Tests verify that the Expected Winrate auto-calculation
+ * Tests verify that the Expected Winrate calculation
  * and display works correctly with the engines.
  *
  * Flow:
- * - EW auto-calculates with Maia when position changes (300ms debounce)
- * - User can optionally click "Add Stockfish Analysis" for SF enrichment
+ * - User loads a position and clicks "Analyze Position" button
+ * - EW calculates using Maia (SF enrichment hidden for now)
  *
  * Optimized: Uses shared page to avoid repeated engine/EW initialization.
  */
@@ -17,6 +17,7 @@ import {
   EW_CALC_TIMEOUT,
   waitForEnginesReady,
   loadPgnAndWaitForEval,
+  calculateEWAndWait,
   trackConsoleErrors,
   logCollectedErrors,
 } from './helpers'
@@ -45,7 +46,7 @@ test.describe('06 - Expected Winrate', () => {
   })
 
   // Engine-dependent tests with shared page
-  test.describe('EW Auto-Calculation and Display', () => {
+  test.describe('EW Calculation and Display', () => {
     // Run serially since tests share page state
     test.describe.configure({ mode: 'serial' })
 
@@ -68,21 +69,23 @@ test.describe('06 - Expected Winrate', () => {
       await context.close()
     })
 
-    test('EW auto-calculates after position loads', async () => {
-      // EW should auto-calculate with Maia after loading PGN
-      // Wait for results to appear (auto-triggered, no button needed)
+    test('shows explanatory text and analyze button before calculation', async () => {
+      // Before clicking analyze, should show idle state with description
+      await expect(page.getByTestId('ew-idle')).toBeVisible()
+      await expect(page.getByTestId('ew-analyze-button')).toBeVisible()
+    })
+
+    test('calculates EW when analyze button is clicked', async () => {
+      // Click analyze button and wait for results
+      await calculateEWAndWait(page)
       await expect(page.getByTestId('ew-results')).toBeVisible({ timeout: EW_CALC_TIMEOUT })
     })
 
-    test('EW results display Maia value (SF may be pending)', async () => {
-      // Maia EW should always be visible after auto-calculation
+    test('EW results display Maia-based value', async () => {
+      // Maia EW should be visible after calculation
       const ewMaia = page.getByTestId('ew-maia-value')
       await expect(ewMaia).toBeVisible()
       await expect(ewMaia).toContainText(/%/)
-
-      // SF EW box shows either value (if enriched) or Add SF button (if not)
-      const sfBox = page.locator('.sf-box')
-      await expect(sfBox).toBeVisible()
     })
 
     test('EW results display candidate moves with probabilities', async () => {
@@ -181,50 +184,18 @@ test.describe('06 - Expected Winrate', () => {
       }
     })
 
-    test('Add SF Analysis button appears when Maia calculation complete', async () => {
-      // Navigate to a new position to trigger fresh Maia calculation
+    test('navigating clears previous results and shows idle state', async () => {
+      // Navigate to a different position
       await page.getByTestId('nav-start').click()
 
-      // Wait for old results to disappear (calculation starting)
-      // Then wait for new results to appear (calculation complete)
-      await expect(page.getByTestId('ew-results')).not.toBeVisible({ timeout: 5000 }).catch(() => {
-        // Old results may have already been replaced, that's ok
-      })
-      await expect(page.getByTestId('ew-results')).toBeVisible({ timeout: EW_CALC_TIMEOUT })
-
-      // SF button should appear (status is complete_maia)
-      const sfButton = page.getByTestId('add-sf-analysis-button')
-      await expect(sfButton).toBeVisible({ timeout: 5000 })
+      // Previous results should be cleared, showing idle state with analyze button
+      await expect(page.getByTestId('ew-idle')).toBeVisible({ timeout: 5000 })
+      await expect(page.getByTestId('ew-analyze-button')).toBeVisible()
     })
 
-    test('clicking Add SF Analysis enriches results', async () => {
-      // SF enrichment evaluates many positions (78+ for 20 candidates)
-      // This can take 60+ seconds, so extend the test timeout
-      test.setTimeout(EW_CALC_TIMEOUT + 30000)
-
-      // Ensure Maia calculation is complete before clicking SF button
-      // (previous test may have completed but state could have changed)
-      await expect(page.getByTestId('ew-results')).toBeVisible({ timeout: EW_CALC_TIMEOUT })
-
-      const sfButton = page.getByTestId('add-sf-analysis-button')
-      await expect(sfButton).toBeVisible({ timeout: 5000 })
-      await sfButton.click()
-
-      // Button should disappear or show loading
-      // After enrichment, status should be 'complete'
-      await expect(page.getByTestId('ew-status')).toContainText(/Complete|Stockfish/, { timeout: EW_CALC_TIMEOUT })
-
-      // SF values should now be populated (not "—")
-      const ewSF = page.getByTestId('ew-sf-value')
-      await expect(ewSF).toContainText(/%/)
-    })
-
-    test('EW auto-recalculates after navigation', async () => {
-      // Navigate to a different position
-      await page.getByTestId('nav-end').click()
-
-      // Wait for new Maia calculation to complete
-      await expect(page.getByTestId('ew-results')).toBeVisible({ timeout: EW_CALC_TIMEOUT })
+    test('can calculate EW again after navigation', async () => {
+      // Click analyze button after navigating
+      await calculateEWAndWait(page)
 
       // Should show fresh Maia results
       const ewMaia = page.getByTestId('ew-maia-value')
@@ -233,9 +204,9 @@ test.describe('06 - Expected Winrate', () => {
     })
 
     test('no console errors during EW operations', async () => {
-      // Navigate around to exercise the code
-      await page.getByTestId('nav-start').click()
+      // Navigate and analyze to exercise the code
       await page.getByTestId('nav-end').click()
+      await expect(page.getByTestId('ew-analyze-button')).toBeVisible({ timeout: 5000 })
 
       expect(consoleErrors).toEqual([])
     })
@@ -258,8 +229,8 @@ test.describe('06 - Expected Winrate', () => {
       await waitForEnginesReady(page)
       await loadPgnAndWaitForEval(page, SAMPLE_PGN)
 
-      // Wait for EW results to appear
-      await expect(page.getByTestId('ew-results')).toBeVisible({ timeout: EW_CALC_TIMEOUT })
+      // Trigger EW calculation manually
+      await calculateEWAndWait(page)
     })
 
     test.afterAll(async () => {

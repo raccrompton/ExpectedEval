@@ -61,10 +61,10 @@ export async function loadPgnAndWaitForEval(page: Page, pgn: string): Promise<vo
 
 /**
  * Calculate Expected Winrate and wait for results.
- * Clicks the calculate button and waits for the results section to appear.
+ * Clicks the analyze button and waits for the results section to appear.
  */
 export async function calculateEWAndWait(page: Page): Promise<void> {
-  await page.getByTestId('calculate-ew-button').click()
+  await page.getByTestId('ew-analyze-button').click()
   await expect(page.getByTestId('ew-results')).toBeVisible({ timeout: EW_CALC_TIMEOUT })
 }
 

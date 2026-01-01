@@ -75,16 +75,15 @@ function getStatusColor(status: EWStatus): string {
 export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EWSectionProps) {
   const { settings, updateSetting } = useSettingsContext()
 
-  // Hook now auto-triggers on fen change
   const {
     result,
     status,
     progress,
     error,
     config: _config,
-    enrichWithSF,
+    calculate,
     updateConfig,
-    canEnrichSF,
+    canCalculate,
   } = useExpectedWinrate(fen)
 
   const [showConfig, setShowConfig] = useState(false)
@@ -101,10 +100,10 @@ export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EW
   }, [settings, updateConfig])
 
   const isCalculatingMaia = status === 'calculating_maia'
-  const isEnrichingSF = status === 'enriching_sf'
-  // Show results when Maia is done, even while enriching with SF
+  const isIdle = status === 'idle'
+  // Show results when Maia is done
   const hasResult =
-    (status === 'complete_maia' || status === 'complete' || status === 'enriching_sf') &&
+    (status === 'complete_maia' || status === 'complete') &&
     result !== null
 
   return (
@@ -124,17 +123,46 @@ export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EW
         </div>
       </div>
 
-      {/* Show status during calculation phases and after completion */}
-      {(isCalculatingMaia || isEnrichingSF || status === 'complete') && (
+      {/* Show analyze button when idle */}
+      {isIdle && (
+        <div className="ew-idle" data-testid="ew-idle">
+          <div className="ew-description">
+            <p className="ew-headline">
+              Expected Winrate shows your realistic winning chances based on human play patterns.
+            </p>
+            <ul className="ew-benefits">
+              <li>
+                <strong>See likely continuations</strong> — View the tree of moves humans
+                will probably play, not just engine &quot;best&quot; moves
+              </li>
+              <li>
+                <strong>Find practical edges</strong> — Discover positions where natural
+                play favors you, even if engines show equality
+              </li>
+              <li>
+                <strong>Compare candidates</strong> — See which move leads to better
+                outcomes when both sides play like humans
+              </li>
+            </ul>
+          </div>
+          <button
+            className="analyze-button"
+            data-testid="ew-analyze-button"
+            onClick={calculate}
+            disabled={!canCalculate}
+          >
+            {canCalculate ? 'Analyze Position' : 'Loading...'}
+          </button>
+        </div>
+      )}
+
+      {/* Show status during calculation */}
+      {isCalculatingMaia && (
         <div className="ew-status" data-testid="ew-status">
           <span style={{ color: getStatusColor(status) }}>
-            {status === 'complete'
-              ? 'Complete (Stockfish enriched)'
-              : progress
-                ? `${progress.phase}: ${progress.message}`
-                : isEnrichingSF
-                  ? 'Enriching with Stockfish...'
-                  : 'Calculating...'}
+            {progress
+              ? `${progress.phase}: ${progress.message}`
+              : 'Calculating...'}
           </span>
         </div>
       )}
@@ -202,9 +230,6 @@ export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EW
           evalSource={evalSource}
           onEvalSourceChange={setEvalSource}
           onNavigate={onNavigate}
-          canEnrichSF={canEnrichSF}
-          isEnrichingSF={isEnrichingSF}
-          onEnrichSF={enrichWithSF}
         />
       )}
 
@@ -295,10 +320,54 @@ export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EW
           border-color: var(--color-primary, #FFE000);
         }
 
-        .sf-button {
+        .ew-idle {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-md, 16px);
+          padding: var(--space-md, 16px);
+          background: var(--color-surface, #111);
+          border: var(--border-thin, 1px) solid var(--color-border, #333);
+        }
+
+        .ew-description {
+          font-size: var(--font-sm, 13px);
+          font-family: var(--font-mono);
+          color: var(--color-text-muted, #888);
+          line-height: 1.6;
+        }
+
+        .ew-headline {
+          margin: 0 0 var(--space-sm, 8px) 0;
+          color: var(--color-text, #fff);
+          font-weight: 600;
+        }
+
+        .ew-benefits {
+          margin: 0;
+          padding-left: var(--space-md, 16px);
+          list-style: none;
+        }
+
+        .ew-benefits li {
+          margin-bottom: var(--space-xs, 4px);
+          position: relative;
+        }
+
+        .ew-benefits li::before {
+          content: '→';
+          position: absolute;
+          left: calc(-1 * var(--space-md, 16px));
+          color: var(--color-primary, #FFE000);
+        }
+
+        .ew-benefits strong {
+          color: var(--color-text, #fff);
+        }
+
+        .analyze-button {
           background: var(--color-primary, #FFE000);
           color: var(--color-background, #0a0a0a);
-          border: var(--border-medium, 2px) solid var(--color-primary, #FFE000);
+          border: none;
           padding: var(--space-sm, 8px) var(--space-lg, 24px);
           cursor: pointer;
           font-weight: 700;
@@ -307,16 +376,16 @@ export function EWSection({ fen, isEngineReady: _isEngineReady, onNavigate }: EW
           text-transform: uppercase;
           letter-spacing: 0.08em;
           transition: all 0.1s ease;
+          align-self: flex-start;
         }
 
-        .sf-button:hover:not(:disabled) {
+        .analyze-button:hover:not(:disabled) {
           background: var(--color-background, #0a0a0a);
           color: var(--color-primary, #FFE000);
-          transform: translate(-2px, -2px);
-          box-shadow: 2px 2px 0 0 var(--color-primary, #FFE000);
+          outline: 2px solid var(--color-primary, #FFE000);
         }
 
-        .sf-button:disabled {
+        .analyze-button:disabled {
           opacity: 0.4;
           cursor: not-allowed;
         }
@@ -339,70 +408,34 @@ interface EWResultsProps {
   evalSource: EvalSource
   onEvalSourceChange: (_source: EvalSource) => void
   onNavigate?: (_fen: string) => void
-  canEnrichSF: boolean
-  isEnrichingSF: boolean
-  onEnrichSF: () => void
-}
-
-/**
- * Formats a nullable winrate, showing "—" if null.
- */
-function formatNullableWinrate(winrate: number | null): string {
-  return winrate !== null ? formatWinrate(winrate) : '—'
 }
 
 /**
  * Displays EW calculation results including summary stats, candidate moves, and tree.
- * SF values show "—" until enrichWithStockfish() is called.
+ * Shows only Maia-based results (SF hidden for now).
  */
 function EWResults({
   result,
   evalSource,
   onEvalSourceChange,
   onNavigate,
-  canEnrichSF,
-  isEnrichingSF,
-  onEnrichSF,
 }: EWResultsProps) {
   const bestCandidate = result.candidates[0]
-  const hasSFResults = bestCandidate?.expectedWinrateSF !== null
 
   return (
     <div className="ew-results" data-testid="ew-results">
-      {/* Horizontal row: EW Maia | EW SF (or button) | Eval source selector */}
+      {/* Summary row: EW Maia value only */}
       <div className="ew-summary-row">
-        {/* EW Maia - always visible */}
         <div className="summary-box">
-          <span className="summary-label">EW (Maia):</span>
+          <span className="summary-label">Expected Winrate:</span>
           <span className="summary-value" data-testid="ew-maia-value">
             {bestCandidate ? formatWinrate(bestCandidate.expectedWinrateMaia) : 'N/A'}
           </span>
         </div>
 
-        {/* EW SF - shows button overlay when SF not yet run */}
-        <div className="summary-box sf-box">
-          {hasSFResults ? (
-            <>
-              <span className="summary-label">EW (Stockfish):</span>
-              <span className="summary-value" data-testid="ew-sf-value">
-                {bestCandidate ? formatNullableWinrate(bestCandidate.expectedWinrateSF) : 'N/A'}
-              </span>
-            </>
-          ) : (
-            <button
-              className="sf-button"
-              data-testid="add-sf-analysis-button"
-              onClick={onEnrichSF}
-              disabled={!canEnrichSF || isEnrichingSF}
-            >
-              {isEnrichingSF ? 'Adding SF...' : 'Add SF Analysis'}
-            </button>
-          )}
-        </div>
-
-        {/* Eval source selector */}
+        {/* Eval source selector (for tree display) */}
         <div className="eval-source-toggle" data-testid="eval-source-toggle">
-          <span className="toggle-label">Eval:</span>
+          <span className="toggle-label">Tree Eval:</span>
           <label className="radio-option" data-testid="eval-source-sf">
             <input
               type="radio"
