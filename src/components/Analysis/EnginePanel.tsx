@@ -107,14 +107,17 @@ export function EnginePanel({
                     ? `M${stockfishEvaluation.mateIn}`
                     : formatCp(stockfishEvaluation.cp)}
                 </span>
-                <span className="eval-labels">
-                  <span className="eval-depth">d{stockfishEvaluation.depth}</span>
-                  {stockfishEvaluation.wdl && (
-                    <span className="wdl-label" data-testid="sf-winrate">
-                      WDL% {Math.round(stockfishEvaluation.wdl.win)}/{Math.round(stockfishEvaluation.wdl.draw)}/{Math.round(stockfishEvaluation.wdl.loss)}
-                    </span>
-                  )}
-                </span>
+                {stockfishEvaluation.wdl && (
+                  <span className="wdl-values" data-testid="sf-winrate">
+                    {Math.round(stockfishEvaluation.wdl.win)}/{Math.round(stockfishEvaluation.wdl.draw)}/{Math.round(stockfishEvaluation.wdl.loss)}
+                  </span>
+                )}
+              </div>
+              <div className="eval-row secondary">
+                <span className="eval-depth">d{stockfishEvaluation.depth}</span>
+                {stockfishEvaluation.wdl && (
+                  <span className="wdl-label">W/D/L%</span>
+                )}
               </div>
               <div className="moves-list" data-testid="sf-best-move">
                 <div className="moves-header">
@@ -236,6 +239,10 @@ export function EnginePanel({
           gap: 6px;
         }
 
+        .eval-row.secondary {
+          margin-top: -2px;
+        }
+
         .eval-value {
           font-size: 20px;
           font-weight: 700;
@@ -248,11 +255,11 @@ export function EnginePanel({
           color: var(--color-primary, #FFE000);
         }
 
-        .eval-labels {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 1px;
+        .wdl-values {
+          font-size: 14px;
+          font-weight: 600;
+          font-family: var(--font-mono, monospace);
+          color: var(--color-text, #fff);
         }
 
         .eval-depth {

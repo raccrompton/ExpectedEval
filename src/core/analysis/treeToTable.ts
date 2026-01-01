@@ -5,9 +5,9 @@
  * for the horizontal table-based EW visualization.
  *
  * Key concepts:
- * - Mainline: The highest probability path through the tree
- * - Alternative rows: Branches shown when a cell is expanded
- * - Expansion state: Tracked via Set<string> with keys like "plyIndex-san"
+ * - Default mode: All ply-0 children shown as separate rows (no expansions)
+ * - Focused mode: Single ply-0 branch with expanded alternatives
+ * - Expansion keys: "rowId:plyIndex-san" (e.g., "mainline:1-Bg7")
  */
 import type { TreeNode } from './types'
 
@@ -98,6 +98,73 @@ export function getColorFromFen(fen: string): 'w' | 'b' {
   }
 
   return parts[1] === 'b' ? 'b' : 'w'
+}
+
+/**
+ * Parse an expansion key to extract its components.
+ *
+ * Key format: "rowId:plyIndex-san"
+ * Examples: "mainline:1-Bg7", "ply1-Nf3:2-d4"
+ *
+ * @returns Object with rowId, plyIndex, and san, or null if invalid
+ */
+function parseExpansionKey(key: string): { rowId: string; plyIndex: number; san: string } | null {
+  const colonIndex = key.indexOf(':')
+  if (colonIndex === -1) return null
+
+  const rowId = key.substring(0, colonIndex)
+  const rest = key.substring(colonIndex + 1)
+
+  const dashIndex = rest.indexOf('-')
+  if (dashIndex === -1) return null
+
+  const plyIndex = parseInt(rest.substring(0, dashIndex), 10)
+  const san = rest.substring(dashIndex + 1)
+
+  if (isNaN(plyIndex) || !san) return null
+
+  return { rowId, plyIndex, san }
+}
+
+/**
+ * Extract the focused branch row ID from expansion keys.
+ *
+ * All expansion keys should belong to the same branch (UI clears others on expand).
+ * Returns null if no expansions or keys are invalid.
+ */
+function getFocusedBranchId(expandedCells: Set<string>): string | null {
+  if (expandedCells.size === 0) return null
+
+  const firstKey = expandedCells.values().next().value
+  if (!firstKey) return null
+
+  const parsed = parseExpansionKey(firstKey)
+  return parsed?.rowId ?? null
+}
+
+/**
+ * Find the ply-0 node corresponding to a row ID.
+ *
+ * @param root - Tree root
+ * @param rowId - Row ID like "mainline" or "ply1-Nf3"
+ * @returns The ply-0 TreeNode, or null if not found
+ */
+function findPly0NodeByRowId(root: TreeNode, rowId: string): TreeNode | null {
+  if (root.children.length === 0) return null
+
+  const sortedChildren = [...root.children].sort((a, b) => b.probability - a.probability)
+
+  if (rowId === 'mainline') {
+    return sortedChildren[0]
+  }
+
+  // Parse "ply1-san" format
+  if (rowId.startsWith('ply1-')) {
+    const san = rowId.substring(5)
+    return sortedChildren.find(c => c.san === san) ?? null
+  }
+
+  return null
 }
 
 /**
@@ -283,13 +350,21 @@ function buildAlternativeRows(
 
 /**
  * Build cells for an alternative branch.
+ *
+ * @param altRoot - Root node of the alternative branch
+ * @param branchPlyIndex - Ply index where this branch starts
+ * @param baseMoveNumber - Starting move number
+ * @param baseColor - Color to move at root
+ * @param expandedCells - Set of expanded cell keys
+ * @param ply0RowId - Row ID for key formatting (e.g., "mainline")
  */
 function buildAlternativeCells(
   altRoot: TreeNode,
   branchPlyIndex: number,
   baseMoveNumber: number,
   baseColor: 'w' | 'b',
-  expandedCells: Set<string>
+  expandedCells: Set<string>,
+  ply0RowId: string = 'mainline'
 ): EWTableCell[] {
   const cells: EWTableCell[] = []
 
@@ -313,6 +388,7 @@ function buildAlternativeCells(
     const next = sorted[0]
 
     const moveInfo = calculateMoveInfo(plyOffset, baseMoveNumber, baseColor)
+    const cellKey = `${ply0RowId}:${plyOffset}-${next.san}`
 
     cells.push({
       san: next.san || '?',
@@ -320,7 +396,7 @@ function buildAlternativeCells(
       color: moveInfo.color,
       node: next,
       hasAlternatives: sorted.length > 1,
-      isExpanded: expandedCells.has(`${plyOffset}-${next.san}`),
+      isExpanded: expandedCells.has(cellKey),
       plyIndex: plyOffset,
     })
 
@@ -369,36 +445,39 @@ function calculateAlternativeLikelihood(
 }
 
 /**
- * Build cells for a ply 1 child and its mainline continuation.
- * Used in default mode to show each ply 1 child as a separate row.
+ * Build cells for a ply-0 child and its mainline continuation.
  *
- * @param ply1Node - The ply-0 child node to build cells for
+ * @param ply0Node - The ply-0 child node to build cells for
+ * @param rowId - Row ID for key formatting (e.g., "mainline" or "ply1-Nf3")
  * @param baseMoveNumber - Starting move number from the position FEN
  * @param baseColor - Color to move at the root position
- * @param expandedCells - Set of expanded cell keys (format: "plyIndex-san")
+ * @param expandedCells - Set of expanded cell keys (format: "rowId:plyIndex-san")
+ * @param showPly0Alternatives - Whether ply-0 cell can show hasAlternatives (false in default mode)
  */
-function buildPly1RowCells(
-  ply1Node: TreeNode,
+function buildPly0RowCells(
+  ply0Node: TreeNode,
+  rowId: string,
   baseMoveNumber: number,
   baseColor: 'w' | 'b',
-  expandedCells: Set<string> = new Set()
+  expandedCells: Set<string> = new Set(),
+  showPly0Alternatives: boolean = false
 ): EWTableCell[] {
   const cells: EWTableCell[] = []
   const { moveNumber, color } = calculateMoveInfo(0, baseMoveNumber, baseColor)
 
-  // First cell (ply 0) - no hasAlternatives since all are shown as rows
+  // First cell (ply 0)
   cells.push({
-    san: ply1Node.san || '?',
+    san: ply0Node.san || '?',
     moveNumber,
     color,
-    node: ply1Node,
-    hasAlternatives: false,
+    node: ply0Node,
+    hasAlternatives: showPly0Alternatives,
     isExpanded: false,
     plyIndex: 0,
   })
 
   // Follow mainline from this node
-  let current = ply1Node
+  let current = ply0Node
   let plyOffset = 1
 
   while (current.children.length > 0) {
@@ -406,7 +485,8 @@ function buildPly1RowCells(
     const next = sorted[0]
     const moveInfo = calculateMoveInfo(plyOffset, baseMoveNumber, baseColor)
 
-    const cellKey = `${plyOffset}-${next.san}`
+    // Key format: "rowId:plyIndex-san"
+    const cellKey = `${rowId}:${plyOffset}-${next.san}`
 
     cells.push({
       san: next.san || '?',
@@ -433,7 +513,7 @@ function buildPly1RowCells(
  *
  * @param ply0Node - The ply-0 child whose subtree we're exploring
  * @param ply0RowId - ID of the parent row (e.g., "mainline" or "ply1-d5")
- * @param expandedCells - Set of expanded cell keys (format: "plyIndex-san")
+ * @param expandedCells - Set of expanded cell keys (format: "rowId:plyIndex-san")
  * @param baseMoveNumber - Starting move number from the position FEN
  * @param baseColor - Color to move at the root position
  */
@@ -453,7 +533,9 @@ function buildPly1BranchAlternatives(
   while (parentNode.children.length > 0) {
     const sorted = [...parentNode.children].sort((a, b) => b.probability - a.probability)
     const mainlineNode = sorted[0]
-    const cellKey = `${plyIndex}-${mainlineNode.san}`
+
+    // Key format: "rowId:plyIndex-san"
+    const cellKey = `${ply0RowId}:${plyIndex}-${mainlineNode.san}`
 
     // Check if this cell is expanded
     if (expandedCells.has(cellKey)) {
@@ -466,7 +548,8 @@ function buildPly1BranchAlternatives(
           plyIndex,
           baseMoveNumber,
           baseColor,
-          expandedCells
+          expandedCells,
+          ply0RowId
         )
 
         const altLeaf = getAlternativeLeaf(altNode)
@@ -491,21 +574,16 @@ function buildPly1BranchAlternatives(
 }
 
 /**
- * Build rows for default mode: all ply 1 children shown as separate rows.
- *
- * When expandedCells is provided, generates alternative rows for each
- * ply-0 branch that has expanded cells.
+ * Build rows for default mode: all ply-0 children shown as separate rows.
  *
  * @param root - Root TreeNode (after candidate move is applied)
  * @param baseMoveNumber - Starting move number from the position FEN
  * @param baseColor - Color to move at the root position
- * @param expandedCells - Set of expanded cell keys (format: "plyIndex-san")
  */
 function buildDefaultModeRows(
   root: TreeNode,
   baseMoveNumber: number,
-  baseColor: 'w' | 'b',
-  expandedCells: Set<string> = new Set()
+  baseColor: 'w' | 'b'
 ): EWTableLine[] {
   if (root.children.length === 0) {
     return [{
@@ -527,8 +605,8 @@ function buildDefaultModeRows(
     const child = sortedChildren[index]
     const rowId = index === 0 ? 'mainline' : `ply1-${child.san}`
 
-    // Build the main row for this ply-0 child
-    const cells = buildPly1RowCells(child, baseMoveNumber, baseColor, expandedCells)
+    // Build the main row for this ply-0 child (no expansion keys in default mode)
+    const cells = buildPly0RowCells(child, rowId, baseMoveNumber, baseColor, new Set(), false)
     const leaf = getAlternativeLeaf(child)
     const likelihood = calculateAlternativeLikelihood(child)
 
@@ -540,17 +618,58 @@ function buildDefaultModeRows(
       branchDepth: 0,
       parentLineId: null,
     })
-
-    // Build alternative rows for any expanded cells in this branch
-    const altRows = buildPly1BranchAlternatives(
-      child,
-      rowId,
-      expandedCells,
-      baseMoveNumber,
-      baseColor
-    )
-    rows.push(...altRows)
   }
+
+  return rows
+}
+
+/**
+ * Build rows for focused mode: single ply-0 branch with expanded alternatives.
+ *
+ * @param root - Root TreeNode (after candidate move is applied)
+ * @param focusedRowId - Row ID of the focused branch (e.g., "mainline" or "ply1-Nf3")
+ * @param expandedCells - Set of expanded cell keys (format: "rowId:plyIndex-san")
+ * @param baseMoveNumber - Starting move number from the position FEN
+ * @param baseColor - Color to move at the root position
+ */
+function buildFocusedModeRows(
+  root: TreeNode,
+  focusedRowId: string,
+  expandedCells: Set<string>,
+  baseMoveNumber: number,
+  baseColor: 'w' | 'b'
+): EWTableLine[] {
+  const focusedNode = findPly0NodeByRowId(root, focusedRowId)
+  if (!focusedNode) {
+    // Fallback to default mode if focused node not found
+    return buildDefaultModeRows(root, baseMoveNumber, baseColor)
+  }
+
+  const rows: EWTableLine[] = []
+
+  // Build the main row for the focused branch
+  const cells = buildPly0RowCells(focusedNode, focusedRowId, baseMoveNumber, baseColor, expandedCells, false)
+  const leaf = getAlternativeLeaf(focusedNode)
+  const likelihood = calculateAlternativeLikelihood(focusedNode)
+
+  rows.push({
+    id: focusedRowId,
+    moves: cells,
+    lineEW: leaf.maiaWinrate,
+    likelihood,
+    branchDepth: 0,
+    parentLineId: null,
+  })
+
+  // Build alternative rows for expanded cells within this branch
+  const altRows = buildPly1BranchAlternatives(
+    focusedNode,
+    focusedRowId,
+    expandedCells,
+    baseMoveNumber,
+    baseColor
+  )
+  rows.push(...altRows)
 
   return rows
 }
@@ -560,11 +679,11 @@ function buildDefaultModeRows(
  *
  * This is the main entry point for the transformation.
  *
- * All ply-0 children are shown as separate rows. When cells are expanded,
- * alternative rows are generated within each ply-0 branch's context.
+ * - Default mode (no expansions): All ply-0 children shown as separate rows
+ * - Focused mode (expansions present): Single ply-0 branch with alternatives
  *
  * @param root - Root TreeNode (after candidate move is applied)
- * @param expandedCells - Set of expanded cell keys (format: "plyIndex-san")
+ * @param expandedCells - Set of expanded cell keys (format: "rowId:plyIndex-san")
  * @param baseMoveNumber - Starting move number from the position FEN
  * @param baseColor - Color to move at the root position
  * @returns Array of EWTableLine rows for rendering
@@ -575,6 +694,14 @@ export function treeToTableRows(
   baseMoveNumber: number,
   baseColor: 'w' | 'b'
 ): EWTableLine[] {
-  // Always use default mode - expansions are handled per-branch
-  return buildDefaultModeRows(root, baseMoveNumber, baseColor, expandedCells)
+  // Check if we have expansions (focused mode) or not (default mode)
+  const focusedBranchId = getFocusedBranchId(expandedCells)
+
+  if (focusedBranchId) {
+    // Focused mode: show only the focused branch with alternatives
+    return buildFocusedModeRows(root, focusedBranchId, expandedCells, baseMoveNumber, baseColor)
+  }
+
+  // Default mode: show all ply-0 children as separate rows
+  return buildDefaultModeRows(root, baseMoveNumber, baseColor)
 }

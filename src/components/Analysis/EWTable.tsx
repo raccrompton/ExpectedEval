@@ -99,33 +99,33 @@ export function EWTable({
   )
 
   /**
-   * Handles expand/collapse with accordion behavior:
-   * - Expanding at ply N closes all expansions at ply >= N (siblings and descendants)
-   * - Collapsing closes the node and all its deeper descendants
-   * This ensures only one branch per depth level is expanded at a time.
+   * Handles expand/collapse with focused mode behavior:
+   * - Clicking + focuses on that ply-0 branch (hides other branches)
+   * - Within a focused branch, accordion behavior applies
+   * - Collapsing the last expansion returns to default mode (all branches visible)
+   *
+   * Keys include branch context: "rowId:plyIndex-san" (e.g., "mainline:1-Bg7")
    */
-  const handleCellToggle = useCallback((plyIndex: number, san: string) => {
-    const key = `${plyIndex}-${san}`
+  const handleCellToggle = useCallback((rowId: string, plyIndex: number, san: string) => {
+    const key = `${rowId}:${plyIndex}-${san}`
     setExpandedCells((prev) => {
       const next = new Set(prev)
       if (next.has(key)) {
-        // Collapse: remove this key and any deeper expansions (children of this node)
+        // Collapse: remove this key and any deeper expansions within the same branch
         next.delete(key)
         for (const existingKey of prev) {
-          const [existingPly] = existingKey.split('-')
-          if (parseInt(existingPly, 10) > plyIndex) {
-            next.delete(existingKey)
+          if (existingKey.startsWith(`${rowId}:`)) {
+            const plyPart = existingKey.split(':')[1]
+            const [existingPly] = plyPart.split('-')
+            if (parseInt(existingPly, 10) > plyIndex) {
+              next.delete(existingKey)
+            }
           }
         }
       } else {
-        // Expand: close all expansions at same ply or deeper (accordion behavior)
-        // This keeps only ancestor expansions (ply < N) and adds the new one
-        for (const existingKey of prev) {
-          const [existingPly] = existingKey.split('-')
-          if (parseInt(existingPly, 10) >= plyIndex) {
-            next.delete(existingKey)
-          }
-        }
+        // Expand: clear ALL previous expansions (switch to this branch's focused mode)
+        // Then add the new expansion
+        next.clear()
         next.add(key)
       }
       return next
@@ -222,7 +222,7 @@ interface EWTableRowProps {
   maxPly: number
   evalSource: EvalSource
   expandedCells: Set<string>
-  onCellToggle: (_plyIndex: number, _san: string) => void
+  onCellToggle: (_rowId: string, _plyIndex: number, _san: string) => void
   onNavigate?: (_fen: string) => void
   onNodeHover?: (_event: React.MouseEvent | null, _node: TreeNode | null) => void
 }
@@ -269,7 +269,10 @@ function EWTableRow({
           )
         }
 
-        const cellKey = `${cell.plyIndex}-${cell.san}`
+        // Key format includes row context: "rowId:plyIndex-san"
+        // For alternative rows, use the parent row ID to maintain branch context
+        const branchRowId = row.parentLineId ?? row.id
+        const cellKey = `${branchRowId}:${cell.plyIndex}-${cell.san}`
         const isExpanded = expandedCells.has(cellKey)
 
         return (
@@ -291,7 +294,7 @@ function EWTableRow({
                 <button
                   className="expand-btn"
                   data-testid={isExpanded ? `ew-collapse-${cell.plyIndex}-${cell.san}` : `ew-expand-${cell.plyIndex}-${cell.san}`}
-                  onClick={() => onCellToggle(cell.plyIndex, cell.san)}
+                  onClick={() => onCellToggle(branchRowId, cell.plyIndex, cell.san)}
                   title={isExpanded ? 'Collapse alternatives' : 'Show alternatives'}
                 >
                   {isExpanded ? '−' : '+'}
