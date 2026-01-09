@@ -92,6 +92,44 @@ export function convertToWhitePerspective(cp: number, fen: string): number {
 }
 
 /**
+ * Checks if SharedArrayBuffer is available in the current environment.
+ *
+ * SharedArrayBuffer is required for Stockfish multi-threading. It's only
+ * available when proper CORS headers are set:
+ * - Cross-Origin-Opener-Policy: same-origin
+ * - Cross-Origin-Embedder-Policy: require-corp
+ *
+ * @returns true if SharedArrayBuffer is available, false otherwise
+ */
+export function checkSharedArrayBufferSupport(): boolean {
+  return typeof SharedArrayBuffer !== 'undefined'
+}
+
+/**
+ * Creates shared WebAssembly memory for Stockfish multi-threading.
+ *
+ * @param minPages - Minimum number of 64KB pages to allocate
+ * @returns WebAssembly.Memory instance with shared buffer
+ * @throws Error if SharedArrayBuffer is unavailable (missing CORS headers)
+ * @throws Error if memory allocation fails
+ */
+export function createSharedMemory(minPages: number): WebAssembly.Memory {
+  if (!checkSharedArrayBufferSupport()) {
+    throw new Error(
+      'SharedArrayBuffer is not available. This requires Cross-Origin headers (CORS). ' +
+      'Ensure your server sends: Cross-Origin-Opener-Policy: same-origin and ' +
+      'Cross-Origin-Embedder-Policy: require-corp'
+    )
+  }
+
+  return new WebAssembly.Memory({
+    shared: true,
+    initial: minPages,
+    maximum: 32767,
+  })
+}
+
+/**
  * Creates shared WebAssembly memory for Stockfish.
  *
  * Stockfish uses multi-threading for parallel search, which requires
@@ -146,6 +184,16 @@ function sharedWasmMemory(lo: number, hi = 32767): WebAssembly.Memory {
  */
 async function setupStockfish(): Promise<StockfishWeb> {
   return new Promise<StockfishWeb>((resolve, reject) => {
+    // Check SharedArrayBuffer support before attempting WASM initialization
+    if (!checkSharedArrayBufferSupport()) {
+      reject(new Error(
+        'SharedArrayBuffer is not available. This requires Cross-Origin headers (CORS). ' +
+        'Ensure your server sends: Cross-Origin-Opener-Policy: same-origin and ' +
+        'Cross-Origin-Embedder-Policy: require-corp'
+      ))
+      return
+    }
+
     // Dynamically import the Stockfish module
     // Using dynamic import because it's a heavy WASM file
     import('lila-stockfish-web/sf171-79.js').then((makeModule) => {

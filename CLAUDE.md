@@ -616,6 +616,10 @@ interface StockfishEvaluation {
 
 **Perspective convention**: `cp` is from **White's perspective**, `winrate` is from **side-to-move's perspective** (see `docs/perspective.md` for details).
 
+**Error handling utilities**:
+- `checkSharedArrayBufferSupport()` - Returns true/false for browser support
+- `createSharedMemory(minPages)` - Creates shared WASM memory with descriptive CORS error if unavailable
+
 ### Required CORS Headers
 
 ```

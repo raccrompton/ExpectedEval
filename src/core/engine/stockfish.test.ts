@@ -5,8 +5,13 @@
  * The actual WASM engine is not tested here (requires browser environment).
  */
 
-import { describe, it, expect } from 'vitest'
-import { computeMateInfo, convertToWhitePerspective } from './stockfish'
+import { describe, it, expect, afterEach } from 'vitest'
+import {
+  computeMateInfo,
+  convertToWhitePerspective,
+  checkSharedArrayBufferSupport,
+  createSharedMemory,
+} from './stockfish'
 
 describe('computeMateInfo', () => {
   /**
@@ -128,5 +133,123 @@ describe('convertToWhitePerspective', () => {
 
     // UCI says -10000 (Black is getting mated) -> should be +10000 (White is mating)
     expect(convertToWhitePerspective(-10000, blackFen)).toBe(10000)
+  })
+})
+
+describe('checkSharedArrayBufferSupport', () => {
+  // Store original globalThis.SharedArrayBuffer to restore after tests
+  const originalSharedArrayBuffer = globalThis.SharedArrayBuffer
+
+  afterEach(() => {
+    // Restore original SharedArrayBuffer after each test
+    if (originalSharedArrayBuffer !== undefined) {
+      globalThis.SharedArrayBuffer = originalSharedArrayBuffer
+    }
+  })
+
+  /**
+   * Test: SharedArrayBuffer is available
+   * When SharedArrayBuffer exists in the global scope, return true.
+   */
+  it('returns true when SharedArrayBuffer is available', () => {
+    // SharedArrayBuffer should be available in Node.js/vitest environment
+    const result = checkSharedArrayBufferSupport()
+
+    expect(result).toBe(true)
+  })
+
+  /**
+   * Test: SharedArrayBuffer is undefined
+   * When SharedArrayBuffer is not available (missing CORS headers), return false.
+   */
+  it('returns false when SharedArrayBuffer is undefined', () => {
+    // Temporarily remove SharedArrayBuffer from global scope
+    ;(globalThis as unknown as { SharedArrayBuffer: undefined }).SharedArrayBuffer = undefined
+
+    const result = checkSharedArrayBufferSupport()
+
+    expect(result).toBe(false)
+  })
+})
+
+describe('createSharedMemory', () => {
+  // Store original globalThis.SharedArrayBuffer to restore after tests
+  const originalSharedArrayBuffer = globalThis.SharedArrayBuffer
+
+  afterEach(() => {
+    // Restore original SharedArrayBuffer after each test
+    if (originalSharedArrayBuffer !== undefined) {
+      globalThis.SharedArrayBuffer = originalSharedArrayBuffer
+    }
+  })
+
+  /**
+   * Test: Successfully creates shared memory
+   * When SharedArrayBuffer is available and allocation succeeds,
+   * return a valid WebAssembly.Memory instance.
+   */
+  it('returns WebAssembly.Memory when SharedArrayBuffer is available', () => {
+    // Arrange
+    const minPages = 16 // 16 * 64KB = 1MB
+
+    // Act
+    const memory = createSharedMemory(minPages)
+
+    // Assert
+    expect(memory).toBeInstanceOf(WebAssembly.Memory)
+    // Verify the buffer is shared
+    expect(memory.buffer).toBeInstanceOf(SharedArrayBuffer)
+    // Verify minimum size (16 pages * 64KB = 1MB)
+    expect(memory.buffer.byteLength).toBeGreaterThanOrEqual(minPages * 64 * 1024)
+  })
+
+  /**
+   * Test: Throws descriptive error when SharedArrayBuffer unavailable
+   * When SharedArrayBuffer is not available, throw an error
+   * that mentions CORS headers (to help developers debug).
+   */
+  it('throws error mentioning CORS when SharedArrayBuffer is unavailable', () => {
+    // Arrange - remove SharedArrayBuffer from global scope
+    ;(globalThis as unknown as { SharedArrayBuffer: undefined }).SharedArrayBuffer = undefined
+
+    // Act & Assert
+    expect(() => createSharedMemory(16)).toThrow()
+
+    // Verify error message mentions CORS headers for debugging help
+    try {
+      createSharedMemory(16)
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error)
+      const errorMessage = (error as Error).message.toLowerCase()
+      expect(errorMessage).toMatch(/cors|cross-origin/i)
+    }
+  })
+
+  /**
+   * Test: Throws descriptive error when memory allocation fails
+   * When WebAssembly.Memory creation fails (e.g., requesting too many pages),
+   * throw a descriptive error about memory allocation.
+   */
+  it('throws error when memory allocation fails', () => {
+    // Arrange - request an impossibly large amount of memory
+    // Max WASM memory is ~4GB (65536 pages), requesting more should fail
+    const impossiblyLargePages = 100000000
+
+    // Act & Assert
+    expect(() => createSharedMemory(impossiblyLargePages)).toThrow()
+  })
+
+  /**
+   * Test: Accepts different page counts
+   * Verify the function works with various valid page counts.
+   */
+  it('accepts various valid page counts', () => {
+    // Test with minimum viable allocation
+    const smallMemory = createSharedMemory(1)
+    expect(smallMemory.buffer.byteLength).toBeGreaterThanOrEqual(64 * 1024)
+
+    // Test with medium allocation
+    const mediumMemory = createSharedMemory(64)
+    expect(mediumMemory.buffer.byteLength).toBeGreaterThanOrEqual(64 * 64 * 1024)
   })
 })
