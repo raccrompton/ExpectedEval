@@ -92,17 +92,31 @@ export function convertToWhitePerspective(cp: number, fen: string): number {
 }
 
 /**
- * Checks if SharedArrayBuffer is available in the current environment.
+ * Checks if SharedArrayBuffer is actually functional in the current environment.
  *
  * SharedArrayBuffer is required for Stockfish multi-threading. It's only
  * available when proper CORS headers are set:
  * - Cross-Origin-Opener-Policy: same-origin
  * - Cross-Origin-Embedder-Policy: require-corp
  *
- * @returns true if SharedArrayBuffer is available, false otherwise
+ * Note: We actually try to CREATE a SharedArrayBuffer, not just check if it's
+ * defined. This catches the case where SharedArrayBuffer exists but is "neutered"
+ * (non-functional) due to missing CORS headers.
+ *
+ * @returns true if SharedArrayBuffer is functional, false otherwise
  */
 export function checkSharedArrayBufferSupport(): boolean {
-  return typeof SharedArrayBuffer !== 'undefined'
+  if (typeof SharedArrayBuffer === 'undefined') {
+    return false
+  }
+
+  // Try to actually create a SharedArrayBuffer - it may be defined but neutered
+  try {
+    new SharedArrayBuffer(1)
+    return true
+  } catch {
+    return false
+  }
 }
 
 /**
