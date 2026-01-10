@@ -423,6 +423,126 @@ describe('analyzeGameForDisagreements', () => {
 })
 
 // ============================================================================
+// Long game / timeout tests
+// ============================================================================
+
+describe('Win Finder with long games', () => {
+  let mockSF: MockStockfish
+  let mockMaia: MockMaia
+
+  beforeEach(async () => {
+    mockSF = createMockStockfish()
+    mockMaia = createMockMaia()
+    await mockSF.init()
+    await mockMaia.init()
+  })
+
+  // The famous Kasparov vs Topalov "Immortal Game" (1999)
+  const KASPAROV_TOPALOV_PGN = `[Event "Hoogovens Group A"]
+[Site "Wijk aan Zee NED"]
+[Date "1999.01.20"]
+[EventDate "1999.01.16"]
+[Round "4"]
+[Result "1-0"]
+[White "Garry Kasparov"]
+[Black "Veselin Topalov"]
+[ECO "B07"]
+[WhiteElo "2812"]
+[BlackElo "2700"]
+[PlyCount "87"]
+
+1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. Be3 Bg7 5. Qd2 c6 6. f3 b5
+7. Nge2 Nbd7 8. Bh6 Bxh6 9. Qxh6 Bb7 10. a3 e5 11. O-O-O Qe7
+12. Kb1 a6 13. Nc1 O-O-O 14. Nb3 exd4 15. Rxd4 c5 16. Rd1 Nb6
+17. g3 Kb8 18. Na5 Ba8 19. Bh3 d5 20. Qf4+ Ka7 21. Rhe1 d4
+22. Nd5 Nbxd5 23. exd5 Qd6 24. Rxd4 cxd4 25. Re7+ Kb6
+26. Qxd4+ Kxa5 27. b4+ Ka4 28. Qc3 Qxd5 29. Ra7 Bb7 30. Rxb7
+Qc4 31. Qxf6 Kxa3 32. Qxa6+ Kxb4 33. c3+ Kxc3 34. Qa1+ Kd2
+35. Qb2+ Kd1 36. Bf1 Rd2 37. Rd7 Rxd7 38. Bxc4 bxc4 39. Qxh8
+Rd3 40. Qa8 c3 41. Qa4+ Ke1 42. f4 f5 43. Kc1 Rd2 44. Qa7 1-0`
+
+  /**
+   * Test: Win Finder completes analysis of a long game without hanging.
+   * This test uses a 10-second timeout to catch any hanging behavior.
+   */
+  it('completes analysis of an 87-ply game without hanging', async () => {
+    // Import the loadGame and extractPositionsFromGame functions
+    const { loadGame } = await import('../chess/game')
+    const { extractPositionsFromGame } = await import('../chess/navigation')
+
+    // Load the game
+    const game = loadGame(KASPAROV_TOPALOV_PGN)
+    expect(game).not.toBeNull()
+
+    // Extract positions
+    const positions = extractPositionsFromGame(game!)
+    expect(positions.length).toBe(88)  // 87 plies + starting position
+
+    // Analyze with skipFirstPly=20 (default)
+    const config: WinFinderConfig = {
+      ...DEFAULT_CONFIG,
+      skipFirstPly: 20,
+      minDisagreement: 0,  // Include all results for testing
+    }
+
+    // This should complete within 10 seconds
+    const startTime = performance.now()
+    const result = await analyzeGameForDisagreements(
+      positions,
+      config,
+      mockSF,
+      mockMaia
+    )
+    const elapsed = performance.now() - startTime
+
+    // Verify the analysis completed
+    expect(result.analyzedPositions).toBe(68)  // 88 - 20 = 68 positions
+    expect(result.calculationTimeMs).toBeGreaterThan(0)
+
+    // Should complete quickly with mocks (< 2 seconds)
+    expect(elapsed).toBeLessThan(2000)
+  }, 10000)  // 10 second test timeout
+
+  /**
+   * Test: Progress callback is called for each position.
+   */
+  it('reports progress for each position in a long game', async () => {
+    const { loadGame } = await import('../chess/game')
+    const { extractPositionsFromGame } = await import('../chess/navigation')
+
+    const game = loadGame(KASPAROV_TOPALOV_PGN)
+    const positions = extractPositionsFromGame(game!)
+
+    const config: WinFinderConfig = {
+      ...DEFAULT_CONFIG,
+      skipFirstPly: 80,  // Only analyze last few positions for speed
+      minDisagreement: 0,
+    }
+
+    const progressCalls: Array<{ current: number; total: number }> = []
+    const onProgress = (current: number, total: number) => {
+      progressCalls.push({ current, total })
+    }
+
+    await analyzeGameForDisagreements(
+      positions,
+      config,
+      mockSF,
+      mockMaia,
+      onProgress
+    )
+
+    // Should have progress calls for remaining positions
+    expect(progressCalls.length).toBeGreaterThan(0)
+
+    // Progress should be monotonically increasing
+    for (let i = 1; i < progressCalls.length; i++) {
+      expect(progressCalls[i].current).toBeGreaterThanOrEqual(progressCalls[i - 1].current)
+    }
+  }, 10000)
+})
+
+// ============================================================================
 // Edge case tests
 // ============================================================================
 

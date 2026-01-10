@@ -493,11 +493,21 @@ export class RealStockfish implements StockfishAdapter {
    * Stops any ongoing analysis.
    *
    * Sends the "stop" command to Stockfish and resets evaluation state.
+   * Also rejects any pending Promise to prevent orphaned Promises from hanging.
    */
   stop(): void {
     if (this.stockfish && this.isEvaluating) {
       this.isEvaluating = false
       this.stockfish.uci('stop')
+
+      // Reject pending Promise to prevent hanging
+      // This is critical for preventing race conditions when
+      // multiple evaluate() calls are made rapidly
+      if (this.evaluationRejecter) {
+        this.evaluationRejecter(new Error('Evaluation cancelled by new request'))
+        this.evaluationResolver = null
+        this.evaluationRejecter = null
+      }
     }
   }
 

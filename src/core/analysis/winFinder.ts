@@ -22,7 +22,7 @@
  */
 
 import { Chess } from 'chessops/chess'
-import { parseFen, makeFen } from 'chessops/fen'
+import { parseFen } from 'chessops/fen'
 import { makeSquare } from 'chessops/util'
 import { SquareSet } from 'chessops/squareSet'
 import type { StockfishAdapter, MaiaAdapter } from '../engine/types'
@@ -392,7 +392,29 @@ export async function analyzeGameForDisagreements(
 
       results.push(disagreement)
     } catch (error) {
-      console.error(`Error analyzing position ${i}:`, error)
+      // Check if this is a cancellation (from concurrent engine access)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (errorMessage.includes('cancelled')) {
+        console.warn(`[WinFinder] Position ${i} cancelled, retrying...`)
+        // Retry once after a brief delay
+        await yieldToUI()
+        try {
+          const disagreement = await analyzePositionForDisagreement(
+            pos.fen,
+            pos.ply,
+            stockfish,
+            maia,
+            config
+          )
+          if (pos.playedMove) disagreement.playedMove = pos.playedMove
+          if (pos.path) disagreement.path = pos.path
+          results.push(disagreement)
+        } catch (retryError) {
+          console.error(`[WinFinder] Retry failed for position ${i}:`, retryError)
+        }
+      } else {
+        console.error(`[WinFinder] Error analyzing position ${i}:`, error)
+      }
       // Continue with other positions
     }
 
