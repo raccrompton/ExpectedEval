@@ -106,7 +106,11 @@ export function WinFinderPanel({ positions, onNavigate }: WinFinderPanelProps) {
             onClick={handleAnalyze}
             disabled={!canAnalyze || positions.length === 0}
           >
-            {canAnalyze && positions.length > 0 ? 'Analyze Game' : 'Loading...'}
+            {positions.length === 0
+              ? 'Load a PGN first'
+              : canAnalyze
+                ? 'Analyze Game'
+                : 'Loading engines...'}
           </button>
         </div>
       )}
