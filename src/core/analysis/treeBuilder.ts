@@ -469,7 +469,13 @@ export async function buildTreeWithInlineSF(
  */
 export function getTurnFromFen(fen: string): 'w' | 'b' {
   const parts = fen.split(' ')
-  return (parts[1] || 'w') as 'w' | 'b'
+  const turn = parts[1]
+  if (turn !== 'w' && turn !== 'b') {
+    throw new Error(
+      `Malformed FEN: side-to-move field must be 'w' or 'b', got ${JSON.stringify(turn)} in ${JSON.stringify(fen)}`,
+    )
+  }
+  return turn
 }
 
 /**

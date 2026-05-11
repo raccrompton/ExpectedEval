@@ -189,11 +189,14 @@ export class RealMaia implements MaiaAdapter {
       chunks.push(value)
       receivedLength += value.length
 
-      // Report progress every 10%
-      const currentProgress = Math.floor((receivedLength / contentLength) * 100)
-      if (currentProgress >= lastReportedProgress + 10) {
-        this.onProgress?.(currentProgress)
-        lastReportedProgress = currentProgress
+      // Report progress every 10%. Servers may omit Content-Length or
+      // send 0; guard against div-by-zero / non-finite progress values.
+      if (contentLength > 0) {
+        const currentProgress = Math.floor((receivedLength / contentLength) * 100)
+        if (currentProgress >= lastReportedProgress + 10) {
+          this.onProgress?.(currentProgress)
+          lastReportedProgress = currentProgress
+        }
       }
     }
 
