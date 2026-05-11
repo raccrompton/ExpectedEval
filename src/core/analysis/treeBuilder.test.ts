@@ -431,6 +431,21 @@ describe('Phase 3 helpers', () => {
       expect(tree.sfWinrate).not.toBeNull()
     })
 
+    // Regression for #6: probabilityThreshold <= 0 must be rejected so
+    // the tree can't grow unboundedly when every node trivially passes
+    // the prune check.
+    it('rejects probabilityThreshold of 0', async () => {
+      await expect(
+        buildTree(AFTER_E4_FEN, { probabilityThreshold: 0 }, maia),
+      ).rejects.toThrow(/probabilityThreshold/)
+    })
+
+    it('rejects negative probabilityThreshold', async () => {
+      await expect(
+        buildTree(AFTER_E4_FEN, { probabilityThreshold: -0.1 }, maia),
+      ).rejects.toThrow(/probabilityThreshold/)
+    })
+
     // Regression for #2: sfCp is White-perspective (per
     // StockfishEvaluation contract). When the root player is White, a
     // positive sfCp must remain positive after population — the previous

@@ -127,6 +127,19 @@ export async function buildTree(
   // Merge config with defaults
   const fullConfig: EWConfig = { ...DEFAULT_EW_CONFIG, ...config }
 
+  // Tree exploration terminates only when cumulative probability falls
+  // below probabilityThreshold. A non-positive threshold means every
+  // legal move passes the prune check, and with no depth cap the tree
+  // would explode. Reject early with a clear message.
+  if (
+    !Number.isFinite(fullConfig.probabilityThreshold) ||
+    fullConfig.probabilityThreshold <= 0
+  ) {
+    throw new Error(
+      `probabilityThreshold must be a positive finite number, got ${fullConfig.probabilityThreshold}`,
+    )
+  }
+
   // Determine root turn from FEN if not provided
   // The rootTurn is the side that made the candidate move (BEFORE this position)
   // So if it's Black's turn in rootFen, White made the candidate move
