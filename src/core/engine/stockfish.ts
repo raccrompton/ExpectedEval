@@ -210,66 +210,51 @@ async function setupStockfish(): Promise<StockfishWeb> {
 
     // Dynamically import the Stockfish module
     // Using dynamic import because it's a heavy WASM file
-    import('lila-stockfish-web/sf171-79.js')
-      .then((makeModule) => {
-        // Initialize the WASM module with configuration
-        makeModule
-          .default({
-            // Allocate shared memory for multi-threading
-            // 2560 pages ≈ 160MB, good balance of memory vs performance
-            wasmMemory: sharedWasmMemory(2560),
+    import('lila-stockfish-web/sf171-79.js').then((makeModule) => {
+      // Initialize the WASM module with configuration
+      makeModule
+        .default({
+          // Allocate shared memory for multi-threading
+          // 2560 pages ≈ 160MB, good balance of memory vs performance
+          wasmMemory: sharedWasmMemory(2560),
 
-            // Handle initialization errors
-            onError: (msg: string) => reject(new Error(msg)),
+          // Handle initialization errors
+          onError: (msg: string) => reject(new Error(msg)),
 
-            // Tell the module where to find its files
-            // Looks in /public/stockfish/ for .wasm and .nnue files
-            locateFile: (name: string) => `/stockfish/${name}`,
-          })
-          .then(async (instance: StockfishWeb) => {
-            // Load NNUE (neural network) evaluation files
-            // Stockfish 17 uses two NNUE files for different position types
+          // Tell the module where to find its files
+          // Looks in /public/stockfish/ for .wasm and .nnue files
+          locateFile: (name: string) => `/stockfish/${name}`,
+        })
+        .then(async (instance: StockfishWeb) => {
+          // Load NNUE (neural network) evaluation files
+          // Stockfish 17 uses two NNUE files for different position types
 
-            // Fetch both NNUE files in parallel for faster loading
-            Promise.all([
-              fetch(`/stockfish/${instance.getRecommendedNnue(0)}`),
-              fetch(`/stockfish/${instance.getRecommendedNnue(1)}`),
-            ])
-              .then((responses) => {
-                // Surface HTTP errors so callers don't silently wedge on
-                // an HTML 404 page being decoded as an NNUE buffer.
-                for (const r of responses) {
-                  if (!r.ok) {
-                    throw new Error(
-                      `NNUE fetch failed: ${r.status} ${r.statusText} (${r.url})`,
-                    )
-                  }
-                }
-                return Promise.all([
-                  responses[0].arrayBuffer(),
-                  responses[1].arrayBuffer(),
-                ])
-              })
-              .then((buffers) => {
-                // Load NNUE data into the engine
-                instance.setNnueBuffer(new Uint8Array(buffers[0]), 0)
-                instance.setNnueBuffer(new Uint8Array(buffers[1]), 1)
+          // Fetch both NNUE files in parallel for faster loading
+          Promise.all([
+            fetch(`/stockfish/${instance.getRecommendedNnue(0)}`),
+            fetch(`/stockfish/${instance.getRecommendedNnue(1)}`),
+          ])
+            .then((responses) => {
+              // Convert responses to ArrayBuffers
+              return Promise.all([
+                responses[0].arrayBuffer(),
+                responses[1].arrayBuffer(),
+              ])
+            })
+            .then((buffers) => {
+              // Load NNUE data into the engine
+              instance.setNnueBuffer(new Uint8Array(buffers[0]), 0)
+              instance.setNnueBuffer(new Uint8Array(buffers[1]), 1)
 
-                // Now Stockfish is fully ready
-                resolve(instance)
-              })
-              .catch((error) => {
-                console.error('Failed to load NNUE models:', error)
-                reject(error)
-              })
-          })
-          .catch(reject)
-      })
-      .catch((error) => {
-        // Without this, a dynamic-import failure (network / 404 / parse)
-        // left setupStockfish() hanging forever.
-        reject(error)
-      })
+              // Now Stockfish is fully ready
+              resolve(instance)
+            })
+            .catch((error) => {
+              console.error('Failed to load NNUE models:', error)
+              reject(error)
+            })
+        })
+    })
   })
 }
 

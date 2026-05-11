@@ -270,6 +270,45 @@ describe('analyzeGameForDisagreements', () => {
   })
 
   /**
+   * Regression for #10: when the caller flips the cancel predicate
+   * after the first Maia call, the in-flight per-position analysis must
+   * abort instead of running through every legal move's predict().
+   * Before the fix, the cancellation was checked only between positions.
+   */
+  it('aborts per-position work when cancellation flips mid-flight', async () => {
+    let cancelled = false
+    let maiaCalls = 0
+    const originalPredict = mockMaia.predict.bind(mockMaia)
+    mockMaia.predict = async (fen, opts) => {
+      maiaCalls++
+      // Flip the predicate after the first Maia call — this happens
+      // inside the per-move loop of analyzePositionForDisagreement.
+      if (maiaCalls === 1) cancelled = true
+      return originalPredict(fen, opts)
+    }
+
+    const positions = [
+      { fen: STARTING_FEN, ply: 0 },
+      { fen: AFTER_E4_FEN, ply: 1 },
+    ]
+
+    await analyzeGameForDisagreements(
+      positions,
+      DEFAULT_CONFIG,
+      mockSF,
+      mockMaia,
+      undefined,
+      () => cancelled,
+    )
+
+    // Starting position has 20 legal moves; without mid-position
+    // cancellation we'd see all 20 Maia calls for position 0 alone.
+    // With the fix, we bail after the next checkCancel() — so only a
+    // handful of calls fire before the throw.
+    expect(maiaCalls).toBeLessThan(10)
+  })
+
+  /**
    * Test: Empty positions returns empty result.
    */
   it('returns empty result for empty positions array', async () => {

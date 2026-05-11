@@ -259,50 +259,57 @@ describe('RealStockfish race-condition handling', () => {
   /**
    * Regression test for the resolver-installation race.
    *
-   * If the mock engine emits info/bestmove synchronously while `go depth`
-   * is being issued (cached result / mate / depth 1), the resolver must
-   * already be installed so the Promise resolves rather than hanging.
+   * If the mock engine emits info lines synchronously inside `go depth`
+   * (e.g., cached result / mate / depth 1), the resolver must already
+   * be installed so the Promise resolves rather than hanging.
    *
-   * We assert this directly: at the moment `uci('go depth ...')` runs,
-   * `evaluationResolver` is non-null. Before the fix, `uci('go depth')`
-   * was called BEFORE the `new Promise` body assigned the resolver, so
-   * a synchronous emission would have nowhere to land.
+   * Position: kings-only endgame. White on e1, Black on e4. White has
+   * exactly 5 legal king moves (Kd1, Kd2, Ke2, Kf1, Kf2) — small enough
+   * to enumerate, large enough that the resolveEvaluation predicate
+   * `multipv === legalMoveCount` is meaningful.
    */
-  it('installs the evaluation resolver before sending `go depth`', async () => {
+  it('resolves when the engine emits all info lines synchronously during `go`', async () => {
     const sf = new RealStockfish()
+    const KINGS_ONLY = '8/8/8/8/4k3/8/8/4K3 w - - 0 1'
+    // White's 5 legal king moves from e1, ranked arbitrarily.
+    const MOVES = ['e1e2', 'e1d1', 'e1d2', 'e1f1', 'e1f2']
 
-    let resolverInstalledAtGo: boolean | null = null
-
+    let listener: ((msg: string) => void) | null = null
     const fake = {
       onError: undefined as unknown,
-      listen: null as ((msg: string) => void) | null,
+      get listen() {
+        return listener
+      },
+      set listen(fn: ((msg: string) => void) | null) {
+        listener = fn
+      },
       uci(cmd: string) {
         if (cmd.startsWith('go depth')) {
-          // Probe the private field — must be set before `go`.
-          resolverInstalledAtGo =
-            (sf as unknown as { evaluationResolver: unknown })
-              .evaluationResolver !== null
-          // Simulate completion: emit synchronous best-move so the promise
-          // resolves and the test doesn't hang.
-          setTimeout(() => {
-            // Force resolveEvaluation by calling stop()'s reject path is wrong;
-            // instead, just cancel cleanly to end the await.
-            sf.stop()
-          }, 0)
+          // Synchronously emit one info line per legal move at depth 1.
+          // The 5th line satisfies `multipv === legalMoveCount` and
+          // triggers resolveEvaluation while still inside this call.
+          MOVES.forEach((move, i) => {
+            listener?.(
+              `info depth 1 seldepth 1 multipv ${i + 1} score cp ${10 + i} wdl 500 400 100 nodes 1 nps 1 pv ${move}`,
+            )
+          })
         }
       },
     }
     ;(sf as unknown as { stockfish: typeof fake }).stockfish = fake
     ;(sf as unknown as { ready: boolean }).ready = true
     ;(sf as unknown as { nnueLoaded: boolean }).nnueLoaded = true
+    fake.listen = (msg: string) => {
+      ;(sf as unknown as { onMessage: (m: string) => void }).onMessage.call(sf, msg)
+    }
 
-    await expect(
-      sf.evaluate(
-        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-        { depth: 1 },
-      ),
-    ).rejects.toThrow(/cancelled/)
+    const result = await sf.evaluate(KINGS_ONLY, { depth: 1 })
 
-    expect(resolverInstalledAtGo).toBe(true)
+    expect(result.depth).toBe(1)
+    // Best move is the highest-winrate one. All moves report identical
+    // WDL (500/400/100) so any of the legal moves is acceptable —
+    // assert it's one of them rather than pinning a specific tiebreak.
+    expect(MOVES).toContain(result.bestMove)
+    expect(Object.keys(result.moveEvaluations).sort()).toEqual([...MOVES].sort())
   })
 })

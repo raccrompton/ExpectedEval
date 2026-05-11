@@ -165,13 +165,31 @@ export function calculateDisagreementScore(
  * @param config - Configuration options
  * @returns Position disagreement result
  */
+/**
+ * Sentinel error used to short-circuit position analysis when the caller
+ * cancels mid-flight. Distinguishable from genuine analysis failures so
+ * the outer loop can break instead of treating it as a per-position
+ * error.
+ */
+export class WinFinderCancelledError extends Error {
+  constructor() {
+    super('WinFinder analysis cancelled')
+    this.name = 'WinFinderCancelledError'
+  }
+}
+
 export async function analyzePositionForDisagreement(
   fen: string,
   ply: number,
   stockfish: StockfishAdapter,
   maia: MaiaAdapter,
-  config: WinFinderConfig
+  config: WinFinderConfig,
+  isCancelled?: () => boolean,
 ): Promise<PositionDisagreement> {
+  const checkCancel = () => {
+    if (isCancelled?.()) throw new WinFinderCancelledError()
+  }
+
   // Parse the position
   const setup = parseFen(fen)
   if (setup.isErr) {
@@ -185,11 +203,15 @@ export async function analyzePositionForDisagreement(
 
   const chess = pos.value
 
+  checkCancel()
+
   // Get SF evaluation with all move winrates
   const sfEval = await stockfish.evaluate(fen, {
     depth: config.sfDepth,
     multiPv: 64,  // Get evaluations for many moves
   })
+
+  checkCancel()
 
   // Build move rankings
   const moveRankings: MoveRanking[] = []
@@ -219,8 +241,10 @@ export async function analyzePositionForDisagreement(
     }
   }
 
-  // Evaluate each move with Maia
+  // Evaluate each move with Maia. Check cancellation between calls so a
+  // reset doesn't wait for every legal move to finish.
   for (const { uci, san } of allMoves) {
+    checkCancel()
     const sfWinrate = sfEval.moveWinrates?.[uci] ?? sfEval.winrate
     const resultingFen = applyMove(fen, uci)
     if (!resultingFen) continue
@@ -387,7 +411,8 @@ export async function analyzeGameForDisagreements(
         pos.ply,
         stockfish,
         maia,
-        config
+        config,
+        isCancelled,
       )
 
       if (pos.playedMove) {
@@ -399,24 +424,34 @@ export async function analyzeGameForDisagreements(
 
       results.push(disagreement)
     } catch (error) {
-      // Check if this is a cancellation (from concurrent engine access)
+      // Caller-driven cancellation: stop entirely, no retry.
+      if (error instanceof WinFinderCancelledError) {
+        break
+      }
+      // Engine "cancelled by new request" comes through as a plain Error
+      // from concurrent SF access. Distinguish from user cancellation
+      // by re-checking the predicate before retrying.
       const errorMessage = error instanceof Error ? error.message : String(error)
       if (errorMessage.includes('cancelled')) {
+        if (isCancelled?.()) break
         console.warn(`[WinFinder] Position ${i} cancelled, retrying...`)
         // Retry once after a brief delay
         await yieldToUI()
+        if (isCancelled?.()) break
         try {
           const disagreement = await analyzePositionForDisagreement(
             pos.fen,
             pos.ply,
             stockfish,
             maia,
-            config
+            config,
+            isCancelled,
           )
           if (pos.playedMove) disagreement.playedMove = pos.playedMove
           if (pos.path) disagreement.path = pos.path
           results.push(disagreement)
         } catch (retryError) {
+          if (retryError instanceof WinFinderCancelledError) break
           console.error(`[WinFinder] Retry failed for position ${i}:`, retryError)
         }
       } else {
