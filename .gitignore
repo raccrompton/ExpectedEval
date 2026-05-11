@@ -40,3 +40,7 @@ tsconfig.tsbuildinfo
 # Reference code (not tracked - local only)
 maia-platform-frontend/
 conductor.json
+
+# Claude Code session artifacts
+.claude/scheduled_tasks.lock
+tmux.md
