@@ -218,14 +218,25 @@ export function useExpectedWinrate(
     await calculateMaia(currentFen)
   }, [calculateMaia, currentFen])
 
-  // Reset result when position changes (clear stale data)
+  // Reset state when position changes (clear stale data).
+  // Crucially, we also invalidate currentFenRef when a calculation is
+  // in-flight for a different FEN — even if no result has landed yet.
+  // Without this, an in-flight first-calculation passes its
+  // `currentFenRef.current === fen` guard and writes a result for the
+  // previous board into UI state.
   useEffect(() => {
-    if (result && result.fen !== currentFen) {
+    const inFlightFen = currentFenRef.current
+    const resultIsStale = result && result.fen !== currentFen
+    const calcIsStale = inFlightFen !== null && inFlightFen !== currentFen
+
+    if (calcIsStale) {
+      currentFenRef.current = null
+    }
+    if (resultIsStale || calcIsStale) {
       setResult(null)
       setStatus('idle')
       setProgress(null)
       setError(null)
-      currentFenRef.current = null
     }
   }, [currentFen, result])
 
