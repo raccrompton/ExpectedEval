@@ -265,6 +265,11 @@ export async function analyzePositionForDisagreement(
     })
   }
 
+  // Final cancellation check before ranking/description work. Without
+  // this, a cancel that flips after the *last* maia.predict() would
+  // still walk through ranking, sort, and return a stale result.
+  checkCancel()
+
   // Create a Map for O(1) lookups when assigning ranks
   const rankingMap = new Map(moveRankings.map(r => [r.uci, r]))
 
