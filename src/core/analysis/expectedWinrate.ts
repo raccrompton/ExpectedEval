@@ -664,9 +664,13 @@ export async function enrichWithStockfish(
     const afterMoveFen = applyMove(result.fen, candidate.move)
     const sfEval = afterMoveFen ? sfResults.get(afterMoveFen) : null
 
-    // SF values need perspective normalization (opponent's view → our view)
+    // SF values need perspective normalization (opponent's view → our view).
+    // winrate is side-to-move-perspective so always flip; cp is
+    // White-perspective so only flip when the mover (root turn) is Black.
     const stockfishWinrate = sfEval ? 1 - sfEval.winrate : null
-    const stockfishCp = sfEval ? -sfEval.cp : null
+    const stockfishCp = sfEval
+      ? (rootTurn === 'b' ? -sfEval.cp : sfEval.cp)
+      : null
 
     enrichedCandidates.push({
       ...candidate,
@@ -775,6 +779,10 @@ async function filterCandidateMoves(
   maiaWinrate: number
   probability: number
 }>> {
+  // Root turn determines whether sfCp (White-perspective) needs to be flipped
+  // when we re-express it from the candidate-mover's perspective.
+  const rootTurn = getTurnFromFen(fen)
+
   // Get Maia move probabilities
   const maiaPredictions = await maia.predict(fen, { eloLevel: config.maiaLevel })
 
@@ -810,12 +818,14 @@ async function filterCandidateMoves(
     const probability = maiaPredictions.policy[move.uci] || 0
 
     // Store both evaluations
-    // Note: We need to invert the winrate since it's from opponent's perspective after the move
+    // Note: We need to invert the winrate since it's from opponent's perspective after the move.
+    // sfEval.cp is White-perspective (per StockfishEvaluation contract); from the
+    // candidate-mover's perspective, only flip when the mover is Black.
     evaluatedMoves.push({
       move: move.uci,
       san: move.san,
       sfWinrate: 1 - sfEval.winrate,    // Invert for side that made the move
-      sfCp: -sfEval.cp,                  // Invert for side that made the move
+      sfCp: rootTurn === 'b' ? -sfEval.cp : sfEval.cp,
       maiaWinrate: 1 - maiaEval.value,   // Invert for side that made the move
       probability,
     })

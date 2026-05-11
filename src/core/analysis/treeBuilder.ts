@@ -392,18 +392,14 @@ export function populateSFEvaluations(
     const sfResult = sfResults.get(node.fen)
 
     if (sfResult !== undefined) {
-      // Stockfish returns evaluation from side-to-move perspective
-      // Normalize to root player's perspective
+      // Per StockfishEvaluation contract: `winrate` is side-to-move-perspective,
+      // `cp` is White-perspective. Normalize each independently:
+      //  - winrate flips when this node's side-to-move differs from rootTurn
+      //  - cp flips only when the rootTurn is Black (independent of node's turn)
       const currentTurn = getTurnFromFen(node.fen)
-      if (currentTurn === rootTurn) {
-        // Same perspective - use as-is
-        node.sfWinrate = sfResult.winrate
-        node.sfCp = sfResult.cp
-      } else {
-        // Opposite perspective - invert
-        node.sfWinrate = 1 - sfResult.winrate
-        node.sfCp = -sfResult.cp
-      }
+      node.sfWinrate =
+        currentTurn === rootTurn ? sfResult.winrate : 1 - sfResult.winrate
+      node.sfCp = rootTurn === 'b' ? -sfResult.cp : sfResult.cp
     }
 
     // Recurse into children

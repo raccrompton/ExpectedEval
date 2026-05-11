@@ -430,6 +430,47 @@ describe('Phase 3 helpers', () => {
       // Now SF should be populated
       expect(tree.sfWinrate).not.toBeNull()
     })
+
+    // Regression for #2: sfCp is White-perspective (per
+    // StockfishEvaluation contract). When the root player is White, a
+    // positive sfCp must remain positive after population — the previous
+    // implementation flipped it whenever the node's side-to-move differed
+    // from rootTurn, which mis-signed half the nodes in any tree.
+    it('preserves sfCp sign when root player is White', async () => {
+      const tree = await buildTree(
+        AFTER_E4_FEN, // Black to move; root player (White) made e4
+        { probabilityThreshold: 0.20 },
+        maia
+      )
+
+      const sfResults = new Map<string, { winrate: number; cp: number }>()
+      sfResults.set(tree.fen, { winrate: 0.45, cp: 35 })
+
+      populateSFEvaluations(tree, sfResults, 'w')
+
+      // Root is White → cp stays positive (35), regardless of node's side-to-move.
+      expect(tree.sfCp).toBe(35)
+      // winrate IS side-to-move-perspective so it gets flipped because the
+      // node's side-to-move (Black) differs from rootTurn (White).
+      expect(tree.sfWinrate).toBeCloseTo(1 - 0.45)
+    })
+
+    it('flips sfCp when root player is Black', async () => {
+      // After 1. e4, Black to move. Imagine Black is the root player.
+      const tree = await buildTree(
+        AFTER_E4_FEN,
+        { probabilityThreshold: 0.20 },
+        maia
+      )
+
+      const sfResults = new Map<string, { winrate: number; cp: number }>()
+      sfResults.set(tree.fen, { winrate: 0.55, cp: 40 })
+
+      populateSFEvaluations(tree, sfResults, 'b')
+
+      // Root is Black → flip White-perspective cp to Black's view.
+      expect(tree.sfCp).toBe(-40)
+    })
   })
 })
 
