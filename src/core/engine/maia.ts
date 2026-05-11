@@ -331,33 +331,37 @@ export class RealMaia implements MaiaAdapter {
       ),
     }
 
-    // Run inference
-    const { logits_maia, logits_value } = await this.model.run(feeds)
+    // Use try/finally so input tensors are disposed even if model.run()
+    // or processOutputs throws. Output tensors are disposed only after
+    // they're assigned (they don't exist on the failure path).
+    let logits_maia: Tensor | undefined
+    let logits_value: Tensor | undefined
+    try {
+      const outputs = await this.model.run(feeds)
+      logits_maia = outputs.logits_maia
+      logits_value = outputs.logits_value
 
-    // Process outputs into move probabilities
-    const { policy, value } = this.processOutputs(
-      fen,
-      logits_maia,
-      logits_value,
-      legalMovesMask,
-      legalMoves,
-    )
+      const { policy, value } = this.processOutputs(
+        fen,
+        logits_maia,
+        logits_value,
+        legalMovesMask,
+        legalMoves,
+      )
 
-    // Dispose input tensors to free memory
-    feeds.boards.dispose()
-    feeds.elo_self.dispose()
-    feeds.elo_oppo.dispose()
-
-    // Dispose output tensors to free memory (critical for preventing leaks!)
-    // Per ONNX Runtime docs: "Call tensor.dispose() explicitly to destroy
-    // the underlying buffer when it is no longer needed."
-    logits_maia.dispose()
-    logits_value.dispose()
-
-    return {
-      policy,
-      value,
-      eloLevel,
+      return {
+        policy,
+        value,
+        eloLevel,
+      }
+    } finally {
+      // Per ONNX Runtime docs: explicit dispose() frees the underlying
+      // buffer. Skipping this on the error path leaks input tensors.
+      feeds.boards.dispose()
+      feeds.elo_self.dispose()
+      feeds.elo_oppo.dispose()
+      logits_maia?.dispose()
+      logits_value?.dispose()
     }
   }
 

@@ -72,12 +72,14 @@ export function EngineProvider({ children }: EngineProviderProps) {
   useEffect(() => {
     const sfEngine = new RealStockfish()
     const maiaEngine = new RealMaia()
+    let cancelled = false
 
     setStockfishStatus('loading')
     setMaiaStatus('loading')
 
     Promise.all([sfEngine.init(), maiaEngine.init()])
       .then(() => {
+        if (cancelled) return
         setStockfish(sfEngine)
         setMaia(maiaEngine)
         setIsInitialized(true)
@@ -85,12 +87,14 @@ export function EngineProvider({ children }: EngineProviderProps) {
         setMaiaStatus('ready')
       })
       .catch((error) => {
+        if (cancelled) return
         console.error('Failed to initialize engines:', error)
         setStockfishStatus('error')
         setMaiaStatus('error')
       })
 
     return () => {
+      cancelled = true
       sfEngine.destroy()
       maiaEngine.destroy()
     }

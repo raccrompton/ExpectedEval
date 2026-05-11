@@ -513,11 +513,11 @@ async function selectCandidatesByMaiaProbability(
   maiaWinrate: number
   probability: number
 }>> {
-  // Get Maia move probabilities (with caching)
-  let maiaPredictions = getCachedPrediction(fen)
+  // Get Maia move probabilities (with ELO-aware caching)
+  let maiaPredictions = getCachedPrediction(fen, config.maiaLevel)
   if (maiaPredictions === undefined) {
     maiaPredictions = await maia.predict(fen, { eloLevel: config.maiaLevel })
-    cachePrediction(fen, maiaPredictions)
+    cachePrediction(fen, maiaPredictions, config.maiaLevel)
   }
 
   // Get legal moves from the position
@@ -541,10 +541,10 @@ async function selectCandidatesByMaiaProbability(
 
     // Get Maia evaluation for position after move (with caching)
     // This cache hit is KEY - the same position is used as tree root later
-    let maiaEval = getCachedPrediction(afterMoveFen)
+    let maiaEval = getCachedPrediction(afterMoveFen, config.maiaLevel)
     if (maiaEval === undefined) {
       maiaEval = await maia.predict(afterMoveFen, { eloLevel: config.maiaLevel })
-      cachePrediction(afterMoveFen, maiaEval)
+      cachePrediction(afterMoveFen, maiaEval, config.maiaLevel)
     }
 
     candidates.push({

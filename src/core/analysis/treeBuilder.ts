@@ -72,8 +72,8 @@ async function getCachedMaiaPrediction(
   maia: MaiaAdapter,
   eloLevel: number
 ): Promise<MaiaEvaluation> {
-  // Check cache first
-  const cached = getCachedPrediction(fen)
+  // Check cache first (keyed by FEN + ELO; predictions are ELO-dependent)
+  const cached = getCachedPrediction(fen, eloLevel)
   if (cached !== undefined) {
     return cached
   }
@@ -82,7 +82,7 @@ async function getCachedMaiaPrediction(
   const result = await maia.predict(fen, { eloLevel })
 
   // Store in cache for future use
-  cachePrediction(fen, result)
+  cachePrediction(fen, result, eloLevel)
 
   return result
 }

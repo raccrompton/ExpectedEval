@@ -154,7 +154,8 @@ export function useWinFinder(): UseWinFinderReturn {
           fullConfig,
           stockfish,
           maia,
-          onProgress
+          onProgress,
+          () => shouldCancelRef.current,
         )
 
         // Check if cancelled

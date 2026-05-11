@@ -26,19 +26,33 @@ let hits = 0
 let misses = 0
 
 /**
+ * Compose the cache key from FEN + ELO. Maia predictions are
+ * ELO-dependent, so two callers using the same FEN at different ELOs
+ * must receive distinct cached values.
+ */
+function makeKey(fen: string, eloLevel?: number): string {
+  return eloLevel === undefined ? fen : `${eloLevel}::${fen}`
+}
+
+/**
  * Get a cached Maia prediction for a position.
  *
  * @param fen - Position FEN string
+ * @param eloLevel - Maia ELO (omit only for legacy callers / tests)
  * @returns Cached MaiaEvaluation if found, undefined otherwise
  */
-export function getCachedPrediction(fen: string): MaiaEvaluation | undefined {
-  const result = cache.get(fen)
+export function getCachedPrediction(
+  fen: string,
+  eloLevel?: number,
+): MaiaEvaluation | undefined {
+  const key = makeKey(fen, eloLevel)
+  const result = cache.get(key)
 
   if (result !== undefined) {
     hits++
     // Move to end of Map to mark as recently used (LRU refresh)
-    cache.delete(fen)
-    cache.set(fen, result)
+    cache.delete(key)
+    cache.set(key, result)
     return result
   }
 
@@ -52,13 +66,20 @@ export function getCachedPrediction(fen: string): MaiaEvaluation | undefined {
  * If the cache exceeds MAX_CACHE_SIZE, the least recently used
  * entry is evicted (LRU eviction policy).
  *
- * @param fen - Position FEN string (cache key)
+ * @param fen - Position FEN string
  * @param result - Maia evaluation to cache
+ * @param eloLevel - Maia ELO (omit only for legacy callers / tests)
  */
-export function cachePrediction(fen: string, result: MaiaEvaluation): void {
+export function cachePrediction(
+  fen: string,
+  result: MaiaEvaluation,
+  eloLevel?: number,
+): void {
+  const key = makeKey(fen, eloLevel)
+
   // If already exists, delete to refresh position in Map
-  if (cache.has(fen)) {
-    cache.delete(fen)
+  if (cache.has(key)) {
+    cache.delete(key)
   }
 
   // Evict oldest entry if cache is full
@@ -70,7 +91,7 @@ export function cachePrediction(fen: string, result: MaiaEvaluation): void {
     }
   }
 
-  cache.set(fen, result)
+  cache.set(key, result)
 }
 
 /**

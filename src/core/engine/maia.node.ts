@@ -259,24 +259,35 @@ export class NodeMaia implements MaiaAdapter {
       ),
     }
 
-    // Run inference
-    const result = await this.model.run(feeds)
-    const logits_maia = result.logits_maia
-    const logits_value = result.logits_value
+    // Run inference and process outputs. Wrap in try/finally so tensors
+    // are disposed even if processing throws — long-running scripts/tests
+    // otherwise accumulate native ONNX memory.
+    let logits_maia: Tensor | undefined
+    let logits_value: Tensor | undefined
+    try {
+      const result = await this.model.run(feeds)
+      logits_maia = result.logits_maia
+      logits_value = result.logits_value
 
-    // Process outputs into move probabilities
-    const { policy, value } = this.processOutputs(
-      fen,
-      logits_maia,
-      logits_value,
-      legalMovesMask,
-      legalMoves,
-    )
+      const { policy, value } = this.processOutputs(
+        fen,
+        logits_maia,
+        logits_value,
+        legalMovesMask,
+        legalMoves,
+      )
 
-    return {
-      policy,
-      value,
-      eloLevel,
+      return {
+        policy,
+        value,
+        eloLevel,
+      }
+    } finally {
+      feeds.boards.dispose()
+      feeds.elo_self.dispose()
+      feeds.elo_oppo.dispose()
+      logits_maia?.dispose()
+      logits_value?.dispose()
     }
   }
 

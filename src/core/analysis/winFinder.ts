@@ -353,7 +353,13 @@ export async function analyzeGameForDisagreements(
   config: WinFinderConfig,
   stockfish: StockfishAdapter,
   maia: MaiaAdapter,
-  onProgress?: WinFinderProgressCallback
+  onProgress?: WinFinderProgressCallback,
+  /**
+   * Optional cancellation predicate. Polled between positions; returning
+   * true short-circuits further analysis. Without this, the analysis
+   * keeps issuing SF/Maia calls after the user resets the panel.
+   */
+  isCancelled?: () => boolean,
 ): Promise<WinFinderResult> {
   const startTime = performance.now()
 
@@ -371,6 +377,7 @@ export async function analyzeGameForDisagreements(
   const results: PositionDisagreement[] = []
 
   for (let i = 0; i < positionsToAnalyze.length; i++) {
+    if (isCancelled?.()) break
     const pos = positionsToAnalyze[i]
     onProgress?.(i + 1, positionsToAnalyze.length)
 
