@@ -92,6 +92,10 @@ export class NodeStockfish implements StockfishAdapter {
     null
   private evaluationRejecter: ((_reason?: unknown) => void) | null = null
 
+  // Per-call timer + token to prevent a stale timeout from cancelling a later eval.
+  private evalTimer: ReturnType<typeof setTimeout> | null = null
+  private evalToken = 0
+
   /**
    * Creates a new Node.js Stockfish instance.
    *
@@ -315,22 +319,20 @@ export class NodeStockfish implements StockfishAdapter {
       }
     }
 
-    // Start evaluation
+    // Mark as evaluating before commands so synchronous output handlers
+    // can call resolveEvaluation() safely.
     this.isEvaluating = true
-    this.sendCommand('ucinewgame')
-    this.sendCommand(`position fen ${fen}`)
-    this.sendCommand(`go depth ${this.targetDepth}`)
 
     return new Promise<StockfishEvaluation>((resolve, reject) => {
+      // Install resolver BEFORE sending the `go` command.
       this.evaluationResolver = resolve
       this.evaluationRejecter = reject
 
-      // Timeout to prevent hanging
+      const evalToken = ++this.evalToken
       const timeout = config?.timeLimit ?? 60000 // 60 seconds default
-      setTimeout(() => {
-        if (this.isEvaluating) {
+      const timer = setTimeout(() => {
+        if (this.isEvaluating && this.evalToken === evalToken) {
           this.stop()
-          // Return whatever we have so far
           const depths = Object.keys(this.store).map(Number)
           if (depths.length > 0) {
             const bestDepth = Math.max(...depths)
@@ -340,6 +342,19 @@ export class NodeStockfish implements StockfishAdapter {
           }
         }
       }, timeout)
+      this.evalTimer = timer
+
+      try {
+        this.sendCommand('ucinewgame')
+        this.sendCommand(`position fen ${fen}`)
+        this.sendCommand(`go depth ${this.targetDepth}`)
+      } catch (err) {
+        clearTimeout(timer)
+        this.isEvaluating = false
+        this.evaluationResolver = null
+        this.evaluationRejecter = null
+        reject(err)
+      }
     })
   }
 
@@ -475,9 +490,14 @@ export class NodeStockfish implements StockfishAdapter {
 
     // Stop evaluation and resolve promise
     this.isEvaluating = false
-    this.evaluationResolver(result)
+    if (this.evalTimer) {
+      clearTimeout(this.evalTimer)
+      this.evalTimer = null
+    }
+    const resolver = this.evaluationResolver
     this.evaluationResolver = null
     this.evaluationRejecter = null
+    resolver(result)
   }
 
   /**
@@ -487,6 +507,10 @@ export class NodeStockfish implements StockfishAdapter {
     if (this.process && this.isEvaluating) {
       this.isEvaluating = false
       this.sendCommand('stop')
+      if (this.evalTimer) {
+        clearTimeout(this.evalTimer)
+        this.evalTimer = null
+      }
     }
   }
 

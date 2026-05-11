@@ -11,6 +11,7 @@ import {
   convertToWhitePerspective,
   checkSharedArrayBufferSupport,
   createSharedMemory,
+  RealStockfish,
 } from './stockfish'
 
 describe('computeMateInfo', () => {
@@ -251,5 +252,57 @@ describe('createSharedMemory', () => {
     // Test with medium allocation
     const mediumMemory = createSharedMemory(64)
     expect(mediumMemory.buffer.byteLength).toBeGreaterThanOrEqual(64 * 64 * 1024)
+  })
+})
+
+describe('RealStockfish race-condition handling', () => {
+  /**
+   * Regression test for the resolver-installation race.
+   *
+   * If the mock engine emits info/bestmove synchronously while `go depth`
+   * is being issued (cached result / mate / depth 1), the resolver must
+   * already be installed so the Promise resolves rather than hanging.
+   *
+   * We assert this directly: at the moment `uci('go depth ...')` runs,
+   * `evaluationResolver` is non-null. Before the fix, `uci('go depth')`
+   * was called BEFORE the `new Promise` body assigned the resolver, so
+   * a synchronous emission would have nowhere to land.
+   */
+  it('installs the evaluation resolver before sending `go depth`', async () => {
+    const sf = new RealStockfish()
+
+    let resolverInstalledAtGo: boolean | null = null
+
+    const fake = {
+      onError: undefined as unknown,
+      listen: null as ((msg: string) => void) | null,
+      uci(cmd: string) {
+        if (cmd.startsWith('go depth')) {
+          // Probe the private field — must be set before `go`.
+          resolverInstalledAtGo =
+            (sf as unknown as { evaluationResolver: unknown })
+              .evaluationResolver !== null
+          // Simulate completion: emit synchronous best-move so the promise
+          // resolves and the test doesn't hang.
+          setTimeout(() => {
+            // Force resolveEvaluation by calling stop()'s reject path is wrong;
+            // instead, just cancel cleanly to end the await.
+            sf.stop()
+          }, 0)
+        }
+      },
+    }
+    ;(sf as unknown as { stockfish: typeof fake }).stockfish = fake
+    ;(sf as unknown as { ready: boolean }).ready = true
+    ;(sf as unknown as { nnueLoaded: boolean }).nnueLoaded = true
+
+    await expect(
+      sf.evaluate(
+        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+        { depth: 1 },
+      ),
+    ).rejects.toThrow(/cancelled/)
+
+    expect(resolverInstalledAtGo).toBe(true)
   })
 })

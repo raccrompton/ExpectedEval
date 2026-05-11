@@ -296,6 +296,11 @@ export class RealStockfish implements StockfishAdapter {
   private evaluationResolver: ((_value: StockfishEvaluation) => void) | null = null
   private evaluationRejecter: ((_reason?: unknown) => void) | null = null
 
+  // Track the timer + a monotonic token per evaluate() call so that a
+  // late-firing timeout from a previous evaluation cannot cancel a later one.
+  private evalTimer: ReturnType<typeof setTimeout> | null = null
+  private evalToken = 0
+
   // Store evaluations as they come in (keyed by depth)
   private store: Record<number, EvaluationData> = {}
 
@@ -461,23 +466,26 @@ export class RealStockfish implements StockfishAdapter {
     // Set evaluation depth (default: 18)
     this.targetDepth = config?.depth ?? 18
 
-    // Start evaluation
+    // Mark as evaluating before issuing commands, since onMessage handlers may
+    // fire synchronously during uci() and call resolveEvaluation().
     this.isEvaluating = true
-    this.stockfish.uci('ucinewgame')
-    this.stockfish.uci(`position fen ${fen}`)
-    this.stockfish.uci(`go depth ${this.targetDepth}`)
 
-    // Return a promise that resolves when evaluation completes
+    // Return a promise that resolves when evaluation completes.
+    // Install the resolver BEFORE issuing the `go depth` command so that
+    // synchronous completion (cached/mate/depth-1) can find the resolver.
     return new Promise<StockfishEvaluation>((resolve, reject) => {
       this.evaluationResolver = resolve
       this.evaluationRejecter = reject
 
-      // Set a timeout to prevent hanging
+      // Track this evaluation's timeout so we can clear it on resolution.
+      // Capture local references so a later evaluation's timer can't cancel
+      // an in-flight one.
+      const evalToken = ++this.evalToken
       const timeout = config?.timeLimit ?? 30000  // Default 30 seconds
-      setTimeout(() => {
-        if (this.isEvaluating) {
+      const timer = setTimeout(() => {
+        // Only act if this timer's evaluation is still the active one.
+        if (this.isEvaluating && this.evalToken === evalToken) {
           this.stop()
-          // Return whatever we have so far
           const bestDepth = Math.max(...Object.keys(this.store).map(Number))
           if (bestDepth > 0 && this.store[bestDepth]) {
             this.resolveEvaluation(bestDepth)
@@ -486,6 +494,19 @@ export class RealStockfish implements StockfishAdapter {
           }
         }
       }, timeout)
+      this.evalTimer = timer
+
+      try {
+        this.stockfish!.uci('ucinewgame')
+        this.stockfish!.uci(`position fen ${fen}`)
+        this.stockfish!.uci(`go depth ${this.targetDepth}`)
+      } catch (err) {
+        clearTimeout(timer)
+        this.isEvaluating = false
+        this.evaluationResolver = null
+        this.evaluationRejecter = null
+        reject(err)
+      }
     })
   }
 
@@ -500,13 +521,19 @@ export class RealStockfish implements StockfishAdapter {
       this.isEvaluating = false
       this.stockfish.uci('stop')
 
+      if (this.evalTimer) {
+        clearTimeout(this.evalTimer)
+        this.evalTimer = null
+      }
+
       // Reject pending Promise to prevent hanging
       // This is critical for preventing race conditions when
       // multiple evaluate() calls are made rapidly
       if (this.evaluationRejecter) {
-        this.evaluationRejecter(new Error('Evaluation cancelled by new request'))
+        const rejecter = this.evaluationRejecter
         this.evaluationResolver = null
         this.evaluationRejecter = null
+        rejecter(new Error('Evaluation cancelled by new request'))
       }
     }
   }
@@ -683,9 +710,14 @@ export class RealStockfish implements StockfishAdapter {
 
     // Stop evaluation and resolve promise
     this.isEvaluating = false
-    this.evaluationResolver(result)
+    if (this.evalTimer) {
+      clearTimeout(this.evalTimer)
+      this.evalTimer = null
+    }
+    const resolver = this.evaluationResolver
     this.evaluationResolver = null
     this.evaluationRejecter = null
+    resolver(result)
   }
 
   /**
