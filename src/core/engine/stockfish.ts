@@ -208,9 +208,20 @@ async function setupStockfish(): Promise<StockfishWeb> {
       return
     }
 
-    // Dynamically import the Stockfish module
-    // Using dynamic import because it's a heavy WASM file
-    import('lila-stockfish-web/sf171-79.js')
+    // Load the Stockfish engine as a STATIC asset from /public — NOT via a
+    // bundler import. `webpackIgnore` keeps webpack from bundling the
+    // Emscripten module and its self-spawned pthread worker. That bundling
+    // rewrites the `new Worker(new URL("sf171-79.js", import.meta.url))`
+    // call into an `em-pthread.[hash].js` chunk whose memory wiring traps
+    // with "out of bounds memory access" in Safari's WASM engine (Chrome
+    // tolerates it). Loading the untouched file means `import.meta.url`
+    // resolves to /stockfish/, so the worker spawns exactly as the package
+    // author intended. Keep public/stockfish/ in sync via the prebuild
+    // copy script (scripts/copy-engine-assets.mjs).
+    // The `: string` annotation also stops TypeScript trying to resolve
+    // the runtime path as a module.
+    const engineUrl: string = '/stockfish/sf171-79.js'
+    import(/* webpackIgnore: true */ engineUrl)
       .then((makeModule) => {
         // Initialize the WASM module with configuration
         makeModule

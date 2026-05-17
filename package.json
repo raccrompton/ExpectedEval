@@ -4,6 +4,9 @@
   "description": "Expected Evaluation Analysis - Chess position analysis combining Stockfish and Maia2",
   "private": true,
   "scripts": {
+    "copy-engine-assets": "node scripts/copy-engine-assets.mjs",
+    "predev": "node scripts/copy-engine-assets.mjs",
+    "prebuild": "node scripts/copy-engine-assets.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
