@@ -5,10 +5,10 @@
  * The module is loaded from /public/stockfish/sf17-79.js at runtime.
  *
  * Note: The actual file comes from maia-platform-frontend's stockfish build,
- * not the lila-stockfish-web npm package (which has sf171-79.js).
+ * not the lila-stockfish-web npm package (which has sf17-79.js).
  */
 
-declare module 'lila-stockfish-web/sf171-79.js' {
+declare module 'lila-stockfish-web/sf17-79.js' {
   import StockfishWeb from 'lila-stockfish-web'
 
   /**
