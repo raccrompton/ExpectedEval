@@ -2,7 +2,7 @@
  * Copy the Stockfish engine files from the lila-stockfish-web package into
  * public/stockfish/ so they are served as untouched static assets.
  *
- * The app loads the engine via `import('/stockfish/sf171-79.js')` with a
+ * The app loads the engine via `import('/stockfish/sf17-79.js')` with a
  * webpackIgnore comment (see src/core/engine/stockfish.ts) — webpack must
  * never bundle it, or its self-spawned pthread worker crashes in Safari.
  *
@@ -15,7 +15,7 @@ const DEST = 'public/stockfish'
 
 // Only the files the app actually loads. The .nnue networks are not shipped
 // in the npm package — they are committed separately under public/stockfish/.
-const FILES = ['sf171-79.js', 'sf171-79.wasm']
+const FILES = ['sf17-79.js', 'sf17-79.wasm']
 
 let copied = 0
 for (const file of FILES) {
