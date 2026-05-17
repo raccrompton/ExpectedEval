@@ -38,7 +38,18 @@ function getStockfishDepth(): number {
 interface EngineInstanceContextValue {
   stockfish: StockfishAdapter | null
   maia: MaiaAdapter | null
+  /**
+   * True once Maia is ready. Reflects that the Maia-first experience is
+   * usable. Stockfish is lazy — its readiness is tracked separately by
+   * stockfishStatus (starts as 'not_initialized').
+   */
   isInitialized: boolean
+  /**
+   * Idempotent: initialises Stockfish on first call, returns the same
+   * promise on subsequent calls while loading, resolves immediately once
+   * already ready.
+   */
+  ensureStockfish: () => Promise<void>
 }
 
 interface EngineEvaluationContextValue {
@@ -70,71 +81,154 @@ export function EngineProvider({ children }: EngineProviderProps) {
   const [isMaiaEvaluating, setIsMaiaEvaluating] = useState(false)
   const currentEvalFen = useRef<string | null>(null)
 
+  // Holds a ref to the engine instances so ensureStockfish can access them
+  // without being recreated every render.
+  const sfEngineRef = useRef<StockfishAdapter | null>(null)
+
+  // Memoised promise for the lazy Stockfish init — mirrors how RealMaia
+  // memoises initPromise internally.
+  const stockfishInitPromiseRef = useRef<Promise<void> | null>(null)
+
   useEffect(() => {
+    // Create Stockfish instance immediately so the adapter object exists,
+    // but do NOT call init() — that happens lazily via ensureStockfish().
     const sfEngine = new RealStockfish()
     const maiaEngine = new RealMaia()
     let cancelled = false
 
-    setStockfishStatus('loading')
+    sfEngineRef.current = sfEngine
+    setStockfish(sfEngine)
+
     setMaiaStatus('loading')
 
-    // Initialize engines SEQUENTIALLY, not in parallel. Each engine
-    // allocates a large WebAssembly memory; initializing both at once
-    // doubles the transient peak and is what tips iOS Safari over its
-    // per-tab memory ceiling during init.
-    ;(async () => {
-      await sfEngine.init()
-      logEngineMemory('stockfish-init')
-      await maiaEngine.init()
-      logEngineMemory('maia-init')
-    })()
+    // Only initialise Maia at mount. Stockfish is initialised on first use
+    // via ensureStockfish(), keeping peak memory lower for iOS Safari.
+    maiaEngine
+      .init()
       .then(() => {
+        logEngineMemory('maia-init')
         if (cancelled) return
-        setStockfish(sfEngine)
         setMaia(maiaEngine)
         setIsInitialized(true)
-        setStockfishStatus('ready')
         setMaiaStatus('ready')
       })
       .catch((error) => {
         if (cancelled) return
-        console.error('Failed to initialize engines:', error)
-        setStockfishStatus('error')
+        console.error('Failed to initialize Maia:', error)
         setMaiaStatus('error')
       })
 
     return () => {
       cancelled = true
+      sfEngineRef.current = null
+      stockfishInitPromiseRef.current = null
       sfEngine.destroy()
       maiaEngine.destroy()
     }
   }, [])
 
+  /**
+   * Idempotent lazy Stockfish initialiser.
+   *
+   * - First call: sets status → 'loading', calls sfEngine.init(), then
+   *   sets status → 'ready' (or 'error' on failure).
+   * - Concurrent calls while loading: return the same in-flight promise.
+   * - Subsequent calls once ready: resolve immediately.
+   * - On error: clears the cached promise so the next call retries.
+   */
+  const ensureStockfish = useCallback(async (): Promise<void> => {
+    const sfEngine = sfEngineRef.current
+    if (!sfEngine) {
+      throw new Error('Stockfish engine not available')
+    }
+
+    // Already ready — fast path.
+    if (sfEngine.isReady()) {
+      return
+    }
+
+    // Return the in-flight promise if init is already running.
+    if (stockfishInitPromiseRef.current) {
+      return stockfishInitPromiseRef.current
+    }
+
+    setStockfishStatus('loading')
+
+    const initPromise = sfEngine
+      .init()
+      .then(() => {
+        logEngineMemory('stockfish-init')
+        setStockfishStatus('ready')
+      })
+      .catch((error) => {
+        // Clear so a retry is possible.
+        stockfishInitPromiseRef.current = null
+        setStockfishStatus('error')
+        console.error('Failed to initialize Stockfish:', error)
+        throw error
+      })
+
+    stockfishInitPromiseRef.current = initPromise
+    return initPromise
+  }, [])
+
   const evaluatePosition = useCallback(
     async (fen: string) => {
-      if (!stockfish || !maia) return
+      if (!maia) return
 
       currentEvalFen.current = fen
-      setIsStockfishEvaluating(true)
       setIsMaiaEvaluating(true)
-      setStockfishStatus('analyzing')
       setMaiaStatus('analyzing')
 
+      // Kick off Maia immediately; Stockfish is initialised lazily in parallel.
+      // We do NOT await ensureStockfish() before starting Maia so Maia results
+      // appear as quickly as possible even on the first evaluation.
+      const sfEngine = sfEngineRef.current
+
+      const sfPromise: Promise<StockfishEvaluation | null> = sfEngine
+        ? ensureStockfish()
+            .then(() => {
+              if (currentEvalFen.current !== fen) return null
+              setIsStockfishEvaluating(true)
+              setStockfishStatus('analyzing')
+              const depth = getStockfishDepth()
+              return sfEngine.evaluate(fen, { depth })
+            })
+            .catch((error) => {
+              console.error('Stockfish evaluation error:', error)
+              // Don't crash — surface the error status but let Maia succeed.
+              if (currentEvalFen.current === fen) {
+                setStockfishStatus('error')
+                setIsStockfishEvaluating(false)
+              }
+              return null
+            })
+        : Promise.resolve(null)
+
+      const maiaPromise = maia.predict(fen).catch((error) => {
+        console.error('Maia evaluation error:', error)
+        return null
+      })
+
       try {
-        const depth = getStockfishDepth()
-        const [sfResult, maiaResult] = await Promise.all([
-          stockfish.evaluate(fen, { depth }),
-          maia.predict(fen),
-        ])
+        const [sfResult, maiaResult] = await Promise.all([sfPromise, maiaPromise])
 
         if (currentEvalFen.current !== fen) {
           return
         }
 
-        setStockfishEvaluation(sfResult)
-        setMaiaEvaluation(maiaResult)
-        setStockfishStatus('ready')
-        setMaiaStatus('ready')
+        if (maiaResult !== null) {
+          setMaiaEvaluation(maiaResult)
+          setMaiaStatus('ready')
+        } else {
+          setMaiaStatus('error')
+        }
+
+        if (sfResult !== null) {
+          setStockfishEvaluation(sfResult)
+          setStockfishStatus('ready')
+        }
+        // If sfResult is null, status was already set inside sfPromise's catch.
       } catch (error) {
         if (currentEvalFen.current !== fen) {
           return
@@ -149,7 +243,7 @@ export function EngineProvider({ children }: EngineProviderProps) {
         }
       }
     },
-    [stockfish, maia]
+    [maia, ensureStockfish]
   )
 
   const instanceValue = useMemo<EngineInstanceContextValue>(
@@ -157,8 +251,9 @@ export function EngineProvider({ children }: EngineProviderProps) {
       stockfish,
       maia,
       isInitialized,
+      ensureStockfish,
     }),
-    [stockfish, maia, isInitialized]
+    [stockfish, maia, isInitialized, ensureStockfish]
   )
 
   const evaluationValue = useMemo<EngineEvaluationContextValue>(

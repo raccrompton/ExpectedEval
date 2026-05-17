@@ -84,7 +84,7 @@ export interface UseWinFinderReturn {
  * }
  */
 export function useWinFinder(): UseWinFinderReturn {
-  const { stockfish, maia, isInitialized } = useEngines()
+  const { stockfish, maia, isInitialized, ensureStockfish } = useEngines()
 
   const [result, setResult] = useState<WinFinderResult | null>(null)
   const [status, setStatus] = useState<WinFinderStatus>('idle')
@@ -96,9 +96,10 @@ export function useWinFinder(): UseWinFinderReturn {
   // Track if analysis should be cancelled
   const shouldCancelRef = useRef(false)
 
-  const canAnalyze = Boolean(
-    isInitialized && stockfish?.isReady() && maia?.isReady() && status !== 'analyzing'
-  )
+  // Stockfish is lazily initialised — the button is enabled once Maia is ready
+  // and the user has a game loaded. Clicking Analyze Game will trigger
+  // ensureStockfish() which loads SF on demand before the analysis begins.
+  const canAnalyze = Boolean(isInitialized && maia?.isReady() && status !== 'analyzing')
 
   /**
    * Run Win Finder analysis on provided positions.
@@ -113,7 +114,7 @@ export function useWinFinder(): UseWinFinderReturn {
         return
       }
 
-      // Check engine readiness
+      // Check Maia readiness (Stockfish is lazily loaded below)
       if (!stockfish || !maia || !isInitialized) {
         setError(new Error('Engines not ready'))
         setStatus('error')
@@ -128,6 +129,23 @@ export function useWinFinder(): UseWinFinderReturn {
           calculationTimeMs: 0,
         })
         setStatus('complete')
+        return
+      }
+
+      // Lazily initialise Stockfish before analysis begins. This is the first
+      // point we know the user actually wants SF data, so we load it here
+      // rather than at app mount to save iOS Safari memory.
+      try {
+        await ensureStockfish()
+      } catch (sfError) {
+        const initError = sfError instanceof Error ? sfError : new Error(String(sfError))
+        setError(initError)
+        setStatus('error')
+        console.error('Win Finder: Stockfish failed to initialise:', initError)
+        return
+      }
+
+      if (shouldCancelRef.current) {
         return
       }
 
@@ -185,7 +203,7 @@ export function useWinFinder(): UseWinFinderReturn {
         isAnalyzingRef.current = false
       }
     },
-    [stockfish, maia, isInitialized]
+    [stockfish, maia, isInitialized, ensureStockfish]
   )
 
   /**
