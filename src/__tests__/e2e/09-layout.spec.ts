@@ -48,6 +48,8 @@ test.describe('UI Layout Structure', () => {
   })
 
   test('has bottom row with board and EW section', async ({ page }) => {
+    await page.getByTestId('tab-ew').click()
+
     const bottomRow = page.locator('[data-testid="bottom-row"]')
     await expect(bottomRow).toBeVisible()
 
@@ -193,11 +195,15 @@ test.describe('EW Section Content', () => {
   })
 
   test('EW section has config toggle', async ({ page }) => {
+    await page.getByTestId('tab-ew').click()
+
     const ewSection = page.locator('[data-testid="ew-section"]')
     await expect(ewSection.locator('[data-testid="ew-config-toggle"]')).toBeVisible()
   })
 
   test('EW section shows idle state with analyze button initially', async ({ page }) => {
+    await page.getByTestId('tab-ew').click()
+
     const ewSection = page.locator('[data-testid="ew-section"]')
     // Before clicking analyze, should show idle state with description and button
     await expect(ewSection.locator('[data-testid="ew-idle"]')).toBeVisible()

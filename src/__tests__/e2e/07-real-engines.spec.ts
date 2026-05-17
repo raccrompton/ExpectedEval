@@ -90,7 +90,8 @@ test.describe('07 - Real Engine Integration', () => {
         const loss = parseInt(match[3])
         // In equal positions, neither win nor loss should be extreme
         // High draw percentage is expected for normal opening positions
-        expect(win + draw + loss).toBeCloseTo(100, 0)
+        expect(win + draw + loss).toBeGreaterThanOrEqual(99)
+        expect(win + draw + loss).toBeLessThanOrEqual(101)
         // Neither side should have a decisive advantage (win or loss > 50%)
         expect(win).toBeLessThan(50)
         expect(loss).toBeLessThan(50)

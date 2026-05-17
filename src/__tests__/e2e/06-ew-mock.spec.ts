@@ -27,12 +27,14 @@ test.describe('06 - Expected Winrate', () => {
   test.describe('EW Section Visibility', () => {
     test('EW section is visible', async ({ page }) => {
       await page.goto(TEST_URL)
+      await page.getByTestId('tab-ew').click()
 
       await expect(page.getByTestId('ew-section')).toBeVisible()
     })
 
     test('config panel toggles visibility', async ({ page }) => {
       await page.goto(TEST_URL)
+      await page.getByTestId('tab-ew').click()
 
       const configToggle = page.getByTestId('ew-config-toggle')
       await expect(configToggle).toBeVisible()
@@ -60,6 +62,7 @@ test.describe('06 - Expected Winrate', () => {
       consoleErrors = trackConsoleErrors(page)
 
       await page.goto(TEST_URL)
+      await page.getByTestId('tab-ew').click()
       await waitForEnginesReady(page)
       await loadPgnAndWaitForEval(page, SAMPLE_PGN)
     })
@@ -226,6 +229,7 @@ test.describe('06 - Expected Winrate', () => {
       consoleErrors = trackConsoleErrors(page)
 
       await page.goto(TEST_URL)
+      await page.getByTestId('tab-ew').click()
       await waitForEnginesReady(page)
       await loadPgnAndWaitForEval(page, SAMPLE_PGN)
 

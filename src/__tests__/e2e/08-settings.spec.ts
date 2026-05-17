@@ -221,6 +221,7 @@ test.describe('08 - Settings', () => {
   test.describe('Settings Wired to EW Config', () => {
     test('EW config panel reflects changed settings', async ({ page }) => {
       await page.goto(TEST_URL)
+      await page.getByTestId('tab-ew').click()
 
       await page.getByTestId('settings-button').click()
       await page.getByTestId('settings-prob-threshold').selectOption('0.05')

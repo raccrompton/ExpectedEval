@@ -47,14 +47,14 @@ test.describe('10 - Win Finder', () => {
       await expect(page.getByTestId('tab-winfinder')).toBeVisible()
     })
 
-    test('EW tab is active by default', async ({ page }) => {
+    test('Win Finder tab is active by default', async ({ page }) => {
       await page.goto(TEST_URL)
 
-      const ewTab = page.getByTestId('tab-ew')
-      await expect(ewTab).toHaveClass(/active/)
-
       const winfinderTab = page.getByTestId('tab-winfinder')
-      await expect(winfinderTab).not.toHaveClass(/active/)
+      await expect(winfinderTab).toHaveClass(/active/)
+
+      const ewTab = page.getByTestId('tab-ew')
+      await expect(ewTab).not.toHaveClass(/active/)
     })
 
     test('clicking Win Finder tab shows Win Finder content', async ({ page }) => {
