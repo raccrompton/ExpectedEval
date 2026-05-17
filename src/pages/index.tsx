@@ -185,7 +185,7 @@ export default function Home() {
             >
               <EWSection
                 fen={currentFen}
-                isEngineReady={stockfishStatus === 'ready' && maiaStatus === 'ready'}
+                isEngineReady={maiaStatus === 'ready'}
                 onNavigate={handleEWNavigate}
               />
             </div>

@@ -103,7 +103,7 @@ export function useExpectedWinrate(
   currentFen: string,
   initialConfig?: Partial<EWConfig>
 ): UseExpectedWinrateReturn {
-  const { stockfish, maia, isInitialized, isMaiaEvaluating } = useEngines()
+  const { stockfish, maia, isInitialized, isMaiaEvaluating, ensureStockfish } = useEngines()
 
   const [result, setResult] = useState<EWResult | null>(null)
   const [status, setStatus] = useState<EWStatus>('idle')
@@ -189,6 +189,7 @@ export function useExpectedWinrate(
     }
 
     try {
+      await ensureStockfish()
       const enrichedResult = await enrichWithStockfish(result, stockfish, config, onProgress)
 
       // Check if position changed during enrichment
@@ -208,7 +209,7 @@ export function useExpectedWinrate(
       setStatus('error')
       console.error('SF enrichment failed:', enrichError)
     }
-  }, [stockfish, result, status, config])
+  }, [stockfish, ensureStockfish, result, status, config])
 
   /**
    * Public API: Trigger Maia-only EW calculation.
