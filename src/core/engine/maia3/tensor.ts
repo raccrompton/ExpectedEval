@@ -31,6 +31,12 @@ export const allPossibleMovesMaia3 = allPossibleMovesMaia3Dict as Record<
   number
 >
 
+/**
+ * Number of moves in the Maia 3 move vocabulary.
+ * Stored as a constant to avoid re-computing Object.keys() on every call.
+ */
+export const MAIA3_MOVE_VOCAB_SIZE = 4352
+
 /** Index → UCI move (reverse lookup) */
 export const allPossibleMovesMaia3Reversed =
   allPossibleMovesMaia3ReversedDict as Record<number, string>
@@ -49,6 +55,9 @@ export const allPossibleMovesMaia3Reversed =
  *
  * The FEN is assumed to already be from White's perspective (mirror before
  * calling if it's Black's turn).
+ *
+ * Assumes a well-formed FEN piece-placement field; callers should pass FENs
+ * already validated / produced by `preprocessMaia3` or `mirrorFEN`.
  *
  * @param fen - FEN string from White's perspective
  * @returns Float32Array of length 64 * 12 = 768
@@ -115,6 +124,11 @@ function getLegalMovesUci(fen: string): string[] {
   const legalMoves: string[] = []
   const ctx = pos.ctx()
 
+  // Hoisted: depends only on pos.turn, not on any individual move
+  const backrank = pos.turn === 'white'
+    ? SquareSet.fromRank(7)  // rank 8
+    : SquareSet.fromRank(0)  // rank 1
+
   for (const [from, dests] of pos.allDests(ctx)) {
     const piece = pos.board.get(from)
     const isPawn = piece?.role === 'pawn'
@@ -124,10 +138,6 @@ function getLegalMovesUci(fen: string): string[] {
       const toStr = makeSquare(to)
 
       // Promotions: pawn reaching the far rank
-      const backrank = pos.turn === 'white'
-        ? SquareSet.fromRank(7)  // rank 8
-        : SquareSet.fromRank(0)  // rank 1
-
       const isPromotion = isPawn && backrank.has(to)
 
       if (isPromotion) {
@@ -222,7 +232,6 @@ export function mirrorFEN(fen: string): string {
 
   const mirroredPosition = position
     .split('/')
-    .slice()
     .reverse()
     .map(swapColorsInRank)
     .join('/')
@@ -267,7 +276,7 @@ export function preprocessMaia3(fen: string): {
   const boardTokens = boardToMaia3Tokens(normalizedFen)
 
   // Build legal-move mask over the 4352-move vocabulary
-  const legalMoves = new Float32Array(Object.keys(allPossibleMovesMaia3).length)
+  const legalMoves = new Float32Array(MAIA3_MOVE_VOCAB_SIZE)
 
   for (const move of getLegalMovesUci(normalizedFen)) {
     // Black moves are already normalised (mirrored) inside normalizedFen,
