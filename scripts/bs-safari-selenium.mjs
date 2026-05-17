@@ -15,6 +15,7 @@
  *   BS_DEVICE   'macos' (default) | 'ios'
  */
 import { Builder } from 'selenium-webdriver'
+import { readFileSync } from 'node:fs'
 
 const USER = process.env.BROWSERSTACK_USERNAME
 const KEY = process.env.BROWSERSTACK_ACCESS_KEY
@@ -26,11 +27,10 @@ if (!USER || !KEY) {
   process.exit(1)
 }
 
-const LONG_PGN = [
-  '1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6',
-  '8. c3 O-O 9. h3 Na5 10. Bc2 c5 11. d4 Qc7 12. Nbd2 cxd4 13. cxd4 Nc6',
-  '14. Nb3 a5 15. Be3 a4 16. Nbd2 Bd7 17. Rc1 Qb7 18. Bb1 Rfe8 19. d5 Nb4 20. Nf1 Rac8',
-].join(' ')
+// Real game to analyze. Defaults to scripts/test-game.pgn (a 98-ply game the
+// user reproduces the OOM on). Override with PGN_FILE.
+const PGN_FILE = process.env.PGN_FILE || 'scripts/test-game.pgn'
+const LONG_PGN = readFileSync(PGN_FILE, 'utf8').trim()
 
 const log = (...a) => console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...a)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
