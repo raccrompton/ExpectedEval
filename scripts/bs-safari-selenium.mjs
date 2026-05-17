@@ -1,0 +1,179 @@
+/**
+ * Real-Safari test via BrowserStack + Selenium WebDriver.
+ *
+ * Unlike playwright-webkit (Playwright's own WebKit build, weak SAB/WASM-
+ * threads support), BrowserStack Selenium drives ACTUAL Safari.app on real
+ * macOS — the genuine engine. This is the real test for:
+ *   #1 — does Stockfish/Maia initialize on Safari?
+ *   #2 — does "Analyze Game" OOM on Safari?
+ *
+ * Run: BROWSERSTACK_USERNAME=... BROWSERSTACK_ACCESS_KEY=... \
+ *      node scripts/bs-safari-selenium.mjs
+ *
+ * Env:
+ *   TARGET_URL  default https://expected-eval.vercel.app
+ *   BS_DEVICE   'macos' (default) | 'ios'
+ */
+import { Builder } from 'selenium-webdriver'
+
+const USER = process.env.BROWSERSTACK_USERNAME
+const KEY = process.env.BROWSERSTACK_ACCESS_KEY
+const TARGET = process.env.TARGET_URL || 'https://expected-eval.vercel.app'
+const DEVICE = process.env.BS_DEVICE || 'macos'
+
+if (!USER || !KEY) {
+  console.error('Missing BROWSERSTACK_USERNAME / BROWSERSTACK_ACCESS_KEY')
+  process.exit(1)
+}
+
+const LONG_PGN = [
+  '1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6',
+  '8. c3 O-O 9. h3 Na5 10. Bc2 c5 11. d4 Qc7 12. Nbd2 cxd4 13. cxd4 Nc6',
+  '14. Nb3 a5 15. Be3 a4 16. Nbd2 Bd7 17. Rc1 Qb7 18. Bb1 Rfe8 19. d5 Nb4 20. Nf1 Rac8',
+].join(' ')
+
+const log = (...a) => console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...a)
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+const bstackOptions = {
+  userName: USER,
+  accessKey: KEY,
+  buildName: 'expectedEval-real-safari',
+  sessionName: `WinFinder real Safari (${DEVICE})`,
+  seleniumVersion: '4.0.0',
+  debug: 'true',
+  consoleLogs: 'verbose',
+}
+
+const caps =
+  DEVICE === 'ios'
+    ? {
+        browserName: 'safari',
+        'bstack:options': {
+          ...bstackOptions,
+          deviceName: 'iPhone 15',
+          osVersion: '17',
+          realMobile: 'true',
+        },
+      }
+    : {
+        browserName: 'Safari',
+        'bstack:options': {
+          ...bstackOptions,
+          os: 'OS X',
+          osVersion: 'Sequoia',
+          browserVersion: 'latest',
+        },
+      }
+
+// Browser-side helpers, passed as strings to executeScript.
+const READ_STATUS = `
+  return {
+    sf: (document.querySelector('[data-testid=sf-status]') || {}).textContent || '',
+    maia: (document.querySelector('[data-testid=maia-status]') || {}).textContent || '',
+    sfError: !!document.querySelector('[data-testid=sf-status] .error, [data-testid=sf-status]'),
+  };`
+
+const READ_WF = `
+  var prog = document.querySelector('[data-testid=wf-progress]');
+  var results = document.querySelector('[data-testid=wf-results]');
+  return {
+    progress: prog ? prog.textContent.trim() : null,
+    done: !!results,
+    heapMB: (performance.memory ? Math.round(performance.memory.usedJSHeapSize/1048576) : null),
+  };`
+
+let result = 'unknown'
+let reason = ''
+
+const run = async () => {
+  log(`Connecting to BrowserStack — REAL Safari (${DEVICE})...`)
+  const driver = new Builder()
+    .usingServer('https://hub-cloud.browserstack.com/wd/hub')
+    .withCapabilities(caps)
+    .build()
+
+  try {
+    await driver.manage().setTimeouts({ pageLoad: 60000, script: 30000 })
+    log(`Navigating to ${TARGET}`)
+    await driver.get(TARGET)
+
+    // --- Phase 1: engine init ---
+    log('Waiting for engines to initialize (up to 4 min)...')
+    const deadline = Date.now() + 240000
+    let enginesReady = false
+    while (Date.now() < deadline) {
+      const s = await driver.executeScript(READ_STATUS)
+      if (/ready/i.test(s.sf) && /ready/i.test(s.maia)) { enginesReady = true; break }
+      if (/error/i.test(s.sf) || /error/i.test(s.maia)) {
+        result = 'failed'
+        reason = `engine init ERROR — sf="${s.sf.trim()}" maia="${s.maia.trim()}"`
+        log('!!! ' + reason)
+        break
+      }
+      log(`  sf="${s.sf.trim()}"  maia="${s.maia.trim()}"`)
+      await sleep(5000)
+    }
+
+    if (!enginesReady) {
+      if (result === 'unknown') { result = 'failed'; reason = 'engines never became ready (timeout)' }
+      log('=== #1 RESULT: engines did NOT initialize on real Safari ===')
+      return
+    }
+    log('=== #1 RESULT: engines INITIALIZED on real Safari ✓ ===')
+
+    // --- Phase 2: Win Finder ---
+    log('Loading PGN...')
+    await driver.executeScript(
+      `var i=document.querySelector('[data-testid=pgn-input]');` +
+        `i.value=arguments[0];` +
+        `i.dispatchEvent(new Event('input',{bubbles:true}));`,
+      LONG_PGN,
+    )
+    await driver.executeScript(`document.querySelector('[data-testid=load-pgn-button]').click();`)
+    await sleep(8000)
+
+    log('Switching to Win Finder tab + clicking Analyze Game...')
+    await driver.executeScript(`document.querySelector('[data-testid=tab-winfinder]').click();`)
+    await sleep(1000)
+    await driver.executeScript(`document.querySelector('[data-testid=wf-analyze-button]').click();`)
+
+    log('Monitoring Analyze Game for OOM...')
+    const wfDeadline = Date.now() + 300000
+    let crashed = false
+    while (Date.now() < wfDeadline) {
+      await sleep(4000)
+      try {
+        const w = await driver.executeScript(READ_WF)
+        log(`  progress=${w.progress ?? '-'}  done=${w.done}  heapMB=${w.heapMB ?? 'n/a'}`)
+        if (w.done) { log('=== #2 RESULT: Analyze Game COMPLETED — no crash ✓ ==='); break }
+      } catch (err) {
+        crashed = true
+        log('!!! page is dead during Analyze Game (OOM): ' + String(err.message).slice(0, 200))
+        break
+      }
+    }
+    result = crashed ? 'failed' : 'passed'
+    reason = crashed
+      ? '#2 Win Finder OOM reproduced on real Safari'
+      : 'engines init + Win Finder completed on real Safari'
+  } catch (err) {
+    result = 'failed'
+    reason = String(err.message).slice(0, 300)
+    log('ERROR: ' + reason)
+  } finally {
+    log(`RESULT: ${result} — ${reason}`)
+    try {
+      await driver.executeScript(
+        `browserstack_executor: ${JSON.stringify({
+          action: 'setSessionStatus',
+          arguments: { status: result === 'passed' ? 'passed' : 'failed', reason },
+        })}`,
+      )
+    } catch {}
+    await driver.quit().catch(() => {})
+  }
+  process.exit(result === 'passed' ? 0 : 1)
+}
+
+run().catch((e) => { console.error(e); process.exit(1) })
