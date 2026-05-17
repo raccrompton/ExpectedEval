@@ -17,9 +17,6 @@ importScripts('/ort/ort.wasm.min.js')
 
 const ORT = ort
 ORT.env.wasm.wasmPaths = '/ort/'
-// Single-threaded WASM backend — keeps the ONNX memory footprint within
-// iOS Safari's per-tab budget (Stockfish is already resident).
-ORT.env.wasm.numThreads = 1
 
 // ── IndexedDB storage (mirrors MaiaModelStorage) ─────────────────────────────
 
