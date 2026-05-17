@@ -241,19 +241,31 @@ export async function analyzePositionForDisagreement(
     }
   }
 
-  // Evaluate each move with Maia. Check cancellation between calls so a
-  // reset doesn't wait for every legal move to finish.
+  // First pass: build a list of processable moves with their resulting FENs.
+  // Moves where applyMove returns null/undefined are skipped entirely.
+  const processableMoves: { uci: string; san: string; resultingFen: string; sfWinrate: number }[] = []
   for (const { uci, san } of allMoves) {
-    checkCancel()
-    const sfWinrate = sfEval.moveWinrates?.[uci] ?? sfEval.winrate
     const resultingFen = applyMove(fen, uci)
     if (!resultingFen) continue
+    const sfWinrate = sfEval.moveWinrates?.[uci] ?? sfEval.winrate
+    processableMoves.push({ uci, san, resultingFen, sfWinrate })
+  }
 
-    const maiaResult = await maia.predict(resultingFen, { eloLevel: config.maiaLevel })
+  // Single batched Maia call for all resulting positions.
+  checkCancel()
+  const maiaResults = await maia.predictBatch(
+    processableMoves.map(m => m.resultingFen),
+    { eloLevel: config.maiaLevel }
+  )
+  checkCancel()
+
+  // Build move rankings from the batch results (lockstep with processableMoves).
+  for (let i = 0; i < processableMoves.length; i++) {
+    const { uci, san, sfWinrate } = processableMoves[i]
 
     // Flip perspective: Maia returns value from side-to-move's perspective
     // After our move, it's opponent's turn, so we flip
-    const playerMaiaWinrate = 1 - maiaResult.value
+    const playerMaiaWinrate = 1 - maiaResults[i].value
 
     moveRankings.push({
       move: san,
@@ -265,9 +277,7 @@ export async function analyzePositionForDisagreement(
     })
   }
 
-  // Final cancellation check before ranking/description work. Without
-  // this, a cancel that flips after the *last* maia.predict() would
-  // still walk through ranking, sort, and return a stale result.
+  // Final cancellation check before ranking/description work.
   checkCancel()
 
   // Create a Map for O(1) lookups when assigning ranks

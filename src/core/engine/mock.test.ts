@@ -308,6 +308,51 @@ describe('MockMaia', () => {
 })
 
 // ============================================================================
+// MockMaia.predictBatch tests
+// ============================================================================
+
+describe('MockMaia.predictBatch', () => {
+  const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+  const POST_E4_FEN = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
+
+  it('returns evaluations in input order for 2 fens', async () => {
+    const maia = new MockMaia()
+    await maia.init()
+
+    const results = await maia.predictBatch([START_FEN, POST_E4_FEN])
+
+    expect(results).toHaveLength(2)
+
+    // First result corresponds to START_FEN
+    expect(typeof results[0].value).toBe('number')
+    expect(results[0].value).toBeGreaterThanOrEqual(0)
+    expect(results[0].value).toBeLessThanOrEqual(1)
+    expect(results[0].policy).toBeDefined()
+    expect(Object.keys(results[0].policy).length).toBeGreaterThan(0)
+
+    // Second result corresponds to POST_E4_FEN
+    expect(typeof results[1].value).toBe('number')
+    expect(results[1].value).toBeGreaterThanOrEqual(0)
+    expect(results[1].value).toBeLessThanOrEqual(1)
+    expect(results[1].policy).toBeDefined()
+    expect(Object.keys(results[1].policy).length).toBeGreaterThan(0)
+
+    maia.destroy()
+  })
+
+  it('returns empty array for empty input', async () => {
+    const maia = new MockMaia()
+    await maia.init()
+
+    const results = await maia.predictBatch([])
+
+    expect(results).toEqual([])
+
+    maia.destroy()
+  })
+})
+
+// ============================================================================
 // Factory function tests
 // ============================================================================
 

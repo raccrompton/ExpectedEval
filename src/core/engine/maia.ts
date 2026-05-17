@@ -1,19 +1,19 @@
 /**
- * Maia Neural Network Engine Implementation
+ * Maia Neural Network Engine Implementation (Maia 3)
  *
  * This file provides the Maia chess engine that predicts human-like moves.
  * Unlike Stockfish (which finds the best moves), Maia predicts what moves
  * humans of a given skill level are likely to play.
  *
- * Maia was trained on millions of games from Lichess, learning patterns
+ * Maia 3 was trained on millions of games from Lichess, learning patterns
  * of how humans at different ELO levels actually play. It outputs:
  * - Move probabilities: "45% chance they play e5, 30% chance they play d5..."
  * - Win probability: "Based on position and typical human play, 58% chance of winning"
  *
  * Technical details:
- * - Uses ONNX (Open Neural Network Exchange) format
- * - Runs in browser via onnxruntime-web
- * - Model file is ~89MB, cached in IndexedDB
+ * - Uses a Web Worker to run ONNX inference off the main thread
+ * - Worker runs onnxruntime-web internally; model file (~ONNX) is cached in IndexedDB
+ * - Main thread communicates via postMessage/onmessage
  *
  * @example
  * const maia = new RealMaia()
@@ -24,37 +24,39 @@
  * console.log(result.value)   // 0.58 (58% win probability)
  */
 
-import { InferenceSession, Tensor } from 'onnxruntime-web'
 import type { MaiaAdapter, MaiaConfig, MaiaEvaluation } from './types'
-import { preprocess, mirrorMove, allPossibleMovesReversed } from './tensor'
-import { MaiaModelStorage } from './storage'
-import { Chess } from 'chessops/chess'
-import { parseFen } from 'chessops/fen'
-import { makeSquare } from 'chessops/util'
-import { SquareSet } from 'chessops/squareSet'
+import { DEFAULT_EW_CONFIG } from '../analysis/types'
+import { preprocessMaia3 } from './maia3/tensor'
+import { processMaia3Outputs } from './maia3/processOutputs'
 
 /**
- * Default URL for the Maia ONNX model file.
+ * Default URL for the Maia 3 ONNX model file.
  * Located in the public folder, served statically by Next.js.
  */
-const DEFAULT_MODEL_URL = '/maia2/maia_rapid.onnx'
+const DEFAULT_MODEL_URL = '/maia3/maia3_simplified.onnx'
+
+/** M2: Model version sent to the worker in the init message. */
+const MAIA_MODEL_VERSION = '3'
+
+/** Timeout (ms) for the worker to report ready during init. */
+const INIT_TIMEOUT_MS = 60_000
+
+/** Timeout (ms) for a single inference request. */
+const INFERENCE_TIMEOUT_MS = 30_000
+
+/** Shape of a pending inference request awaiting a worker response. */
+interface PendingInference {
+  resolve: (_result: { logitsMove: ArrayBuffer; logitsValue: ArrayBuffer }) => void
+  reject: (_err: Error) => void
+}
 
 /**
- * Real Maia engine implementation using ONNX Runtime Web.
+ * Real Maia 3 engine implementation — a thin proxy to the Maia Web Worker.
  *
- * This class implements the MaiaAdapter interface, providing:
- * - Model downloading with progress tracking
- * - IndexedDB caching (so model is only downloaded once)
- * - Move probability prediction
- * - Win probability estimation
- *
- * The model takes:
- * - Board position as an 18-channel 8x8 tensor
- * - ELO ratings for both players (as category indices)
- *
- * And outputs:
- * - Policy logits for each possible move
- * - Value (win probability) for the position
+ * All heavy lifting (ONNX session management, IndexedDB caching, tensor
+ * operations) runs in the worker. The main thread only preprocesses input
+ * (boardTokens / legalMoves), sends buffers over the structured-clone
+ * channel, and decodes the returned logits via `processMaia3Outputs`.
  *
  * @example
  * const maia = new RealMaia()
@@ -65,173 +67,330 @@ const DEFAULT_MODEL_URL = '/maia2/maia_rapid.onnx'
  * // prediction.value = 0.52 (52% win probability)
  */
 export class RealMaia implements MaiaAdapter {
-  // ONNX inference session (the loaded model)
-  private model: InferenceSession | null = null
+  // The Web Worker that owns the ONNX session
+  private worker: Worker | null = null
 
   // URL where the model can be downloaded
   private modelUrl: string
 
-  // IndexedDB storage for caching the model
-  private storage: MaiaModelStorage
-
-  // Track initialization state
+  // Track readiness
   private ready = false
-  private initializing = false
 
-  // Progress callback for download tracking
+  // C1: Whether the init promise has already settled (resolved or rejected)
+  private initSettled = false
+
+  // I2: Memoised init promise — returned on every subsequent init() call
+  private initPromise: Promise<void> | null = null
+
+  // Progress callback for download tracking (0–100)
   private onProgress?: (_progress: number) => void
+
+  // Pending inference map: requestId → { resolve, reject }
+  private pendingInferences: Map<number, PendingInference> = new Map()
+  private nextRequestId = 0
 
   /**
    * Creates a new Maia instance.
    *
-   * @param modelUrl - URL to the ONNX model file (default: /maia2/maia_rapid.onnx)
+   * @param modelUrl   - URL to the ONNX model file (default: /maia3/maia3_simplified.onnx)
    * @param onProgress - Optional callback for download progress (0-100)
    */
-  constructor(modelUrl: string = DEFAULT_MODEL_URL, onProgress?: (_progress: number) => void) {
+  constructor(
+    modelUrl: string = DEFAULT_MODEL_URL,
+    onProgress?: (_progress: number) => void,
+  ) {
     this.modelUrl = modelUrl
     this.onProgress = onProgress
-    this.storage = new MaiaModelStorage()
   }
 
   /**
    * Checks if the engine is ready to receive commands.
    *
-   * @returns true if model is loaded and ready
+   * @returns true once the worker has reported `status: 'ready'`
    */
   isReady(): boolean {
-    return this.ready && this.model !== null
+    return this.ready
   }
 
   /**
-   * Initializes the Maia engine.
+   * Initialises the Maia engine.
    *
-   * This will:
-   * 1. Check IndexedDB for cached model
-   * 2. If not cached, download the model (~89MB)
-   * 3. Store in IndexedDB for future use
-   * 4. Create ONNX inference session
+   * Spawns the Web Worker, wires message handlers, and posts an `init`
+   * message. The worker handles cache checking and model downloading
+   * internally; it reports progress and emits `status: 'ready'` when done.
    *
-   * @throws Error if initialization fails
+   * I2: Concurrent calls are safe — the same Promise is returned for all
+   * callers until init has settled.
+   *
+   * I1: Rejects after INIT_TIMEOUT_MS if the worker never reports ready.
+   *
+   * @throws Error in SSR/Node environments where `Worker` is unavailable.
+   * @throws Error if the worker reports an error during initialisation.
    */
   async init(): Promise<void> {
-    // Prevent multiple simultaneous initializations
-    if (this.initializing) {
-      // Wait for existing initialization to complete
-      while (this.initializing) {
-        await new Promise((resolve) => setTimeout(resolve, 100))
+    // I2: Return memoised promise so concurrent callers share one worker
+    if (this.initPromise !== null) return this.initPromise
+
+    if (typeof window === 'undefined' || typeof Worker === 'undefined') {
+      throw new Error(
+        'RealMaia: Web Workers are not available in this environment (SSR/Node). ' +
+          'Use MockMaia for server-side rendering or testing.',
+      )
+    }
+
+    this.initPromise = new Promise<void>((resolve, reject) => {
+      this.worker = new Worker('/maia-worker.js')
+
+      // I1: Timeout guard — reject if the worker never reports ready
+      let initTimer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+        initTimer = null
+        if (!this.initSettled) {
+          this.initSettled = true
+          this.worker?.terminate()
+          this.worker = null
+          this.initPromise = null
+          reject(
+            new Error(
+              `Maia worker did not become ready within ${INIT_TIMEOUT_MS / 1000}s. ` +
+                'Check that the worker script loaded correctly.',
+            ),
+          )
+        }
+      }, INIT_TIMEOUT_MS)
+
+      /** Settle the init promise exactly once. */
+      const settleInit = (settleFn: () => void) => {
+        if (this.initSettled) return
+        this.initSettled = true
+        if (initTimer !== null) {
+          clearTimeout(initTimer)
+          initTimer = null
+        }
+        settleFn()
       }
-      return
-    }
 
-    if (this.ready) return
+      this.worker.onmessage = (e: MessageEvent) => {
+        const msg = e.data as Record<string, unknown>
 
-    this.initializing = true
+        switch (msg.type) {
+          case 'status': {
+            const status = msg.status as string
+            if (status === 'no-cache') {
+              // Model not cached — tell the worker to start downloading
+              this.worker!.postMessage({ type: 'download' })
+            } else if (status === 'ready') {
+              settleInit(() => {
+                this.ready = true
+                this.onProgress?.(100)
+                resolve()
+              })
+            }
+            // M3: removed dead 'error' branch — worker never sends status:'error'
+            break
+          }
 
-    try {
-      // Request persistent storage (optional, may improve reliability)
-      await this.storage.requestPersistentStorage()
+          case 'progress': {
+            const progress = msg.progress as number
+            this.onProgress?.(progress)
+            break
+          }
 
-      console.log('Maia: Checking for cached model...')
+          case 'error': {
+            const id = msg.id as number | undefined
+            if (id !== undefined) {
+              // Per-inference error (safe to handle at any time)
+              const pending = this.pendingInferences.get(id)
+              if (pending) {
+                pending.reject(new Error((msg.message as string) ?? 'Maia inference error'))
+                this.pendingInferences.delete(id)
+              }
+            } else {
+              // C1: Global worker error — reject all pending inferences
+              const err = new Error((msg.message as string) ?? 'Maia worker error')
+              for (const pending of this.pendingInferences.values()) {
+                pending.reject(err)
+              }
+              this.pendingInferences.clear()
 
-      // Try to load from IndexedDB cache
-      const cachedBuffer = await this.storage.getModel(this.modelUrl)
+              // C1: Only touch init promise if not yet settled
+              if (!this.initSettled) {
+                settleInit(() => reject(err))
+              }
+            }
+            break
+          }
 
-      if (cachedBuffer) {
-        console.log('Maia: Found cached model, loading...')
-        await this.initializeModel(cachedBuffer)
-        console.log('Maia: Model loaded from cache')
-      } else {
-        console.log('Maia: No cached model, downloading...')
-        await this.downloadAndInitialize()
-        console.log('Maia: Model downloaded and initialized')
-      }
-
-      this.ready = true
-    } catch (error) {
-      console.error('Maia: Initialization failed:', error)
-      this.ready = false
-      throw error
-    } finally {
-      this.initializing = false
-    }
-  }
-
-  /**
-   * Downloads the model and initializes it.
-   *
-   * Shows download progress via the onProgress callback.
-   * Stores the downloaded model in IndexedDB for caching.
-   */
-  private async downloadAndInitialize(): Promise<void> {
-    // Fetch the model with progress tracking
-    const response = await fetch(this.modelUrl)
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch model: ${response.status} ${response.statusText}`)
-    }
-
-    const reader = response.body?.getReader()
-    const contentLength = +(response.headers.get('Content-Length') ?? 0)
-
-    if (!reader) {
-      throw new Error('No response body available')
-    }
-
-    // Read the response stream with progress tracking
-    const chunks: Uint8Array[] = []
-    let receivedLength = 0
-    let lastReportedProgress = 0
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      chunks.push(value)
-      receivedLength += value.length
-
-      // Report progress every 10%. Servers may omit Content-Length or
-      // send 0; guard against div-by-zero / non-finite progress values.
-      if (contentLength > 0) {
-        const currentProgress = Math.floor((receivedLength / contentLength) * 100)
-        if (currentProgress >= lastReportedProgress + 10) {
-          this.onProgress?.(currentProgress)
-          lastReportedProgress = currentProgress
+          case 'inference-result': {
+            const id = msg.id as number
+            const pending = this.pendingInferences.get(id)
+            if (pending) {
+              pending.resolve({
+                logitsMove: msg.logitsMove as ArrayBuffer,
+                logitsValue: msg.logitsValue as ArrayBuffer,
+              })
+              this.pendingInferences.delete(id)
+            }
+            break
+          }
         }
       }
-    }
 
-    // Combine chunks into a single buffer
-    const buffer = new Uint8Array(receivedLength)
-    let position = 0
-    for (const chunk of chunks) {
-      buffer.set(chunk, position)
-      position += chunk.length
-    }
+      this.worker.onerror = (err: ErrorEvent) => {
+        console.error('Maia worker crashed:', err)
+        const error = new Error(err.message ?? 'Maia worker crashed')
+        // C1: Reject all in-flight inferences regardless of init state
+        for (const pending of this.pendingInferences.values()) {
+          pending.reject(error)
+        }
+        this.pendingInferences.clear()
 
-    // Store in IndexedDB for next time
-    await this.storage.storeModel(this.modelUrl, buffer.buffer)
+        // C1: Only reject init if it hasn't settled yet
+        if (!this.initSettled) {
+          settleInit(() => reject(error))
+        }
+      }
 
-    // Initialize the ONNX session
-    await this.initializeModel(buffer.buffer)
+      // Tell the worker which model to load (M2: use constant)
+      this.worker.postMessage({
+        type: 'init',
+        modelUrl: this.modelUrl,
+        modelVersion: MAIA_MODEL_VERSION,
+      })
+    })
+
+    return this.initPromise
   }
 
   /**
-   * Initializes the ONNX inference session from a model buffer.
+   * Posts an `inference` message to the worker and awaits the matching result.
    *
-   * @param buffer - The model file as an ArrayBuffer
+   * Buffers are transferred (zero-copy) to avoid serialisation overhead.
+   *
+   * I4: Each request has a per-request timeout (INFERENCE_TIMEOUT_MS). On
+   * expiry the promise is rejected and the pending entry is removed so the
+   * slot cannot be resolved/rejected by a late response.
    */
-  private async initializeModel(buffer: ArrayBuffer): Promise<void> {
-    // Create ONNX inference session
-    // onnxruntime-web will use WebAssembly for inference
-    this.model = await InferenceSession.create(buffer)
-    this.ready = true
+  private runInference(
+    tokens: Float32Array,
+    eloSelfs: Float32Array,
+    eloOppos: Float32Array,
+    batchSize: number,
+  ): Promise<{ logitsMove: ArrayBuffer; logitsValue: ArrayBuffer }> {
+    if (!this.worker) {
+      return Promise.reject(new Error('Maia worker not initialised. Call init() first.'))
+    }
+
+    const id = this.nextRequestId++
+
+    return new Promise((resolve, reject) => {
+      // I4: Per-request timeout
+      const timer = setTimeout(() => {
+        if (this.pendingInferences.has(id)) {
+          this.pendingInferences.delete(id)
+          reject(
+            new Error(
+              `Maia inference request ${id} timed out after ${INFERENCE_TIMEOUT_MS / 1000}s`,
+            ),
+          )
+        }
+      }, INFERENCE_TIMEOUT_MS)
+
+      this.pendingInferences.set(id, {
+        resolve: (result) => {
+          clearTimeout(timer)
+          resolve(result)
+        },
+        reject: (err) => {
+          clearTimeout(timer)
+          reject(err)
+        },
+      })
+
+      // Transfer ArrayBuffers for zero-copy send
+      this.worker!.postMessage(
+        {
+          type: 'inference',
+          id,
+          tokens: tokens.buffer,
+          eloSelfs: eloSelfs.buffer,
+          eloOppos: eloOppos.buffer,
+          batchSize,
+        },
+        [tokens.buffer, eloSelfs.buffer, eloOppos.buffer],
+      )
+    })
+  }
+
+  /**
+   * Predicts move probabilities for multiple positions in one batched inference call.
+   *
+   * Concatenates all board tokens into a single Float32Array and sends one
+   * worker message, then slices the returned logits per-item. This is far
+   * more efficient than calling predict() in a loop.
+   *
+   * @param fens   - Positions in FEN notation
+   * @param config - Configuration (ELO level); defaults to the app's default Maia level
+   * @returns Move probabilities and win probability for each position, in input order
+   */
+  async predictBatch(fens: string[], config?: Partial<MaiaConfig>): Promise<MaiaEvaluation[]> {
+    if (!this.ready) {
+      throw new Error('Maia is not ready — call init() and await it first.')
+    }
+
+    if (fens.length === 0) return []
+
+    const eloLevel = config?.eloLevel ?? DEFAULT_EW_CONFIG.maiaLevel
+
+    // Preprocess every position — keep tokens and legal-move masks together
+    const preprocessed = fens.map((fen) => preprocessMaia3(fen))
+
+    // Concatenate all board tokens into one flat array (batchSize * 64 * 12)
+    const TOKENS_PER_POSITION = 64 * 12
+    const combined = new Float32Array(fens.length * TOKENS_PER_POSITION)
+    for (let i = 0; i < preprocessed.length; i++) {
+      combined.set(preprocessed[i].boardTokens, i * TOKENS_PER_POSITION)
+    }
+
+    // Build ELO arrays — same ELO for self and opponent for all items
+    const eloSelfs = new Float32Array(fens.length).fill(eloLevel)
+    const eloOppos = new Float32Array(fens.length).fill(eloLevel)
+
+    // Single worker round-trip for the whole batch
+    const { logitsMove, logitsValue } = await this.runInference(
+      combined,
+      eloSelfs,
+      eloOppos,
+      fens.length,
+    )
+
+    const moveLogitsAll = new Float32Array(logitsMove)
+    const valueLogitsAll = new Float32Array(logitsValue)
+
+    // Slice per-item and decode
+    const MOVE_LOGITS_PER_ITEM = 4352
+    const VALUE_LOGITS_PER_ITEM = 3
+
+    return fens.map((fen, i) => {
+      const moveSlice = moveLogitsAll.slice(
+        i * MOVE_LOGITS_PER_ITEM,
+        (i + 1) * MOVE_LOGITS_PER_ITEM,
+      )
+      const valueSlice = valueLogitsAll.slice(
+        i * VALUE_LOGITS_PER_ITEM,
+        (i + 1) * VALUE_LOGITS_PER_ITEM,
+      )
+      const { policy, value } = processMaia3Outputs(fen, moveSlice, valueSlice, preprocessed[i].legalMoves)
+      return { policy, value, eloLevel }
+    })
   }
 
   /**
    * Predicts move probabilities for a position.
    *
-   * @param fen - Position in FEN notation
-   * @param config - Configuration (ELO level)
+   * Delegates to predictBatch for a single position, eliminating duplicated logic.
+   *
+   * @param fen    - Position in FEN notation
+   * @param config - Configuration (ELO level); defaults to the app's default Maia level
    * @returns Move probabilities and win probability
    *
    * @example
@@ -242,277 +401,33 @@ export class RealMaia implements MaiaAdapter {
    * console.log(result.policy.e7e5)  // 0.45 (45% chance of playing e5)
    * console.log(result.value)         // 0.48 (48% win probability for Black)
    */
-  async predict(
-    fen: string,
-    config?: Partial<MaiaConfig>,
-  ): Promise<MaiaEvaluation> {
-    if (!this.model) {
-      throw new Error('Maia model not initialized. Call init() first.')
-    }
-
-    // Default ELO level (1500 is average club player)
-    const eloLevel = config?.eloLevel ?? 1500
-
-    // Get legal moves using chessops
-    const setup = parseFen(fen)
-    if (setup.isErr) {
-      throw new Error(`Invalid FEN: ${fen}`)
-    }
-
-    const chess = Chess.fromSetup(setup.value)
-    if (chess.isErr) {
-      throw new Error(`Invalid position: ${chess.error}`)
-    }
-
-    // Get all legal moves in UCI format
-    const pos = chess.value
-    const legalMoves: string[] = []
-
-    // Iterate over all legal moves using allDests()
-    const ctx = pos.ctx()
-    for (const [from, dests] of pos.allDests(ctx)) {
-      // Get the piece on this square to check for promotions
-      const piece = pos.board.get(from)
-      const isPawn = piece?.role === 'pawn'
-
-      // Iterate over all destination squares
-      for (const to of dests) {
-        // Build UCI string
-        const fromStr = makeSquare(from)
-        const toStr = makeSquare(to)
-
-        // Check if this move would be a promotion
-        const backrank = pos.turn === 'white'
-          ? SquareSet.fromRank(7)  // 8th rank
-          : SquareSet.fromRank(0)  // 1st rank
-        const isPromotion = isPawn && backrank.has(to)
-
-        if (isPromotion) {
-          // Add all promotion variants (queen, rook, bishop, knight)
-          legalMoves.push(`${fromStr}${toStr}q`)
-          legalMoves.push(`${fromStr}${toStr}r`)
-          legalMoves.push(`${fromStr}${toStr}b`)
-          legalMoves.push(`${fromStr}${toStr}n`)
-        } else {
-          legalMoves.push(`${fromStr}${toStr}`)
-        }
-      }
-    }
-
-    // Handle positions with no legal moves
-    if (legalMoves.length === 0) {
-      const inCheck = pos.isCheck()
-      return {
-        policy: {},
-        value: inCheck ? 0.0 : 0.5,  // Checkmate = loss, Stalemate = draw
-        eloLevel,
-      }
-    }
-
-    // Preprocess the position for the neural network
-    // This handles perspective normalization (Black positions are mirrored)
-    const { boardInput, eloSelfCategory, eloOppoCategory, legalMovesMask } = preprocess(
-      fen,
-      eloLevel,
-      eloLevel, // Use same ELO for opponent (symmetric)
-      legalMoves,
-    )
-
-    // Prepare input tensors for ONNX runtime
-    const feeds: Record<string, Tensor> = {
-      // Board tensor: [batch_size=1, channels=18, height=8, width=8]
-      boards: new Tensor('float32', boardInput, [1, 18, 8, 8]),
-
-      // ELO categories as 64-bit integers (model requirement)
-      elo_self: new Tensor(
-        'int64',
-        BigInt64Array.from([BigInt(eloSelfCategory)]),
-      ),
-      elo_oppo: new Tensor(
-        'int64',
-        BigInt64Array.from([BigInt(eloOppoCategory)]),
-      ),
-    }
-
-    // Use try/finally so input tensors are disposed even if model.run()
-    // or processOutputs throws. Output tensors are disposed only after
-    // they're assigned (they don't exist on the failure path).
-    let logits_maia: Tensor | undefined
-    let logits_value: Tensor | undefined
-    try {
-      const outputs = await this.model.run(feeds)
-      logits_maia = outputs.logits_maia
-      logits_value = outputs.logits_value
-
-      const { policy, value } = this.processOutputs(
-        fen,
-        logits_maia,
-        logits_value,
-        legalMovesMask,
-        legalMoves,
-      )
-
-      return {
-        policy,
-        value,
-        eloLevel,
-      }
-    } finally {
-      // Per ONNX Runtime docs: explicit dispose() frees the underlying
-      // buffer. Skipping this on the error path leaks input tensors.
-      feeds.boards.dispose()
-      feeds.elo_self.dispose()
-      feeds.elo_oppo.dispose()
-      logits_maia?.dispose()
-      logits_value?.dispose()
-    }
-  }
-
-  /**
-   * Processes model outputs into move probabilities and win probability.
-   *
-   * The model outputs:
-   * - logits_maia: Raw scores for each possible move (1880 values)
-   * - logits_value: Win probability prediction (-1 to +1)
-   *
-   * We need to:
-   * 1. Mask illegal moves
-   * 2. Apply softmax to get probabilities
-   * 3. Convert value to 0-1 range
-   * 4. Handle perspective (flip for Black)
-   *
-   * @param fen - Original FEN (for perspective checking)
-   * @param logits_maia - Policy logits from model
-   * @param logits_value - Value logits from model
-   * @param legalMovesMask - Binary mask of legal moves
-   * @param legalMoves - List of legal moves in UCI format
-   * @returns Processed policy and value
-   */
-  private processOutputs(
-    fen: string,
-    logits_maia: Tensor,
-    logits_value: Tensor,
-    legalMovesMask: Float32Array,
-    _legalMoves: string[],
-  ): { policy: Record<string, number>; value: number } {
-    const logits = logits_maia.data as Float32Array
-    const value = logits_value.data as Float32Array
-
-    // Convert value from [-1, 1] to [0, 1] range
-    // Model outputs value from current player's perspective (after board normalization)
-    // Since Black positions are mirrored to look like White, the model always outputs
-    // from the "current player's" perspective (who appears as White after mirroring)
-    const rawValue = value[0] as number
-    let winProb = Math.min(Math.max(rawValue / 2 + 0.5, 0), 1)
-
-    // Check if it's Black's turn
-    const isBlackTurn = fen.split(' ')[1] === 'b'
-
-    // Note: Model outputs value from perspective of side-to-move after mirroring
-    // For Black positions, board is mirrored so Black appears as White
-
-    // The model outputs value from the perspective of the side-to-move AFTER mirroring.
-    // For Black positions, the board is mirrored so Black pieces become White.
-    // So the model's value is already from Black's perspective.
-    // We should NOT flip it - removing the flip that was here.
-    // if (isBlackTurn) {
-    //   winProb = 1 - winProb
-    // }
-
-    // Round to 4 decimal places
-    winProb = Math.round(winProb * 10000) / 10000
-
-    // Get indices of legal moves from the mask
-    const legalMoveIndices = legalMovesMask
-      .map((value, index) => (value > 0 ? index : -1))
-      .filter((index) => index !== -1)
-
-    // Map legal move indices back to UCI notation
-    // If Black's turn, we need to un-mirror the moves
-    const legalMovesMirrored: string[] = []
-    for (const moveIndex of legalMoveIndices) {
-      let move = allPossibleMovesReversed[moveIndex]
-      if (isBlackTurn) {
-        // Un-mirror the move back to Black's perspective
-        move = mirrorMove(move)
-      }
-      legalMovesMirrored.push(move)
-    }
-
-    // Extract logits only for legal moves
-    const legalLogits = legalMoveIndices.map((idx) => logits[idx])
-
-    // Apply softmax to convert logits to probabilities
-    // Softmax: exp(x_i) / sum(exp(x_j))
-    // We subtract max for numerical stability
-    const maxLogit = Math.max(...legalLogits)
-    const expLogits = legalLogits.map((logit) => Math.exp(logit - maxLogit))
-    const sumExp = expLogits.reduce((a, b) => a + b, 0)
-    const probs = expLogits.map((expLogit) => expLogit / sumExp)
-
-    // Build the policy dictionary mapping moves to probabilities
-    const moveProbs: Record<string, number> = {}
-    for (let i = 0; i < legalMoveIndices.length; i++) {
-      moveProbs[legalMovesMirrored[i]] = probs[i]
-    }
-
-    // Sort by probability (highest first) for convenience
-    const sortedMoveProbs = Object.keys(moveProbs)
-      .sort((a, b) => moveProbs[b] - moveProbs[a])
-      .reduce(
-        (acc, key) => {
-          acc[key] = moveProbs[key]
-          return acc
-        },
-        {} as Record<string, number>,
-      )
-
-    return { policy: sortedMoveProbs, value: winProb }
+  async predict(fen: string, config?: Partial<MaiaConfig>): Promise<MaiaEvaluation> {
+    return (await this.predictBatch([fen], config))[0]
   }
 
   /**
    * Cleans up resources.
    *
-   * Call when done using the engine to free memory.
+   * Terminates the Web Worker and clears all state.
    */
   destroy(): void {
-    // ONNX runtime doesn't have explicit cleanup
-    // Setting to null allows garbage collection
-    this.model = null
+    this.worker?.terminate()
+    this.worker = null
     this.ready = false
-  }
-
-  /**
-   * Gets storage information (for debugging/display).
-   *
-   * @returns Storage info including model size and cache status
-   */
-  async getStorageInfo(): Promise<{
-    supported: boolean
-    quota?: number
-    usage?: number
-    modelSize?: number
-    modelTimestamp?: number
-  }> {
-    return this.storage.getStorageInfo()
-  }
-
-  /**
-   * Clears the cached model from IndexedDB.
-   *
-   * Use if you need to force re-download.
-   */
-  async clearCache(): Promise<void> {
-    await this.storage.clearAllStorage()
+    // Reject any pending inferences
+    for (const pending of this.pendingInferences.values()) {
+      pending.reject(new Error('Maia engine destroyed'))
+    }
+    this.pendingInferences.clear()
   }
 }
 
 /**
  * Factory function to create a Maia instance.
  *
- * @param modelUrl - Optional custom model URL
- * @param onProgress - Optional progress callback for downloads
- * @returns A new RealMaia instance (not yet initialized)
+ * @param modelUrl   - Optional custom model URL
+ * @param onProgress - Optional progress callback for downloads (0-100)
+ * @returns A new RealMaia instance (not yet initialised)
  *
  * @example
  * const maia = createMaia()

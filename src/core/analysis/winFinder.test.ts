@@ -277,14 +277,15 @@ describe('analyzeGameForDisagreements', () => {
    */
   it('aborts per-position work when cancellation flips mid-flight', async () => {
     let cancelled = false
-    let maiaCalls = 0
-    const originalPredict = mockMaia.predict.bind(mockMaia)
-    mockMaia.predict = async (fen, opts) => {
-      maiaCalls++
-      // Flip the predicate after the first Maia call — this happens
-      // inside the per-move loop of analyzePositionForDisagreement.
-      if (maiaCalls === 1) cancelled = true
-      return originalPredict(fen, opts)
+    let batchCalls = 0
+    const originalPredictBatch = mockMaia.predictBatch.bind(mockMaia)
+    mockMaia.predictBatch = async (fens, opts) => {
+      batchCalls++
+      // Flip the predicate after the first batch call — this happens
+      // inside analyzePositionForDisagreement. The post-batch checkCancel()
+      // will then throw WinFinderCancelledError before position 1 is reached.
+      if (batchCalls === 1) cancelled = true
+      return originalPredictBatch(fens, opts)
     }
 
     const positions = [
@@ -301,11 +302,10 @@ describe('analyzeGameForDisagreements', () => {
       () => cancelled,
     )
 
-    // Starting position has 20 legal moves; without mid-position
-    // cancellation we'd see all 20 Maia calls for position 0 alone.
-    // With the fix, we bail after the next checkCancel() — so only a
-    // handful of calls fire before the throw.
-    expect(maiaCalls).toBeLessThan(10)
+    // With batching, one predictBatch call covers all moves for a position.
+    // Cancellation flips after the first batch, so the post-batch checkCancel()
+    // throws before position 1's batch is ever issued — only 1 batch call total.
+    expect(batchCalls).toBe(1)
   })
 
   /**

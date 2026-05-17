@@ -33,6 +33,7 @@
 
 import type StockfishWeb from 'lila-stockfish-web'
 import type { StockfishAdapter, StockfishConfig, StockfishEvaluation } from './types'
+import { recommendedHashMB, recommendedThreads } from './deviceProfile'
 import { Chess } from 'chessops/chess'
 import { parseFen } from 'chessops/fen'
 import { makeSquare } from 'chessops/util'
@@ -183,6 +184,17 @@ function sharedWasmMemory(lo: number, hi = 32767): WebAssembly.Memory {
 }
 
 /**
+ * Most recently created Stockfish WASM memory, kept for diagnostics so
+ * memoryDebug can report the engine's actual resident heap size.
+ */
+let stockfishWasmMemory: WebAssembly.Memory | null = null
+
+/** Current size of Stockfish's WASM heap in bytes, or null if not loaded. */
+export function getStockfishMemoryBytes(): number | null {
+  return stockfishWasmMemory ? stockfishWasmMemory.buffer.byteLength : null
+}
+
+/**
  * Loads and initializes the Stockfish WASM module.
  *
  * This involves:
@@ -208,16 +220,31 @@ async function setupStockfish(): Promise<StockfishWeb> {
       return
     }
 
-    // Dynamically import the Stockfish module
-    // Using dynamic import because it's a heavy WASM file
-    import('lila-stockfish-web/sf171-79.js')
+    // Load the Stockfish engine as a STATIC asset from /public — NOT via a
+    // bundler import. `webpackIgnore` keeps webpack from bundling the
+    // Emscripten module and its self-spawned pthread worker. That bundling
+    // rewrites the `new Worker(new URL("sf17-79.js", import.meta.url))`
+    // call into an `em-pthread.[hash].js` chunk whose memory wiring traps
+    // with "out of bounds memory access" in Safari's WASM engine (Chrome
+    // tolerates it). Loading the untouched file means `import.meta.url`
+    // resolves to /stockfish/, so the worker spawns exactly as the package
+    // author intended. Keep public/stockfish/ in sync via the prebuild
+    // copy script (scripts/copy-engine-assets.mjs).
+    // The `: string` annotation also stops TypeScript trying to resolve
+    // the runtime path as a module.
+    const engineUrl: string = '/stockfish/sf17-79.js'
+    import(/* webpackIgnore: true */ engineUrl)
       .then((makeModule) => {
         // Initialize the WASM module with configuration
         makeModule
           .default({
-            // Allocate shared memory for multi-threading
-            // 2560 pages ≈ 160MB, good balance of memory vs performance
-            wasmMemory: sharedWasmMemory(2560),
+            // Allocate shared memory for multi-threading.
+            // 2560 pages ≈ 160MB initial. The maximum is left at the default
+            // (~2GB): it is only a virtual reservation, and capping it lower
+            // makes Emscripten write the NNUE buffers out of bounds on
+            // Safari ("out of bounds memory access"). Footprint is bounded
+            // instead via the Hash/Threads options below.
+            wasmMemory: (stockfishWasmMemory = sharedWasmMemory(2560)),
 
             // Handle initialization errors
             onError: (msg: string) => reject(new Error(msg)),
@@ -355,6 +382,12 @@ export class RealStockfish implements StockfishAdapter {
 
       // Enable native WDL (Win/Draw/Loss) output instead of calculating from cp
       this.stockfish.uci('setoption name UCI_ShowWDL value true')
+
+      // Cap memory use so Stockfish + Maia together stay within Safari's
+      // per-tab budget. Hash is the transposition table; Threads each carry
+      // their own stack/arena. Both are sized down on iOS. See deviceProfile.
+      this.stockfish.uci(`setoption name Hash value ${recommendedHashMB()}`)
+      this.stockfish.uci(`setoption name Threads value ${recommendedThreads()}`)
 
       // Set up message handlers
       this.stockfish.onError = this.onError.bind(this)

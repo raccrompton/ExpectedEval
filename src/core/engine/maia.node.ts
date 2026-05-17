@@ -381,6 +381,20 @@ export class NodeMaia implements MaiaAdapter {
   }
 
   /**
+   * Predict move probabilities for multiple positions.
+   *
+   * Simple Promise.all delegation — the Node.js implementation does not
+   * have a batched worker protocol, so we run predictions sequentially
+   * via Promise.all for simplicity.
+   */
+  async predictBatch(
+    fens: string[],
+    config?: Partial<MaiaConfig>,
+  ): Promise<MaiaEvaluation[]> {
+    return Promise.all(fens.map((f) => this.predict(f, config)))
+  }
+
+  /**
    * Cleans up resources.
    *
    * In Node.js, ONNX runtime cleans up automatically,

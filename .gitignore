@@ -44,3 +44,5 @@ conductor.json
 # Claude Code session artifacts
 .claude/scheduled_tasks.lock
 tmux.md
+.vercel
+scripts/bs-safari-*.png

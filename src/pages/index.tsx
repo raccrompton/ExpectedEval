@@ -88,16 +88,18 @@ export default function Home() {
   }, [handleKeyDown])
 
   useEffect(() => {
+    // Stockfish is now lazily initialised — trigger evaluation once Maia is
+    // ready. evaluatePosition() will call ensureStockfish() internally so SF
+    // loads on first use without blocking the initial page load.
     if (
       currentFen &&
-      stockfishStatus === 'ready' &&
       maiaStatus === 'ready' &&
       currentFen !== lastEvaluatedFen.current
     ) {
       lastEvaluatedFen.current = currentFen
       evaluatePosition(currentFen)
     }
-  }, [currentFen, stockfishStatus, maiaStatus, evaluatePosition])
+  }, [currentFen, maiaStatus, evaluatePosition])
 
   return (
     <main className="main-container">
@@ -183,7 +185,7 @@ export default function Home() {
             >
               <EWSection
                 fen={currentFen}
-                isEngineReady={stockfishStatus === 'ready' && maiaStatus === 'ready'}
+                isEngineReady={maiaStatus === 'ready'}
                 onNavigate={handleEWNavigate}
               />
             </div>
