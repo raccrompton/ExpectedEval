@@ -46,7 +46,7 @@
 Build a single-purpose **Expected Evaluation Analysis Page** that combines:
 
 - **Stockfish** (traditional engine evaluation)
-- **Maia2** (human-like move probability predictions)
+- **Maia 3** (human-like move probability predictions)
 
 This creates an "expected winrate" analysis that shows what evaluation a position will likely reach given how humans actually play (not perfect engine play).
 
@@ -578,10 +578,10 @@ interface WinFinderResult {
 
 Both engines run **entirely client-side** in the browser. No backend required.
 
-### Maia2 Engine (ONNX Runtime Web)
+### Maia 3 Engine (ONNX Runtime Web)
 
 - Uses `onnxruntime-web` to run neural network in browser
-- Model (~89MB ONNX) downloaded once, cached in IndexedDB
+- Model (~46MB ONNX) downloaded once, cached in IndexedDB
 - Input: FEN + ELO ratings
 - Output: Two outputs from separate neural network heads:
   - **Policy head**: Move probabilities (used for tree building)

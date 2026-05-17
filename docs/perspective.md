@@ -18,6 +18,10 @@ Empirical testing (`src/core/engine/perspective.test.ts`) verifies perspective c
 - **Engine layer** returns evaluations from **side-to-move's perspective**
 - **Consumer layer** (treeBuilder.ts) normalizes to **root player's perspective** using `currentTurn === rootTurn` pattern
 
+### Maia 3 Value Output
+
+Maia 3 outputs three LDW (loss/draw/win) logits for the side-to-move. `processMaia3Outputs` (in `src/core/engine/maia3/processOutputs.ts`) applies a softmax over these logits to obtain probabilities, then returns the win probability directly for White-to-move positions, or `1 - winProb` (a black-to-move flip) for Black-to-move positions. This ensures the resulting `value` is always in **side-to-move perspective**, matching the existing Maia value convention used by the EW algorithm and the engine panel. The gated test `src/core/engine/maia3/perspective.test.ts` empirically verifies this: it checks that `value > 0.6` when the winning side is to move, and `value < 0.4` when the losing side is to move.
+
 **Test file:** `src/core/engine/perspective.test.ts` - run to verify perspective behavior
 
 ## Engine Evaluation Perspective Conventions
