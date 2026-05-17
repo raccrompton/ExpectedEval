@@ -87,7 +87,14 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // Allow running against a system-installed Chromium when Playwright's
+        // bundled browser cannot be installed (set PLAYWRIGHT_CHROMIUM_PATH).
+        ...(process.env.PLAYWRIGHT_CHROMIUM_PATH
+          ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } }
+          : {}),
+      },
     },
     // Uncomment these to test on more browsers:
     // {
