@@ -30,14 +30,13 @@ export function isIPad(): boolean {
 }
 
 /**
- * Stockfish transposition-table size in MB. Kept small — at the depths the
- * app searches (~10-18) a large hash gives little benefit but a lot of
- * resident memory. Mirrors Lichess's mobile caps.
+ * Stockfish transposition-table size in MB. 16MB everywhere — this is both
+ * Stockfish's and Lichess's default. At the depths the app searches
+ * (~10-18) a larger hash gives little benefit but costs resident memory.
+ * Set explicitly so the engine can never inherit a larger default.
  */
 export function recommendedHashMB(): number {
-  if (isIPad()) return 32
-  if (isIOSorIPadOS()) return 16
-  return 64
+  return 16
 }
 
 /** Stockfish search threads. Conservative; leaves cores free. */
