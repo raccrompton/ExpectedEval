@@ -77,6 +77,15 @@ const ERROR_HOOK = `
       try { window.__errs.push(Array.prototype.map.call(arguments, String).join(' ')); } catch (e) {}
       return oe.apply(console, arguments);
     };
+    window.__mems = window.__mems || [];
+    var ol = console.log;
+    console.log = function () {
+      try {
+        var s = Array.prototype.map.call(arguments, String).join(' ');
+        if (s.indexOf('[mem:') === 0) window.__mems.push(s);
+      } catch (e) {}
+      return ol.apply(console, arguments);
+    };
     window.addEventListener('error', function (e) {
       window.__errs.push('window.onerror: ' + (e.message || e));
     });
@@ -205,6 +214,10 @@ const run = async () => {
     reason = String(err.message).slice(0, 300)
     log('ERROR: ' + reason)
   } finally {
+    try {
+      const mems = await driver.executeScript(`return window.__mems || [];`)
+      mems.forEach((m) => log('   ' + m))
+    } catch {}
     log(`RESULT: ${result} — ${reason}`)
     try {
       await driver.executeScript(

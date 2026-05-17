@@ -13,6 +13,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { useEngines } from '@/contexts'
+import { logEngineMemory } from '@/core/engine'
 import {
   analyzeGameForDisagreements,
   type PositionDisagreement,
@@ -132,6 +133,7 @@ export function useWinFinder(): UseWinFinderReturn {
 
       isAnalyzingRef.current = true
       shouldCancelRef.current = false
+      logEngineMemory('winfinder-start')
       setStatus('analyzing')
       setError(null)
       setProgress({ current: 0, total: positions.length })
@@ -167,6 +169,7 @@ export function useWinFinder(): UseWinFinderReturn {
 
         setResult(winFinderResult)
         setStatus('complete')
+        logEngineMemory('winfinder-end')
       } catch (err) {
         if (shouldCancelRef.current) {
           isAnalyzingRef.current = false

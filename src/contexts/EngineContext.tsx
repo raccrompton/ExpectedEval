@@ -16,6 +16,7 @@ import {
   type StockfishEvaluation,
   type MaiaEvaluation,
   type EngineStatus,
+  logEngineMemory,
 } from '@/core/engine'
 
 /**
@@ -83,7 +84,9 @@ export function EngineProvider({ children }: EngineProviderProps) {
     // per-tab memory ceiling during init.
     ;(async () => {
       await sfEngine.init()
+      logEngineMemory('stockfish-init')
       await maiaEngine.init()
+      logEngineMemory('maia-init')
     })()
       .then(() => {
         if (cancelled) return

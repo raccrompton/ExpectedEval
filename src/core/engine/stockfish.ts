@@ -184,6 +184,17 @@ function sharedWasmMemory(lo: number, hi = 32767): WebAssembly.Memory {
 }
 
 /**
+ * Most recently created Stockfish WASM memory, kept for diagnostics so
+ * memoryDebug can report the engine's actual resident heap size.
+ */
+let stockfishWasmMemory: WebAssembly.Memory | null = null
+
+/** Current size of Stockfish's WASM heap in bytes, or null if not loaded. */
+export function getStockfishMemoryBytes(): number | null {
+  return stockfishWasmMemory ? stockfishWasmMemory.buffer.byteLength : null
+}
+
+/**
  * Loads and initializes the Stockfish WASM module.
  *
  * This involves:
@@ -233,7 +244,7 @@ async function setupStockfish(): Promise<StockfishWeb> {
             // makes Emscripten write the NNUE buffers out of bounds on
             // Safari ("out of bounds memory access"). Footprint is bounded
             // instead via the Hash/Threads options below.
-            wasmMemory: sharedWasmMemory(2560),
+            wasmMemory: (stockfishWasmMemory = sharedWasmMemory(2560)),
 
             // Handle initialization errors
             onError: (msg: string) => reject(new Error(msg)),
