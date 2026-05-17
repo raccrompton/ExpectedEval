@@ -229,9 +229,19 @@ export class RealMaia implements MaiaAdapter {
     // threads (1 on iOS) keeps the footprint within Safari's per-tab budget.
     env.wasm.numThreads = recommendedOnnxThreads()
 
-    // Create ONNX inference session
-    // onnxruntime-web will use WebAssembly for inference
-    this.model = await InferenceSession.create(buffer)
+    // Create ONNX inference session. The session options trade a little
+    // speed for a smaller memory footprint — important because Stockfish
+    // is already resident and iOS Safari's per-tab budget is tight:
+    //  - enableCpuMemArena/enableMemPattern off: ORT does not pre-allocate
+    //    large reusable arenas, lowering peak resident memory.
+    //  - graphOptimizationLevel 'basic': avoids the extra transient buffers
+    //    that full optimization allocates while building the session.
+    this.model = await InferenceSession.create(buffer, {
+      executionProviders: ['wasm'],
+      graphOptimizationLevel: 'basic',
+      enableCpuMemArena: false,
+      enableMemPattern: false,
+    })
     this.ready = true
   }
 
