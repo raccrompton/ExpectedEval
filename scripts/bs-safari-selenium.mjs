@@ -45,26 +45,46 @@ const bstackOptions = {
   consoleLogs: 'verbose',
 }
 
-const caps =
-  DEVICE === 'ios'
-    ? {
-        browserName: 'safari',
-        'bstack:options': {
-          ...bstackOptions,
-          deviceName: 'iPhone 15',
-          osVersion: '17',
-          realMobile: 'true',
-        },
-      }
-    : {
-        browserName: 'Safari',
-        'bstack:options': {
-          ...bstackOptions,
-          os: 'OS X',
-          osVersion: 'Sequoia',
-          browserVersion: 'latest',
-        },
-      }
+const DEVICE_CAPS = {
+  ios: {
+    browserName: 'safari',
+    'bstack:options': { ...bstackOptions, deviceName: 'iPhone 15', osVersion: '17', realMobile: 'true' },
+  },
+  ipad: {
+    browserName: 'safari',
+    'bstack:options': {
+      ...bstackOptions,
+      deviceName: 'iPad Pro 12.9 2022',
+      osVersion: '16',
+      realMobile: 'true',
+    },
+  },
+  macos: {
+    browserName: 'Safari',
+    'bstack:options': { ...bstackOptions, os: 'OS X', osVersion: 'Sequoia', browserVersion: 'latest' },
+  },
+}
+const caps = DEVICE_CAPS[DEVICE] || DEVICE_CAPS.macos
+
+// Injected right after navigation: capture console.error + uncaught errors
+// so we can report WHY engine init fails (the app only logs to console).
+const ERROR_HOOK = `
+  window.__errs = window.__errs || [];
+  if (!window.__errHook) {
+    window.__errHook = true;
+    var oe = console.error;
+    console.error = function () {
+      try { window.__errs.push(Array.prototype.map.call(arguments, String).join(' ')); } catch (e) {}
+      return oe.apply(console, arguments);
+    };
+    window.addEventListener('error', function (e) {
+      window.__errs.push('window.onerror: ' + (e.message || e));
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      window.__errs.push('unhandledrejection: ' + ((e.reason && e.reason.message) || e.reason));
+    });
+  }
+  return window.__errs.length;`
 
 // Browser-side helpers, passed as strings to executeScript.
 const READ_STATUS = `
@@ -97,18 +117,24 @@ const run = async () => {
     await driver.manage().setTimeouts({ pageLoad: 60000, script: 30000 })
     log(`Navigating to ${TARGET}`)
     await driver.get(TARGET)
+    await driver.executeScript(ERROR_HOOK)
+    log('Error hook installed.')
 
     // --- Phase 1: engine init ---
     log('Waiting for engines to initialize (up to 4 min)...')
     const deadline = Date.now() + 240000
     let enginesReady = false
     while (Date.now() < deadline) {
+      await driver.executeScript(ERROR_HOOK) // idempotent re-install
       const s = await driver.executeScript(READ_STATUS)
       if (/ready/i.test(s.sf) && /ready/i.test(s.maia)) { enginesReady = true; break }
       if (/error/i.test(s.sf) || /error/i.test(s.maia)) {
+        const errs = await driver.executeScript(`return window.__errs || [];`)
         result = 'failed'
         reason = `engine init ERROR — sf="${s.sf.trim()}" maia="${s.maia.trim()}"`
         log('!!! ' + reason)
+        if (errs.length) errs.forEach((e) => log('   console: ' + String(e).slice(0, 350)))
+        else log('   (no console errors captured — hook may have missed early failure)')
         break
       }
       log(`  sf="${s.sf.trim()}"  maia="${s.maia.trim()}"`)
