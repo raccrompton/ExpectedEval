@@ -13,7 +13,7 @@
  *   npx tsx scripts/test-engines.ts --fen "..."  # Test with custom FEN
  *
  * Requirements:
- *   - Maia model file at: public/maia2/maia_rapid.onnx
+ *   - Maia model file at: public/maia3/maia3_simplified.onnx
  *   - Stockfish binary in PATH (install via: brew install stockfish)
  *
  * Exit codes:
@@ -172,7 +172,7 @@ ${colors.bright}Examples:${colors.reset}
   npx tsx scripts/test-engines.ts --fen "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
 
 ${colors.bright}Requirements:${colors.reset}
-  - Maia: Model file at public/maia2/maia_rapid.onnx
+  - Maia: Model file at public/maia3/maia3_simplified.onnx
   - Stockfish: Binary in PATH (brew install stockfish)
 `)
     process.exit(0)
@@ -193,12 +193,12 @@ async function testMaia(
   // Check if model file exists
   const modelPath = path.resolve(
     process.cwd(),
-    'public/maia2/maia_rapid.onnx',
+    'public/maia3/maia3_simplified.onnx',
   )
 
   if (!fs.existsSync(modelPath)) {
     error(`Model file not found at: ${modelPath}`)
-    info('Make sure the Maia ONNX model is in public/maia2/maia_rapid.onnx')
+    info('Make sure the Maia 3 ONNX model is in public/maia3/maia3_simplified.onnx')
     return false
   }
 

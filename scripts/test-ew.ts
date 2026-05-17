@@ -12,7 +12,7 @@
  *   npx tsx scripts/test-ew.ts --fen "..."  # Test with custom FEN
  *
  * Requirements:
- *   - Maia model file at: public/maia2/maia_rapid.onnx
+ *   - Maia model file at: public/maia3/maia3_simplified.onnx
  *   - Stockfish binary in PATH (install via: brew install stockfish)
  *
  * @example
@@ -172,7 +172,7 @@ async function main(): Promise<void> {
   // Initialize engines
   header('Initializing Engines')
 
-  const modelPath = path.resolve(process.cwd(), 'public/maia2/maia_rapid.onnx')
+  const modelPath = path.resolve(process.cwd(), 'public/maia3/maia3_simplified.onnx')
   if (!fs.existsSync(modelPath)) {
     error(`Model file not found at: ${modelPath}`)
     process.exit(1)

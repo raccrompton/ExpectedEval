@@ -478,7 +478,7 @@ async function main(): Promise<void> {
   // Initialize engines
   console.log(`\n${c.cyan}ℹ${c.reset} Initializing engines...`)
 
-  const modelPath = path.resolve(process.cwd(), 'public/maia2/maia_rapid.onnx')
+  const modelPath = path.resolve(process.cwd(), 'public/maia3/maia3_simplified.onnx')
   const maia = new NodeMaia(modelPath)
   await maia.init()
   console.log(`${c.green}✓${c.reset} Maia loaded`)

@@ -8,7 +8,7 @@ import { NodeMaia } from '../src/core/engine/maia.node'
 async function main() {
   console.log('=== Minimal Maia Value Test ===\n')
 
-  const maia = new NodeMaia('./public/maia2/maia_rapid.onnx')
+  const maia = new NodeMaia('./public/maia3/maia3_simplified.onnx')
   await maia.init()
 
   // Test position: After 1.e4 (Black to move)
