@@ -35,6 +35,15 @@ import { processMaia3Outputs } from './maia3/processOutputs'
  */
 const DEFAULT_MODEL_URL = '/maia3/maia3_simplified.onnx'
 
+/** M2: Model version sent to the worker in the init message. */
+const MAIA_MODEL_VERSION = '3'
+
+/** Timeout (ms) for the worker to report ready during init. */
+const INIT_TIMEOUT_MS = 60_000
+
+/** Timeout (ms) for a single inference request. */
+const INFERENCE_TIMEOUT_MS = 30_000
+
 /** Shape of a pending inference request awaiting a worker response. */
 interface PendingInference {
   resolve: (_result: { logitsMove: ArrayBuffer; logitsValue: ArrayBuffer }) => void
@@ -66,6 +75,12 @@ export class RealMaia implements MaiaAdapter {
 
   // Track readiness
   private ready = false
+
+  // C1: Whether the init promise has already settled (resolved or rejected)
+  private initSettled = false
+
+  // I2: Memoised init promise — returned on every subsequent init() call
+  private initPromise: Promise<void> | null = null
 
   // Progress callback for download tracking (0–100)
   private onProgress?: (_progress: number) => void
@@ -104,11 +119,17 @@ export class RealMaia implements MaiaAdapter {
    * message. The worker handles cache checking and model downloading
    * internally; it reports progress and emits `status: 'ready'` when done.
    *
+   * I2: Concurrent calls are safe — the same Promise is returned for all
+   * callers until init has settled.
+   *
+   * I1: Rejects after INIT_TIMEOUT_MS if the worker never reports ready.
+   *
    * @throws Error in SSR/Node environments where `Worker` is unavailable.
    * @throws Error if the worker reports an error during initialisation.
    */
   async init(): Promise<void> {
-    if (this.ready) return
+    // I2: Return memoised promise so concurrent callers share one worker
+    if (this.initPromise !== null) return this.initPromise
 
     if (typeof window === 'undefined' || typeof Worker === 'undefined') {
       throw new Error(
@@ -117,8 +138,36 @@ export class RealMaia implements MaiaAdapter {
       )
     }
 
-    return new Promise<void>((resolve, reject) => {
+    this.initPromise = new Promise<void>((resolve, reject) => {
       this.worker = new Worker('/maia-worker.js')
+
+      // I1: Timeout guard — reject if the worker never reports ready
+      let initTimer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+        initTimer = null
+        if (!this.initSettled) {
+          this.initSettled = true
+          this.worker?.terminate()
+          this.worker = null
+          this.initPromise = null
+          reject(
+            new Error(
+              `Maia worker did not become ready within ${INIT_TIMEOUT_MS / 1000}s. ` +
+                'Check that the worker script loaded correctly.',
+            ),
+          )
+        }
+      }, INIT_TIMEOUT_MS)
+
+      /** Settle the init promise exactly once. */
+      const settleInit = (settleFn: () => void) => {
+        if (this.initSettled) return
+        this.initSettled = true
+        if (initTimer !== null) {
+          clearTimeout(initTimer)
+          initTimer = null
+        }
+        settleFn()
+      }
 
       this.worker.onmessage = (e: MessageEvent) => {
         const msg = e.data as Record<string, unknown>
@@ -130,12 +179,13 @@ export class RealMaia implements MaiaAdapter {
               // Model not cached — tell the worker to start downloading
               this.worker!.postMessage({ type: 'download' })
             } else if (status === 'ready') {
-              this.ready = true
-              this.onProgress?.(100)
-              resolve()
-            } else if (status === 'error') {
-              reject(new Error((msg.message as string) ?? 'Maia worker: init error'))
+              settleInit(() => {
+                this.ready = true
+                this.onProgress?.(100)
+                resolve()
+              })
             }
+            // M3: removed dead 'error' branch — worker never sends status:'error'
             break
           }
 
@@ -148,21 +198,24 @@ export class RealMaia implements MaiaAdapter {
           case 'error': {
             const id = msg.id as number | undefined
             if (id !== undefined) {
-              // Per-inference error
+              // Per-inference error (safe to handle at any time)
               const pending = this.pendingInferences.get(id)
               if (pending) {
                 pending.reject(new Error((msg.message as string) ?? 'Maia inference error'))
                 this.pendingInferences.delete(id)
               }
             } else {
-              // Global worker error during init
+              // C1: Global worker error — reject all pending inferences
               const err = new Error((msg.message as string) ?? 'Maia worker error')
-              // Reject any pending inferences too
               for (const pending of this.pendingInferences.values()) {
                 pending.reject(err)
               }
               this.pendingInferences.clear()
-              reject(err)
+
+              // C1: Only touch init promise if not yet settled
+              if (!this.initSettled) {
+                settleInit(() => reject(err))
+              }
             }
             break
           }
@@ -185,27 +238,37 @@ export class RealMaia implements MaiaAdapter {
       this.worker.onerror = (err: ErrorEvent) => {
         console.error('Maia worker crashed:', err)
         const error = new Error(err.message ?? 'Maia worker crashed')
-        // Reject any pending inferences
+        // C1: Reject all in-flight inferences regardless of init state
         for (const pending of this.pendingInferences.values()) {
           pending.reject(error)
         }
         this.pendingInferences.clear()
-        reject(error)
+
+        // C1: Only reject init if it hasn't settled yet
+        if (!this.initSettled) {
+          settleInit(() => reject(error))
+        }
       }
 
-      // Tell the worker which model to load
+      // Tell the worker which model to load (M2: use constant)
       this.worker.postMessage({
         type: 'init',
         modelUrl: this.modelUrl,
-        modelVersion: '3',
+        modelVersion: MAIA_MODEL_VERSION,
       })
     })
+
+    return this.initPromise
   }
 
   /**
    * Posts an `inference` message to the worker and awaits the matching result.
    *
    * Buffers are transferred (zero-copy) to avoid serialisation overhead.
+   *
+   * I4: Each request has a per-request timeout (INFERENCE_TIMEOUT_MS). On
+   * expiry the promise is rejected and the pending entry is removed so the
+   * slot cannot be resolved/rejected by a late response.
    */
   private runInference(
     tokens: Float32Array,
@@ -220,7 +283,28 @@ export class RealMaia implements MaiaAdapter {
     const id = this.nextRequestId++
 
     return new Promise((resolve, reject) => {
-      this.pendingInferences.set(id, { resolve, reject })
+      // I4: Per-request timeout
+      const timer = setTimeout(() => {
+        if (this.pendingInferences.has(id)) {
+          this.pendingInferences.delete(id)
+          reject(
+            new Error(
+              `Maia inference request ${id} timed out after ${INFERENCE_TIMEOUT_MS / 1000}s`,
+            ),
+          )
+        }
+      }, INFERENCE_TIMEOUT_MS)
+
+      this.pendingInferences.set(id, {
+        resolve: (result) => {
+          clearTimeout(timer)
+          resolve(result)
+        },
+        reject: (err) => {
+          clearTimeout(timer)
+          reject(err)
+        },
+      })
 
       // Transfer ArrayBuffers for zero-copy send
       this.worker!.postMessage(
@@ -253,8 +337,9 @@ export class RealMaia implements MaiaAdapter {
    * console.log(result.value)         // 0.48 (48% win probability for Black)
    */
   async predict(fen: string, config?: Partial<MaiaConfig>): Promise<MaiaEvaluation> {
-    if (!this.worker) {
-      throw new Error('Maia model not initialised. Call init() first.')
+    // I3: Guard against calling predict before init() has resolved
+    if (!this.ready) {
+      throw new Error('Maia is not ready — call init() and await it first.')
     }
 
     // Resolve ELO level: explicit config → app default (1500)
@@ -263,11 +348,11 @@ export class RealMaia implements MaiaAdapter {
     // Preprocess: build board tokens and legal-move mask
     const { boardTokens, legalMoves } = preprocessMaia3(fen)
 
-    // Run inference on the worker
+    // Run inference on the worker (M1: new Float32Array instead of Float32Array.from)
     const { logitsMove, logitsValue } = await this.runInference(
       boardTokens,
-      Float32Array.from([eloLevel]),
-      Float32Array.from([eloLevel]), // symmetric: use same ELO for both sides
+      new Float32Array([eloLevel]),
+      new Float32Array([eloLevel]), // symmetric: use same ELO for both sides
       1,
     )
 
