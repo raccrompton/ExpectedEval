@@ -389,6 +389,18 @@ export class MockMaia implements MaiaAdapter {
   }
 
   /**
+   * Predict move probabilities for multiple positions.
+   *
+   * Mock implementation delegates to predict() for each position.
+   */
+  async predictBatch(
+    fens: string[],
+    config?: Partial<MaiaConfig>
+  ): Promise<MaiaEvaluation[]> {
+    return Promise.all(fens.map((f) => this.predict(f, config)))
+  }
+
+  /**
    * Clean up (no-op in mock).
    */
   destroy(): void {

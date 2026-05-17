@@ -322,7 +322,72 @@ export class RealMaia implements MaiaAdapter {
   }
 
   /**
+   * Predicts move probabilities for multiple positions in one batched inference call.
+   *
+   * Concatenates all board tokens into a single Float32Array and sends one
+   * worker message, then slices the returned logits per-item. This is far
+   * more efficient than calling predict() in a loop.
+   *
+   * @param fens   - Positions in FEN notation
+   * @param config - Configuration (ELO level); defaults to the app's default Maia level
+   * @returns Move probabilities and win probability for each position, in input order
+   */
+  async predictBatch(fens: string[], config?: Partial<MaiaConfig>): Promise<MaiaEvaluation[]> {
+    if (!this.ready) {
+      throw new Error('Maia is not ready — call init() and await it first.')
+    }
+
+    if (fens.length === 0) return []
+
+    const eloLevel = config?.eloLevel ?? DEFAULT_EW_CONFIG.maiaLevel
+
+    // Preprocess every position — keep tokens and legal-move masks together
+    const preprocessed = fens.map((fen) => preprocessMaia3(fen))
+
+    // Concatenate all board tokens into one flat array (batchSize * 64 * 12)
+    const TOKENS_PER_POSITION = 64 * 12
+    const combined = new Float32Array(fens.length * TOKENS_PER_POSITION)
+    for (let i = 0; i < preprocessed.length; i++) {
+      combined.set(preprocessed[i].boardTokens, i * TOKENS_PER_POSITION)
+    }
+
+    // Build ELO arrays — same ELO for self and opponent for all items
+    const eloSelfs = new Float32Array(fens.length).fill(eloLevel)
+    const eloOppos = new Float32Array(fens.length).fill(eloLevel)
+
+    // Single worker round-trip for the whole batch
+    const { logitsMove, logitsValue } = await this.runInference(
+      combined,
+      eloSelfs,
+      eloOppos,
+      fens.length,
+    )
+
+    const moveLogitsAll = new Float32Array(logitsMove)
+    const valueLogitsAll = new Float32Array(logitsValue)
+
+    // Slice per-item and decode
+    const MOVE_LOGITS_PER_ITEM = 4352
+    const VALUE_LOGITS_PER_ITEM = 3
+
+    return fens.map((fen, i) => {
+      const moveSlice = moveLogitsAll.slice(
+        i * MOVE_LOGITS_PER_ITEM,
+        (i + 1) * MOVE_LOGITS_PER_ITEM,
+      )
+      const valueSlice = valueLogitsAll.slice(
+        i * VALUE_LOGITS_PER_ITEM,
+        (i + 1) * VALUE_LOGITS_PER_ITEM,
+      )
+      const { policy, value } = processMaia3Outputs(fen, moveSlice, valueSlice, preprocessed[i].legalMoves)
+      return { policy, value, eloLevel }
+    })
+  }
+
+  /**
    * Predicts move probabilities for a position.
+   *
+   * Delegates to predictBatch for a single position, eliminating duplicated logic.
    *
    * @param fen    - Position in FEN notation
    * @param config - Configuration (ELO level); defaults to the app's default Maia level
@@ -337,34 +402,7 @@ export class RealMaia implements MaiaAdapter {
    * console.log(result.value)         // 0.48 (48% win probability for Black)
    */
   async predict(fen: string, config?: Partial<MaiaConfig>): Promise<MaiaEvaluation> {
-    // I3: Guard against calling predict before init() has resolved
-    if (!this.ready) {
-      throw new Error('Maia is not ready — call init() and await it first.')
-    }
-
-    // Resolve ELO level: explicit config → app default (1500)
-    const eloLevel = config?.eloLevel ?? DEFAULT_EW_CONFIG.maiaLevel
-
-    // Preprocess: build board tokens and legal-move mask
-    const { boardTokens, legalMoves } = preprocessMaia3(fen)
-
-    // Run inference on the worker (M1: new Float32Array instead of Float32Array.from)
-    const { logitsMove, logitsValue } = await this.runInference(
-      boardTokens,
-      new Float32Array([eloLevel]),
-      new Float32Array([eloLevel]), // symmetric: use same ELO for both sides
-      1,
-    )
-
-    // Decode worker output into policy + value
-    const { policy, value } = processMaia3Outputs(
-      fen,
-      new Float32Array(logitsMove),
-      new Float32Array(logitsValue),
-      legalMoves,
-    )
-
-    return { policy, value, eloLevel }
+    return (await this.predictBatch([fen], config))[0]
   }
 
   /**

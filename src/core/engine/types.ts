@@ -265,6 +265,13 @@ export interface MaiaAdapter {
   predict(_fen: string, _config?: Partial<MaiaConfig>): Promise<MaiaEvaluation>
 
   /**
+   * Predict multiple positions in one batched inference call.
+   * Far fewer worker round-trips than calling predict() per position.
+   * @returns evaluations in the same order as the input fens
+   */
+  predictBatch(_fens: string[], _config?: Partial<MaiaConfig>): Promise<MaiaEvaluation[]>
+
+  /**
    * Clean up resources. Call when done with the engine.
    */
   destroy(): void
