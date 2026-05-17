@@ -77,7 +77,14 @@ export function EngineProvider({ children }: EngineProviderProps) {
     setStockfishStatus('loading')
     setMaiaStatus('loading')
 
-    Promise.all([sfEngine.init(), maiaEngine.init()])
+    // Initialize engines SEQUENTIALLY, not in parallel. Each engine
+    // allocates a large WebAssembly memory; initializing both at once
+    // doubles the transient peak and is what tips iOS Safari over its
+    // per-tab memory ceiling during init.
+    ;(async () => {
+      await sfEngine.init()
+      await maiaEngine.init()
+    })()
       .then(() => {
         if (cancelled) return
         setStockfish(sfEngine)

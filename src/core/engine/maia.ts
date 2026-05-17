@@ -24,8 +24,9 @@
  * console.log(result.value)   // 0.58 (58% win probability)
  */
 
-import { InferenceSession, Tensor } from 'onnxruntime-web'
+import { InferenceSession, Tensor, env } from 'onnxruntime-web'
 import type { MaiaAdapter, MaiaConfig, MaiaEvaluation } from './types'
+import { recommendedOnnxThreads } from './deviceProfile'
 import { preprocess, mirrorMove, allPossibleMovesReversed } from './tensor'
 import { MaiaModelStorage } from './storage'
 import { Chess } from 'chessops/chess'
@@ -221,6 +222,13 @@ export class RealMaia implements MaiaAdapter {
    * @param buffer - The model file as an ArrayBuffer
    */
   private async initializeModel(buffer: ArrayBuffer): Promise<void> {
+    // Constrain ONNX Runtime Web's WASM backend BEFORE creating the session.
+    // Each WASM thread carries its own stack/arena; on iOS Safari the
+    // multi-threaded backend's allocation fails with "RangeError: Out of
+    // memory" because Stockfish already holds a large shared memory. Fewer
+    // threads (1 on iOS) keeps the footprint within Safari's per-tab budget.
+    env.wasm.numThreads = recommendedOnnxThreads()
+
     // Create ONNX inference session
     // onnxruntime-web will use WebAssembly for inference
     this.model = await InferenceSession.create(buffer)

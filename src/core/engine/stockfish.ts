@@ -33,6 +33,7 @@
 
 import type StockfishWeb from 'lila-stockfish-web'
 import type { StockfishAdapter, StockfishConfig, StockfishEvaluation } from './types'
+import { recommendedHashMB, recommendedThreads, stockfishMaxPages } from './deviceProfile'
 import { Chess } from 'chessops/chess'
 import { parseFen } from 'chessops/fen'
 import { makeSquare } from 'chessops/util'
@@ -226,9 +227,12 @@ async function setupStockfish(): Promise<StockfishWeb> {
         // Initialize the WASM module with configuration
         makeModule
           .default({
-            // Allocate shared memory for multi-threading
-            // 2560 pages ≈ 160MB, good balance of memory vs performance
-            wasmMemory: sharedWasmMemory(2560),
+            // Allocate shared memory for multi-threading.
+            // initial 2560 pages ≈ 160MB (covers code + NNUE + small hash).
+            // The maximum is capped well below the 32767-page (~2GB) default
+            // so two coexisting WASM engines don't blow Safari's per-tab
+            // memory ceiling. See deviceProfile.stockfishMaxPages().
+            wasmMemory: sharedWasmMemory(2560, stockfishMaxPages()),
 
             // Handle initialization errors
             onError: (msg: string) => reject(new Error(msg)),
@@ -366,6 +370,12 @@ export class RealStockfish implements StockfishAdapter {
 
       // Enable native WDL (Win/Draw/Loss) output instead of calculating from cp
       this.stockfish.uci('setoption name UCI_ShowWDL value true')
+
+      // Cap memory use so Stockfish + Maia together stay within Safari's
+      // per-tab budget. Hash is the transposition table; Threads each carry
+      // their own stack/arena. Both are sized down on iOS. See deviceProfile.
+      this.stockfish.uci(`setoption name Hash value ${recommendedHashMB()}`)
+      this.stockfish.uci(`setoption name Threads value ${recommendedThreads()}`)
 
       // Set up message handlers
       this.stockfish.onError = this.onError.bind(this)
