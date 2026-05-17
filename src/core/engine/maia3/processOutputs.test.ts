@@ -19,11 +19,11 @@ describe('processMaia3Outputs', () => {
     expect(value).toBeLessThan(0.5)
   })
 
-  it('black-to-move: Win-favouring LDW still yields > 0.5 for black (side-to-move)', () => {
+  it('black-to-move: Win-favouring LDW (white wins) flips to < 0.5 for black', () => {
     const blackFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1'
     const { value } = processMaia3Outputs(blackFen, uniformMoveLogits(), [0, 0, 5], legalOf(blackFen))
-    // LDW is for the mirrored white side; after the black flip, value is
-    // side-to-move (black). A Win-favouring LDW => value > 0.5 for black.
+    // The model sees a mirrored white board, so LDW "Win" means white wins.
+    // After the black flip, the side-to-move (black) value is low (~0.01).
     expect(value).toBeLessThan(0.5)
   })
 
