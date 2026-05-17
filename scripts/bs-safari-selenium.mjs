@@ -130,14 +130,16 @@ const run = async () => {
     log('Error hook installed.')
 
     // --- Phase 1: engine init ---
-    log('Waiting for engines to initialize (up to 4 min)...')
+    // Stockfish is lazily initialized — at page load only Maia loads eagerly.
+    // Stockfish becomes ready later, when a PGN is loaded / Analyze Game runs.
+    log('Waiting for Maia to initialize at load (up to 4 min)...')
     const deadline = Date.now() + 240000
     let enginesReady = false
     while (Date.now() < deadline) {
       await driver.executeScript(ERROR_HOOK) // idempotent re-install
       const s = await driver.executeScript(READ_STATUS)
-      if (/ready/i.test(s.sf) && /ready/i.test(s.maia)) { enginesReady = true; break }
-      if (/error/i.test(s.sf) || /error/i.test(s.maia)) {
+      if (/ready/i.test(s.maia)) { enginesReady = true; break }
+      if (/error/i.test(s.maia) || /error/i.test(s.sf)) {
         const errs = await driver.executeScript(`return window.__errs || [];`)
         result = 'failed'
         reason = `engine init ERROR — sf="${s.sf.trim()}" maia="${s.maia.trim()}"`
@@ -151,11 +153,11 @@ const run = async () => {
     }
 
     if (!enginesReady) {
-      if (result === 'unknown') { result = 'failed'; reason = 'engines never became ready (timeout)' }
-      log('=== #1 RESULT: engines did NOT initialize on real Safari ===')
+      if (result === 'unknown') { result = 'failed'; reason = 'Maia never became ready (timeout)' }
+      log('=== #1 RESULT: Maia did NOT initialize on real Safari ===')
       return
     }
-    log('=== #1 RESULT: engines INITIALIZED on real Safari ✓ ===')
+    log('=== #1 RESULT: Maia INITIALIZED on real Safari ✓ (Stockfish loads lazily) ===')
 
     // --- Phase 2: Win Finder ---
     log('Loading PGN (via React-compatible native setter)...')
