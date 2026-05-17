@@ -86,6 +86,9 @@ Win Finder, and all mock-based unit tests stay untouched.
   `elo_self` / `elo_oppo` encoding (bucketing + range). Map the app's
   `MaiaConfig.eloLevel` / settings (currently 1100–1900) onto whatever
   range Maia 3 expects. A wrong ELO encoding silently corrupts predictions.
+  During implementation, **document** how Maia 3's strength input works
+  (it may be undocumented or differ from Maia 2) — write findings into
+  `docs/perspective.md` or a sibling doc so the encoding is not folklore.
 
 **Data flow:** `predict(fen)` → worker `postMessage` → ONNX `session.run`
 in worker → logits posted back → `processOutputsMaia3` → `{ policy, value }`.
@@ -131,8 +134,20 @@ Four checks before either phase is "done":
   `07-real-engines.spec.ts`) — Maia 3 values differ from Maia 2, so
   value-specific assertions become range / structural / perspective-direction
   checks rather than exact numbers.
-- New tests: LDW→value conversion, ELO encoding mapping, the four
-  perspective checks.
+- New tests: LDW→value conversion, the four perspective checks, and
+  **Maia 3 strength-adjustment tests** (see below).
+- **Strength-adjustment tests (explicit requirement).** Maia 3's ELO /
+  strength mechanism may be undocumented or differ from Maia 2's, so it
+  must be verified behaviorally, not just structurally:
+  - The `eloLevel` → `elo_self` / `elo_oppo` mapping encodes the documented
+    value (unit test on the encoding function).
+  - Predictions actually *respond* to strength: running the same position
+    at distinct levels (e.g. 1100 vs 1900) yields **different** policy
+    distributions, and the shift is in the expected direction (higher
+    level → closer to the engine-best move). Use a position with a clear
+    "human mistake vs best move" gap.
+  - Boundary levels (lowest / highest supported) do not error and stay
+    within Maia 3's valid input range.
 - Per-phase BrowserStack verification:
   - Phase A: iOS `[mem:stockfish-init]`; macOS Safari + Chrome.
   - Phase B: real iOS Safari runs both engines + completes Win Finder / EW
