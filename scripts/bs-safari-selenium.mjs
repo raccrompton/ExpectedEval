@@ -123,19 +123,36 @@ const run = async () => {
     log('=== #1 RESULT: engines INITIALIZED on real Safari ✓ ===')
 
     // --- Phase 2: Win Finder ---
-    log('Loading PGN...')
+    log('Loading PGN (via React-compatible native setter)...')
     await driver.executeScript(
       `var i=document.querySelector('[data-testid=pgn-input]');` +
-        `i.value=arguments[0];` +
+        `var proto=i.tagName==='TEXTAREA'?window.HTMLTextAreaElement.prototype:window.HTMLInputElement.prototype;` +
+        `Object.getOwnPropertyDescriptor(proto,'value').set.call(i, arguments[0]);` +
         `i.dispatchEvent(new Event('input',{bubbles:true}));`,
       LONG_PGN,
     )
     await driver.executeScript(`document.querySelector('[data-testid=load-pgn-button]').click();`)
-    await sleep(8000)
 
-    log('Switching to Win Finder tab + clicking Analyze Game...')
+    // Wait for the position to evaluate (sf-cp appears) before analyzing.
+    let pgnLoaded = false
+    for (let t = 0; t < 60000; t += 4000) {
+      await sleep(4000)
+      const ok = await driver.executeScript(
+        `return !!document.querySelector('[data-testid=sf-cp]');`,
+      )
+      if (ok) { pgnLoaded = true; break }
+    }
+    log(`PGN loaded / position evaluated: ${pgnLoaded}`)
+
+    log('Switching to Win Finder tab...')
     await driver.executeScript(`document.querySelector('[data-testid=tab-winfinder]').click();`)
     await sleep(1000)
+    const btn = await driver.executeScript(
+      `var b=document.querySelector('[data-testid=wf-analyze-button]');` +
+        `return b?{disabled:b.disabled,text:b.textContent.trim()}:null;`,
+    )
+    log(`Analyze button: ${JSON.stringify(btn)}`)
+    log('Clicking Analyze Game...')
     await driver.executeScript(`document.querySelector('[data-testid=wf-analyze-button]').click();`)
 
     log('Monitoring Analyze Game for OOM...')
