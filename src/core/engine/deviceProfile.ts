@@ -53,14 +53,3 @@ export function recommendedOnnxThreads(): number {
   if (isIOSorIPadOS()) return 1
   return Math.min(2, cores)
 }
-
-/**
- * Upper bound (in 64KiB WASM pages) for Stockfish's shared WebAssembly
- * memory. The default of 32767 pages reserves ~2GB; with two engines
- * coexisting that reservation is itself a problem on Safari. Stockfish
- * with a small Hash + NNUE needs only a few hundred MB, so 6144 pages
- * (~384MB) is ample headroom while drastically shrinking the reservation.
- */
-export function stockfishMaxPages(): number {
-  return 6144
-}

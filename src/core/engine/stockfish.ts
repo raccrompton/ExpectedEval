@@ -33,7 +33,7 @@
 
 import type StockfishWeb from 'lila-stockfish-web'
 import type { StockfishAdapter, StockfishConfig, StockfishEvaluation } from './types'
-import { recommendedHashMB, recommendedThreads, stockfishMaxPages } from './deviceProfile'
+import { recommendedHashMB, recommendedThreads } from './deviceProfile'
 import { Chess } from 'chessops/chess'
 import { parseFen } from 'chessops/fen'
 import { makeSquare } from 'chessops/util'
@@ -228,11 +228,12 @@ async function setupStockfish(): Promise<StockfishWeb> {
         makeModule
           .default({
             // Allocate shared memory for multi-threading.
-            // initial 2560 pages ≈ 160MB (covers code + NNUE + small hash).
-            // The maximum is capped well below the 32767-page (~2GB) default
-            // so two coexisting WASM engines don't blow Safari's per-tab
-            // memory ceiling. See deviceProfile.stockfishMaxPages().
-            wasmMemory: sharedWasmMemory(2560, stockfishMaxPages()),
+            // 2560 pages ≈ 160MB initial. The maximum is left at the default
+            // (~2GB): it is only a virtual reservation, and capping it lower
+            // makes Emscripten write the NNUE buffers out of bounds on
+            // Safari ("out of bounds memory access"). Footprint is bounded
+            // instead via the Hash/Threads options below.
+            wasmMemory: sharedWasmMemory(2560),
 
             // Handle initialization errors
             onError: (msg: string) => reject(new Error(msg)),
